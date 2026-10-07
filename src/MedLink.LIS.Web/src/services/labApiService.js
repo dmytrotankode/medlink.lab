@@ -231,6 +231,22 @@ const labApi = {
     params: { dryRun: !!dryRun }, headers: { 'Content-Type': 'multipart/form-data' }
   })),
 
+  // ---------- Оплата (FR-GAP-060) ----------
+  payers: () => data(http.get('/payers')),
+  savePayer: (id, body) => data(id ? http.put(`/payers/${id}`, body) : http.post('/payers', body)),
+  priceLists: () => data(http.get('/price-lists')),
+  savePriceList: (id, body) => data(id ? http.put(`/price-lists/${id}`, body) : http.post('/price-lists', body)),
+  patientInsurances: patientId => data(http.get(`/patients/${patientId}/insurances`)),
+  addPatientInsurance: (patientId, body) => data(http.post(`/patients/${patientId}/insurances`, body)),
+  billingQuote: body => data(http.post('/billing/quote', body)),
+  orderBilling: id => data(http.get(`/orders/${id}/billing`)),
+  setOrderPayer: (id, body) => data(http.put(`/orders/${id}/payer`, body)),
+  setChargePatientChoice: (id, chargeId, patientPays) => data(http.put(`/orders/${id}/charges/${chargeId}/patient-choice`, null, { params: { patientPays } })),
+  addPayment: (id, body) => data(http.post(`/orders/${id}/payments`, body)),
+  issueInvoice: id => data(http.post(`/orders/${id}/invoice`)),
+  receiptUrl: id => `${API_BASE}/orders/${id}/receipt`,
+  invoicePrintUrl: id => `${API_BASE}/invoices/${id}/print`,
+
   // ---------- Направлення (FR-REF-001) ----------
   lookupEhealthReferral: (number, patientId) => data(http.get('/referrals/ehealth/lookup', { params: clean({ number, patientId }) })),
   referralJournal: params => data(http.get('/referrals/journal', { params: clean(params || {}) })),

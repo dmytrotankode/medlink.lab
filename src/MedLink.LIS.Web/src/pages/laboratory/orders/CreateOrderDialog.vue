@@ -157,7 +157,27 @@
                 <div class="row items-center justify-between"><span class="text-grey-7">Профілів</span><b>{{ form.profileIds.length }}</b></div>
                 <div class="row items-center justify-between"><span class="text-grey-7">Пробірок до забору</span><b>{{ planItems.length }}</b></div>
                 <q-separator class="q-my-sm" />
-                <div class="row items-center justify-between text-h6"><span>До сплати</span><span class="text-primary">{{ totalPrice | money }}</span></div>
+                <q-select v-model="payerId" outlined dense emit-value map-options :options="payerOptions" label="Платник" data-testid="payerSelect" class="q-mb-xs" />
+                <div v-if="selectedPayer && selectedPayer.requiresPolicy" class="q-mb-xs">
+                  <q-select v-if="policies.length" v-model="policyId" outlined dense emit-value map-options :options="policyOptions" label="Поліс пацієнта" />
+                  <div v-else class="row q-gutter-xs items-center">
+                    <q-input v-model="newPolicy.number" outlined dense label="№ полісу *" class="col" />
+                    <q-input v-model="newPolicy.validTo" outlined dense type="date" stack-label label="Дійсний до" class="col" />
+                    <q-btn dense unelevated color="primary" icon="add" :disable="!newPolicy.number || !patient" @click="addPolicy"><q-tooltip>Додати поліс пацієнту</q-tooltip></q-btn>
+                  </div>
+                </div>
+                <q-input v-if="selectedPayer && selectedPayer.requiresAuthorization" v-model="authorizationNumber" outlined dense label="№ гарантійного листа *" class="q-mb-xs" />
+                <div v-if="payerId === 'AUTO' && quote" class="text-caption text-grey-7 q-mb-xs">Визначено: <b>{{ quote.payerName }}</b><span v-if="quote.policyNumber"> · поліс {{ quote.policyNumber }}</span></div>
+                <q-banner v-if="quote && quote.warning" dense rounded class="bg-orange-1 text-deep-orange-9 q-mb-xs">{{ quote.warning }}</q-banner>
+                <template v-if="quote">
+                  <div v-for="l in quote.lines" :key="l.code" class="row justify-between text-caption">
+                    <span>{{ l.code }}<span v-if="l.isPackage" class="text-primary"> (пакет)</span><span v-if="l.isNotCovered" class="text-deep-orange-8"> · не покривається</span></span>
+                    <span>{{ l.amount | money }}</span>
+                  </div>
+                  <q-separator class="q-my-xs" />
+                  <div class="row items-center justify-between"><span class="text-grey-7">Сплачує {{ quote.payerKind === 'PATIENT' ? 'пацієнт' : quote.payerName }}</span><b>{{ (quote.payerKind === 'PATIENT' ? quote.patientAmount : quote.payerAmount) | money }}</b></div>
+                </template>
+                <div class="row items-center justify-between text-h6" data-testid="patientToPay"><span>До сплати пацієнтом</span><span class="text-primary">{{ (quote ? quote.patientAmount : 0) | money }}</span></div>
                 <div v-if="form.isUrgentCito" class="text-caption text-deep-orange-7 q-mt-xs"><q-icon name="bolt" /> CITO — пріоритетна черга та окрема позначка на етикетках</div>
               </div>
             </div>
@@ -220,6 +240,14 @@ export default {
         { value: 'SELF', label: 'Самозвернення' }, { value: 'INTERNAL', label: 'Внутрішнє' }, { value: 'EHEALTH', label: 'Е-направлення' },
         { value: 'PAPER', label: 'Паперове' }, { value: 'EXTERNAL_CLINIC', label: 'Клініка-партнер' }
       ],
+      payers: [],
+      payerId: 'AUTO',
+      policies: [],
+      policyId: null,
+      newPolicy: { number: '', validTo: '' },
+      authorizationNumber: '',
+      quote: null,
+      quoteTimer: null,
       plan: null,
       planLoading: false,
       planError: '',
@@ -270,6 +298,12 @@ export default {
       }));
     },
     planWarnings () { return (this.plan && this.plan.warnings) || []; },
+    payerOptions () {
+      return [{ value: 'AUTO', label: 'Автоматично (поліс / НСЗУ з е-направлення / каса)' }]
+        .concat(this.payers.filter(p => p.isActive).map(p => ({ value: p.id, label: `${p.name} · ${p.kindName}` })));
+    },
+    selectedPayer () { return this.payers.find(p => p.id === this.payerId || p.code === this.payerId) || null; },
+    policyOptions () { return this.policies.filter(p => !this.selectedPayer || p.payerId === this.selectedPayer.id).map(p => ({ value: p.id, label: `${p.policyNumber} · ${p.payerName}` })); },
     patientName () { return patientDisplay(this.patient); },
     patientAge () { return ageFromBirthDate(this.patient && this.patient.birthDate); },
     canSubmit () {
@@ -280,6 +314,8 @@ export default {
   watch: {
     'form.profileIds' () { this.schedulePlan(); },
     'form.testIds' () { this.schedulePlan(); },
+    payerId () { this.scheduleQuote(); },
+    patient (p) { this.loadPolicies(p); this.scheduleQuote(); },
     value: {
       // immediate: діалог може бути відкритий одразу при завантаженні сторінки (?create=1)
       immediate: true,
@@ -296,6 +332,34 @@ export default {
     schedulePlan () {
       clearTimeout(this.planTimer);
       this.planTimer = setTimeout(this.loadPlan, 300);
+      this.scheduleQuote();
+    },
+    scheduleQuote () {
+      clearTimeout(this.quoteTimer);
+      this.quoteTimer = setTimeout(this.loadQuote, 350);
+    },
+    async loadQuote () {
+      if (!this.form.profileIds.length && !this.form.testIds.length) { this.quote = null; return; }
+      try {
+        this.quote = await this.$api.billingQuote({
+          profileIds: this.form.profileIds, testIds: this.form.testIds, payerId: this.payerId === 'AUTO' ? null : this.payerId,
+          patientId: this.patient && this.patient.id, ehealthReferralNumber: this.form.referralType === 'EHEALTH' ? this.ehealthNumber : null
+        });
+      } catch (e) { this.quote = null; }
+    },
+    async loadPayers () { try { this.payers = await this.$api.payers(); } catch (e) { this.payers = []; } },
+    async loadPolicies (p) {
+      this.policies = []; this.policyId = null;
+      if (!p || !p.id) return;
+      try { this.policies = (await this.$api.patientInsurances(p.id)).filter(x => x.isValid); this.policyId = this.policies.length ? this.policies[0].id : null; } catch (e) { this.policies = []; }
+    },
+    async addPolicy () {
+      try {
+        await this.$api.addPatientInsurance(this.patient.id, { payerId: this.selectedPayer.id, policyNumber: this.newPolicy.number, validTo: this.newPolicy.validTo || null });
+        this.newPolicy = { number: '', validTo: '' };
+        await this.loadPolicies(this.patient);
+        this.scheduleQuote();
+      } catch (e) { this.$q.notify({ type: 'negative', message: e.userMessage || 'Не вдалося додати поліс' }); }
     },
     async loadPlan () {
       const body = { profileIds: this.form.profileIds, testIds: this.form.testIds };
@@ -328,6 +392,9 @@ export default {
       }
     },
     reset () {
+      this.payerId = 'AUTO';
+      this.policies = []; this.policyId = null; this.authorizationNumber = ''; this.quote = null;
+      this.loadPayers();
       this.ehealthNumber = '';
       this.referralInfo = null;
       this.paper = emptyPaper();
@@ -362,7 +429,10 @@ export default {
         ehealthReferralId: null,
         ehealthReferralNumber: this.form.referralType === 'EHEALTH' ? (this.ehealthNumber || '').trim() : null,
         paperReferral: this.form.referralType === 'PAPER' ? { ...this.paper, date: this.paper.date || null } : null,
-        clinicalNotes: this.form.clinicalNotes || null
+        clinicalNotes: this.form.clinicalNotes || null,
+        payerId: this.payerId && this.payerId !== 'AUTO' ? this.payerId : null,
+        patientInsuranceId: this.selectedPayer && this.selectedPayer.requiresPolicy ? this.policyId : null,
+        authorizationNumber: this.authorizationNumber || null
       };
       ['referrerOrganizationName', 'referrerOrganizationEdrpou', 'referrerDoctorName', 'referrerNumber'].forEach(k => { if (this.form.referralType !== 'EXTERNAL_CLINIC' || !body[k]) body[k] = null; });
       if (this.newPatientMode) body.newPatient = { ...this.newPatient };

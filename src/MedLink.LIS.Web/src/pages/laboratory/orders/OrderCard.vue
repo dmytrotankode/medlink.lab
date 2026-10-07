@@ -77,6 +77,9 @@
         </q-list>
       </div>
 
+      <!-- Оплата (FR-GAP-060) -->
+      <order-billing :order-id="order.id" />
+
       <!-- Процес + дії -->
       <div class="medlink-card q-mb-md">
         <div class="medlink-card__title">
@@ -241,6 +244,7 @@
 </template>
 
 <script>
+import OrderBilling from '../../../components/orders/OrderBilling.vue';
 import apiMixin from '../../../mixins/apiMixin';
 import LabelsDialog from '../../../components/common/LabelsDialog.vue';
 import HtmlPreviewDialog from '../../../components/common/HtmlPreviewDialog.vue';
@@ -262,7 +266,7 @@ import { formatDateTime, formatNumber, patientDisplay, genderLabel, ageFromBirth
 export default {
   name: 'OrderCard',
   mixins: [apiMixin, labelPrintMixin],
-  components: { LabelsDialog, HtmlPreviewDialog, OrderStepper, OrderActionsBar, AuditTimeline, CollectSampleDialog, ReceiveSampleDialog, RejectSampleDialog, SampleEditDialog, ResultEditorDialog, VerifyResultDialog, EditOrderDialog },
+  components: { LabelsDialog, HtmlPreviewDialog, OrderStepper, OrderActionsBar, AuditTimeline, CollectSampleDialog, ReceiveSampleDialog, RejectSampleDialog, SampleEditDialog, ResultEditorDialog, VerifyResultDialog, EditOrderDialog, OrderBilling },
   props: { id: { type: String, required: true } },
   data () {
     return {

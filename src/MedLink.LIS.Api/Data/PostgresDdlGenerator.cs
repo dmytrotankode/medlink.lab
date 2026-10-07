@@ -23,8 +23,11 @@ public static class PostgresDdlGenerator
     /// <summary>Рядкові *Id, що не є uuid (вільні ідентифікатори журналів, приладів).</summary>
     private static readonly HashSet<string> NonUuidIds = new(StringComparer.OrdinalIgnoreCase) { "UserId", "EntityId", "InstrumentId", "OperatorId", "ActorId", "ById" };
 
-    public static bool IsMedLinkTable(string table) =>
-        table.StartsWith("cmn_") || table.StartsWith("org_") || table.StartsWith("mis_") || table.StartsWith("ehe_");
+    /// <summary>[MedLink-new] — нові загальні сутності МІС, які пропонується додати до ядра MedLink (створюються скриптом).</summary>
+    public static readonly HashSet<string> MedLinkNewTables = new() { "mis_patient_insurance" };
+
+    public static bool IsMedLinkTable(string table) => !MedLinkNewTables.Contains(table) &&
+        (table.StartsWith("cmn_") || table.StartsWith("org_") || table.StartsWith("mis_") || table.StartsWith("ehe_"));
 
     public static string Generate(LisDbContext db)
     {
@@ -36,6 +39,7 @@ public static class PostgresDdlGenerator
         sb.AppendLine("-- [MedLink]  — таблиця evomis, не створюється (наведено колонки, які використовує ЛІС).");
         sb.AppendLine("-- [MedLink+] — колонки, які ЛІС додає до таблиці evomis.");
         sb.AppendLine("-- [ЛІС]      — таблиця модуля, створюється цим скриптом.");
+        sb.AppendLine("-- [MedLink-new] — нова загальна сутність МІС (пропонується до ядра MedLink), створюється цим скриптом.");
         sb.AppendLine("-- =============================================================================");
         sb.AppendLine("BEGIN;");
         sb.AppendLine();
@@ -61,7 +65,7 @@ public static class PostgresDdlGenerator
         {
             var table = e.GetTableName()!;
             var store = StoreObjectIdentifier.Table(table, null);
-            sb.AppendLine($"-- [ЛІС] {table} ({e.ClrType.Name})");
+            sb.AppendLine($"-- [{(MedLinkNewTables.Contains(table) ? "MedLink-new" : "ЛІС")}] {table} ({e.ClrType.Name})");
             sb.AppendLine($"CREATE TABLE IF NOT EXISTS {table} (");
             var lines = new List<string>();
             foreach (var p in e.GetProperties())

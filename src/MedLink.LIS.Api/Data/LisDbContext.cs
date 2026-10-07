@@ -99,6 +99,16 @@ public class LisDbContext : DbContext
     public DbSet<LabOrderAttachment> Attachments => Set<LabOrderAttachment>();
     public DbSet<LabEhealthExchangeLog> EhealthExchangeLog => Set<LabEhealthExchangeLog>();
 
+    // --- оплата (FR-GAP-060) ---
+    public DbSet<LabPriceList> PriceLists => Set<LabPriceList>();
+    public DbSet<LabPriceListItem> PriceListItems => Set<LabPriceListItem>();
+    public DbSet<LabPricePackage> PricePackages => Set<LabPricePackage>();
+    public DbSet<LabPayer> Payers => Set<LabPayer>();
+    public DbSet<MisPatientInsurance> PatientInsurances => Set<MisPatientInsurance>();
+    public DbSet<LabOrderCharge> OrderCharges => Set<LabOrderCharge>();
+    public DbSet<LabPayment> Payments => Set<LabPayment>();
+    public DbSet<LabInvoice> Invoices => Set<LabInvoice>();
+
     // --- system ---
     public DbSet<LabAuditLog> AuditLog => Set<LabAuditLog>();
     public DbSet<LabSettings> Settings => Set<LabSettings>();
@@ -145,6 +155,14 @@ public class LisDbContext : DbContext
 
         // [MedLink] персона та лабораторні атрибути завантажуються разом із карткою/співробітником/підрозділом
         mb.Entity<LabEhealthExchangeLog>().HasIndex(l => l.At);
+        mb.Entity<LabPriceList>().HasIndex(p => p.Code).IsUnique();
+        mb.Entity<LabPriceListItem>().HasIndex(i => new { i.PriceListId, i.ProfileId, i.TestId });
+        mb.Entity<LabPayer>().HasIndex(p => p.Code).IsUnique();
+        mb.Entity<MisPatientInsurance>().HasIndex(p => p.PatientCardId);
+        mb.Entity<LabOrderCharge>().HasIndex(c => c.OrderId);
+        mb.Entity<LabPayment>().HasIndex(p => p.OrderId);
+        mb.Entity<LabInvoice>().HasIndex(i => i.Number).IsUnique();
+        mb.Entity<LabOrder>().HasMany(o => o.Charges).WithOne(c => c.Order).HasForeignKey(c => c.OrderId).OnDelete(DeleteBehavior.Cascade);
         mb.Entity<LabOrder>().HasIndex(o => o.EhealthReferralId);
         mb.Entity<LabOrder>().HasIndex(o => o.ReferralType);
         mb.Entity<EheIncomingMedicalReferral>().HasIndex(r => r.RegNumber);

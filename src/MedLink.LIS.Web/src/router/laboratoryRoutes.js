@@ -40,6 +40,7 @@ export default [
       lab('analytics-tat', 'lab-analytics-tat', 'Аналітика TAT', () => import('pages/laboratory/LabAnalyticsTat.vue')),
 
       // ----- Довідники -----
+      lab('pricing', 'lab-pricing', 'Прайси та платники', () => import('pages/laboratory/PricingPage.vue')),
       lab('norms', 'lab-norms', 'Довідник послуг та норми', () => import('pages/laboratory/norms/NormsCatalog.vue')),
       lab('dictionaries', 'lab-dictionaries', 'Довідники', () => import('pages/dictionaries/DictionariesHome.vue')),
       lab('dictionaries/:name', 'lab-dictionary', 'Довідник', () => import('pages/dictionaries/DictionaryPage.vue'), { props: true }),

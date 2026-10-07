@@ -52,6 +52,7 @@ public sealed class SeedService
         await SeedMicrobiologyAsync();
         await SeedAnalyzersAsync();
         await SeedPerformersAsync();
+        await SeedBillingAsync();
         await SeedQcMaterialsAsync();
         await SeedCountersAsync();
         _logger.LogInformation("Сід довідників завершено за {Ms} мс", sw.ElapsedMilliseconds);
@@ -198,6 +199,50 @@ public sealed class SeedService
             }
             _db.Performers.Add(p);
         }
+        await _db.SaveChangesAsync();
+    }
+
+    /// <summary>Прайс-листи, пакети, платники (каса, страхові програми, НСЗУ, клініка, внутрішнє), поліси демо-пацієнтів.</summary>
+    private async Task SeedBillingAsync()
+    {
+        if (await _db.Payers.AnyAsync()) return;
+        var b = ReadResource<JsonElement>("billing.json");
+        var profiles = await _db.Profiles.AsNoTracking().ToDictionaryAsync(p => p.Code, p => p.Id);
+        var tests = await _db.Tests.AsNoTracking().ToDictionaryAsync(t => t.Code, t => t.Id);
+        (string? P, string? T) Ref(string code) => profiles.TryGetValue(code, out var p) ? (p, null) : tests.TryGetValue(code, out var t) ? (null, t) : throw new InvalidOperationException($"billing.json: невідомий код {code}");
+        DateTime? D(JsonElement el, string n) => el.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.String ? DateTime.SpecifyKind(DateTime.Parse(v.GetString()!), DateTimeKind.Utc) : null;
+        var lists = new Dictionary<string, string>();
+        foreach (var el in b.GetProperty("priceLists").EnumerateArray())
+        {
+            var code = el.GetProperty("code").GetString()!;
+            var l = new LabPriceList { Id = DeterministicGuid.For("pricelist:" + code), Code = code, Name = el.GetProperty("name").GetString()!, ValidFrom = D(el, "validFrom"), ValidTo = D(el, "validTo"),
+                IsDefault = el.TryGetProperty("isDefault", out var d) && d.GetBoolean() };
+            foreach (var it in el.GetProperty("items").EnumerateObject()) { var (pid, tid) = Ref(it.Name); l.Items.Add(new LabPriceListItem { PriceListId = l.Id, ProfileId = pid, TestId = tid, Price = it.Value.GetDecimal() }); }
+            if (el.TryGetProperty("packages", out var pk))
+                foreach (var pe in pk.EnumerateArray())
+                    l.Packages.Add(new LabPricePackage { PriceListId = l.Id, Code = pe.GetProperty("code").GetString()!, Name = pe.GetProperty("name").GetString()!, Price = pe.GetProperty("price").GetDecimal(),
+                        MemberIds = pe.GetProperty("members").EnumerateArray().Select(m => { var (pid, tid) = Ref(m.GetString()!); return pid ?? tid!; }).ToList() });
+            _db.PriceLists.Add(l);
+            lists[code] = l.Id;
+        }
+        foreach (var el in b.GetProperty("payers").EnumerateArray())
+        {
+            var p = JsonSerializer.Deserialize<LabPayer>(el.GetRawText(), Json)!;
+            p.Id = DeterministicGuid.For("payer:" + p.Code);
+            p.ContractValidTo = D(el, "contractValidTo");
+            if (el.TryGetProperty("priceListCode", out var pl)) p.PriceListId = lists[pl.GetString()!];
+            _db.Payers.Add(p);
+        }
+        foreach (var el in b.GetProperty("policies").EnumerateArray())
+            _db.PatientInsurances.Add(new MisPatientInsurance
+            {
+                PatientCardId = el.GetProperty("patientId").GetString()!, PayerId = DeterministicGuid.For("payer:" + el.GetProperty("payerCode").GetString()),
+                PolicyNumber = el.GetProperty("policyNumber").GetString()!, ValidFrom = D(el, "validFrom"), ValidTo = D(el, "validTo")
+            });
+        // Е-направлення №1 — за програмою медичних гарантій (платник НСЗУ підставляється автоматично)
+        var program = b.GetProperty("nszuProgramId").GetString();
+        var r1 = await _db.Referrals.FirstOrDefaultAsync(r => r.Id == "0c0f0000-0000-0000-0000-000000000001");
+        if (r1 != null) r1.MedicalServiceProgramId = program;
         await _db.SaveChangesAsync();
     }
 

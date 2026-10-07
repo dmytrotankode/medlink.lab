@@ -4,13 +4,14 @@
 -- [MedLink]  — таблиця evomis, не створюється (наведено колонки, які використовує ЛІС).
 -- [MedLink+] — колонки, які ЛІС додає до таблиці evomis.
 -- [ЛІС]      — таблиця модуля, створюється цим скриптом.
+-- [MedLink-new] — нова загальна сутність МІС (пропонується до ядра MedLink), створюється цим скриптом.
 -- =============================================================================
 BEGIN;
 
 -- ----------------------------------------------------------------------------- [MedLink]
 -- [MedLink] cmn_enum_record: id, caption, code, created_by, created_on, enum_type, modified_by, modified_on, parent_id, record_state, value_type
 -- [MedLink] cmn_person: id, birthday, caption, created_by, created_on, description, email, gender_id, ipn, last_name, location, middle_name, modified_by, modified_on, name, no_ipn, phone, record_state, subscribed_to_notifications
--- [MedLink] ehe_incoming_medical_referral: id, caption, complete_date_in_ehealth, completed_with_item_entity_id, completed_with_item_entity_name, created_by, created_on, ehealth_id, expiration_date, medical_referral_category_id, modified_by, modified_on, organization_id, patient_card_id, patient_instruction, patient_short_name, priority_id, processing_status_in_ehealth_id, record_state, reg_date, reg_number, requester_id, service_catalog_service_id, status_id, take_in_work_date
+-- [MedLink] ehe_incoming_medical_referral: id, caption, complete_date_in_ehealth, completed_with_item_entity_id, completed_with_item_entity_name, created_by, created_on, ehealth_id, expiration_date, medical_referral_category_id, medical_service_program_id, modified_by, modified_on, organization_id, patient_card_id, patient_instruction, patient_short_name, priority_id, processing_status_in_ehealth_id, record_state, reg_date, reg_number, requester_id, service_catalog_service_id, status_id, take_in_work_date
 -- [MedLink] ehe_paper_medical_referral: id, caption, created_by, created_on, description, modified_by, modified_on, organization_id, patient_card_id, processed_date, record_state, reg_date, reg_number, requester_employee_name, requester_legal_entity_edrpou, requester_legal_entity_name, status
 -- [MedLink] ehe_service_catalog_service: id, caption, code, created_by, created_on, ehealth_id, inserted_at_in_ehealth, is_active, is_composition, medical_referral_category_id, modified_by, modified_on, name, record_state, request_allowed
 -- [MedLink] mis_diagnostic_report: id, caption, comment, created_by, created_on, description, diagnostic_report_category_id, division_id, document_type_id, effective_date_time_end, effective_date_time_start, ehealth_id, ehealth_incoming_medical_referral_id, ehealth_service_catalog_service_id, is_performer_string, is_primary_source, issued_at, legal_entity_id, modified_by, modified_on, organization_id, patient_card_id, performer_id, performer_string, record_state, recorded_by_id, reg_date, reg_number, status
@@ -404,6 +405,29 @@ CREATE TABLE IF NOT EXISTS lab_eucast_breakpoint (
 CREATE INDEX IF NOT EXISTS ix_lab_eucast_breakpoint_antibiotic_id ON lab_eucast_breakpoint (antibiotic_id);
 CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_eucast_breakpoint_organism_id_antibiotic_id_eucast_version ON lab_eucast_breakpoint (organism_id, antibiotic_id, eucast_version);
 
+-- [ЛІС] lab_invoice (LabInvoice)
+CREATE TABLE IF NOT EXISTS lab_invoice (
+    id uuid NOT NULL,
+    amount numeric(18,2) NOT NULL,
+    charge_ids_json text NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    issued_at timestamp without time zone NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    number varchar(32) NOT NULL,
+    order_id uuid,
+    paid_at timestamp without time zone,
+    payer_id uuid NOT NULL,
+    period_from timestamp without time zone,
+    period_to timestamp without time zone,
+    record_state integer NOT NULL DEFAULT 2,
+    status varchar(16) NOT NULL,
+    CONSTRAINT pk_lab_invoice PRIMARY KEY (id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_invoice_number ON lab_invoice (number);
+CREATE INDEX IF NOT EXISTS ix_lab_invoice_payer_id ON lab_invoice (payer_id);
+
 -- [ЛІС] lab_isolate (LabIsolate)
 CREATE TABLE IF NOT EXISTS lab_isolate (
     id uuid NOT NULL,
@@ -474,6 +498,7 @@ CREATE TABLE IF NOT EXISTS lab_numerator (
 -- [ЛІС] lab_order (LabOrder)
 CREATE TABLE IF NOT EXISTS lab_order (
     id uuid NOT NULL,
+    authorization_number varchar(64),
     cancel_reason varchar(512),
     clinical_notes text,
     completed_at timestamp without time zone,
@@ -485,6 +510,7 @@ CREATE TABLE IF NOT EXISTS lab_order (
     doctor_id uuid,
     ehealth_referral_id uuid,
     icd10_code varchar(16),
+    insurance_policy_number varchar(64),
     is_pregnant boolean NOT NULL,
     is_urgent_cito boolean NOT NULL,
     menstrual_phase varchar(32),
@@ -493,8 +519,13 @@ CREATE TABLE IF NOT EXISTS lab_order (
     order_datetime timestamp without time zone NOT NULL,
     order_number varchar(32) NOT NULL,
     organization_id uuid,
+    paid_amount numeric(18,2) NOT NULL,
     paper_referral_id uuid,
+    patient_amount numeric(18,2) NOT NULL,
     patient_id uuid NOT NULL,
+    patient_insurance_id uuid,
+    payer_amount numeric(18,2) NOT NULL,
+    payer_id uuid,
     pregnancy_week integer,
     record_state integer NOT NULL DEFAULT 2,
     referral_type varchar(16) NOT NULL,
@@ -518,6 +549,7 @@ CREATE INDEX IF NOT EXISTS ix_lab_order_order_datetime ON lab_order (order_datet
 CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_order_order_number ON lab_order (order_number);
 CREATE INDEX IF NOT EXISTS ix_lab_order_paper_referral_id ON lab_order (paper_referral_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_patient_id ON lab_order (patient_id);
+CREATE INDEX IF NOT EXISTS ix_lab_order_payer_id ON lab_order (payer_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_referral_type ON lab_order (referral_type);
 CREATE INDEX IF NOT EXISTS ix_lab_order_status ON lab_order (status);
 CREATE INDEX IF NOT EXISTS ix_lab_order_verify_token ON lab_order (verify_token);
@@ -543,6 +575,33 @@ CREATE TABLE IF NOT EXISTS lab_order_attachment (
     CONSTRAINT pk_lab_order_attachment PRIMARY KEY (id)
 );
 CREATE INDEX IF NOT EXISTS ix_lab_order_attachment_order_id ON lab_order_attachment (order_id);
+
+-- [ЛІС] lab_order_charge (LabOrderCharge)
+CREATE TABLE IF NOT EXISTS lab_order_charge (
+    id uuid NOT NULL,
+    amount numeric(18,2) NOT NULL,
+    code varchar(64) NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    is_not_covered boolean NOT NULL,
+    is_patient_choice boolean NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    name varchar(512) NOT NULL,
+    order_id uuid NOT NULL,
+    package_id uuid,
+    patient_amount numeric(18,2) NOT NULL,
+    payer_amount numeric(18,2) NOT NULL,
+    payer_id uuid NOT NULL,
+    payer_kind varchar(16) NOT NULL,
+    price_list_id uuid,
+    profile_id uuid,
+    record_state integer NOT NULL DEFAULT 2,
+    test_id uuid,
+    CONSTRAINT pk_lab_order_charge PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_order_charge_order_id ON lab_order_charge (order_id);
+CREATE INDEX IF NOT EXISTS ix_lab_order_charge_payer_id ON lab_order_charge (payer_id);
 
 -- [ЛІС] lab_order_favorite (LabOrderFavorite)
 CREATE TABLE IF NOT EXISTS lab_order_favorite (
@@ -678,6 +737,57 @@ CREATE TABLE IF NOT EXISTS lab_patient_notification (
     CONSTRAINT pk_lab_patient_notification PRIMARY KEY (id)
 );
 
+-- [ЛІС] lab_payer (LabPayer)
+CREATE TABLE IF NOT EXISTS lab_payer (
+    id uuid NOT NULL,
+    code varchar(32) NOT NULL,
+    contact_person varchar(256),
+    contract_date timestamp without time zone,
+    contract_number varchar(64),
+    contract_valid_to timestamp without time zone,
+    coverage_pct numeric(18,2) NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    edrpou varchar(16),
+    email varchar(128),
+    franchise_amount numeric(18,2) NOT NULL,
+    is_active boolean NOT NULL,
+    kind varchar(16) NOT NULL,
+    medical_program_id uuid,
+    medlink_contract_id uuid,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    name varchar(256) NOT NULL,
+    organization_name varchar(256),
+    phone varchar(64),
+    price_list_id uuid,
+    record_state integer NOT NULL DEFAULT 2,
+    requires_authorization boolean NOT NULL,
+    requires_policy boolean NOT NULL,
+    CONSTRAINT pk_lab_payer PRIMARY KEY (id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_payer_code ON lab_payer (code);
+CREATE INDEX IF NOT EXISTS ix_lab_payer_price_list_id ON lab_payer (price_list_id);
+
+-- [ЛІС] lab_payment (LabPayment)
+CREATE TABLE IF NOT EXISTS lab_payment (
+    id uuid NOT NULL,
+    amount numeric(18,2) NOT NULL,
+    cashier_id uuid,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    method varchar(16) NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    note varchar(512),
+    order_id uuid NOT NULL,
+    paid_at timestamp without time zone NOT NULL,
+    receipt_number varchar(32) NOT NULL,
+    record_state integer NOT NULL DEFAULT 2,
+    CONSTRAINT pk_lab_payment PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_payment_order_id ON lab_payment (order_id);
+
 -- [ЛІС] lab_performer (LabPerformer)
 CREATE TABLE IF NOT EXISTS lab_performer (
     id uuid NOT NULL,
@@ -727,6 +837,59 @@ CREATE TABLE IF NOT EXISTS lab_performer_test (
 );
 CREATE INDEX IF NOT EXISTS ix_lab_performer_test_test_id ON lab_performer_test (test_id);
 CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_performer_test_performer_id_test_id ON lab_performer_test (performer_id, test_id);
+
+-- [ЛІС] lab_price_list (LabPriceList)
+CREATE TABLE IF NOT EXISTS lab_price_list (
+    id uuid NOT NULL,
+    code varchar(32) NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    currency varchar(3) NOT NULL,
+    is_active boolean NOT NULL,
+    is_default boolean NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    name varchar(256) NOT NULL,
+    record_state integer NOT NULL DEFAULT 2,
+    valid_from timestamp without time zone,
+    valid_to timestamp without time zone,
+    CONSTRAINT pk_lab_price_list PRIMARY KEY (id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_price_list_code ON lab_price_list (code);
+
+-- [ЛІС] lab_price_list_item (LabPriceListItem)
+CREATE TABLE IF NOT EXISTS lab_price_list_item (
+    id uuid NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    price numeric(18,2) NOT NULL,
+    price_list_id uuid NOT NULL,
+    profile_id uuid,
+    record_state integer NOT NULL DEFAULT 2,
+    test_id uuid,
+    CONSTRAINT pk_lab_price_list_item PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_price_list_item_price_list_id_profile_id_test_id ON lab_price_list_item (price_list_id, profile_id, test_id);
+
+-- [ЛІС] lab_price_package (LabPricePackage)
+CREATE TABLE IF NOT EXISTS lab_price_package (
+    id uuid NOT NULL,
+    code varchar(32) NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    is_active boolean NOT NULL,
+    member_ids_json text NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    name varchar(256) NOT NULL,
+    price numeric(18,2) NOT NULL,
+    price_list_id uuid NOT NULL,
+    record_state integer NOT NULL DEFAULT 2,
+    CONSTRAINT pk_lab_price_package PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_price_package_price_list_id ON lab_price_package (price_list_id);
 
 -- [ЛІС] lab_qc_material (LabQcMaterial)
 CREATE TABLE IF NOT EXISTS lab_qc_material (
@@ -1319,6 +1482,26 @@ CREATE TABLE IF NOT EXISTS lab_worklist_batch (
     CONSTRAINT pk_lab_worklist_batch PRIMARY KEY (id)
 );
 
+-- [MedLink-new] mis_patient_insurance (MisPatientInsurance)
+CREATE TABLE IF NOT EXISTS mis_patient_insurance (
+    id uuid NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    is_active boolean NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    note varchar(512),
+    patient_card_id uuid NOT NULL,
+    payer_id uuid NOT NULL,
+    policy_number varchar(64) NOT NULL,
+    record_state integer NOT NULL DEFAULT 2,
+    valid_from timestamp without time zone,
+    valid_to timestamp without time zone,
+    CONSTRAINT pk_mis_patient_insurance PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_mis_patient_insurance_patient_card_id ON mis_patient_insurance (patient_card_id);
+CREATE INDEX IF NOT EXISTS ix_mis_patient_insurance_payer_id ON mis_patient_insurance (payer_id);
+
 -- ----------------------------------------------------------------------------- зовнішні ключі
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_analyzer_analyzer_type_id') THEN ALTER TABLE lab_analyzer ADD CONSTRAINT fk_lab_analyzer_analyzer_type_id FOREIGN KEY (analyzer_type_id) REFERENCES lab_analyzer_type (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_analyzer_connector_id') THEN ALTER TABLE lab_analyzer ADD CONSTRAINT fk_lab_analyzer_connector_id FOREIGN KEY (connector_id) REFERENCES lab_connector_installation (id); END IF; END $$;
@@ -1334,6 +1517,7 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_d
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_employee_settings_employee_id') THEN ALTER TABLE lab_employee_settings ADD CONSTRAINT fk_lab_employee_settings_employee_id FOREIGN KEY (employee_id) REFERENCES org_employee (id) ON DELETE CASCADE; END IF; END $$; -- → [MedLink]
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_eucast_breakpoint_antibiotic_id') THEN ALTER TABLE lab_eucast_breakpoint ADD CONSTRAINT fk_lab_eucast_breakpoint_antibiotic_id FOREIGN KEY (antibiotic_id) REFERENCES lab_antibiotic (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_eucast_breakpoint_organism_id') THEN ALTER TABLE lab_eucast_breakpoint ADD CONSTRAINT fk_lab_eucast_breakpoint_organism_id FOREIGN KEY (organism_id) REFERENCES lab_micro_organism (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_invoice_payer_id') THEN ALTER TABLE lab_invoice ADD CONSTRAINT fk_lab_invoice_payer_id FOREIGN KEY (payer_id) REFERENCES lab_payer (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_isolate_culture_order_id') THEN ALTER TABLE lab_isolate ADD CONSTRAINT fk_lab_isolate_culture_order_id FOREIGN KEY (culture_order_id) REFERENCES lab_culture_order (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_isolate_organism_id') THEN ALTER TABLE lab_isolate ADD CONSTRAINT fk_lab_isolate_organism_id FOREIGN KEY (organism_id) REFERENCES lab_micro_organism (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_department_id') THEN ALTER TABLE lab_order ADD CONSTRAINT fk_lab_order_department_id FOREIGN KEY (department_id) REFERENCES org_department (id); END IF; END $$; -- → [MedLink]
@@ -1342,7 +1526,10 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_o
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_ehealth_referral_id') THEN ALTER TABLE lab_order ADD CONSTRAINT fk_lab_order_ehealth_referral_id FOREIGN KEY (ehealth_referral_id) REFERENCES ehe_incoming_medical_referral (id); END IF; END $$; -- → [MedLink]
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_paper_referral_id') THEN ALTER TABLE lab_order ADD CONSTRAINT fk_lab_order_paper_referral_id FOREIGN KEY (paper_referral_id) REFERENCES ehe_paper_medical_referral (id); END IF; END $$; -- → [MedLink]
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_patient_id') THEN ALTER TABLE lab_order ADD CONSTRAINT fk_lab_order_patient_id FOREIGN KEY (patient_id) REFERENCES mis_patient_card (id) ON DELETE CASCADE; END IF; END $$; -- → [MedLink]
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_payer_id') THEN ALTER TABLE lab_order ADD CONSTRAINT fk_lab_order_payer_id FOREIGN KEY (payer_id) REFERENCES lab_payer (id); END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_attachment_order_id') THEN ALTER TABLE lab_order_attachment ADD CONSTRAINT fk_lab_order_attachment_order_id FOREIGN KEY (order_id) REFERENCES lab_order (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_charge_order_id') THEN ALTER TABLE lab_order_charge ADD CONSTRAINT fk_lab_order_charge_order_id FOREIGN KEY (order_id) REFERENCES lab_order (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_charge_payer_id') THEN ALTER TABLE lab_order_charge ADD CONSTRAINT fk_lab_order_charge_payer_id FOREIGN KEY (payer_id) REFERENCES lab_payer (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_sample_biomaterial_type_id') THEN ALTER TABLE lab_order_sample ADD CONSTRAINT fk_lab_order_sample_biomaterial_type_id FOREIGN KEY (biomaterial_type_id) REFERENCES lab_biomaterial_type (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_sample_lab_section_id') THEN ALTER TABLE lab_order_sample ADD CONSTRAINT fk_lab_order_sample_lab_section_id FOREIGN KEY (lab_section_id) REFERENCES lab_section (id); END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_sample_order_id') THEN ALTER TABLE lab_order_sample ADD CONSTRAINT fk_lab_order_sample_order_id FOREIGN KEY (order_id) REFERENCES lab_order (id) ON DELETE CASCADE; END IF; END $$;
@@ -1354,8 +1541,12 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_o
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_test_profile_id') THEN ALTER TABLE lab_order_test ADD CONSTRAINT fk_lab_order_test_profile_id FOREIGN KEY (profile_id) REFERENCES lab_test_profile (id); END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_test_sample_id') THEN ALTER TABLE lab_order_test ADD CONSTRAINT fk_lab_order_test_sample_id FOREIGN KEY (sample_id) REFERENCES lab_order_sample (id); END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_test_test_id') THEN ALTER TABLE lab_order_test ADD CONSTRAINT fk_lab_order_test_test_id FOREIGN KEY (test_id) REFERENCES lab_test_definition (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_payer_price_list_id') THEN ALTER TABLE lab_payer ADD CONSTRAINT fk_lab_payer_price_list_id FOREIGN KEY (price_list_id) REFERENCES lab_price_list (id); END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_payment_order_id') THEN ALTER TABLE lab_payment ADD CONSTRAINT fk_lab_payment_order_id FOREIGN KEY (order_id) REFERENCES lab_order (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_performer_test_performer_id') THEN ALTER TABLE lab_performer_test ADD CONSTRAINT fk_lab_performer_test_performer_id FOREIGN KEY (performer_id) REFERENCES lab_performer (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_performer_test_test_id') THEN ALTER TABLE lab_performer_test ADD CONSTRAINT fk_lab_performer_test_test_id FOREIGN KEY (test_id) REFERENCES lab_test_definition (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_price_list_item_price_list_id') THEN ALTER TABLE lab_price_list_item ADD CONSTRAINT fk_lab_price_list_item_price_list_id FOREIGN KEY (price_list_id) REFERENCES lab_price_list (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_price_package_price_list_id') THEN ALTER TABLE lab_price_package ADD CONSTRAINT fk_lab_price_package_price_list_id FOREIGN KEY (price_list_id) REFERENCES lab_price_list (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_qc_material_analyzer_id') THEN ALTER TABLE lab_qc_material ADD CONSTRAINT fk_lab_qc_material_analyzer_id FOREIGN KEY (analyzer_id) REFERENCES lab_analyzer (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_qc_result_qc_material_id') THEN ALTER TABLE lab_qc_result ADD CONSTRAINT fk_lab_qc_result_qc_material_id FOREIGN KEY (qc_material_id) REFERENCES lab_qc_material (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_qc_target_qc_material_id') THEN ALTER TABLE lab_qc_target ADD CONSTRAINT fk_lab_qc_target_qc_material_id FOREIGN KEY (qc_material_id) REFERENCES lab_qc_material (id) ON DELETE CASCADE; END IF; END $$;
@@ -1385,5 +1576,7 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_t
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_test_profile_item_test_id') THEN ALTER TABLE lab_test_profile_item ADD CONSTRAINT fk_lab_test_profile_item_test_id FOREIGN KEY (test_id) REFERENCES lab_test_definition (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_test_result_analyzer_id') THEN ALTER TABLE lab_test_result ADD CONSTRAINT fk_lab_test_result_analyzer_id FOREIGN KEY (analyzer_id) REFERENCES lab_analyzer (id); END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_test_result_order_test_id') THEN ALTER TABLE lab_test_result ADD CONSTRAINT fk_lab_test_result_order_test_id FOREIGN KEY (order_test_id) REFERENCES lab_order_test (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_mis_patient_insurance_patient_card_id') THEN ALTER TABLE mis_patient_insurance ADD CONSTRAINT fk_mis_patient_insurance_patient_card_id FOREIGN KEY (patient_card_id) REFERENCES mis_patient_card (id) ON DELETE CASCADE; END IF; END $$; -- → [MedLink]
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_mis_patient_insurance_payer_id') THEN ALTER TABLE mis_patient_insurance ADD CONSTRAINT fk_mis_patient_insurance_payer_id FOREIGN KEY (payer_id) REFERENCES lab_payer (id) ON DELETE CASCADE; END IF; END $$;
 
 COMMIT;

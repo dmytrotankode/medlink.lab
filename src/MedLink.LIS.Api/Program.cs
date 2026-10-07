@@ -84,6 +84,7 @@ if (ehealthOptions.IsMock) ehealthHttp.ConfigurePrimaryHttpMessageHandler<MedLin
 builder.Services.AddScoped<MedLink.LIS.Api.Services.Ehealth.IEhealthClient, MedLink.LIS.Api.Services.Ehealth.EhealthClient>();
 builder.Services.AddScoped<IEhealthReferralGateway, EhealthReferralGateway>();
 builder.Services.AddScoped<ReferralService>();
+builder.Services.AddScoped<BillingService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<SampleService>();
 builder.Services.AddScoped<ResultPipelineService>();

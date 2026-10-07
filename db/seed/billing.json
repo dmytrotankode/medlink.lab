@@ -1,0 +1,163 @@
+{
+ "nszuProgramId": "0e5e0000-0000-0000-0000-000000000001",
+ "priceLists": [
+  {
+   "code": "RETAIL-2026",
+   "name": "Роздрібний прайс 2026",
+   "isDefault": true,
+   "validFrom": "2026-01-01",
+   "items": {},
+   "packages": [
+    {
+     "code": "PKG-CHECKUP",
+     "name": "Check-up базовий",
+     "price": 800,
+     "members": [
+      "PROF_CBC",
+      "PROF_BIOCHEM_BASE",
+      "PROF_URINE"
+     ]
+    }
+   ]
+  },
+  {
+   "code": "UNIQA-2026",
+   "name": "УНІКА — прайс програми Gold",
+   "validFrom": "2026-01-01",
+   "validTo": "2026-12-31",
+   "items": {
+    "PROF_CBC": 230,
+    "PROF_BIOCHEM_BASE": 500,
+    "PROF_URINE": 110,
+    "PROF_LIPID": 350,
+    "TSH": 180
+   }
+  },
+  {
+   "code": "INGO-2026",
+   "name": "ІНГО — прайс програми Базова",
+   "validFrom": "2026-01-01",
+   "validTo": "2026-12-31",
+   "items": {
+    "PROF_CBC": 240,
+    "PROF_URINE": 115,
+    "PROF_THYROID": 330
+   },
+   "packages": [
+    {
+     "code": "INGO-PKG-1",
+     "name": "ІНГО: ЗАК + ЗАС",
+     "price": 320,
+     "members": [
+      "PROF_CBC",
+      "PROF_URINE"
+     ]
+    }
+   ]
+  },
+  {
+   "code": "NSZU-PMG",
+   "name": "НСЗУ — ПМГ (первинна допомога, лабораторні)",
+   "validFrom": "2026-01-01",
+   "items": {
+    "PROF_CBC": 0,
+    "PROF_BIOCHEM_BASE": 0,
+    "PROF_URINE": 0,
+    "GLU": 0,
+    "CHOL": 0
+   }
+  },
+  {
+   "code": "CLINIC-ZD",
+   "name": "Клініка «Здоров'я» — договірний прайс",
+   "validFrom": "2026-01-01",
+   "items": {
+    "PROF_CBC": 200,
+    "PROF_BIOCHEM_BASE": 440,
+    "PROF_URINE": 96,
+    "PROF_THYROID": 280,
+    "PROF_LIPID": 300,
+    "VITD": 360,
+    "GLU": 40
+   }
+  }
+ ],
+ "payers": [
+  {
+   "code": "PATIENT",
+   "name": "Пацієнт (каса)",
+   "kind": "PATIENT",
+   "priceListCode": "RETAIL-2026",
+   "coveragePct": 0
+  },
+  {
+   "code": "UNIQA-GOLD",
+   "name": "УНІКА — Корпоративна Gold",
+   "kind": "INSURANCE",
+   "organizationName": "ПрАТ «СК «УНІКА»",
+   "edrpou": "20033533",
+   "contractNumber": "ДМС-УН-2026/07",
+   "contractValidTo": "2026-12-31",
+   "priceListCode": "UNIQA-2026",
+   "coveragePct": 90,
+   "franchiseAmount": 0,
+   "requiresPolicy": true
+  },
+  {
+   "code": "INGO-BASIC",
+   "name": "ІНГО — Базова",
+   "kind": "INSURANCE",
+   "organizationName": "ПрАТ «СК «ІНГО»",
+   "edrpou": "16285602",
+   "contractNumber": "ДМС-ІН-2026/02",
+   "contractValidTo": "2026-12-31",
+   "priceListCode": "INGO-2026",
+   "coveragePct": 100,
+   "franchiseAmount": 150,
+   "requiresPolicy": true,
+   "requiresAuthorization": true
+  },
+  {
+   "code": "NSZU-PMG",
+   "name": "НСЗУ — програма медичних гарантій",
+   "kind": "NSZU",
+   "organizationName": "Національна служба здоров'я України",
+   "edrpou": "42032422",
+   "priceListCode": "NSZU-PMG",
+   "coveragePct": 100,
+   "medicalProgramId": "0e5e0000-0000-0000-0000-000000000001"
+  },
+  {
+   "code": "CLINIC-ZD",
+   "name": "Клініка «Здоров'я» (договір)",
+   "kind": "CLINIC",
+   "organizationName": "ТОВ «Клініка Здоров'я»",
+   "edrpou": "38800112",
+   "contractNumber": "ЛАБ-2026/11",
+   "priceListCode": "CLINIC-ZD",
+   "coveragePct": 100
+  },
+  {
+   "code": "INTERNAL",
+   "name": "Внутрішнє (потреби закладу)",
+   "kind": "INTERNAL",
+   "coveragePct": 100
+  }
+ ],
+ "policies": [
+  {
+   "patientId": "0b000000-0000-0000-0000-000000000003",
+   "payerCode": "UNIQA-GOLD",
+   "policyNumber": "UQ-778812",
+   "validFrom": "2026-01-01",
+   "validTo": "2026-12-31"
+  },
+  {
+   "patientId": "0b000000-0000-0000-0000-000000000002",
+   "payerCode": "INGO-BASIC",
+   "policyNumber": "IN-2026-55410",
+   "validFrom": "2026-01-01",
+   "validTo": "2026-12-31"
+  }
+ ]
+}

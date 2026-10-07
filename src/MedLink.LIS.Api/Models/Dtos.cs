@@ -148,6 +148,13 @@ public sealed class OrderDto
     public string? ReferralStatus { get; set; }
     public string? ReferrerOrganizationName { get; set; }
     public string? ReferrerDoctorName { get; set; }
+    public string? PayerId { get; set; }
+    public string? PayerName { get; set; }
+    public string? PayerKind { get; set; }
+    public string? InsurancePolicyNumber { get; set; }
+    public decimal PayerAmount { get; set; }
+    public decimal PatientAmount { get; set; }
+    public decimal PaidAmount { get; set; }
     public string? EhealthReferralId { get; set; }
     public string? ClinicalNotes { get; set; }
     public bool IsPregnant { get; set; }
@@ -258,6 +265,10 @@ public sealed class CreateOrderRequest
     public string? ReferrerOrganizationEdrpou { get; set; }
     public string? ReferrerDoctorName { get; set; }
     public string? ReferrerNumber { get; set; }
+    /// <summary>Платник (lab_payer id/код); порожньо — поліс → НСЗУ з е-направлення → пацієнт.</summary>
+    public string? PayerId { get; set; }
+    public string? PatientInsuranceId { get; set; }
+    public string? AuthorizationNumber { get; set; }
     public string? ClinicalNotes { get; set; }
     public bool IsPregnant { get; set; }
     public int? PregnancyWeek { get; set; }

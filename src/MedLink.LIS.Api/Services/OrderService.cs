@@ -18,10 +18,11 @@ public sealed class OrderService
     private readonly OrderStateService _state;
     private readonly TubePlanService _tubes;
     private readonly ReferralService _referrals;
+    private readonly BillingService _billing;
 
-    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state, TubePlanService tubes, ReferralService referrals)
+    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state, TubePlanService tubes, ReferralService referrals, BillingService billing)
     {
-        _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state; _tubes = tubes; _referrals = referrals;
+        _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state; _tubes = tubes; _referrals = referrals; _billing = billing;
     }
 
     public static readonly string[] CreatorRoles = { LabRoles.Admin, LabRoles.Registrar, LabRoles.Doctor, LabRoles.Phlebotomist, LabRoles.Technician };
@@ -29,7 +30,7 @@ public sealed class OrderService
     // ------------------------------------------------------------------ queries
     public IQueryable<LabOrder> FullQuery() => _db.Orders
         .Include(o => o.Patient).Include(o => o.Doctor).Include(o => o.Department)
-        .Include(o => o.Referral).ThenInclude(r => r!.Status).Include(o => o.PaperReferral)
+        .Include(o => o.Referral).ThenInclude(r => r!.Status).Include(o => o.PaperReferral).Include(o => o.Payer).Include(o => o.Charges)
         .Include(o => o.Samples).ThenInclude(s => s.TubeType)
         .Include(o => o.Samples).ThenInclude(s => s.BiomaterialType)
         .Include(o => o.Tests).ThenInclude(t => t.Test).ThenInclude(d => d!.LabSection)
@@ -184,6 +185,8 @@ public sealed class OrderService
         _db.Orders.Add(order);
 
         await AddTestsInternalAsync(order, req.ProfileIds, req.TestIds);
+        await _billing.ApplyPayerAsync(order, req.PayerId, req.PatientInsuranceId, req.AuthorizationNumber);
+        await _billing.RecalculateAsync(order);
         _audit.Log("CREATE", "lab_order", order.Id, null, new { order.OrderNumber, order.PatientId, tests = order.Tests.Select(t => t.TestCode), samples = order.Samples.Select(s => s.Barcode) });
         return order;
     }
@@ -260,6 +263,7 @@ public sealed class OrderService
         _policy.Ensure(LisEntities.Order, OrderActions.AddTest, order.Status, $"Замовлення {order.OrderNumber}");
         var beforeCodes = order.Tests.Select(t => t.TestCode).ToList();
         await AddTestsInternalAsync(order, req.ProfileIds, req.TestIds);
+        await _billing.RecalculateAsync(order);
         _state.RecomputeReopen(order);
         _audit.Log("ADD_TESTS", "lab_order", order.Id, beforeCodes, order.Tests.Select(t => t.TestCode));
         await _db.SaveChangesAsync();
@@ -284,6 +288,7 @@ public sealed class OrderService
             _db.Samples.Remove(sample);
         }
         if (order.Tests.Count == 0) throw new ConflictException("Неможливо видалити останній тест замовлення — скасуйте замовлення");
+        await _billing.RecalculateAsync(order);
         _audit.Log("REMOVE_TEST", "lab_order", order.Id, new { test.TestCode }, null);
         await _db.SaveChangesAsync();
         return await GetAsync(orderId);

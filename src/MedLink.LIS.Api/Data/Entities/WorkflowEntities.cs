@@ -88,6 +88,18 @@ public class LabOrder : GuidEntity
     [MaxLength(256)] public string? ReferrerDoctorName { get; set; }
     /// <summary>Номер направлення в системі направника (клініки-партнера).</summary>
     [MaxLength(64)] public string? ReferrerNumber { get; set; }
+    // --- Оплата (FR-GAP-060) ---
+    /// <summary>Основний платник замовлення (lab_payer).</summary>
+    [MaxLength(64)] public string? PayerId { get; set; }
+    /// <summary>Поліс пацієнта, за яким застосовано страхову програму ([MedLink-new] mis_patient_insurance).</summary>
+    [MaxLength(64)] public string? PatientInsuranceId { get; set; }
+    /// <summary>Номер полісу на момент замовлення (знімок для документів).</summary>
+    [MaxLength(64)] public string? InsurancePolicyNumber { get; set; }
+    /// <summary>Номер гарантійного листа / погодження страхової.</summary>
+    [MaxLength(64)] public string? AuthorizationNumber { get; set; }
+    public decimal PayerAmount { get; set; }
+    public decimal PatientAmount { get; set; }
+    public decimal PaidAmount { get; set; }
     /// <summary>Заклад MedLink (org_organization) — для розмежування даних (RLS evomis).</summary>
     [MaxLength(64)] public string? OrganizationId { get; set; }
     /// <summary>Медичний висновок MedLink (mis_diagnostic_report), створений при видачі.</summary>
@@ -96,6 +108,8 @@ public class LabOrder : GuidEntity
     [ForeignKey(nameof(PatientId))] public MisPatientCard? Patient { get; set; }
     [ForeignKey(nameof(DiagnosticReportId))] public MisDiagnosticReport? DiagnosticReport { get; set; }
     [ForeignKey(nameof(PaperReferralId))] public EhePaperMedicalReferral? PaperReferral { get; set; }
+    [ForeignKey(nameof(PayerId))] public LabPayer? Payer { get; set; }
+    public List<LabOrderCharge> Charges { get; set; } = new();
     [ForeignKey(nameof(DoctorId))] public OrgEmployee? Doctor { get; set; }
     [ForeignKey(nameof(DepartmentId))] public OrgDepartment? Department { get; set; }
     [ForeignKey(nameof(EhealthReferralId))] public EheIncomingMedicalReferral? Referral { get; set; }

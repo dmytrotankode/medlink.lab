@@ -185,6 +185,8 @@ public class EheIncomingMedicalReferral : GuidEntity
     public DateTime? ExpirationDate { get; set; }
     [MaxLength(64)] public string? EhealthId { get; set; }
     [MaxLength(2000)] public string? PatientInstruction { get; set; }
+    /// <summary>Програма медичних гарантій (ehe_medical_service_program) — для автоматичного вибору платника НСЗУ.</summary>
+    [MaxLength(64)] public string? MedicalServiceProgramId { get; set; }
     // --- обробка направлення виконавцем (як в evomis EhealthIncomingMedicalReferralService) ---
     /// <summary>cmn_enum_record MedicalReferralProcessingStatusInEhealth: new | in_progress | completed …</summary>
     [MaxLength(64)] public string? ProcessingStatusInEhealthId { get; set; }

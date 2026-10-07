@@ -100,6 +100,7 @@ export default {
         {
           title: 'Довідники',
           items: [
+            { name: 'pricing', label: 'Прайси та платники', icon: 'fas fa-file-invoice-dollar', to: { name: 'lab-pricing' } },
             { name: 'norms', label: 'Послуги та норми', icon: 'fas fa-sliders-h', to: { name: 'lab-norms' } },
             { name: 'sections', label: 'Підрозділи лабораторії', icon: 'fas fa-sitemap', to: { name: 'lab-sections' }, exact: true },
             { name: 'd-tests', label: 'Показники', icon: 'fas fa-list-ol', to: { name: 'lab-dictionary', params: { name: 'tests' } } },

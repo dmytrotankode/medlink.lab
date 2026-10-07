@@ -23,7 +23,9 @@ public class PostgresDdlTests
         var ddl = Generate();
         Assert.Contains("CREATE TABLE IF NOT EXISTS lab_order (", ddl);
         Assert.Contains("CREATE TABLE IF NOT EXISTS lab_employee_settings (", ddl);
-        Assert.DoesNotContain("CREATE TABLE IF NOT EXISTS mis_", ddl);
+        Assert.DoesNotContain("CREATE TABLE IF NOT EXISTS mis_patient_card", ddl);
+        Assert.DoesNotContain("CREATE TABLE IF NOT EXISTS mis_diagnostic_report", ddl);
+        Assert.Contains("-- [MedLink-new] mis_patient_insurance", ddl); // нова загальна сутність МІС — створюється
         Assert.DoesNotContain("CREATE TABLE IF NOT EXISTS org_", ddl);
         Assert.DoesNotContain("CREATE TABLE IF NOT EXISTS cmn_", ddl);
         Assert.Contains("ALTER TABLE mis_patient_card ADD COLUMN IF NOT EXISTS last_name_latin varchar(100); -- [MedLink+]", ddl);
