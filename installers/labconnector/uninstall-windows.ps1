@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   MedLink LIS Analyzer Connector — видалення служби Windows.
 .DESCRIPTION

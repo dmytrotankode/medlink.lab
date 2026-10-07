@@ -202,13 +202,15 @@ end;
   якщо кеш ще не отримано — лише порт статусу. }
 function GetFirewallPorts(Param: String): String;
 var
+  RawJson: AnsiString;
   Json, Ports: String;
   P, Q: Integer;
   PortStr: String;
 begin
   Result := GetStatusPort('');
-  if LoadStringFromFile(ExpandConstant('{app}\data\config.cache.json'), Json) then
+  if LoadStringFromFile(ExpandConstant('{app}\data\config.cache.json'), RawJson) then
   begin
+    Json := String(RawJson);
     Ports := '';
     P := Pos('"port":', Json);
     while P > 0 do
@@ -216,7 +218,7 @@ begin
       Delete(Json, 1, P + 6);
       Q := 1;
       PortStr := '';
-      while (Q <= Length(Json)) and (Json[Q] in ['0'..'9', ' ']) do
+      while (Q <= Length(Json)) and (((Json[Q] >= '0') and (Json[Q] <= '9')) or (Json[Q] = ' ')) do
       begin
         if Json[Q] <> ' ' then PortStr := PortStr + Json[Q];
         Q := Q + 1;

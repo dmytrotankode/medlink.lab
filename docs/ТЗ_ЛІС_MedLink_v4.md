@@ -2753,6 +2753,17 @@ FR-PRE-004, FR-PRE-005, FR-PRE-001 (розд. 18) → FR-GAP-001, 003, 010, 011,
 4. **Таблиці MedLink не змінюються**. Нові загальні сутності позначаються [MedLink-new] і пропонуються до ядра.
 
 
+### 20.10. Поставка для аналітика: інсталятор, коннектор, документація, відеоогляд
+
+| Артефакт | Склад | Збірка |
+|---|---|---|
+| **`MedLink_LIS_Setup_v4.1.0.exe`** (Inno Setup, x64, права адміністратора) | Сервер ЛІС self-contained (.NET не потрібен) з веб-інтерфейсом; лаунчер `Start-MedLinkLIS.ps1`: сервер у фоні, БД `%LOCALAPPDATA%\MedLink LIS\data`, журнали `…\logs`, режим ЕСОЗ — мок, демо-дані, автоматичне відкриття Edge на `http://localhost:5055`. Також «Зупинити», «Скинути демо-базу», ярлики на ТЗ, документацію, Swagger, інструкцію (`README_UA.md`) | `installers/medlink-lis/build-installer.ps1`: фронтенд → `dotnet publish -r win-x64 --self-contained` → документація (ТЗ HTML з Markdown `tools/render_tz_html.py`, контракт API, swagger, скріншоти, міграції PostgreSQL, відео) → інсталятор коннектора → ISCC |
+| **Коннектор аналізаторів** `MedLink_LabConnector_Setup_v4.0.0.exe` | Вкладено в інсталятор ЛІС (`{app}\connector`, ярлик «Встановити коннектор аналізаторів», опція при встановленні); служба Windows, майстер адреси сервера й ключа інсталяції | `installers/labconnector/publish.ps1 -Rid win-x64 -BuildInstaller`. Виправлено сумісність з Inno Setup 6.7 (AnsiString у `LoadStringFromFile`, перевірка цифр без множин символів) і кодування PowerShell-скриптів (UTF-8 з BOM для Windows PowerShell 5.1) |
+| **Відеоогляд** `MedLink_LIS_demo_UA.mp4` | Запис екрана Microsoft Edge (Playwright, channel msedge), 17 сцен за розділами ТЗ на демо-прикладі, озвучка чоловічим голосом Microsoft uk-UA-OstapNeural | `tools/video`: `scenes.json` (текст сцен) → `tts.py` (edge-tts) → `prepare.py` (демо-сценарій через API) → `record.mjs` (запис) → `mux.py` (ffmpeg, синхронізація озвучки за таймлайном) |
+
+Порт сервера змінюється в `Start-MedLinkLIS.ps1` (`$port`; лаунчер перевизначає `Kestrel:Endpoints:Http:Url`). Для доступу коннекторів з інших ПК сервер слухає `0.0.0.0` (Windows може запитати дозвіл брандмауера).
+
+
 ## 15. Додатки
 
 ### Додаток A. Каталог профілів аналізаторів (`ac_analyzer_type` Simplex → `LabAnalyzerType`)

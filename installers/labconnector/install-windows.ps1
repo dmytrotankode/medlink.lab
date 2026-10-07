@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   MedLink LIS Analyzer Connector — встановлення на Windows без Inno Setup.
 .DESCRIPTION

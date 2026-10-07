@@ -1,4 +1,4 @@
-# MedLink LIS 4.0 — збірка фронтенду (Quasar v1 SPA) та копіювання у wwwroot API (Windows).
+﻿# MedLink LIS 4.0 — збірка фронтенду (Quasar v1 SPA) та копіювання у wwwroot API (Windows).
 # Використання: .\build.ps1 [-SkipInstall]
 param([switch]$SkipInstall)
 

@@ -38,3 +38,9 @@ src/MedLink.LIS.Web/test-results/
 src/MedLink.LIS.Web/playwright-report/
 # Local snapshot archives of the cloud session (duplicates of the repo)
 /MedLink_LIS_4.0*
+
+# Inno Setup output
+installers/**/Output/
+
+# Video artifacts are generated
+artifacts/

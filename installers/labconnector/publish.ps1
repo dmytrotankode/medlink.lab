@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   MedLink LIS Analyzer Connector — публікація self-contained збірок (Windows-хост).
 .EXAMPLE
