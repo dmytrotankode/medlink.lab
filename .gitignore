@@ -36,3 +36,5 @@ src/MedLink.LIS.Api/wwwroot/*
 # Playwright
 src/MedLink.LIS.Web/test-results/
 src/MedLink.LIS.Web/playwright-report/
+# Local snapshot archives of the cloud session (duplicates of the repo)
+/MedLink_LIS_4.0*

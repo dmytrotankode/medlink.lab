@@ -15,10 +15,16 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // --- База даних: SQLite (Database:SqlitePath, типово App_Data/medlink_lis.db відносно content root) ---
-var sqlitePath = builder.Configuration["Database:SqlitePath"] ?? "App_Data/medlink_lis.db";
-if (!Path.IsPathRooted(sqlitePath)) sqlitePath = Path.Combine(builder.Environment.ContentRootPath, sqlitePath);
-Directory.CreateDirectory(Path.GetDirectoryName(sqlitePath)!);
-builder.Services.AddDbContext<LisDbContext>(o => o.UseSqlite($"Data Source={sqlitePath}"));
+// Шлях обчислюється ліниво з IConfiguration контейнера, щоб перевизначення (WebApplicationFactory у тестах) застосовувались
+static string ResolveSqlitePath(IConfiguration cfg, IHostEnvironment env)
+{
+    var path = cfg["Database:SqlitePath"] ?? "App_Data/medlink_lis.db";
+    if (!Path.IsPathRooted(path)) path = Path.Combine(env.ContentRootPath, path);
+    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+    return path;
+}
+builder.Services.AddDbContext<LisDbContext>((sp, o) =>
+    o.UseSqlite($"Data Source={ResolveSqlitePath(sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<IHostEnvironment>())}"));
 
 // --- MVC / JSON / ProblemDetails ---
 builder.Services.AddControllers()
@@ -149,7 +155,7 @@ app.MapFallback(async ctx =>
     else { ctx.Response.StatusCode = 404; await ctx.Response.WriteAsync("Фронтенд не зібрано (wwwroot/index.html відсутній)"); }
 });
 
-app.Logger.LogInformation("MedLink LIS 4.0 API запущено. Swagger: /swagger · БД: {Db}", sqlitePath);
+app.Logger.LogInformation("MedLink LIS 4.0 API запущено. Swagger: /swagger · БД: {Db}", ResolveSqlitePath(app.Configuration, app.Environment));
 app.Run();
 
 /// <summary>Точка входу (для WebApplicationFactory в інтеграційних тестах).</summary>
