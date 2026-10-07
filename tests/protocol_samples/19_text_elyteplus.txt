@@ -1,0 +1,2 @@
+Sample Report  Date  26-02-20  Time  13:54:21  PAT       0003  Reel       001  Cup       001  Barcode   10042014
+           K 4.10       Na 138.6      Cl 102.3      iCa 1.21       TCa 2.36       nCa 1.23       TCO2      24.0  pH 7.38       AG      12.0  Mg      0.85  Li      0.00  End

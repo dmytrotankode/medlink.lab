@@ -1,0 +1,13 @@
+<STX>No. 0070
+ ID:10021415
+ UBG  Normal 3.4umol/L
+ BIL  Neg
+ KET  Neg
+ BLD  Neg
+ PRO  Neg
+ NIT  Neg
+ LEU  Neg
+ GLU  Neg
+ SG     <=1.005
+ pH         7.5
+<ETX>

@@ -1,0 +1,5 @@
+<ENQ>
+<STX>1H|\^&|||host^1|||||cobas-e411|TSREQ^REAL|P|1<CR><ETX>48<CR><LF>
+<STX>2Q|1|1^10260048^S1^SC||ALL||||||||O<CR><ETX>B6<CR><LF>
+<STX>3L|1|N<CR><ETX>06<CR><LF>
+<EOT>

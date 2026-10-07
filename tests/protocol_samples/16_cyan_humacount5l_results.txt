@@ -1,0 +1,12 @@
+<SOH>Serial No.:	CY12345
+Date:	07/10/2026 11:20
+Sample ID:	10260054
+Patient:
+Param	Flags	Value	Unit	[min-max]
+WBC		7.45	10^9/l	[4.0-10.0]
+RBC		4.62	10^12/l	[3.5-5.5]
+HGB		148	g/l	[120-160]
+HCT		43.5	%	[36-48]
+PLT	L	135	10^9/l	[150-400]
+WARNINGS:
+<EOT>
