@@ -1,0 +1,42 @@
+{
+  "name": "medlink-lis-web",
+  "version": "4.0.0",
+  "description": "MedLink LIS 4.0 — лабораторний модуль МІС MedLink / evomis (Quasar v1 + Vue 2)",
+  "productName": "MedLink LIS",
+  "author": "ТОВ МедЛінк",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider quasar dev",
+    "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider quasar build",
+    "serve": "node tools/serve-dist.js"
+  },
+  "dependencies": {
+    "@fontsource/source-sans-pro": "^5.0.0",
+    "@quasar/extras": "^1.16.0",
+    "axios": "^0.21.4",
+    "core-js": "^3.6.5",
+    "quasar": "1.15.3",
+    "vue": "2.6.14",
+    "vue-router": "^3.5.4",
+    "vuex": "^3.6.2"
+  },
+  "devDependencies": {
+    "@quasar/app": "^1.9.6",
+    "cross-env": "^7.0.3",
+    "vue-template-compiler": "2.6.14"
+  },
+  "overrides": {
+    "zlib": "npm:browserify-zlib@0.2.0",
+    "node-sass": "npm:sass@1.32.13"
+  },
+  "browserslist": [
+    "last 10 Chrome versions",
+    "last 10 Firefox versions",
+    "last 4 Edge versions",
+    "last 7 Safari versions"
+  ],
+  "engines": {
+    "node": ">= 12.22.1",
+    "npm": ">= 6.13.4"
+  }
+}

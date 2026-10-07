@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="uk">
+  <head>
+    <title><%= htmlWebpackPlugin.options.productName %></title>
+
+    <meta charset="utf-8">
+    <meta name="description" content="<%= htmlWebpackPlugin.options.productDescription %>">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width<% if (htmlWebpackPlugin.options.ctx.mode.cordova || htmlWebpackPlugin.options.ctx.mode.capacitor) { %>, viewport-fit=cover<% } %>">
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%234274A7'/%3E%3Cpath d='M12 6h8v8l6 10a2 2 0 0 1-1.7 3H7.7A2 2 0 0 1 6 24l6-10z' fill='%23fff'/%3E%3C/svg%3E">
+  </head>
+  <body>
+    <!-- DO NOT touch the following DIV -->
+    <div id="q-app"></div>
+  </body>
+</html>
