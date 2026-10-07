@@ -21,4 +21,8 @@
     <PackageReference Include="System.IO.Ports" Version="8.0.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MedLink.LIS.Core\MedLink.LIS.Core.csproj" />
+  </ItemGroup>
 </Project>

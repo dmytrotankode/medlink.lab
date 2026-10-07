@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{21EFEC99-12D8-4A0D-BA0E-63E1A612444B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedLink.LIS.Core", "src\MedLink.LIS.Core\MedLink.LIS.Core.csproj", "{E0416260-1769-43A7-A517-49760F66D96C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedLink.LIS.Api", "src\MedLink.LIS.Api\MedLink.LIS.Api.csproj", "{7CE24EE3-2050-446C-BD26-3677638C3F25}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedLink.LabConnector", "src\MedLink.LabConnector\MedLink.LabConnector.csproj", "{7C57A5EE-1A88-47C8-82D5-5B56A394D789}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{12ADCF4B-085E-4E49-8C68-F2FF9174487A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedLink.LIS.Tests", "tests\MedLink.LIS.Tests\MedLink.LIS.Tests.csproj", "{B5F6F03B-E0E3-4723-B92E-ED454B5B29C3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E0416260-1769-43A7-A517-49760F66D96C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0416260-1769-43A7-A517-49760F66D96C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0416260-1769-43A7-A517-49760F66D96C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0416260-1769-43A7-A517-49760F66D96C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7CE24EE3-2050-446C-BD26-3677638C3F25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CE24EE3-2050-446C-BD26-3677638C3F25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CE24EE3-2050-446C-BD26-3677638C3F25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CE24EE3-2050-446C-BD26-3677638C3F25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C57A5EE-1A88-47C8-82D5-5B56A394D789}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C57A5EE-1A88-47C8-82D5-5B56A394D789}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C57A5EE-1A88-47C8-82D5-5B56A394D789}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C57A5EE-1A88-47C8-82D5-5B56A394D789}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5F6F03B-E0E3-4723-B92E-ED454B5B29C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5F6F03B-E0E3-4723-B92E-ED454B5B29C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5F6F03B-E0E3-4723-B92E-ED454B5B29C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5F6F03B-E0E3-4723-B92E-ED454B5B29C3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E0416260-1769-43A7-A517-49760F66D96C} = {21EFEC99-12D8-4A0D-BA0E-63E1A612444B}
+		{7CE24EE3-2050-446C-BD26-3677638C3F25} = {21EFEC99-12D8-4A0D-BA0E-63E1A612444B}
+		{7C57A5EE-1A88-47C8-82D5-5B56A394D789} = {21EFEC99-12D8-4A0D-BA0E-63E1A612444B}
+		{B5F6F03B-E0E3-4723-B92E-ED454B5B29C3} = {12ADCF4B-085E-4E49-8C68-F2FF9174487A}
+	EndGlobalSection
+EndGlobal
