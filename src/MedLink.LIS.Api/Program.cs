@@ -27,8 +27,13 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// 3. Add DbContext with local SQLite database
-var dbPath = @"C:\__MEDLINK___\LABA\medlink_lab_local.db";
+// 3. Add DbContext with local SQLite database (prototype: sample DB copied into App_Data)
+var repoRoot = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", ".."));
+var appData = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
+Directory.CreateDirectory(appData);
+var dbPath = Path.Combine(appData, "medlink_lab_local.db");
+var sampleDb = Path.Combine(repoRoot, "db", "medlink_lab_local.sample.db");
+if (!File.Exists(dbPath) && File.Exists(sampleDb)) File.Copy(sampleDb, dbPath);
 builder.Services.AddDbContext<MedLinkLabDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 
@@ -63,7 +68,7 @@ app.UseSwaggerUI(c =>
 });
 
 // Custom Physical File Provider for serving MedLink Vue frontend & documentation
-var rootDir = @"C:\__MEDLINK___\LABA";
+var rootDir = Path.Combine(repoRoot, "src", "MedLink.LIS.Web.legacy-prototype");
 if (Directory.Exists(rootDir))
 {
     var fileProvider = new PhysicalFileProvider(rootDir);
@@ -81,7 +86,7 @@ if (Directory.Exists(rootDir))
 }
 
 // Redirect root to frontend
-app.MapGet("/", () => Results.Redirect("/medlink_lab_frontend/run_prototype.html"));
+app.MapGet("/", () => Results.Redirect("/run_prototype.html"));
 
 app.UseAuthorization();
 app.MapControllers();
@@ -89,9 +94,9 @@ app.MapControllers();
 Console.WriteLine("================================================================================");
 Console.WriteLine("MedLink LIS 3.0 .NET 8 Core Web API started successfully!");
 Console.WriteLine("REST API & Swagger UI: http://localhost:5055/swagger");
-Console.WriteLine("Vue Quasar Frontend:   http://localhost:5055/medlink_lab_frontend/run_prototype.html");
-Console.WriteLine("Master Specification:  http://localhost:5055/TZ_LIS_MedLink_v3_Master_Specification.html");
-Console.WriteLine("Database:              C:\\__MEDLINK___\\LABA\\medlink_lab_local.db");
+Console.WriteLine("Vue Quasar Frontend:   http://localhost:5055/run_prototype.html");
+Console.WriteLine("Master Specification:  (docs/analysis)");
+Console.WriteLine($"Database:              {dbPath}");
 Console.WriteLine("================================================================================");
 
 app.Run();
