@@ -27,3 +27,6 @@ medlink_offline_buffer.db
 .DS_Store
 Thumbs.db
 .idea/
+
+# Claude worktrees / local tooling
+.claude/
