@@ -1,0 +1,264 @@
+[
+ {
+  "code": "PROF_CBC",
+  "name": "Загальний аналіз крові розгорнутий (ЗАК + ШОЕ)",
+  "category": "Гематологія",
+  "turnaroundHours": 3,
+  "fastingRequired": false,
+  "price": 250,
+  "biomaterialCode": "BM_18",
+  "tubeCode": "EDTA_CBC",
+  "items": [
+   {
+    "testCode": "WBC",
+    "displayOrder": 1,
+    "isRequired": true
+   },
+   {
+    "testCode": "RBC",
+    "displayOrder": 2,
+    "isRequired": true
+   },
+   {
+    "testCode": "HGB",
+    "displayOrder": 3,
+    "isRequired": true
+   },
+   {
+    "testCode": "HCT",
+    "displayOrder": 4,
+    "isRequired": true
+   },
+   {
+    "testCode": "MCV",
+    "displayOrder": 5,
+    "isRequired": true
+   },
+   {
+    "testCode": "MCH",
+    "displayOrder": 6,
+    "isRequired": true
+   },
+   {
+    "testCode": "MCHC",
+    "displayOrder": 7,
+    "isRequired": true
+   },
+   {
+    "testCode": "PLT",
+    "displayOrder": 8,
+    "isRequired": true
+   },
+   {
+    "testCode": "NEUT_PCT",
+    "displayOrder": 9,
+    "isRequired": true
+   },
+   {
+    "testCode": "LYMPH_PCT",
+    "displayOrder": 10,
+    "isRequired": true
+   },
+   {
+    "testCode": "ESR",
+    "displayOrder": 11,
+    "isRequired": true
+   }
+  ]
+ },
+ {
+  "code": "PROF_BIOCHEM_BASE",
+  "name": "Базовий біохімічний профіль (ниркові + печінкові проби + глюкоза)",
+  "category": "Клінічна біохімія",
+  "turnaroundHours": 4,
+  "fastingRequired": true,
+  "price": 550,
+  "biomaterialCode": "BM_04",
+  "tubeCode": "SERUM_GEL",
+  "items": [
+   {
+    "testCode": "GLU",
+    "displayOrder": 1,
+    "isRequired": true
+   },
+   {
+    "testCode": "CREAT",
+    "displayOrder": 2,
+    "isRequired": true
+   },
+   {
+    "testCode": "UREA",
+    "displayOrder": 3,
+    "isRequired": true
+   },
+   {
+    "testCode": "ALT",
+    "displayOrder": 4,
+    "isRequired": true
+   },
+   {
+    "testCode": "AST",
+    "displayOrder": 5,
+    "isRequired": true
+   },
+   {
+    "testCode": "BIL_TOT",
+    "displayOrder": 6,
+    "isRequired": true
+   },
+   {
+    "testCode": "PROT_TOT",
+    "displayOrder": 7,
+    "isRequired": true
+   }
+  ]
+ },
+ {
+  "code": "PROF_COAG",
+  "name": "Коагулограма (скринінг гемостазу)",
+  "category": "Гемостаз",
+  "turnaroundHours": 3,
+  "fastingRequired": true,
+  "price": 300,
+  "biomaterialCode": "BM_05",
+  "tubeCode": "CITRATE",
+  "items": [
+   {
+    "testCode": "PT",
+    "displayOrder": 1,
+    "isRequired": true
+   },
+   {
+    "testCode": "INR",
+    "displayOrder": 2,
+    "isRequired": true
+   },
+   {
+    "testCode": "APTT",
+    "displayOrder": 3,
+    "isRequired": true
+   },
+   {
+    "testCode": "FIBRINOGEN",
+    "displayOrder": 4,
+    "isRequired": true
+   }
+  ]
+ },
+ {
+  "code": "PROF_THYROID",
+  "name": "Тиреоїдна панель (ТТГ + Т4 вільний)",
+  "category": "Імунохімія та гормони",
+  "turnaroundHours": 6,
+  "fastingRequired": true,
+  "price": 350,
+  "biomaterialCode": "BM_04",
+  "tubeCode": "SERUM_GEL",
+  "items": [
+   {
+    "testCode": "TSH",
+    "displayOrder": 1,
+    "isRequired": true
+   },
+   {
+    "testCode": "FT4",
+    "displayOrder": 2,
+    "isRequired": true
+   }
+  ]
+ },
+ {
+  "code": "PROF_URINE",
+  "name": "Загальний аналіз сечі (тест-смужка + фізичні властивості)",
+  "category": "Клінічні дослідження сечі",
+  "turnaroundHours": 2,
+  "fastingRequired": false,
+  "price": 120,
+  "biomaterialCode": "BM_07",
+  "tubeCode": "URINE_CONTAINER",
+  "items": [
+   {
+    "testCode": "U_COLOR",
+    "displayOrder": 1,
+    "isRequired": true
+   },
+   {
+    "testCode": "U_CLARITY",
+    "displayOrder": 2,
+    "isRequired": true
+   },
+   {
+    "testCode": "U_SG",
+    "displayOrder": 3,
+    "isRequired": true
+   },
+   {
+    "testCode": "U_PH",
+    "displayOrder": 4,
+    "isRequired": true
+   },
+   {
+    "testCode": "U_PRO",
+    "displayOrder": 5,
+    "isRequired": true
+   },
+   {
+    "testCode": "U_GLU",
+    "displayOrder": 6,
+    "isRequired": true
+   },
+   {
+    "testCode": "U_KET",
+    "displayOrder": 7,
+    "isRequired": true
+   },
+   {
+    "testCode": "U_LEU",
+    "displayOrder": 8,
+    "isRequired": true
+   },
+   {
+    "testCode": "U_ERY",
+    "displayOrder": 9,
+    "isRequired": true
+   },
+   {
+    "testCode": "U_NIT",
+    "displayOrder": 10,
+    "isRequired": true
+   }
+  ]
+ },
+ {
+  "code": "PROF_LIPID",
+  "name": "Ліпідограма (холестерин, ЛПВЩ, ЛПНЩ, тригліцериди)",
+  "category": "Клінічна біохімія",
+  "turnaroundHours": 4,
+  "fastingRequired": true,
+  "price": 380,
+  "biomaterialCode": "BM_04",
+  "tubeCode": "SERUM_GEL",
+  "items": [
+   {
+    "testCode": "CHOL",
+    "displayOrder": 1,
+    "isRequired": true
+   },
+   {
+    "testCode": "HDL",
+    "displayOrder": 2,
+    "isRequired": true
+   },
+   {
+    "testCode": "LDL",
+    "displayOrder": 3,
+    "isRequired": true
+   },
+   {
+    "testCode": "TG",
+    "displayOrder": 4,
+    "isRequired": true
+   }
+  ]
+ }
+]

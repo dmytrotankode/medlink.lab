@@ -1,0 +1,68 @@
+{
+  "sections": [
+    { "id": "sec-0000-0000-0000-000000000001", "code": "BIOCHEM", "name": "Клінічна біохімія", "sectionType": "CLINICAL_BIOCHEM", "departmentId": "dept-0000-0000-0000-000000000001", "journalMask": "{yyyy}-{seq6}", "journalResetPeriod": "YEAR", "secondaryMask": "{dayseq}", "autoReleaseVerified": true, "workflowTemplateCode": "CLINICAL" },
+    { "id": "sec-0000-0000-0000-000000000002", "code": "HEM", "name": "Гематологія", "sectionType": "HEMATOLOGY", "departmentId": "dept-0000-0000-0000-000000000001", "journalMask": "{yy}{MM}{dd}/{dayseq3}", "journalResetPeriod": "DAY", "secondaryMask": null, "autoReleaseVerified": true, "workflowTemplateCode": "HEMATOLOGY" },
+    { "id": "sec-0000-0000-0000-000000000003", "code": "IMMUNO", "name": "Імунохімія", "sectionType": "IMMUNO", "departmentId": "dept-0000-0000-0000-000000000001", "journalMask": "I{yy}-{seq5}", "journalResetPeriod": "YEAR", "secondaryMask": "{dayseq}", "autoReleaseVerified": true, "workflowTemplateCode": "CLINICAL" },
+    { "id": "sec-0000-0000-0000-000000000004", "code": "COAG", "name": "Коагулологія", "sectionType": "COAG", "departmentId": "dept-0000-0000-0000-000000000001", "journalMask": "K{yy}{MM}-{seq4}", "journalResetPeriod": "MONTH", "secondaryMask": null, "autoReleaseVerified": true, "workflowTemplateCode": "CLINICAL" },
+    { "id": "sec-0000-0000-0000-000000000005", "code": "URINE", "name": "Загальноклінічні дослідження (сеча)", "sectionType": "URINALYSIS", "departmentId": "dept-0000-0000-0000-000000000001", "journalMask": "U{yy}{MM}{dd}-{dayseq3}", "journalResetPeriod": "DAY", "secondaryMask": null, "autoReleaseVerified": true, "workflowTemplateCode": "URINALYSIS" },
+    { "id": "sec-0000-0000-0000-000000000006", "code": "MICRO", "name": "Мікробіологія", "sectionType": "MICROBIOLOGY", "departmentId": "dept-0000-0000-0000-000000000001", "journalMask": "M{yyyy}-{seq5}", "journalResetPeriod": "YEAR", "secondaryMask": null, "autoReleaseVerified": false, "workflowTemplateCode": "MICROBIOLOGY" },
+    { "id": "sec-0000-0000-0000-000000000007", "code": "PATH", "name": "Патогістологія", "sectionType": "PATHOLOGY", "departmentId": "dept-0000-0000-0000-000000000001", "journalMask": "S{yy}-{seq5}", "journalResetPeriod": "YEAR", "secondaryMask": null, "autoReleaseVerified": false, "workflowTemplateCode": "PATHOLOGY" },
+    { "id": "sec-0000-0000-0000-000000000008", "code": "CYTO", "name": "Цитологія", "sectionType": "CYTOLOGY", "departmentId": "dept-0000-0000-0000-000000000001", "journalMask": "C{yy}-{seq5}", "journalResetPeriod": "YEAR", "secondaryMask": null, "autoReleaseVerified": false, "workflowTemplateCode": "CYTOLOGY" }
+  ],
+  "categoryToSection": { "BIOCHEM": "BIOCHEM", "HEMATOLOGY": "HEM", "IMMUNO": "IMMUNO", "COAG": "COAG", "URINE": "URINE", "MICRO": "MICRO", "PATHOLOGY": "PATH", "CYTOLOGY": "CYTO" },
+  "workflowTemplates": [
+    { "code": "CLINICAL", "name": "Клінічна біохімія / імунохімія / коагулологія", "stages": [
+      { "code": "RECEIVED", "name": "Прийнято в лабораторії", "isRequired": true },
+      { "code": "CENTRIFUGED", "name": "Центрифуговано", "isRequired": true },
+      { "code": "ALIQUOTED", "name": "Алікотовано", "isRequired": false },
+      { "code": "ON_ANALYZER", "name": "На аналізаторі", "isRequired": true },
+      { "code": "RESULTED", "name": "Результат отримано", "isRequired": true },
+      { "code": "STORED", "name": "Збережено (архів)", "isRequired": false },
+      { "code": "DISPOSED", "name": "Утилізовано", "isRequired": false } ] },
+    { "code": "HEMATOLOGY", "name": "Гематологія", "stages": [
+      { "code": "RECEIVED", "name": "Прийнято", "isRequired": true },
+      { "code": "MIXED", "name": "Перемішано (ротатор)", "isRequired": true },
+      { "code": "ON_ANALYZER", "name": "На аналізаторі", "isRequired": true },
+      { "code": "SMEAR", "name": "Мазок", "isRequired": false },
+      { "code": "MICROSCOPY", "name": "Мікроскопія", "isRequired": false },
+      { "code": "RESULTED", "name": "Результат отримано", "isRequired": true },
+      { "code": "STORED", "name": "Збережено", "isRequired": false } ] },
+    { "code": "URINALYSIS", "name": "Загальний аналіз сечі", "stages": [
+      { "code": "RECEIVED", "name": "Прийнято", "isRequired": true },
+      { "code": "STRIP", "name": "Тест-смужка", "isRequired": true },
+      { "code": "CENTRIFUGED", "name": "Центрифуговано", "isRequired": true },
+      { "code": "MICROSCOPY", "name": "Мікроскопія осаду", "isRequired": true },
+      { "code": "RESULTED", "name": "Результат отримано", "isRequired": true },
+      { "code": "DISPOSED", "name": "Утилізовано", "isRequired": false } ] },
+    { "code": "MICROBIOLOGY", "name": "Мікробіологія", "stages": [
+      { "code": "RECEIVED", "name": "Прийнято", "isRequired": true },
+      { "code": "INOCULATED", "name": "Посів на середовища", "isRequired": true },
+      { "code": "INCUBATING", "name": "Інкубація", "isRequired": true },
+      { "code": "READ_24H", "name": "Облік через 24 год", "isRequired": true },
+      { "code": "ISOLATED", "name": "Виділення ізолятів", "isRequired": false },
+      { "code": "AST", "name": "Антибіотикограма", "isRequired": false },
+      { "code": "RESULTED", "name": "Результат отримано", "isRequired": true },
+      { "code": "DISPOSED", "name": "Утилізовано", "isRequired": false } ] },
+    { "code": "PATHOLOGY", "name": "Патогістологія", "stages": [
+      { "code": "ACCESSIONED", "name": "Реєстрація (accession)", "isRequired": true },
+      { "code": "GROSSING", "name": "Макроскопічний опис (вирізка)", "isRequired": true },
+      { "code": "CASSETTED", "name": "Касетування", "isRequired": true },
+      { "code": "PROCESSING", "name": "Гістологічна проводка", "isRequired": true },
+      { "code": "EMBEDDED", "name": "Заливка в парафін", "isRequired": true },
+      { "code": "SECTIONED", "name": "Мікротомія", "isRequired": true },
+      { "code": "STAINED_HE", "name": "Фарбування H&E", "isRequired": true },
+      { "code": "SPECIAL_STAINS", "name": "Спеціальні фарбування", "isRequired": false },
+      { "code": "IHC", "name": "Імуногістохімія", "isRequired": false },
+      { "code": "MICROSCOPY", "name": "Мікроскопія патолога", "isRequired": true },
+      { "code": "REPORTED", "name": "Висновок", "isRequired": true },
+      { "code": "ARCHIVED", "name": "Архів блоків/скелець", "isRequired": false } ] },
+    { "code": "CYTOLOGY", "name": "Цитологія", "stages": [
+      { "code": "ACCESSIONED", "name": "Реєстрація", "isRequired": true },
+      { "code": "PREPARED", "name": "Приготування препарату", "isRequired": true },
+      { "code": "STAINED_PAP", "name": "Фарбування за Папаніколау", "isRequired": true },
+      { "code": "SCREENED", "name": "Скринінг цитотехнологом", "isRequired": true },
+      { "code": "REVIEWED", "name": "Перегляд цитопатологом", "isRequired": true },
+      { "code": "REPORTED", "name": "Висновок", "isRequired": true },
+      { "code": "ARCHIVED", "name": "Архів", "isRequired": false } ] }
+  ]
+}

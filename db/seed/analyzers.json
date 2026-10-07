@@ -1,0 +1,34 @@
+{
+  "connectors": [
+    { "id": "con-0000-0000-0000-000000000001", "name": "Лабораторний ПК №1 (КДЛ)", "installKey": "DEMO-INSTALL-KEY-0001", "status": "PENDING" }
+  ],
+  "analyzers": [
+    {
+      "id": "anz-0000-0000-0000-000000000001", "code": "SYSMEX_XN1000", "name": "Sysmex XN-1000 (гематологія)", "analyzerTypeCode": "SYSMEXXN",
+      "connectorId": "con-0000-0000-0000-000000000001", "departmentId": "dept-0000-0000-0000-000000000001",
+      "connectionMode": "TCP", "tcpHost": "0.0.0.0", "tcpPort": 5100, "isTcpServer": true, "autoQueryOrders": true,
+      "parameterMap": [
+        { "analyzerCode": "WBC", "testCode": "WBC" }, { "analyzerCode": "RBC", "testCode": "RBC" }, { "analyzerCode": "HGB", "testCode": "HGB" },
+        { "analyzerCode": "HCT", "testCode": "HCT" }, { "analyzerCode": "MCV", "testCode": "MCV" }, { "analyzerCode": "MCH", "testCode": "MCH" },
+        { "analyzerCode": "MCHC", "testCode": "MCHC" }, { "analyzerCode": "PLT", "testCode": "PLT" },
+        { "analyzerCode": "NEUT%", "testCode": "NEUT_PCT" }, { "analyzerCode": "LYMPH%", "testCode": "LYMPH_PCT" }
+      ]
+    },
+    {
+      "id": "anz-0000-0000-0000-000000000002", "code": "MINDRAY_BS240", "name": "Mindray BS-240 (біохімія)", "analyzerTypeCode": "MINDRAY240",
+      "connectorId": "con-0000-0000-0000-000000000001", "departmentId": "dept-0000-0000-0000-000000000001",
+      "connectionMode": "TCP", "tcpHost": "192.168.1.102", "tcpPort": 5600, "isTcpServer": false, "autoQueryOrders": true,
+      "parameterMap": [
+        { "analyzerCode": "GLU", "testCode": "GLU" }, { "analyzerCode": "Crea", "testCode": "CREAT" }, { "analyzerCode": "CREAT", "testCode": "CREAT" },
+        { "analyzerCode": "Urea", "testCode": "UREA" }, { "analyzerCode": "UREA", "testCode": "UREA" }, { "analyzerCode": "ALT", "testCode": "ALT" },
+        { "analyzerCode": "AST", "testCode": "AST" }, { "analyzerCode": "TBIL", "testCode": "BIL_TOT" }, { "analyzerCode": "TP", "testCode": "PROT_TOT" },
+        { "analyzerCode": "ALB", "testCode": "ALB" }, { "analyzerCode": "K", "testCode": "K" }, { "analyzerCode": "Na", "testCode": "NA" },
+        { "analyzerCode": "Cl", "testCode": "CL" }, { "analyzerCode": "Ca", "testCode": "CA" }, { "analyzerCode": "CHOL", "testCode": "CHOL" },
+        { "analyzerCode": "HDL-C", "testCode": "HDL" }, { "analyzerCode": "LDL-C", "testCode": "LDL" }, { "analyzerCode": "TG", "testCode": "TG" },
+        { "analyzerCode": "UA", "testCode": "URIC" }, { "analyzerCode": "CRP", "testCode": "CRP" }, { "analyzerCode": "GGT", "testCode": "GGT" },
+        { "analyzerCode": "ALP", "testCode": "ALP" }, { "analyzerCode": "Fe", "testCode": "FE" }, { "analyzerCode": "AMY", "testCode": "AMYL" },
+        { "analyzerCode": "GLU-mg", "testCode": "GLU", "factor": 0.0555, "offset": 0.0, "unitOverride": "ммоль/л" }
+      ]
+    }
+  ]
+}
