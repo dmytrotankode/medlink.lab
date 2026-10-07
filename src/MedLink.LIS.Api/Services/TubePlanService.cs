@@ -10,7 +10,12 @@ using Microsoft.EntityFrameworkCore;
 namespace MedLink.LIS.Api.Services;
 
 /// <summary>Тест, обраний до замовлення, з профілем-джерелом і визначеним типом тари.</summary>
-public sealed record SelectedTest(LabTestDefinition Test, LabTestProfile? Profile, int TubeTypeId);
+public sealed record SelectedTest(LabTestDefinition Test, LabTestProfile? Profile, int TubeTypeId)
+{
+    /// <summary>Зовнішня лабораторія-виконавець за маршрутом за замовчуванням (null — власна лабораторія).</summary>
+    public string? PerformerId { get; init; }
+    public string? PerformerCode { get; init; }
+}
 
 public sealed class TubePlanService
 {
@@ -49,16 +54,22 @@ public sealed class TubePlanService
 
         var codes = new HashSet<string>(existingCodes);
         var result = new List<SelectedTest>();
+        var candidateIds = profiles.SelectMany(p => p.Items).Where(i => i.Test != null).Select(i => i.Test!.Id).Concat(singles.Select(t => t.Id)).Distinct().ToList();
+        // Маршрути send-out за замовчуванням (lab_performer_test.is_default_route)
+        var routes = await _db.PerformerTests.AsNoTracking().Include(x => x.Performer)
+            .Where(x => candidateIds.Contains(x.TestId) && x.IsDefaultRoute && x.IsActive && x.Performer!.IsActive && x.Performer.Kind == PerformerKinds.External && x.Performer.RecordState != RecordStates.Deleted)
+            .ToDictionaryAsync(x => x.TestId, x => (x.PerformerId, x.Performer!.Code));
+        SelectedTest Routed(SelectedTest s) => routes.TryGetValue(s.Test.Id, out var r) ? s with { PerformerId = r.PerformerId, PerformerCode = r.Code } : s;
         foreach (var p in profiles)
             foreach (var item in p.Items.OrderBy(i => i.DisplayOrder))
             {
                 if (item.Test == null || !codes.Add(item.Test.Code)) continue;
-                result.Add(new SelectedTest(item.Test, p, item.Test.TubeTypeId ?? p.DefaultTubeTypeId ?? await DefaultTubeForBiomaterialAsync(item.Test.BiomaterialTypeId)));
+                result.Add(Routed(new SelectedTest(item.Test, p, item.Test.TubeTypeId ?? p.DefaultTubeTypeId ?? await DefaultTubeForBiomaterialAsync(item.Test.BiomaterialTypeId))));
             }
         foreach (var t in singles)
         {
             if (!codes.Add(t.Code)) continue;
-            result.Add(new SelectedTest(t, null, t.TubeTypeId ?? await DefaultTubeForBiomaterialAsync(t.BiomaterialTypeId)));
+            result.Add(Routed(new SelectedTest(t, null, t.TubeTypeId ?? await DefaultTubeForBiomaterialAsync(t.BiomaterialTypeId))));
         }
         return (result, profiles, singles);
     }
@@ -76,16 +87,16 @@ public sealed class TubePlanService
                 existing.Add(new TubePlanExistingTube
                 {
                     SampleId = s.Id, BiomaterialTypeId = s.BiomaterialTypeId, TubeTypeId = s.TubeTypeId, GroupNumb = s.GroupNumb,
-                    Tests = order.Tests.Where(t => t.SampleId == s.Id && t.Test != null).Select(t => ToPlanTest(t.Test!, s.TubeTypeId)).ToList()
+                    Tests = order.Tests.Where(t => t.SampleId == s.Id && t.Test != null).Select(t => ToPlanTest(t.Test!, s.TubeTypeId, t.Performer?.Code ?? (t.PerformerId == null ? null : "EXT"))).ToList()
                 });
-        return TubePlanner.Plan(tests.Select(t => ToPlanTest(t.Test, t.TubeTypeId)), types, existing);
+        return TubePlanner.Plan(tests.Select(t => ToPlanTest(t.Test, t.TubeTypeId, t.PerformerCode)), types, existing);
     }
 
     public async Task<TubePlanDto> PreviewAsync(TubePlanRequest req)
     {
         LabOrder? order = null;
         if (!string.IsNullOrWhiteSpace(req.OrderId))
-            order = await _db.Orders.AsNoTracking().Include(o => o.Samples).Include(o => o.Tests).ThenInclude(t => t.Test)
+            order = await _db.Orders.AsNoTracking().Include(o => o.Samples).Include(o => o.Tests).ThenInclude(t => t.Test).Include(o => o.Tests).ThenInclude(t => t.Performer)
                         .FirstOrDefaultAsync(o => o.Id == req.OrderId) ?? throw NotFoundException.For("Замовлення", req.OrderId!);
         var existingCodes = new HashSet<string>(order?.Tests.Select(t => t.TestCode) ?? Enumerable.Empty<string>());
         var (tests, _, _) = await ResolveAsync(req.ProfileIds, req.TestIds, existingCodes);
@@ -117,11 +128,12 @@ public sealed class TubePlanService
 
     private static TubePlanTestDto ToDto(TubePlanTest t, bool isNew) => new() { TestId = t.TestId, Code = t.Code, Name = t.Name, RequiredVolumeMl = t.RequiredVolumeMl, IsNew = isNew };
 
-    private static TubePlanTest ToPlanTest(LabTestDefinition t, int tubeTypeId) => new()
+    /// <summary>Тести, що відправляються в зовнішню лабораторію, групуються в окрему тару цієї лабораторії (група SENDOUT:&lt;код&gt;).</summary>
+    private static TubePlanTest ToPlanTest(LabTestDefinition t, int tubeTypeId, string? performerCode = null) => new()
     {
         TestId = t.Id, Code = t.Code, Name = t.Name, BiomaterialTypeId = t.BiomaterialTypeId, TubeTypeId = tubeTypeId,
         RequiresSeparateTube = t.RequiresSeparateTube, MaxTestsPerTube = t.MaxTestsPerTube, RequiredVolumeMl = t.RequiredVolumeMl,
-        CompatibilityGroup = t.TubeCompatibilityGroup
+        CompatibilityGroup = performerCode != null ? "SENDOUT:" + performerCode : t.TubeCompatibilityGroup
     };
 
     private async Task<int> DefaultTubeForBiomaterialAsync(int biomaterialTypeId)

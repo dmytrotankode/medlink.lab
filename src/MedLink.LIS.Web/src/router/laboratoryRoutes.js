@@ -28,6 +28,7 @@ export default [
       lab('sections', 'lab-sections', 'Підрозділи лабораторії', () => import('pages/laboratory/sections/LabSectionsPage.vue')),
       lab('sections/journal', 'lab-section-journal', 'Журнал відділення', () => import('pages/laboratory/sections/DepartmentJournalPage.vue')),
       lab('logistics', 'lab-logistics', 'Логістика зразків', () => import('pages/laboratory/SpecimenLogistics.vue')),
+      lab('send-out', 'lab-send-out', 'Зовнішні лабораторії', () => import('pages/laboratory/SendOutPage.vue')),
       lab('workstation', 'lab-workstation', 'Робочий стіл лаборанта', () => import('pages/laboratory/workstation/LabWorkstation.vue')),
       lab('validation', 'lab-validation', 'Валідація та паніка', () => import('pages/laboratory/validation/ValidationPanic.vue')),
       lab('quality-control', 'lab-qc', 'Контроль якості (ВКЯ)', () => import('pages/laboratory/qc/QualityControl.vue')),

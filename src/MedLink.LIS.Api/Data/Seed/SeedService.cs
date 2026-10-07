@@ -51,6 +51,7 @@ public sealed class SeedService
         await SeedReflexRulesAsync();
         await SeedMicrobiologyAsync();
         await SeedAnalyzersAsync();
+        await SeedPerformersAsync();
         await SeedQcMaterialsAsync();
         await SeedCountersAsync();
         _logger.LogInformation("Сід довідників завершено за {Ms} мс", sw.ElapsedMilliseconds);
@@ -170,6 +171,28 @@ public sealed class SeedService
             }
             await _db.SaveChangesAsync();
         }
+    }
+
+    /// <summary>Лабораторії-виконавці: власна, зовнішня партнерська (Сінево, обмін файлом) і TerraLab (довідково — обмін веде MedLink).</summary>
+    private async Task SeedPerformersAsync()
+    {
+        if (await _db.Performers.AnyAsync()) return;
+        var tests = await _db.Tests.AsNoTracking().ToDictionaryAsync(t => t.Code, t => t.Id);
+        foreach (var el in ReadResource<List<JsonElement>>("performers.json"))
+        {
+            var p = JsonSerializer.Deserialize<LabPerformer>(el.GetRawText(), Json)!;
+            p.Tests = new();
+            foreach (var t in el.GetProperty("tests").EnumerateArray())
+            {
+                var code = t.GetProperty("testCode").GetString()!;
+                if (!tests.TryGetValue(code, out var testId)) continue;
+                var pt = JsonSerializer.Deserialize<LabPerformerTest>(t.GetRawText(), Json)!;
+                pt.PerformerId = p.Id; pt.TestId = testId;
+                p.Tests.Add(pt);
+            }
+            _db.Performers.Add(p);
+        }
+        await _db.SaveChangesAsync();
     }
 
     private static string? Str(JsonElement el, string name) => el.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;

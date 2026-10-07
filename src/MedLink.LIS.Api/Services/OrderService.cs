@@ -34,6 +34,7 @@ public sealed class OrderService
         .Include(o => o.Tests).ThenInclude(t => t.Profile)
         .Include(o => o.Tests).ThenInclude(t => t.Sample)
         .Include(o => o.Tests).ThenInclude(t => t.AssignedAnalyzer)
+        .Include(o => o.Tests).ThenInclude(t => t.Performer)
         .Include(o => o.Tests).ThenInclude(t => t.Result).ThenInclude(r => r!.Analyzer);
 
     public async Task<LabOrder> LoadAsync(string id)
@@ -224,7 +225,7 @@ public sealed class OrderService
             order.Tests.Add(new LabOrderTest
             {
                 OrderId = order.Id, SampleId = sampleByTest[sel.Test.Id], ProfileId = sel.Profile?.Id, TestId = sel.Test.Id, TestCode = sel.Test.Code, TestName = sel.Test.Name,
-                Status = OrderTestStatuses.Pending, DisplayOrder = ++displayOrder, Test = sel.Test
+                Status = OrderTestStatuses.Pending, DisplayOrder = ++displayOrder, Test = sel.Test, PerformerId = sel.PerformerId
             });
         }
     }

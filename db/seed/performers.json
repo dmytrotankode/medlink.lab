@@ -1,0 +1,67 @@
+[
+ {
+  "id": "0f0f0000-0000-0000-0000-000000000001",
+  "code": "OWN",
+  "name": "Клініко-діагностична лабораторія «МедЛінк» (власна)",
+  "kind": "INTERNAL",
+  "exchangeMode": "MANUAL",
+  "defaultTatHours": 24,
+  "departmentId": "0d000000-0000-0000-0000-000000000001",
+  "tests": []
+ },
+ {
+  "id": "0f0f0000-0000-0000-0000-000000000002",
+  "code": "SYNEVO",
+  "name": "ТОВ «Сінево Україна»",
+  "kind": "EXTERNAL",
+  "exchangeMode": "FILE",
+  "edrpou": "34522543",
+  "licenseNumber": "Ліцензія МОЗ (демо)",
+  "address": "м. Київ",
+  "phone": "+380800000000",
+  "email": "partners@synevo.example",
+  "contractNumber": "ДГ-2026/014",
+  "defaultTatHours": 72,
+  "reportNote": "Дослідження виконано партнерською лабораторією ТОВ «Сінево Україна» (договір ДГ-2026/014). Результат перевірено лікарем-лаборантом КДЛ «МедЛінк».",
+  "tests": [
+   {
+    "testCode": "VITD",
+    "externalCode": "SY-1043",
+    "externalName": "Вітамін D, 25-OH",
+    "cost": 290,
+    "tatHours": 72,
+    "isDefaultRoute": true,
+    "specimenRequirements": "Сироватка 1 мл, окрема пробірка, +2..+8 °C"
+   },
+   {
+    "testCode": "AMH",
+    "externalCode": "SY-2210",
+    "externalName": "АМГ",
+    "cost": 410,
+    "tatHours": 96,
+    "isDefaultRoute": true,
+    "specimenRequirements": "Сироватка 1 мл, окрема пробірка"
+   },
+   {
+    "testCode": "TSH",
+    "externalCode": "SY-0101",
+    "externalName": "ТТГ",
+    "cost": 120,
+    "tatHours": 48,
+    "isDefaultRoute": false
+   }
+  ]
+ },
+ {
+  "id": "0f0f0000-0000-0000-0000-000000000003",
+  "code": "TERRALAB",
+  "name": "TerraLab (інтеграція MedLink)",
+  "kind": "EXTERNAL",
+  "exchangeMode": "API",
+  "medlinkProvider": "TERRALAB",
+  "defaultTatHours": 72,
+  "reportNote": "Направлення в TerraLab оформлюються лікарем у МІС MedLink (е-направлення + позначка «TerraLab»); обмін виконує MedLink.",
+  "isActive": true,
+  "tests": []
+ }
+]

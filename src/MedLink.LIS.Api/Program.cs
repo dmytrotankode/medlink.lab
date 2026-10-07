@@ -69,6 +69,7 @@ builder.Services.AddScoped<INumeratorService, NumeratorService>();
 builder.Services.AddScoped<OrderStateService>();
 builder.Services.AddScoped<TubePlanService>();
 builder.Services.AddScoped<OrgDictionaryService>();
+builder.Services.AddScoped<SendOutService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<SampleService>();
 builder.Services.AddScoped<ResultPipelineService>();

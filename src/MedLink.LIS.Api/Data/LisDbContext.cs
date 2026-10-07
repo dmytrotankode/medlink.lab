@@ -90,6 +90,13 @@ public class LisDbContext : DbContext
     public DbSet<LabSampleStageEvent> StageEvents => Set<LabSampleStageEvent>();
     public DbSet<LabOrderFavorite> OrderFavorites => Set<LabOrderFavorite>();
 
+    // --- зовнішні лабораторії (send-out) ---
+    public DbSet<LabPerformer> Performers => Set<LabPerformer>();
+    public DbSet<LabPerformerTest> PerformerTests => Set<LabPerformerTest>();
+    public DbSet<LabSendOut> SendOuts => Set<LabSendOut>();
+    public DbSet<LabSendOutItem> SendOutItems => Set<LabSendOutItem>();
+    public DbSet<LabOrderAttachment> Attachments => Set<LabOrderAttachment>();
+
     // --- system ---
     public DbSet<LabAuditLog> AuditLog => Set<LabAuditLog>();
     public DbSet<LabSettings> Settings => Set<LabSettings>();
@@ -135,6 +142,13 @@ public class LisDbContext : DbContext
         mb.Entity<LabOrderTest>().HasIndex(t => t.ReleasedAt);
 
         // [MedLink] персона та лабораторні атрибути завантажуються разом із карткою/співробітником/підрозділом
+        mb.Entity<LabPerformer>().HasIndex(p => p.Code).IsUnique();
+        mb.Entity<LabPerformerTest>().HasIndex(p => new { p.PerformerId, p.TestId }).IsUnique();
+        mb.Entity<LabSendOut>().HasIndex(s => s.Number).IsUnique();
+        mb.Entity<LabSendOutItem>().HasIndex(i => i.OrderTestId);
+        mb.Entity<LabOrderAttachment>().HasIndex(a => a.OrderId);
+        mb.Entity<LabOrderTest>().HasIndex(t => t.PerformerId);
+
         mb.Entity<OrgEmployee>().HasOne(e => e.LabSettings).WithOne(s => s.Employee).HasForeignKey<LabEmployeeSettings>(s => s.EmployeeId);
         mb.Entity<OrgDepartment>().HasOne(d => d.LabSettings).WithOne(s => s.Department).HasForeignKey<LabDepartmentSettings>(s => s.DepartmentId);
         mb.Entity<MisPatientCard>().Navigation(p => p.Person).AutoInclude();

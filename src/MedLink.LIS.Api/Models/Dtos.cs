@@ -81,6 +81,9 @@ public sealed class OrderTestDto
     public DateTime? ReleasedAt { get; set; }
     public string? LabSectionId { get; set; }
     public string? LabSectionName { get; set; }
+    /// <summary>Зовнішня лабораторія-виконавець (null — власна лабораторія).</summary>
+    public string? PerformerId { get; set; }
+    public string? PerformerName { get; set; }
     public string? JournalNumber { get; set; }
     public ResultDto? Result { get; set; }
     public List<AllowedActionDto> AllowedActions { get; set; } = new();

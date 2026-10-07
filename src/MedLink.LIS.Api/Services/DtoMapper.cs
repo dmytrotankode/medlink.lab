@@ -47,6 +47,7 @@ public static class DtoMapper
         Status = t.Status, AssignedAnalyzerId = t.AssignedAnalyzerId, AnalyzerName = t.AssignedAnalyzer?.Name ?? t.Result?.Analyzer?.Name,
         IsReflex = t.IsReflex, ReflexFromTestId = t.ReflexFromTestId, ReflexNeedsConfirmation = t.ReflexNeedsConfirmation, RejectReason = t.RejectReason,
         DisplayOrder = t.DisplayOrder, ReleasedAt = t.ReleasedAt, LabSectionId = t.Test?.LabSectionId, LabSectionName = t.Test?.LabSection?.Name,
+        PerformerId = t.PerformerId, PerformerName = t.Performer?.Name,
         Result = t.Result == null ? null : ToDto(t.Result, t.Test?.DecimalPlaces ?? 2),
         AllowedActions = policy.AllowedActions(LisEntities.OrderTest, t.Status)
     };

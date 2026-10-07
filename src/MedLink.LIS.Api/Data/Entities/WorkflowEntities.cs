@@ -24,10 +24,12 @@ public static class SampleStatuses
 public static class OrderTestStatuses
 {
     public const string Pending = "PENDING", InAnalysis = "IN_ANALYSIS", Resulted = "RESULTED", NeedsReview = "NEEDS_REVIEW",
-        AutoVerified = "AUTO_VERIFIED", Verified = "VERIFIED", Rejected = "REJECTED", Rerun = "RERUN";
+        AutoVerified = "AUTO_VERIFIED", Verified = "VERIFIED", Rejected = "REJECTED", Rerun = "RERUN",
+        /// <summary>Відправлено на виконання в зовнішню лабораторію, очікується результат.</summary>
+        SentOut = "SENT_OUT";
     public static readonly string[] Final = { AutoVerified, Verified, Rejected };
     public static readonly string[] VerifiedAny = { AutoVerified, Verified };
-    public static readonly string[] AllowsResultEntry = { Pending, InAnalysis, Resulted, NeedsReview, Rerun };
+    public static readonly string[] AllowsResultEntry = { Pending, InAnalysis, Resulted, NeedsReview, Rerun, SentOut };
 }
 
 [Table("lab_order")]
@@ -129,9 +131,12 @@ public class LabOrderTest : GuidEntity
     public int DisplayOrder { get; set; }
     /// <summary>Прогресивна видача: результат відкрито пацієнту (після верифікації, якщо секція має autoReleaseVerified).</summary>
     public DateTime? ReleasedAt { get; set; }
+    /// <summary>Лабораторія-виконавець (lab_performer); null — власна лабораторія.</summary>
+    [MaxLength(64)] public string? PerformerId { get; set; }
 
     [ForeignKey(nameof(OrderId))] public LabOrder? Order { get; set; }
     [ForeignKey(nameof(SampleId))] public LabOrderSample? Sample { get; set; }
+    [ForeignKey(nameof(PerformerId))] public LabPerformer? Performer { get; set; }
     [ForeignKey(nameof(ProfileId))] public LabTestProfile? Profile { get; set; }
     [ForeignKey(nameof(TestId))] public LabTestDefinition? Test { get; set; }
     [ForeignKey(nameof(AssignedAnalyzerId))] public LabAnalyzer? AssignedAnalyzer { get; set; }
@@ -173,6 +178,10 @@ public class LabTestResult : GuidEntity
     public DateTime EnteredAt { get; set; } = DateTime.UtcNow;
     public DateTime? MeasuredAt { get; set; }
     public int Version { get; set; } = 1;
+    /// <summary>Лабораторія, що виконала дослідження (для результатів зовнішніх лабораторій).</summary>
+    [MaxLength(64)] public string? PerformerId { get; set; }
+    /// <summary>Номер/посилання на бланк зовнішньої лабораторії.</summary>
+    [MaxLength(128)] public string? ExternalReference { get; set; }
 
     [ForeignKey(nameof(OrderTestId))] public LabOrderTest? OrderTest { get; set; }
     [ForeignKey(nameof(AnalyzerId))] public LabAnalyzer? Analyzer { get; set; }

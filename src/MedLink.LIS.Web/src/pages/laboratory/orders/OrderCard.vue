@@ -65,6 +65,17 @@
         </div>
       </div>
 
+      <!-- Бланки зовнішніх лабораторій -->
+      <div v-if="attachments.length" class="medlink-card q-mb-md" data-testid="attachments">
+        <div class="medlink-card__title"><span><q-icon name="attach_file" class="q-mr-xs" />Бланки та файли ({{ attachments.length }})</span></div>
+        <q-list dense separator>
+          <q-item v-for="a in attachments" :key="a.id" clickable tag="a" :href="$api.attachmentUrl(a.id)" target="_blank">
+            <q-item-section avatar><q-icon name="picture_as_pdf" color="red-6" /></q-item-section>
+            <q-item-section><q-item-label>{{ a.fileName }}</q-item-label><q-item-label caption>{{ a.performerName || 'Файл' }} · {{ formatDateTime(a.uploadedAt) }} · SHA-256 {{ a.sha256.slice(0, 12) }}…</q-item-label></q-item-section>
+          </q-item>
+        </q-list>
+      </div>
+
       <!-- Процес + дії -->
       <div class="medlink-card q-mb-md">
         <div class="medlink-card__title">
@@ -148,7 +159,7 @@
                     <span class="text-weight-bold">{{ props.row.testCode }}</span>
                     <q-badge v-if="props.row.isReflex" color="purple-5" label="reflex" class="q-ml-xs" />
                   </q-td>
-                  <q-td key="testName" :props="props">{{ props.row.testName }}</q-td>
+                  <q-td key="testName" :props="props">{{ props.row.testName }} <q-badge v-if="props.row.performerName" color="purple-5" :label="`→ ${props.row.performerName}`" data-testid="performerBadge"><q-tooltip>Виконує зовнішня лабораторія (send-out)</q-tooltip></q-badge></q-td>
                   <q-td key="sample" :props="props" class="mono">{{ sampleBarcode(props.row.sampleId) }}</q-td>
                   <q-td key="value" :props="props" class="text-right">
                     <span :class="flagCss(resultOf(props.row).flag)" class="text-weight-bold">{{ valueOf(props.row) }}</span>
@@ -255,6 +266,7 @@ export default {
   data () {
     return {
       order: null,
+      attachments: [],
       transitions: null,
       reportVariant: 'final',
       reportVariants: [
@@ -350,6 +362,11 @@ export default {
       this.loadTransitions();
       this.loadAudit();
       this.loadJournal();
+      this.loadAttachments();
+    },
+    async loadAttachments () {
+      if (!this.order) return;
+      try { this.attachments = await this.$api.orderAttachments(this.order.id); } catch (e) { this.attachments = []; }
     },
     async loadJournal () {
       if (!this.order) return;

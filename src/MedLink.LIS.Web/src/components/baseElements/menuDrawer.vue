@@ -86,6 +86,7 @@ export default {
             { name: 'phlebotomy', label: 'Пункт забору', icon: 'fas fa-syringe', to: { name: 'lab-phlebotomy' } },
             { name: 'journal', label: 'Журнал відділення', icon: 'fas fa-book', to: { name: 'lab-section-journal' } },
             { name: 'logistics', label: 'Логістика', icon: 'fas fa-truck', to: { name: 'lab-logistics' } },
+            { name: 'send-out', label: 'Зовнішні лабораторії', icon: 'fas fa-share-square', to: { name: 'lab-send-out' } },
             { name: 'workstation', label: 'Робочий стіл лаборанта', icon: 'fas fa-microscope', to: { name: 'lab-workstation' }, badgeKey: 'pending' },
             { name: 'validation', label: 'Валідація та паніка', icon: 'fas fa-user-check', to: { name: 'lab-validation' }, badgeKey: 'panic' },
             { name: 'qc', label: 'Контроль якості', icon: 'fas fa-chart-line', to: { name: 'lab-qc' }, badgeKey: 'lockout' },

@@ -82,7 +82,7 @@ public sealed class ImportService
         return new { dryRun = false, fileName, total = rows.Count, applied, errors = rows.Count(r => r.Status == "ERROR"), skipped = rows.Count(r => r.Status == "SKIP"), rows };
     }
 
-    private static List<ImportRow> ParseCsv(Stream stream)
+    internal static List<ImportRow> ParseCsv(Stream stream)
     {
         using var reader = new StreamReader(stream, System.Text.Encoding.UTF8, true);
         var lines = new List<string>();
@@ -105,7 +105,7 @@ public sealed class ImportService
         return rows;
     }
 
-    private static List<ImportRow> ParseXlsx(Stream stream)
+    internal static List<ImportRow> ParseXlsx(Stream stream)
     {
         using var wb = new XLWorkbook(stream);
         var ws = wb.Worksheets.First();
@@ -119,7 +119,7 @@ public sealed class ImportService
         return rows;
     }
 
-    private static List<ImportRow> ParseXml(Stream stream)
+    internal static List<ImportRow> ParseXml(Stream stream)
     {
         var doc = XDocument.Load(stream);
         var rows = new List<ImportRow>();

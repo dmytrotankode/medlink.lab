@@ -29,6 +29,11 @@ public sealed class ResultEntry
     public DateTime? MeasuredAt { get; set; }
     /// <summary>Технічний актор (коннектор/імпорт) — без рольових обмежень, з автоприйомом проби.</summary>
     public bool IsSystem { get; set; }
+    /// <summary>Результат зовнішньої лабораторії (send-out): виконавець і номер її бланка.</summary>
+    public string? PerformerId { get; set; }
+    public string? ExternalReference { get; set; }
+    /// <summary>Референсний інтервал зовнішньої лабораторії (якщо в довіднику норм ЛІС немає шару для показника).</summary>
+    public string? ReferenceText { get; set; }
 }
 
 public sealed class ResultPipelineService
@@ -138,7 +143,7 @@ public sealed class ResultPipelineService
         var decision = AutoVerificationEngine.Evaluate(new AutoVerificationInput
         {
             Flag = flag, AnalyzerFlags = entry.AnalyzerFlags, DeltaAlert = delta.IsAlert,
-            RequiresManualVerification = def.RequiresManualVerification, HasActiveLockout = locked, HasValue = numeric.HasValue || !string.IsNullOrEmpty(text)
+            RequiresManualVerification = def.RequiresManualVerification || (entry.PerformerId ?? test.PerformerId) != null, HasActiveLockout = locked, HasValue = numeric.HasValue || !string.IsNullOrEmpty(text)
         });
 
         // Результат (одна версія на тест, попередні — в історії)
@@ -164,7 +169,7 @@ public sealed class ResultPipelineService
         result.StringValue = numeric.HasValue ? null : text;
         result.Unit = entry.Unit ?? resolution.Unit ?? def.Unit;
         result.NormLow = resolution.NormLow; result.NormHigh = resolution.NormHigh; result.CritLow = resolution.CritLow; result.CritHigh = resolution.CritHigh;
-        result.ReferenceDisplay = resolution.Found ? resolution.ReferenceDisplay : "";
+        result.ReferenceDisplay = resolution.Found ? resolution.ReferenceDisplay : (entry.ReferenceText?.Trim() ?? "");
         result.Flag = flag;
         result.AppliedLayerId = resolution.WinningLayer?.Id;
         result.AppliedLayerName = resolution.WinningLayer?.NormName;
@@ -180,6 +185,8 @@ public sealed class ResultPipelineService
         result.EnteredById = entry.IsSystem ? null : _current.EmployeeId;
         result.EnteredAt = now;
         result.MeasuredAt = entry.MeasuredAt;
+        result.PerformerId = entry.PerformerId ?? test.PerformerId;
+        result.ExternalReference = entry.ExternalReference;
         result.IsAutoVerified = decision.Approved;
         result.AutoVerifyBlockReason = decision.Approved ? null : decision.Summary;
         result.VerifiedById = null; result.VerifiedAt = null; result.VerificationComment = null;

@@ -231,6 +231,29 @@ const labApi = {
     params: { dryRun: !!dryRun }, headers: { 'Content-Type': 'multipart/form-data' }
   })),
 
+  // ---------- Зовнішні лабораторії (send-out) ----------
+  performers: includeInactive => data(http.get('/performers', { params: clean({ includeInactive }) })),
+  savePerformer: (id, body) => data(id ? http.put(`/performers/${id}`, body) : http.post('/performers', body)),
+  setPerformerTests: (id, items) => data(http.put(`/performers/${id}/tests`, items)),
+  routeOrderTest: (orderTestId, performerId, reason) => data(http.put(`/order-tests/${orderTestId}/performer`, { performerId, reason })),
+  sendOutQueue: performerId => data(http.get('/send-out/queue', { params: clean({ performerId }) })),
+  sendOuts: (status, performerId) => data(http.get('/send-out', { params: clean({ status, performerId }) })),
+  sendOut: id => data(http.get(`/send-out/${id}`)),
+  createSendOut: body => data(http.post('/send-out', body)),
+  dispatchSendOut: (id, body) => data(http.post(`/send-out/${id}/dispatch`, body || {})),
+  acceptSendOut: (id, body) => data(http.post(`/send-out/${id}/accept`, body || {})),
+  cancelSendOut: (id, reason) => data(http.post(`/send-out/${id}/cancel`, { reason })),
+  sendOutResult: (itemId, body) => data(http.post(`/send-out/items/${itemId}/result`, body)),
+  sendOutRejectItem: (itemId, reason, returnToQueue) => data(http.post(`/send-out/items/${itemId}/reject`, { reason, returnToQueue })),
+  sendOutImport: (id, formData, dryRun) => data(http.post(`/send-out/${id}/import`, formData, {
+    params: { dryRun: !!dryRun }, headers: { 'Content-Type': 'multipart/form-data' }
+  })),
+  orderAttachments: orderId => data(http.get(`/orders/${orderId}/attachments`)),
+  uploadAttachment: (orderId, formData, sendOutId) => data(http.post(`/orders/${orderId}/attachments`, formData, {
+    params: clean({ sendOutId }), headers: { 'Content-Type': 'multipart/form-data' }
+  })),
+  attachmentUrl: id => `${API_BASE}/attachments/${id}/content`,
+
   // ---------- Кабінет пацієнта ----------
   portalOrders: patientId => data(http.get(`/portal/${patientId}/orders`)),
   portalOrder: (patientId, id) => data(http.get(`/portal/${patientId}/orders/${id}`)),
