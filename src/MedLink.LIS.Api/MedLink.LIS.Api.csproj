@@ -4,16 +4,36 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>MedLink.LIS.Api</RootNamespace>
+    <AssemblyName>MedLink.LIS.Api</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.29" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="QuestPDF" Version="2024.12.3" />
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MedLink.LIS.Core\MedLink.LIS.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Сід-дані: db/seed/*.json вбудовуються як ресурси (працює і в тестах, і в publish) -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\db\seed\*.json" LinkBase="Seed" LogicalName="MedLink.LIS.Api.Seed.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\**" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MedLink.LIS.Tests" />
   </ItemGroup>
 
 </Project>

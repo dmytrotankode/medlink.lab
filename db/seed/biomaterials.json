@@ -1,0 +1,20 @@
+[
+  { "id": 1, "code": "BM_01", "name": "Цільна кров (капілярна)", "defaultContainer": "Мікропробірка EDTA", "stabilityHours": 6, "temperatureRegime": "+18..+25°C" },
+  { "id": 2, "code": "BM_02", "name": "Кал", "defaultContainer": "Контейнер для калу", "stabilityHours": 4, "temperatureRegime": "+2..+8°C" },
+  { "id": 3, "code": "BM_03", "name": "Сироватка, гепаринизована плазма", "defaultContainer": "Пробірка з гелем / Li-гепарин", "stabilityHours": 24, "temperatureRegime": "+2..+8°C" },
+  { "id": 4, "code": "BM_04", "name": "Сироватка", "defaultContainer": "Пробірка з активатором згортання та гелем", "stabilityHours": 24, "temperatureRegime": "+2..+8°C" },
+  { "id": 5, "code": "BM_05", "name": "Плазма", "defaultContainer": "Пробірка з цитратом натрію 3.2%", "stabilityHours": 4, "temperatureRegime": "+18..+25°C" },
+  { "id": 6, "code": "BM_06", "name": "Плевральна рідина", "defaultContainer": "Стерильний контейнер", "stabilityHours": 2, "temperatureRegime": "+2..+8°C" },
+  { "id": 7, "code": "BM_07", "name": "Сеча", "defaultContainer": "Контейнер для сечі стерильний", "stabilityHours": 2, "temperatureRegime": "+2..+8°C" },
+  { "id": 8, "code": "BM_08", "name": "Частинки органів", "defaultContainer": "Контейнер з формаліном", "stabilityHours": 72, "temperatureRegime": "+18..+25°C" },
+  { "id": 9, "code": "BM_09", "name": "Дренажна рідина", "defaultContainer": "Стерильний контейнер", "stabilityHours": 2, "temperatureRegime": "+2..+8°C" },
+  { "id": 10, "code": "BM_10", "name": "Ліквор", "defaultContainer": "Стерильна пробірка", "stabilityHours": 1, "temperatureRegime": "+18..+25°C" },
+  { "id": 11, "code": "BM_11", "name": "Харкотіння", "defaultContainer": "Стерильний контейнер", "stabilityHours": 2, "temperatureRegime": "+2..+8°C" },
+  { "id": 12, "code": "BM_12", "name": "Біологічна речовина", "defaultContainer": "Контейнер", "stabilityHours": 24, "temperatureRegime": "+2..+8°C" },
+  { "id": 13, "code": "BM_13", "name": "Випотні рідини", "defaultContainer": "Стерильний контейнер", "stabilityHours": 2, "temperatureRegime": "+2..+8°C" },
+  { "id": 14, "code": "BM_14", "name": "Грудне молоко", "defaultContainer": "Стерильний контейнер", "stabilityHours": 2, "temperatureRegime": "+2..+8°C" },
+  { "id": 15, "code": "BM_15", "name": "Цільна кров венозна або капілярна", "defaultContainer": "Пробірка EDTA", "stabilityHours": 24, "temperatureRegime": "+2..+8°C" },
+  { "id": 16, "code": "BM_16", "name": "Гепаринизована плазма", "defaultContainer": "Пробірка Li-гепарин", "stabilityHours": 24, "temperatureRegime": "+2..+8°C" },
+  { "id": 17, "code": "BM_17", "name": "Перикардиальна рідина", "defaultContainer": "Стерильний контейнер", "stabilityHours": 2, "temperatureRegime": "+2..+8°C" },
+  { "id": 18, "code": "BM_18", "name": "Цільна кров (венозна)", "defaultContainer": "Пробірка K2/K3 EDTA", "stabilityHours": 24, "temperatureRegime": "+2..+8°C" }
+]

@@ -1,8 +1,7 @@
 // =============================================================================
-// MedLink LIS 4.0 — транслітерація українського алфавіту латиницею за
-// Постановою КМУ № 55 від 27.01.2010 «Про впорядкування транслітерації
-// українського алфавіту латиницею». Спільна для API та коннектора.
-// Copyright (c) 2026 ТОВ "МедЛінк" (MedLink LLC)
+// MedLink LIS 4.0 — транслітерація української латиницею за Постановою КМУ №55
+// від 27.01.2010 «Про впорядкування транслітерації українського алфавіту латиницею».
+// Спільний клас для API (mis_patient_card.last_name_latin) та коннектора (ПІБ для приладів).
 // =============================================================================
 using System.Text;
 
@@ -10,64 +9,79 @@ namespace MedLink.LIS.Core.Common;
 
 public static class TransliterationKmu2010
 {
-    private static readonly Dictionary<char, string> Map = new()
+    // Літери з однаковою передачею незалежно від позиції
+    private static readonly Dictionary<char, string> Simple = new()
     {
-        ['а'] = "a", ['б'] = "b", ['в'] = "v", ['г'] = "h", ['ґ'] = "g", ['д'] = "d", ['е'] = "e", ['є'] = "ie",
-        ['ж'] = "zh", ['з'] = "z", ['и'] = "y", ['і'] = "i", ['ї'] = "i", ['й'] = "i", ['к'] = "k", ['л'] = "l",
-        ['м'] = "m", ['н'] = "n", ['о'] = "o", ['п'] = "p", ['р'] = "r", ['с'] = "s", ['т'] = "t", ['у'] = "u",
-        ['ф'] = "f", ['х'] = "kh", ['ц'] = "ts", ['ч'] = "ch", ['ш'] = "sh", ['щ'] = "shch", ['ь'] = "", ['ю'] = "iu",
-        ['я'] = "ia", ['\''] = "", ['’'] = "", ['ʼ'] = "", ['`'] = "",
-        // літери російського алфавіту (трапляються у старих картках пацієнтів)
-        ['ы'] = "y", ['э'] = "e", ['ё'] = "io", ['ъ'] = "",
+        ['а'] = "a", ['б'] = "b", ['в'] = "v", ['г'] = "h", ['ґ'] = "g", ['д'] = "d", ['е'] = "e", ['ж'] = "zh", ['з'] = "z", ['и'] = "y",
+        ['і'] = "i", ['к'] = "k", ['л'] = "l", ['м'] = "m", ['н'] = "n", ['о'] = "o", ['п'] = "p", ['р'] = "r", ['с'] = "s", ['т'] = "t",
+        ['у'] = "u", ['ф'] = "f", ['х'] = "kh", ['ц'] = "ts", ['ч'] = "ch", ['ш'] = "sh", ['щ'] = "shch",
+        // російські літери (на випадок старих карток) — найближчі відповідники
+        ['ы'] = "y", ['э'] = "e", ['ё'] = "io", ['ъ'] = ""
     };
 
-    /// <summary>На початку слова: Є→Ye, Ї→Yi, Й→Y, Ю→Yu, Я→Ya.</summary>
-    private static readonly Dictionary<char, string> WordStart = new()
+    // Літери, що передаються по-різному на початку слова та в інших позиціях
+    private static readonly Dictionary<char, (string Start, string Other)> Positional = new()
     {
-        ['є'] = "ye", ['ї'] = "yi", ['й'] = "y", ['ю'] = "yu", ['я'] = "ya",
+        ['є'] = ("ye", "ie"), ['ї'] = ("yi", "i"), ['й'] = ("y", "i"), ['ю'] = ("yu", "iu"), ['я'] = ("ya", "ia")
     };
 
     /// <summary>
-    /// Транслітерує текст латиницею за КМУ №55 (2010): «зг» → «zgh», апостроф і м'який знак не відтворюються,
-    /// слово ВЕЛИКИМИ літерами → латиниця великими. Латиниця, цифри та розділові знаки — без змін.
+    /// Транслітерує рядок (ПІБ, назву). М'який знак та апостроф не відтворюються; буквосполучення «зг» → «zgh».
+    /// Регістр зберігається: велика літера на початку → велика перша латинська літера; слово повністю великими → великими.
     /// </summary>
-    public static string ToLatin(string? text)
+    public static string ToLatin(string ukrainian)
     {
-        if (string.IsNullOrEmpty(text)) return "";
-        var sb = new StringBuilder(text.Length * 2);
-        bool wordStart = true;
-        for (int i = 0; i < text.Length; i++)
+        if (string.IsNullOrEmpty(ukrainian)) return ukrainian ?? "";
+        var sb = new StringBuilder(ukrainian.Length * 2);
+        var wordStart = true;
+        for (var i = 0; i < ukrainian.Length; i++)
         {
-            char c = text[i];
-            char lower = char.ToLowerInvariant(c);
-            bool allUpper = char.IsUpper(c) && ((i + 1 < text.Length && char.IsUpper(text[i + 1])) || (i > 0 && char.IsUpper(text[i - 1])));
-            if (lower == 'з' && i + 1 < text.Length && char.ToLowerInvariant(text[i + 1]) == 'г')
+            var ch = ukrainian[i];
+            var lower = char.ToLowerInvariant(ch);
+
+            if (lower is 'ь' or '\'' or '’' or 'ʼ') { continue; } // не відтворюються, позиція у слові не змінюється
+
+            if (!char.IsLetter(ch)) { sb.Append(ch); wordStart = true; continue; }
+
+            string lat;
+            if (lower == 'з' && i + 1 < ukrainian.Length && char.ToLowerInvariant(ukrainian[i + 1]) == 'г')
             {
-                Append(sb, "zgh", char.IsUpper(c), allUpper);
-                i++;
+                lat = "zgh"; i++; // «зг» → zgh
+                var bothUpper = char.IsUpper(ch) && char.IsUpper(ukrainian[i]);
+                sb.Append(ApplyCase(lat, ch, bothUpper || IsAllUpperWord(ukrainian, i - 1)));
                 wordStart = false;
                 continue;
             }
-            if (Map.TryGetValue(lower, out var latin))
-            {
-                if (wordStart && WordStart.TryGetValue(lower, out var ws)) latin = ws;
-                Append(sb, latin, char.IsUpper(c), allUpper);
-                wordStart = false;
-            }
-            else
-            {
-                sb.Append(c);
-                wordStart = !char.IsLetterOrDigit(c);
-            }
+            if (Positional.TryGetValue(lower, out var pos)) lat = wordStart ? pos.Start : pos.Other;
+            else if (Simple.TryGetValue(lower, out var s)) lat = s;
+            else { sb.Append(ch); wordStart = false; continue; } // латиниця/інші літери — як є
+
+            sb.Append(ApplyCase(lat, ch, IsAllUpperWord(ukrainian, i)));
+            wordStart = false;
         }
         return sb.ToString();
     }
 
-    private static void Append(StringBuilder sb, string latin, bool capitalize, bool allUpper)
+    private static string ApplyCase(string lat, char source, bool allUpper)
     {
-        if (latin.Length == 0) return;
-        if (allUpper) sb.Append(latin.ToUpperInvariant());
-        else if (capitalize) sb.Append(char.ToUpperInvariant(latin[0])).Append(latin, 1, latin.Length - 1);
-        else sb.Append(latin);
+        if (lat.Length == 0) return lat;
+        if (!char.IsUpper(source)) return lat;
+        if (allUpper) return lat.ToUpperInvariant();
+        return char.ToUpperInvariant(lat[0]) + lat.Substring(1);
+    }
+
+    /// <summary>Чи слово, що містить позицію index, записане повністю великими літерами (≥2 літер).</summary>
+    private static bool IsAllUpperWord(string s, int index)
+    {
+        var start = index; while (start > 0 && char.IsLetter(s[start - 1])) start--;
+        var end = index; while (end + 1 < s.Length && char.IsLetter(s[end + 1])) end++;
+        var letters = 0;
+        for (var i = start; i <= end; i++)
+        {
+            if (!char.IsLetter(s[i])) continue;
+            letters++;
+            if (char.IsLower(s[i])) return false;
+        }
+        return letters >= 2;
     }
 }

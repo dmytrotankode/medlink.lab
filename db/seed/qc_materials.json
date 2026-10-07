@@ -1,0 +1,42 @@
+[
+  {
+    "id": "qcm-0000-0000-0000-000000000001", "analyzerId": "anz-0000-0000-0000-000000000001", "name": "XN CHECK Level 1 (Low)", "level": "LEVEL_1_LOW",
+    "lotNumber": "XN1-24091", "manufacturer": "Sysmex / Streck", "expiryDate": "2027-03-31", "openedAt": "2026-09-20", "openStabilityDays": 30,
+    "targets": [
+      { "testCode": "WBC", "targetMean": 2.9, "targetSd": 0.12, "unit": "10^9/л", "teaPct": 15 },
+      { "testCode": "RBC", "targetMean": 2.3, "targetSd": 0.05, "unit": "10^12/л", "teaPct": 6 },
+      { "testCode": "HGB", "targetMean": 62, "targetSd": 1.5, "unit": "г/л", "teaPct": 7 },
+      { "testCode": "PLT", "targetMean": 60, "targetSd": 5.0, "unit": "10^9/л", "teaPct": 25 }
+    ]
+  },
+  {
+    "id": "qcm-0000-0000-0000-000000000002", "analyzerId": "anz-0000-0000-0000-000000000001", "name": "XN CHECK Level 2 (Normal)", "level": "LEVEL_2_NORMAL",
+    "lotNumber": "XN2-24092", "manufacturer": "Sysmex / Streck", "expiryDate": "2027-03-31", "openedAt": "2026-09-20", "openStabilityDays": 30,
+    "targets": [
+      { "testCode": "WBC", "targetMean": 7.2, "targetSd": 0.3, "unit": "10^9/л", "teaPct": 15 },
+      { "testCode": "RBC", "targetMean": 4.5, "targetSd": 0.08, "unit": "10^12/л", "teaPct": 6 },
+      { "testCode": "HGB", "targetMean": 138, "targetSd": 2.5, "unit": "г/л", "teaPct": 7 },
+      { "testCode": "PLT", "targetMean": 245, "targetSd": 12.0, "unit": "10^9/л", "teaPct": 25 }
+    ]
+  },
+  {
+    "id": "qcm-0000-0000-0000-000000000003", "analyzerId": "anz-0000-0000-0000-000000000002", "name": "ClinChem Multi Control Level 1", "level": "LEVEL_1_LOW",
+    "lotNumber": "CCM1-5581", "manufacturer": "Bio-Rad Lyphochek", "expiryDate": "2027-06-30", "openedAt": "2026-09-25", "openStabilityDays": 14,
+    "targets": [
+      { "testCode": "GLU", "targetMean": 4.2, "targetSd": 0.15, "unit": "ммоль/л", "teaPct": 10 },
+      { "testCode": "CREAT", "targetMean": 85, "targetSd": 4.0, "unit": "мкмоль/л", "teaPct": 15 },
+      { "testCode": "ALT", "targetMean": 32, "targetSd": 2.0, "unit": "Од/л", "teaPct": 20 },
+      { "testCode": "K", "targetMean": 3.8, "targetSd": 0.1, "unit": "ммоль/л", "teaPct": 5.8 }
+    ]
+  },
+  {
+    "id": "qcm-0000-0000-0000-000000000004", "analyzerId": "anz-0000-0000-0000-000000000002", "name": "ClinChem Multi Control Level 2", "level": "LEVEL_2_NORMAL",
+    "lotNumber": "CCM2-5582", "manufacturer": "Bio-Rad Lyphochek", "expiryDate": "2027-06-30", "openedAt": "2026-09-25", "openStabilityDays": 14,
+    "targets": [
+      { "testCode": "GLU", "targetMean": 12.5, "targetSd": 0.4, "unit": "ммоль/л", "teaPct": 10 },
+      { "testCode": "CREAT", "targetMean": 420, "targetSd": 15.0, "unit": "мкмоль/л", "teaPct": 15 },
+      { "testCode": "ALT", "targetMean": 120, "targetSd": 6.0, "unit": "Од/л", "teaPct": 20 },
+      { "testCode": "K", "targetMean": 6.2, "targetSd": 0.15, "unit": "ммоль/л", "teaPct": 5.8 }
+    ]
+  }
+]

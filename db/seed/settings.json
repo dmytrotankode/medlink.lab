@@ -1,0 +1,20 @@
+{
+  "name": "Клініко-діагностична лабораторія «MedLink»",
+  "edrpou": "43215678",
+  "address": "01001, м. Київ, вул. Лабораторна, 1",
+  "phone": "+380 (44) 200-00-01",
+  "email": "lab@medlink.ua",
+  "licenseNumber": "Ліцензія МОЗ України АЕ №459120 від 12.03.2024",
+  "directorName": "Мельник Вікторія Степанівна",
+  "workingHours": "Пн–Пт 07:30–19:00, Сб 08:00–14:00",
+  "orderNumberMask": "{yyMM}-{000000}",
+  "barcodePrefix": null,
+  "reportFooter": "Результати лабораторних досліджень не є діагнозом та потребують інтерпретації лікарем. Бланк сформовано ЛІС MedLink 4.0.",
+  "panicPhone": "+380 (44) 200-00-99",
+  "coldChainMinC": 2.0,
+  "coldChainMaxC": 8.0,
+  "labelPrinterHost": "192.168.1.200",
+  "labelPrinterPort": 9100,
+  "labelPrinterName": "Zebra ZD421 (пункт забору №1)",
+  "reportTemplates": { "final": true, "preliminary": true, "cito": true, "showPreviousValues": true, "showQr": true }
+}

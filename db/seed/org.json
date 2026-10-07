@@ -1,0 +1,35 @@
+{
+  "departments": [
+    { "id": "dept-0000-0000-0000-000000000001", "code": "KDL", "name": "Клініко-діагностична лабораторія (центральна)", "departmentType": "LABORATORY", "address": "м. Київ, вул. Лабораторна, 1", "phone": "+380442000001" },
+    { "id": "dept-0000-0000-0000-000000000002", "code": "CP-01", "name": "Пункт забору біоматеріалу №1", "departmentType": "COLLECTION_POINT", "address": "м. Київ, просп. Перемоги, 25", "phone": "+380442000002" },
+    { "id": "dept-0000-0000-0000-000000000003", "code": "BR-PECH", "name": "Філія «Печерськ»", "departmentType": "BRANCH", "address": "м. Київ, вул. Басейна, 10", "phone": "+380442000003" }
+  ],
+  "employees": [
+    { "id": "emp-0000-0000-0000-000000000001", "fullName": "Мельник Вікторія Степанівна", "positionName": "Завідувач КДЛ", "specialityName": "Клінічна лабораторна діагностика", "labRole": "LAB_ADMIN", "departmentId": "dept-0000-0000-0000-000000000001", "phone": "+380671000001", "email": "melnyk@medlink.ua", "digitalSignatureCertId": "CERT-KEP-45AF12" },
+    { "id": "emp-0000-0000-0000-000000000002", "fullName": "Коваленко Олег Васильович", "positionName": "Лікар-лаборант", "specialityName": "Клінічна лабораторна діагностика", "labRole": "LAB_DOCTOR", "departmentId": "dept-0000-0000-0000-000000000001", "phone": "+380671000002", "email": "kovalenko@medlink.ua", "digitalSignatureCertId": "CERT-KEP-88BC99" },
+    { "id": "emp-0000-0000-0000-000000000003", "fullName": "Шевченко Ірина Петрівна", "positionName": "Фельдшер-лаборант", "specialityName": "Лабораторна справа", "labRole": "LAB_TECHNICIAN", "departmentId": "dept-0000-0000-0000-000000000001", "phone": "+380671000003", "email": "shevchenko@medlink.ua" },
+    { "id": "emp-0000-0000-0000-000000000004", "fullName": "Бондар Наталія Іванівна", "positionName": "Медична сестра пункту забору", "specialityName": "Сестринська справа", "labRole": "PHLEBOTOMIST", "departmentId": "dept-0000-0000-0000-000000000002", "phone": "+380671000004", "email": "bondar@medlink.ua" },
+    { "id": "emp-0000-0000-0000-000000000005", "fullName": "Ткаченко Андрій Миколайович", "positionName": "Кур'єр медичної логістики", "specialityName": "Логістика", "labRole": "LOGISTICS_COURIER", "departmentId": "dept-0000-0000-0000-000000000002", "phone": "+380671000005", "email": "tkachenko@medlink.ua" },
+    { "id": "emp-0000-0000-0000-000000000006", "fullName": "Лисенко Оксана Юріївна", "positionName": "Реєстратор", "specialityName": "Реєстратура", "labRole": "REGISTRAR", "departmentId": "dept-0000-0000-0000-000000000003", "phone": "+380671000006", "email": "lysenko@medlink.ua" }
+  ],
+  "patients": [
+    { "id": "pat-0000-0000-0000-000000000001", "lastName": "Мельник", "firstName": "Юрій", "secondName": "Володимирович", "birthDate": "1982-04-12", "gender": "M", "phone": "+380671112233", "email": "y.melnyk@example.ua", "taxId": "2987102918", "address": "м. Київ, вул. Хрещатик, 1, кв. 5" },
+    { "id": "pat-0000-0000-0000-000000000002", "lastName": "Коваленко", "firstName": "Олена", "secondName": "Сергіївна", "birthDate": "1985-09-24", "gender": "F", "phone": "+380504445566", "email": "o.kovalenko@example.ua", "taxId": "3128409124", "address": "м. Київ, просп. Науки, 12" },
+    { "id": "pat-0000-0000-0000-000000000003", "lastName": "Бондаренко", "firstName": "Ігор", "secondName": "Васильович", "birthDate": "1976-11-03", "gender": "M", "phone": "+380637778899", "email": "i.bondarenko@example.ua", "taxId": "2812401923", "address": "м. Київ, вул. Садова, 7" },
+    { "id": "pat-0000-0000-0000-000000000004", "lastName": "Коваль", "firstName": "Ганна", "secondName": "Василівна", "birthDate": "1998-09-03", "gender": "F", "phone": "+380507778899", "email": "h.koval@example.ua", "taxId": "3600112233", "address": "м. Київ, вул. Басейна, 3" },
+    { "id": "pat-0000-0000-0000-000000000005", "lastName": "Шевчук", "firstName": "Марія", "secondName": "Олександрівна", "birthDate": "2024-06-15", "gender": "F", "phone": "+380991234567", "email": null, "taxId": null, "address": "м. Київ, вул. Дитяча, 2" },
+    { "id": "pat-0000-0000-0000-000000000006", "lastName": "Гриценко", "firstName": "Петро", "secondName": "Іванович", "birthDate": "1949-02-20", "gender": "M", "phone": "+380972223344", "email": null, "taxId": "1795300412", "address": "м. Київ, бул. Лесі Українки, 20" }
+  ],
+  "referrals": [
+    { "id": "ref-0000-0000-0000-000000000001", "referralCode": "0001-2026-A7K3", "patientId": "pat-0000-0000-0000-000000000001", "serviceCode": "LAB-BIOCHEM", "serviceName": "Біохімічний аналіз крові", "category": "laboratory_procedure", "requesterDoctorId": "emp-0000-0000-0000-000000000002", "requesterOrganization": "КНП «Київська міська клінічна лікарня №1»", "status": "active" },
+    { "id": "ref-0000-0000-0000-000000000002", "referralCode": "0002-2026-B8M4", "patientId": "pat-0000-0000-0000-000000000002", "serviceCode": "LAB-CBC", "serviceName": "Загальний аналіз крові", "category": "laboratory_procedure", "requesterDoctorId": "emp-0000-0000-0000-000000000002", "requesterOrganization": "Амбулаторія сімейної медицини №3", "status": "active" }
+  ],
+  "services": [
+    { "id": "svc-0000-0000-0000-000000000001", "code": "LAB-CBC", "name": "Загальний аналіз крові розгорнутий", "price": 250, "labProfileCode": "PROF_CBC" },
+    { "id": "svc-0000-0000-0000-000000000002", "code": "LAB-BIOCHEM", "name": "Біохімічний аналіз крові (базовий)", "price": 550, "labProfileCode": "PROF_BIOCHEM_BASE" },
+    { "id": "svc-0000-0000-0000-000000000003", "code": "LAB-COAG", "name": "Коагулограма", "price": 300, "labProfileCode": "PROF_COAG" },
+    { "id": "svc-0000-0000-0000-000000000004", "code": "LAB-THYROID", "name": "Тиреоїдна панель", "price": 350, "labProfileCode": "PROF_THYROID" },
+    { "id": "svc-0000-0000-0000-000000000005", "code": "LAB-URINE", "name": "Загальний аналіз сечі", "price": 120, "labProfileCode": "PROF_URINE" },
+    { "id": "svc-0000-0000-0000-000000000006", "code": "LAB-LIPID", "name": "Ліпідограма", "price": 380, "labProfileCode": "PROF_LIPID" }
+  ]
+}
