@@ -1,0 +1,409 @@
+// MedLink LIS 4.0 — глобальні стилі (відтворення вигляду evomis / прототипу run_prototype.html)
+
+body
+  background-color $medlink-bg
+  color #333333
+  font-size 14.5px
+
+::-webkit-scrollbar
+  width 8px
+  height 8px
+  background-color #f5f5f5
+::-webkit-scrollbar-thumb
+  border-radius 4px
+  background-color #c1c1c1
+::-webkit-scrollbar-thumb:hover
+  background-color #9e9e9e
+
+// ---------- Header ----------
+#main-header
+  background-color #ffffff
+  border-bottom 1px solid $medlink-border
+  color #333333
+  box-shadow 0 1px 3px rgba(0, 0, 0, 0.04)
+
+.brand-gradient-line
+  height 3px
+  width 100%
+  background $medlink-gradient
+
+.brand-logo-box
+  width 34px
+  height 34px
+  border-radius 6px
+  background $primary
+  display flex
+  align-items center
+  justify-content center
+  color white
+
+.header-chip
+  font-size 12.5px
+  font-weight 600
+  border-radius 14px
+  padding 2px 10px
+  border 1px solid $medlink-border
+  background #fff
+  display inline-flex
+  align-items center
+  gap 6px
+  white-space nowrap
+
+.header-chip--ok
+  border-color rgba(33, 186, 69, 0.4)
+  color #1e7e34
+  background rgba(33, 186, 69, 0.06)
+.header-chip--bad
+  border-color rgba(208, 79, 69, 0.5)
+  color $negative
+  background rgba(208, 79, 69, 0.06)
+.header-chip--warn
+  border-color rgba(242, 192, 55, 0.7)
+  color #8a6d00
+  background rgba(242, 192, 55, 0.12)
+.header-chip--muted
+  color $medlink-readonly
+
+// ---------- Drawer ----------
+.nav-drawer
+  background-color $dark !important
+  color #e0e0e0 !important
+
+.drawer-header
+  border-bottom 1px solid #333333
+  background-color #1a1a1a
+  padding 10px 14px
+
+.drawer-header-title
+  font-size 11px
+  letter-spacing 0.08em
+  font-weight 700
+  color #9e9e9e
+  text-transform uppercase
+
+.nav-drawer .q-item
+  color #c5c5c5 !important
+  border-left 4px solid transparent
+  transition all 0.15s ease
+  min-height 36px
+  padding 5px 14px 5px 12px
+  font-size 13.5px
+
+.nav-drawer .q-item:hover
+  background-color rgba(255, 255, 255, 0.06) !important
+  color #ffffff !important
+
+.nav-drawer .q-item .q-icon
+  color #828999 !important
+
+.nav-drawer .nav-active-item
+  background-color rgba(255, 255, 255, 0.12) !important
+  color #ffffff !important
+  border-left 4px solid $primary !important
+  font-weight 600
+
+.nav-drawer .nav-active-item .q-icon
+  color #42a5f5 !important
+
+.nav-drawer .q-item__label--header
+  color #9e9e9e
+  font-size 10.5px
+  letter-spacing 0.08em
+  font-weight 700
+  text-transform uppercase
+  padding 12px 14px 4px
+
+.nav-drawer .q-separator
+  background rgba(255, 255, 255, 0.08)
+
+// ---------- Cards / tables ----------
+.medlink-card
+  border-radius 4px
+  border 1px solid $medlink-border
+  box-shadow 0 1px 3px rgba(0, 0, 0, 0.04)
+  background #ffffff
+
+.medlink-card__title
+  font-size 14.5px
+  font-weight 700
+  color #374151
+  padding 10px 16px
+  border-bottom 1px solid #eef0f2
+  background #fafbfc
+  display flex
+  align-items center
+  justify-content space-between
+  gap 8px
+
+.q-table thead th
+  background-color #f8fafc
+  color #475569
+  font-weight 700
+  font-size 13px
+  border-bottom 1px solid #cbd5e1
+
+.q-table tbody tr:hover
+  background-color $medlink-hover-row !important
+
+.q-table tbody td
+  font-size 13.5px
+
+.q-table tbody tr.row-selected
+  background-color #dce7f2 !important
+
+// Кодування рядків черги за ТЗ 8.1
+.row-status--closed td
+  background-color #f3f4f6
+  color #6b7280
+.row-status--rejected td
+  background-color #fff8dc
+.row-status--cancelled td
+  background-color #fde8e8
+.row-status--overdue td
+  background-color #ffe0b2
+.row-status--cito td:first-child
+  box-shadow inset 4px 0 0 $negative
+
+// ---------- Page header ----------
+.page-header
+  display flex
+  align-items flex-start
+  justify-content space-between
+  gap 16px
+  margin-bottom 14px
+  padding-bottom 10px
+  border-bottom 1px solid $medlink-border
+
+.page-header__title
+  font-size 21px
+  font-weight 700
+  color #1f2937
+  line-height 1.2
+  display flex
+  align-items center
+  gap 10px
+
+.page-header__subtitle
+  font-size 13px
+  color #6b7280
+  margin-top 4px
+
+.section-title
+  font-size 13px
+  font-weight 700
+  text-transform uppercase
+  letter-spacing 0.05em
+  color #475569
+  margin-bottom 8px
+
+// ---------- KPI tiles ----------
+.kpi-tile
+  background #fff
+  border 1px solid $medlink-border
+  border-radius 4px
+  padding 10px 14px
+  min-height 70px
+  display flex
+  flex-direction column
+  justify-content center
+  gap 2px
+.kpi-tile__label
+  font-size 12px
+  color #6b7280
+  text-transform uppercase
+  letter-spacing 0.04em
+.kpi-tile__value
+  font-size 24px
+  font-weight 700
+  color #1f2937
+  line-height 1.1
+.kpi-tile__hint
+  font-size 12px
+  color #9ca3af
+.kpi-tile--accent
+  border-top 3px solid $primary
+.kpi-tile--negative
+  border-top 3px solid $negative
+.kpi-tile--warning
+  border-top 3px solid $warning
+.kpi-tile--positive
+  border-top 3px solid $positive
+
+// ---------- Result value colouring ----------
+.val-normal
+  color #1e7e34
+.val-abnormal
+  color #b45309
+  font-weight 600
+.val-critical
+  color #fff
+  background $negative
+  padding 1px 8px
+  border-radius 3px
+  font-weight 700
+  animation panic-pulse 1.6s infinite
+.val-empty
+  color #9ca3af
+
+@keyframes panic-pulse
+  0%, 100%
+    opacity 1
+  50%
+    opacity 0.65
+
+// ---------- Barcode sticker 40x25 ----------
+.barcode-sticker
+  width 302px
+  height 189px
+  border 1px solid #000
+  padding 8px 10px
+  background #fff
+  font-family Consolas, 'JetBrains Mono', monospace
+  color #000
+  margin 0 auto
+  box-shadow 0 2px 4px rgba(0, 0, 0, 0.08)
+  display flex
+  flex-direction column
+  justify-content space-between
+
+// ---------- Cryo grid ----------
+.cryo-grid-8x12
+  display grid
+  grid-template-columns 28px repeat(12, 1fr)
+  gap 4px
+  background #f8fafc
+  padding 10px
+  border-radius 4px
+  border 1px solid $medlink-border
+
+.cryo-cell
+  aspect-ratio 1 / 1
+  border-radius 3px
+  display flex
+  align-items center
+  justify-content center
+  font-size 10px
+  font-weight 600
+  cursor pointer
+  transition all 0.15s
+  user-select none
+  border 1px solid transparent
+  min-height 30px
+.cryo-cell:hover
+  transform scale(1.08)
+  z-index 2
+  box-shadow 0 2px 4px rgba(0, 0, 0, 0.15)
+.cryo-cell--empty
+  background #fff
+  color #94a3b8
+  border-color #e2e8f0
+.cryo-cell--selected
+  border 2px solid $dark !important
+  box-shadow 0 0 0 2px $primary
+  z-index 3
+.cryo-rowlabel
+  display flex
+  align-items center
+  justify-content center
+  font-weight 700
+  color #475569
+  font-size 12px
+
+// ---------- misc ----------
+.mono
+  font-family Consolas, 'JetBrains Mono', monospace
+.text-readonly
+  color $medlink-readonly
+.pipeline-step
+  display flex
+  align-items center
+  gap 8px
+  padding 6px 10px
+  border-radius 4px
+  background #f8fafc
+  border 1px solid #e2e8f0
+  font-size 12px
+  color #475569
+.pipeline-step--done
+  border-color rgba(33, 186, 69, 0.4)
+  background rgba(33, 186, 69, 0.05)
+  color #1e7e34
+.pipeline-step--active
+  background rgba(66, 116, 167, 0.08)
+  border-color $primary
+  color #1e3a5f
+  font-weight 600
+.pipeline-num
+  width 20px
+  height 20px
+  border-radius 50%
+  background #cbd5e1
+  color #475569
+  display flex
+  align-items center
+  justify-content center
+  font-size 11px
+  font-weight 700
+  flex-shrink 0
+.pipeline-step--done .pipeline-num
+  background $positive
+  color #fff
+.pipeline-step--active .pipeline-num
+  background $primary
+  color #fff
+
+.tat-bar
+  height 22px
+  border-radius 3px
+  display flex
+  align-items center
+  padding 0 8px
+  font-size 11px
+  font-weight 600
+  color #fff
+  transition width 0.4s ease
+  min-width 28px
+
+.sir-chip
+  font-weight 700
+  min-width 26px
+  text-align center
+  border-radius 4px
+  padding 1px 6px
+  color #fff
+  display inline-block
+.sir-S
+  background #21ba45
+.sir-I
+  background #f2c037
+  color #333
+.sir-R
+  background #d04f45
+
+.json-diff
+  font-family Consolas, monospace
+  font-size 12px
+  white-space pre-wrap
+  background #f8fafc
+  border 1px solid #e2e8f0
+  border-radius 4px
+  padding 8px
+  max-height 320px
+  overflow auto
+.json-diff .diff-removed
+  background #fde8e8
+  color #991b1b
+.json-diff .diff-added
+  background #dcfce7
+  color #166534
+
+.lj-svg
+  width 100%
+  height 300px
+  overflow visible
+
+@media (max-width: 600px)
+  .page-header__title
+    font-size 18px
+  .kpi-tile__value
+    font-size 20px
