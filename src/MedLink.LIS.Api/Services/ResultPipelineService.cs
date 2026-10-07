@@ -245,7 +245,7 @@ public sealed class ResultPipelineService
         return new PatientContext
         {
             Gender = patient?.Gender ?? "U",
-            AgeDays = patient?.BirthDate.HasValue == true ? AgeUnits.AgeDays(patient.BirthDate.Value, at) : 30 * 365.25,
+            AgeDays = patient?.Birthday.HasValue == true ? AgeUnits.AgeDays(patient.Birthday.Value, at) : 30 * 365.25,
             IsPregnant = order.IsPregnant, PregnancyWeek = order.PregnancyWeek, MenstrualPhase = order.MenstrualPhase, Icd10Code = order.Icd10Code,
             MethodCode = def.MethodCode
         };

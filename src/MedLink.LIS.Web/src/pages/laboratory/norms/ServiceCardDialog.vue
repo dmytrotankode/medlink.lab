@@ -28,7 +28,7 @@
             <div class="row q-col-gutter-md">
               <div class="col-12 col-md-6">
                 <div class="medlink-card q-pa-md">
-                  <q-banner v-if="profile && profile.misServiceId" dense rounded class="bg-blue-1 text-grey-9 q-mb-sm"><q-icon name="link" color="primary" /> Джерело: довідник послуг MedLink (dct_service, ID {{ profile.misServiceId }}). Код, назва та ціна — лише для читання; лабораторні атрибути редагуються тут.</q-banner>
+                  <q-banner v-if="profile && profile.organizationServiceId" dense rounded class="bg-blue-1 text-grey-9 q-mb-sm"><q-icon name="link" color="primary" /> Джерело: прайс послуг MedLink (org_organization_service, ID {{ profile.organizationServiceId }}). Назва та ціна — лише для читання; лабораторні атрибути редагуються тут.</q-banner>
                   <q-markup-table dense flat>
                     <tbody>
                       <tr><td class="text-grey-7">Код</td><td class="mono">{{ profile && profile.code }}</td></tr>

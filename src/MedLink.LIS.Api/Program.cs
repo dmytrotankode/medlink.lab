@@ -68,6 +68,7 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<INumeratorService, NumeratorService>();
 builder.Services.AddScoped<OrderStateService>();
 builder.Services.AddScoped<TubePlanService>();
+builder.Services.AddScoped<OrgDictionaryService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<SampleService>();
 builder.Services.AddScoped<ResultPipelineService>();
@@ -99,10 +100,24 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<RetentionCleanupSe
 
 var app = builder.Build();
 
+// --- Експорт DDL PostgreSQL для перенесення в MedLink: --export-pg-ddl <файл> (без запуску сервера) ---
+var ddlArg = Array.IndexOf(args, "--export-pg-ddl");
+if (ddlArg >= 0)
+{
+    using var ddlScope = app.Services.CreateScope();
+    var target = ddlArg + 1 < args.Length ? args[ddlArg + 1] : "medlink_lis_schema.sql";
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(target))!);
+    File.WriteAllText(target, PostgresDdlGenerator.Generate(ddlScope.ServiceProvider.GetRequiredService<LisDbContext>()), new System.Text.UTF8Encoding(false));
+    Console.WriteLine($"DDL PostgreSQL збережено: {Path.GetFullPath(target)}");
+    return;
+}
+
 // --- Створення схеми та сід (ідемпотентно, лише порожні таблиці) ---
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<LisDbContext>();
+    var legacyBackup = await SchemaUpgrader.BackupIfIncompatibleAsync(db);
+    if (legacyBackup != null) app.Logger.LogWarning("БД попередньої структури (до вирівнювання з MedLink) збережено як {Backup}; створюється нова БД", legacyBackup);
     await db.Database.EnsureCreatedAsync();
     foreach (var change in await SchemaUpgrader.UpgradeAsync(db)) app.Logger.LogWarning("Оновлення схеми БД: {Sql}", change);
     await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");

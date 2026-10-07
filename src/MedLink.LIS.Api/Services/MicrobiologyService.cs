@@ -59,11 +59,11 @@ public sealed class MicrobiologyService
         .Include(c => c.Isolates).ThenInclude(i => i.Organism)
         .Include(c => c.Isolates).ThenInclude(i => i.Susceptibilities).ThenInclude(s => s.Antibiotic);
 
-    public async Task<LabCultureOrder> LoadAsync(string id) => await Query().FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted) ?? throw NotFoundException.For("Посів", id);
+    public async Task<LabCultureOrder> LoadAsync(string id) => await Query().FirstOrDefaultAsync(c => c.Id == id && c.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Посів", id);
 
     public async Task<List<object>> ListAsync(string? status)
     {
-        var items = await Query().AsNoTracking().Where(c => !c.IsDeleted && (status == null || c.Status == status.ToUpper())).OrderByDescending(c => c.CreatedOn).ToListAsync();
+        var items = await Query().AsNoTracking().Where(c => c.RecordState != RecordStates.Deleted && (status == null || c.Status == status.ToUpper())).OrderByDescending(c => c.CreatedOn).ToListAsync();
         return items.Select(ToDto).ToList();
     }
 
@@ -71,7 +71,7 @@ public sealed class MicrobiologyService
 
     public object ToDto(LabCultureOrder c) => new
     {
-        c.Id, c.OrderTestId, c.OrderId, orderNumber = c.Order?.OrderNumber, patientName = c.Order?.Patient?.FullName, testCode = c.OrderTest?.TestCode,
+        c.Id, c.OrderTestId, c.OrderId, orderNumber = c.Order?.OrderNumber, patientName = c.Order?.Patient?.Caption, testCode = c.OrderTest?.TestCode,
         c.SpecimenLocus, c.IncubationStart, c.IncubationHoursRecommended, incubationHoursElapsed = Math.Round((DateTime.UtcNow - c.IncubationStart).TotalHours, 1),
         c.CultureMedium, c.GrowthDetected, c.GrowthIntensity, c.CfuPerMl, c.PreliminaryReport, c.FinalMicroscopyDescription, c.Status, c.CreatedOn,
         isolates = c.Isolates.OrderBy(i => i.IsolateNumber).Select(i => new
@@ -88,7 +88,7 @@ public sealed class MicrobiologyService
         _policy.Require("Створення посіву", Roles);
         if (string.IsNullOrWhiteSpace(req.OrderTestId)) throw ValidationException.Field("orderTestId", "Вкажіть тест замовлення (посів)");
         var test = await _db.OrderTests.Include(t => t.Order).FirstOrDefaultAsync(t => t.Id == req.OrderTestId) ?? throw NotFoundException.For("Тест замовлення", req.OrderTestId);
-        if (await _db.Cultures.AnyAsync(c => c.OrderTestId == test.Id && !c.IsDeleted)) throw new ConflictException("Для цього тесту посів уже створено");
+        if (await _db.Cultures.AnyAsync(c => c.OrderTestId == test.Id && c.RecordState != RecordStates.Deleted)) throw new ConflictException("Для цього тесту посів уже створено");
         var c = new LabCultureOrder
         {
             OrderTestId = test.Id, OrderId = test.OrderId, SpecimenLocus = req.SpecimenLocus, CultureMedium = req.CultureMedium ?? "Blood Agar",
@@ -262,7 +262,7 @@ public sealed class MicrobiologyService
         string H(string? s) => System.Net.WebUtility.HtmlEncode(s ?? "");
         sb.Append("<!doctype html><html lang=\"uk\"><head><meta charset=\"utf-8\"><title>Бактеріологічне дослідження</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:20mm}h1{font-size:16px;color:#4274A7}table{border-collapse:collapse;width:100%;margin:8px 0}td,th{border:1px solid #999;padding:4px 6px}th{background:#eef}.S{color:#15803d;font-weight:bold}.I{color:#b45309;font-weight:bold}.R{color:#b91c1c;font-weight:bold}.alert{background:#fee2e2;padding:6px;border:1px solid #b91c1c}@page{size:A4}</style></head><body>");
         sb.Append($"<h1>{H(lab?.Name)}</h1><p>{H(lab?.Address)} · {H(lab?.Phone)}</p><h2>Бактеріологічне дослідження з антибіотикограмою (EUCAST v14.0)</h2>");
-        sb.Append($"<p><b>Пацієнт:</b> {H(c.Order?.Patient?.FullName)} · <b>Замовлення:</b> {H(c.Order?.OrderNumber)} · <b>Локус:</b> {H(c.SpecimenLocus)} · <b>Середовище:</b> {H(c.CultureMedium)}</p>");
+        sb.Append($"<p><b>Пацієнт:</b> {H(c.Order?.Patient?.Caption)} · <b>Замовлення:</b> {H(c.Order?.OrderNumber)} · <b>Локус:</b> {H(c.SpecimenLocus)} · <b>Середовище:</b> {H(c.CultureMedium)}</p>");
         sb.Append($"<p><b>Інкубація:</b> з {c.IncubationStart:dd.MM.yyyy HH:mm} ({c.IncubationHoursRecommended} год) · <b>Ріст:</b> {(c.GrowthDetected == true ? $"виявлено, {H(c.GrowthIntensity)} {H(c.CfuPerMl)}" : c.GrowthDetected == false ? "не виявлено" : "в інкубації")} · <b>Статус:</b> {c.Status}</p>");
         if (!string.IsNullOrEmpty(c.FinalMicroscopyDescription)) sb.Append($"<p><b>Мікроскопія:</b> {H(c.FinalMicroscopyDescription)}</p>");
         foreach (var i in c.Isolates.OrderBy(i => i.IsolateNumber))

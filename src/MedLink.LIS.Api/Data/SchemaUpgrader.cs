@@ -12,6 +12,28 @@ namespace MedLink.LIS.Api.Data;
 
 public static class SchemaUpgrader
 {
+    /// <summary>
+    /// БД версії до вирівнювання з MedLink (v4.0: is_deleted замість record_state, без cmn_person) несумісна структурно.
+    /// Файл перейменовується в *.pre-medlink-&lt;час&gt;.bak (дані не втрачаються), далі створюється нова БД. Повертає шлях копії або null.
+    /// </summary>
+    public static async Task<string?> BackupIfIncompatibleAsync(LisDbContext db)
+    {
+        if (!db.Database.IsSqlite()) return null;
+        var path = db.Database.GetDbConnection().DataSource;
+        if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+        var tables = (await db.Database.SqlQueryRaw<string>("SELECT name AS \"Value\" FROM sqlite_master WHERE type = 'table'").ToListAsync()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!tables.Contains("lab_order")) return null;
+        var orderColumns = await db.Database.SqlQueryRaw<string>("SELECT name AS \"Value\" FROM pragma_table_info('lab_order')").ToListAsync();
+        var legacy = !tables.Contains("cmn_person") || orderColumns.Contains("is_deleted", StringComparer.OrdinalIgnoreCase);
+        if (!legacy) return null;
+        await db.Database.CloseConnectionAsync();
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        var backup = $"{path}.pre-medlink-{DateTime.Now:yyyyMMdd-HHmmss}.bak";
+        File.Move(path, backup);
+        foreach (var suffix in new[] { "-wal", "-shm" }) if (File.Exists(path + suffix)) File.Move(path + suffix, backup + suffix);
+        return backup;
+    }
+
     public static async Task<List<string>> UpgradeAsync(LisDbContext db)
     {
         var applied = new List<string>();

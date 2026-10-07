@@ -60,7 +60,7 @@ public sealed class ReportService
         if (order.Status is OrderStatuses.New or OrderStatuses.Collected or OrderStatuses.InTransit or OrderStatuses.Received)
             throw new ConflictException($"Бланк недоступний: замовлення {order.OrderNumber} у статусі {order.Status} (немає результатів)");
         var lab = await _db.Settings.AsNoTracking().FirstOrDefaultAsync() ?? new LabSettings();
-        var employees = await _db.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => e.FullName);
+        var employees = await _db.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => e.Caption ?? "");
         var baseUrl = (_config["Lab:PublicBaseUrl"] ?? (host != null ? $"http://{host}" : "http://localhost:5055")).TrimEnd('/');
         var token = order.VerifyToken ?? _state.VerifyToken(order.Id, order.ReleasedAt ?? order.CompletedAt ?? order.OrderDatetime);
         var url = $"{baseUrl}/verify/{token}";
@@ -89,7 +89,7 @@ public sealed class ReportService
         ResultFlags.Low => "↓", ResultFlags.High => "↑", ResultFlags.CritLow => "↓↓ КРИТ", ResultFlags.CritHigh => "↑↑ КРИТ", ResultFlags.Abnormal => "!", _ => ""
     };
 
-    private static string Age(MisPatientCard? p, DateTime at) => p?.BirthDate == null ? "" : $"{AgeUnits.AgeYears(p.BirthDate.Value, at)} р.";
+    private static string Age(MisPatientCard? p, DateTime at) => p?.Birthday == null ? "" : $"{AgeUnits.AgeYears(p.Birthday.Value, at)} р.";
 
     public async Task<string> HtmlAsync(string orderId, string? host, string? variant = null)
     {
@@ -107,8 +107,8 @@ public sealed class ReportService
         if (m.IsPreliminary) sb.Append("<div style=\"text-align:center\"><span class=\"prelim\">ПОПЕРЕДНІЙ БЛАНК — результати не видано</span></div>");
         var p = o.Patient;
         sb.Append("<div class=\"meta\"><table>");
-        sb.Append($"<tr><td><b>Пацієнт:</b></td><td>{H(p?.FullName)}</td></tr><tr><td><b>Дата народження:</b></td><td>{(p?.BirthDate?.ToString("dd.MM.yyyy") ?? "—")} ({Age(p, o.OrderDatetime)}), стать: {(p?.Gender == "M" ? "чоловіча" : p?.Gender == "F" ? "жіноча" : "—")}</td></tr>");
-        sb.Append($"<tr><td><b>Телефон:</b></td><td>{H(p?.Phone)}</td></tr><tr><td><b>Напрямок:</b></td><td>{H(o.Doctor?.FullName ?? "—")} {(o.Department != null ? "· " + H(o.Department.Name) : "")}</td></tr></table>");
+        sb.Append($"<tr><td><b>Пацієнт:</b></td><td>{H(p?.Caption)}</td></tr><tr><td><b>Дата народження:</b></td><td>{(p?.Birthday?.ToString("dd.MM.yyyy") ?? "—")} ({Age(p, o.OrderDatetime)}), стать: {(p?.Gender == "M" ? "чоловіча" : p?.Gender == "F" ? "жіноча" : "—")}</td></tr>");
+        sb.Append($"<tr><td><b>Телефон:</b></td><td>{H(p?.Person?.Phone)}</td></tr><tr><td><b>Напрямок:</b></td><td>{H(o.Doctor?.Caption ?? "—")} {(o.Department != null ? "· " + H(o.Department.Caption) : "")}</td></tr></table>");
         sb.Append("<table>");
         sb.Append($"<tr><td><b>Замовлення:</b></td><td>{o.OrderDatetime.ToLocalTime():dd.MM.yyyy HH:mm}{(o.IsUrgentCito ? " <b style=\"color:#b91c1c\">CITO</b>" : "")}</td></tr>");
         var collected = o.Samples.Where(s => s.CollectedAt != null).Select(s => s.CollectedAt).Min();
@@ -204,9 +204,9 @@ public sealed class ReportService
             {
                 r.RelativeItem().Column(cc =>
                 {
-                    cc.Item().Text(t => { t.Span("Пацієнт: ").Bold(); t.Span(p?.FullName ?? ""); });
-                    cc.Item().Text(t => { t.Span("Дата народження: ").Bold(); t.Span($"{p?.BirthDate:dd.MM.yyyy} ({Age(p, o.OrderDatetime)}), стать: {(p?.Gender == "M" ? "чоловіча" : p?.Gender == "F" ? "жіноча" : "—")}"); });
-                    cc.Item().Text(t => { t.Span("Напрямок: ").Bold(); t.Span($"{o.Doctor?.FullName ?? "—"} {(o.Department != null ? "· " + o.Department.Name : "")}"); });
+                    cc.Item().Text(t => { t.Span("Пацієнт: ").Bold(); t.Span(p?.Caption ?? ""); });
+                    cc.Item().Text(t => { t.Span("Дата народження: ").Bold(); t.Span($"{p?.Birthday:dd.MM.yyyy} ({Age(p, o.OrderDatetime)}), стать: {(p?.Gender == "M" ? "чоловіча" : p?.Gender == "F" ? "жіноча" : "—")}"); });
+                    cc.Item().Text(t => { t.Span("Напрямок: ").Bold(); t.Span($"{o.Doctor?.Caption ?? "—"} {(o.Department != null ? "· " + o.Department.Caption : "")}"); });
                 });
                 r.RelativeItem().Column(cc =>
                 {

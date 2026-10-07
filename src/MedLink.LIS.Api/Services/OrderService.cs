@@ -46,7 +46,7 @@ public sealed class OrderService
     public async Task<PagedResult<OrderListItemDto>> ListAsync(string? status, DateTime? from, DateTime? to, bool? cito, string? departmentId,
         string? patientId, string? search, PagingQuery paging)
     {
-        var q = _db.Orders.AsNoTracking().Include(o => o.Patient).Include(o => o.Department).Include(o => o.Doctor).Where(o => !o.IsDeleted);
+        var q = _db.Orders.AsNoTracking().Include(o => o.Patient).Include(o => o.Department).Include(o => o.Doctor).Where(o => o.RecordState != RecordStates.Deleted);
         if (!string.IsNullOrWhiteSpace(status))
         {
             var statuses = status.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(s => s.ToUpperInvariant()).ToArray();
@@ -60,15 +60,15 @@ public sealed class OrderService
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim();
-            q = q.Where(o => o.OrderNumber.Contains(s) || o.Patient!.LastName.Contains(s) || o.Patient.FirstName.Contains(s)
-                             || (o.Patient.Phone != null && o.Patient.Phone.Contains(s)) || (o.Patient.TaxId != null && o.Patient.TaxId.Contains(s))
+            q = q.Where(o => o.OrderNumber.Contains(s) || (o.Patient!.Caption != null && o.Patient.Caption.Contains(s))
+                             || (o.Patient.Person!.Phone != null && o.Patient.Person.Phone.Contains(s)) || (o.Patient.Person.Ipn != null && o.Patient.Person.Ipn.Contains(s))
                              || o.Samples.Any(sm => sm.Barcode == s));
         }
         q = paging.Sort?.ToLowerInvariant() switch
         {
             "ordernumber" => paging.Desc ? q.OrderByDescending(o => o.OrderNumber) : q.OrderBy(o => o.OrderNumber),
             "status" => paging.Desc ? q.OrderByDescending(o => o.Status) : q.OrderBy(o => o.Status),
-            "patient" => paging.Desc ? q.OrderByDescending(o => o.Patient!.LastName) : q.OrderBy(o => o.Patient!.LastName),
+            "patient" => paging.Desc ? q.OrderByDescending(o => o.Patient!.Caption) : q.OrderBy(o => o.Patient!.Caption),
             _ => q.OrderByDescending(o => o.IsUrgentCito).ThenByDescending(o => o.OrderDatetime)
         };
 
@@ -76,8 +76,8 @@ public sealed class OrderService
         var items = await q.Skip((paging.SafePage - 1) * paging.SafePageSize).Take(paging.SafePageSize)
             .Select(o => new
             {
-                o.Id, o.OrderNumber, o.PatientId, PatientName = o.Patient!.LastName + " " + o.Patient.FirstName + " " + (o.Patient.SecondName ?? ""),
-                o.Patient.BirthDate, o.Patient.Gender, o.OrderDatetime, o.Status, o.IsUrgentCito, DepartmentName = o.Department!.Name, DoctorName = o.Doctor!.FullName,
+                o.Id, o.OrderNumber, o.PatientId, PatientName = o.Patient!.Caption ?? "",
+                o.Patient.Birthday, o.Patient.GenderId, o.OrderDatetime, o.Status, o.IsUrgentCito, DepartmentName = o.Department!.Caption, DoctorName = o.Doctor!.Caption,
                 TestsTotal = o.Tests.Count, TestsVerified = o.Tests.Count(t => t.Status == OrderTestStatuses.Verified || t.Status == OrderTestStatuses.AutoVerified),
                 SamplesCount = o.Samples.Count, HasCritical = o.Tests.Any(t => t.Result != null && (t.Result.Flag == "CRIT_HIGH" || t.Result.Flag == "CRIT_LOW")),
                 o.TotalPrice
@@ -89,7 +89,7 @@ public sealed class OrderService
             Items = items.Select(o => new OrderListItemDto
             {
                 Id = o.Id, OrderNumber = o.OrderNumber, PatientId = o.PatientId, PatientName = o.PatientName.Trim(),
-                PatientAgeGender = DtoMapper.AgeGender(new MisPatientCard { BirthDate = o.BirthDate, Gender = o.Gender }, o.OrderDatetime),
+                PatientAgeGender = DtoMapper.AgeGender(o.Birthday, MedLinkEnums.GenderCode(o.GenderId), o.OrderDatetime),
                 OrderDatetime = o.OrderDatetime, Status = o.Status, IsUrgentCito = o.IsUrgentCito, DepartmentName = o.DepartmentName, DoctorName = o.DoctorName,
                 TestsTotal = o.TestsTotal, TestsVerified = o.TestsVerified, SamplesCount = o.SamplesCount, HasCritical = o.HasCritical, TotalPrice = o.TotalPrice,
                 AllowedActions = _policy.AllowedActions(LisEntities.Order, o.Status)
@@ -146,16 +146,10 @@ public sealed class OrderService
         {
             if (string.IsNullOrWhiteSpace(req.NewPatient.LastName) || string.IsNullOrWhiteSpace(req.NewPatient.FirstName))
                 throw ValidationException.Field("newPatient", "Прізвище та ім'я пацієнта обов'язкові");
-            patient = new MisPatientCard
-            {
-                LastName = req.NewPatient.LastName.Trim(), FirstName = req.NewPatient.FirstName.Trim(), SecondName = req.NewPatient.SecondName?.Trim(),
-                BirthDate = req.NewPatient.BirthDate, Gender = NormalizeGender(req.NewPatient.Gender), Phone = req.NewPatient.Phone, Email = req.NewPatient.Email,
-                TaxId = req.NewPatient.TaxId, Address = req.NewPatient.Address
-            };
-            patient.LastNameLatin = Core.Common.TransliterationKmu2010.ToLatin(patient.LastName);
-            patient.FirstNameLatin = Core.Common.TransliterationKmu2010.ToLatin(patient.FirstName);
+            req.NewPatient.Gender = NormalizeGender(req.NewPatient.Gender);
+            patient = MedLinkPeople.NewPatient(req.NewPatient, MedLinkDefaults.OrganizationId);
             _db.Patients.Add(patient);
-            _audit.Log("CREATE", "mis_patient_card", patient.Id, null, patient);
+            _audit.Log("CREATE", "mis_patient_card", patient.Id, null, req.NewPatient);
         }
         else throw ValidationException.Field("patientId", "Вкажіть patientId або newPatient");
 
@@ -179,7 +173,8 @@ public sealed class OrderService
             MenstrualPhase = NullIfEmpty(req.MenstrualPhase),
             Icd10Code = NullIfEmpty(req.Icd10Code),
             CreatedById = _current.EmployeeId,
-            RepeatOfOrderId = repeatOfOrderId
+            RepeatOfOrderId = repeatOfOrderId,
+            OrganizationId = MedLinkDefaults.OrganizationId
         };
         await ValidateRefsAsync(order);
         _db.Orders.Add(order);
@@ -384,15 +379,26 @@ public sealed class OrderService
         order.VerifyToken = _state.VerifyToken(order.Id, now);
 
         var performer = order.Tests.Select(t => t.Result?.VerifiedById).FirstOrDefault(v => v != null) ?? _current.EmployeeId;
-        _db.DiagnosticReports.Add(new MisDiagnosticReport
+        // [MedLink] mis_diagnostic_report: висновок за замовленням (передача в ЕСОЗ — R2). Код послуги — з каталогу eHealth профілю або е-направлення.
+        var critical = order.Tests.Count(t => t.Result != null && Core.Clinical.ResultFlags.IsCritical(t.Result.Flag));
+        var referral = order.EhealthReferralId == null ? null : await _db.Referrals.AsNoTracking().FirstOrDefaultAsync(r => r.Id == order.EhealthReferralId);
+        var ehealthServiceId = order.Tests.Select(t => t.Profile?.EhealthServiceCatalogServiceId).FirstOrDefault(x => x != null)
+                               ?? referral?.ServiceCatalogServiceId ?? MedLinkEnums.EmptyGuid;
+        var performerName = (await _db.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.Id == performer))?.Caption;
+        var report = new MisDiagnosticReport
         {
-            ReportNumber = order.OrderNumber, PatientId = order.PatientId, ReferralId = order.EhealthReferralId, LabOrderId = order.Id,
-            ServiceName = string.Join("; ", order.Tests.Select(t => t.Profile?.Name ?? t.TestName).Distinct()),
-            PerformerDoctorId = performer, Status = "FINAL", EhealthSynced = false, SignedAt = now,
-            Conclusions = $"Лабораторне дослідження №{order.OrderNumber}: {order.Tests.Count} показників, критичних: {order.Tests.Count(t => t.Result != null && Core.Clinical.ResultFlags.IsCritical(t.Result.Flag))}"
-        });
+            RegNumber = order.OrderNumber, RegDate = now, Caption = string.Join("; ", order.Tests.Select(t => t.Profile?.Name ?? t.TestName).Distinct()),
+            Status = 0, PatientCardId = order.PatientId, OrganizationId = order.OrganizationId ?? MedLinkDefaults.OrganizationId,
+            LegalEntityId = order.OrganizationId ?? MedLinkDefaults.OrganizationId, DivisionId = MedLinkEnums.EmptyGuid, DocumentTypeId = MedLinkEnums.EmptyGuid,
+            EhealthServiceCatalogServiceId = ehealthServiceId, EhealthIncomingMedicalReferralId = order.EhealthReferralId,
+            EffectiveDateTimeStart = order.Samples.Min(s => s.CollectedAt) ?? order.OrderDatetime, EffectiveDateTimeEnd = now, IssuedAt = now,
+            PerformerString = performerName, IsPerformerString = true, IsPrimarySource = true,
+            Description = $"Лабораторне дослідження №{order.OrderNumber}: {order.Tests.Count} показників, критичних: {critical}"
+        };
+        _db.DiagnosticReports.Add(report);
+        order.DiagnosticReportId = report.Id;
 
-        var channel = !string.IsNullOrWhiteSpace(order.Patient?.Email) ? "EMAIL" : "SMS";
+        var channel = !string.IsNullOrWhiteSpace(order.Patient?.Person?.Email) ? "EMAIL" : "SMS";
         _db.Notifications.Add(new LabPatientNotification
         {
             PatientId = order.PatientId, OrderId = order.Id, Channel = channel, Status = "QUEUED",

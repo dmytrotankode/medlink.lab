@@ -7,7 +7,7 @@
         <q-space /><q-btn flat round dense icon="close" v-close-popup />
       </q-card-section>
       <q-card-section style="max-height: 70vh; overflow: auto">
-        <q-banner v-if="schema.sourceHint && (form.misServiceId || name === 'profiles')" dense rounded class="bg-blue-1 text-grey-9 q-mb-sm"><q-icon name="link" color="primary" /> {{ schema.sourceHint }}</q-banner>
+        <q-banner v-if="schema.sourceHint && (form.organizationServiceId || name === 'profiles')" dense rounded class="bg-blue-1 text-grey-9 q-mb-sm"><q-icon name="link" color="primary" /> {{ schema.sourceHint }}</q-banner>
         <div class="row q-col-gutter-sm">
           <template v-for="f in visibleFields">
             <div :key="f.name" :class="`col-12 col-md-${f.col || 12}`">

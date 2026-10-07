@@ -60,7 +60,7 @@ public sealed class WorklistService
             .Include(t => t.Test).ThenInclude(d => d!.LabSection).Include(t => t.Sample).Include(t => t.AssignedAnalyzer)
             .Include(t => t.Order).ThenInclude(o => o!.Patient)
             .Include(t => t.Result).ThenInclude(r => r!.Analyzer)
-            .Where(t => !t.IsDeleted && t.Order!.Status != OrderStatuses.Cancelled);
+            .Where(t => t.RecordState != RecordStates.Deleted && t.Order!.Status != OrderStatuses.Cancelled);
 
         if (!string.IsNullOrWhiteSpace(f.Status))
         {
@@ -83,7 +83,7 @@ public sealed class WorklistService
         if (!string.IsNullOrWhiteSpace(f.Search))
         {
             var s = f.Search.Trim();
-            q = q.Where(t => t.Order!.OrderNumber.Contains(s) || t.Order.Patient!.LastName.Contains(s) || t.Order.Patient.FirstName.Contains(s)
+            q = q.Where(t => t.Order!.OrderNumber.Contains(s) || (t.Order.Patient!.Caption != null && t.Order.Patient.Caption.Contains(s))
                              || (t.Sample != null && t.Sample.Barcode.Contains(s)) || t.TestCode.Contains(s) || t.TestName.Contains(s));
         }
 
@@ -91,7 +91,7 @@ public sealed class WorklistService
         {
             "enteredat" => paging.Desc ? q.OrderByDescending(t => t.Result!.EnteredAt) : q.OrderBy(t => t.Result!.EnteredAt),
             "testcode" => paging.Desc ? q.OrderByDescending(t => t.TestCode) : q.OrderBy(t => t.TestCode),
-            "patient" => paging.Desc ? q.OrderByDescending(t => t.Order!.Patient!.LastName) : q.OrderBy(t => t.Order!.Patient!.LastName),
+            "patient" => paging.Desc ? q.OrderByDescending(t => t.Order!.Patient!.Caption) : q.OrderBy(t => t.Order!.Patient!.Caption),
             _ => q.OrderByDescending(t => t.Order!.IsUrgentCito).ThenByDescending(t => t.Order!.OrderDatetime).ThenBy(t => t.DisplayOrder)
         };
 
@@ -132,7 +132,7 @@ public sealed class WorklistService
     // ------------------------------------------------------------------ panic calls
     public async Task<List<LabPanicCall>> PanicCallsAsync(DateTime? from, DateTime? to)
     {
-        var q = _db.PanicCalls.AsNoTracking().Where(p => !p.IsDeleted);
+        var q = _db.PanicCalls.AsNoTracking().Where(p => p.RecordState != RecordStates.Deleted);
         if (from.HasValue) q = q.Where(p => p.NotifiedAt >= from.Value);
         if (to.HasValue) q = q.Where(p => p.NotifiedAt <= to.Value);
         return await q.OrderByDescending(p => p.NotifiedAt).ToListAsync();
@@ -147,7 +147,7 @@ public sealed class WorklistService
                      ?? throw NotFoundException.For("Результат", req.ResultId);
         var call = new LabPanicCall
         {
-            ResultId = result.Id, OrderId = result.OrderTest!.OrderId, PatientName = result.OrderTest.Order?.Patient?.FullName ?? "",
+            ResultId = result.Id, OrderId = result.OrderTest!.OrderId, PatientName = result.OrderTest.Order?.Patient?.Caption ?? "",
             TestCode = result.OrderTest.TestCode, Value = DtoMapper.FormatValue(result.NumericValue, result.StringValue, 2) + " " + result.Unit,
             DoctorNotifiedName = req.DoctorName, Phone = req.Phone, Department = req.Department, ReadbackConfirmed = req.ReadbackConfirmed,
             NotifiedById = _current.EmployeeId, NotifiedAt = DateTime.UtcNow, Comments = req.Comments
@@ -259,7 +259,7 @@ public sealed class WorklistService
         var i = 0;
         foreach (var t in rows.OrderByDescending(t => t.Order!.IsUrgentCito).ThenBy(t => t.Sample?.Barcode))
         {
-            sb.Append($"<tr><td>{++i}</td><td>{t.Sample?.Barcode}</td><td>{t.Order?.OrderNumber}{(t.Order?.IsUrgentCito == true ? " <b>CITO</b>" : "")}</td><td>{System.Net.WebUtility.HtmlEncode(t.Order?.Patient?.FullName)}</td><td>{t.TestCode} — {System.Net.WebUtility.HtmlEncode(t.TestName)}</td><td style=\"min-width:80px\">{(t.Result == null ? "" : DtoMapper.FormatValue(t.Result.NumericValue, t.Result.StringValue, t.Test?.DecimalPlaces ?? 2))}</td><td>{t.Test?.Unit}</td><td>{t.Result?.ReferenceDisplay}</td><td style=\"min-width:60px\"></td></tr>");
+            sb.Append($"<tr><td>{++i}</td><td>{t.Sample?.Barcode}</td><td>{t.Order?.OrderNumber}{(t.Order?.IsUrgentCito == true ? " <b>CITO</b>" : "")}</td><td>{System.Net.WebUtility.HtmlEncode(t.Order?.Patient?.Caption)}</td><td>{t.TestCode} — {System.Net.WebUtility.HtmlEncode(t.TestName)}</td><td style=\"min-width:80px\">{(t.Result == null ? "" : DtoMapper.FormatValue(t.Result.NumericValue, t.Result.StringValue, t.Test?.DecimalPlaces ?? 2))}</td><td>{t.Test?.Unit}</td><td>{t.Result?.ReferenceDisplay}</td><td style=\"min-width:60px\"></td></tr>");
         }
         sb.Append("</table></body></html>");
         return sb.ToString();

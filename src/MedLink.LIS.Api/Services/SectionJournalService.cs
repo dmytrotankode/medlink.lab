@@ -39,7 +39,7 @@ public sealed class SectionJournalService
     // ------------------------------------------------------------------ sections CRUD
     public async Task<List<object>> ListAsync(bool? isActive)
     {
-        var items = await _db.Sections.AsNoTracking().Include(s => s.Department).Where(s => !s.IsDeleted && (isActive == null || s.IsActive == isActive)).OrderBy(s => s.Name).ToListAsync();
+        var items = await _db.Sections.AsNoTracking().Include(s => s.Department).Where(s => s.RecordState != RecordStates.Deleted && (isActive == null || s.IsActive == isActive)).OrderBy(s => s.Name).ToListAsync();
         var counts = await _db.Tests.AsNoTracking().Where(t => t.LabSectionId != null).GroupBy(t => t.LabSectionId!).Select(g => new { g.Key, n = g.Count() }).ToDictionaryAsync(x => x.Key, x => x.n);
         return items.Select(s => ToDto(s, counts.TryGetValue(s.Id, out var n) ? n : 0)).ToList();
     }
@@ -51,11 +51,11 @@ public sealed class SectionJournalService
     }
 
     public async Task<LabSection> LoadAsync(string idOrCode) =>
-        await _db.Sections.Include(s => s.Department).FirstOrDefaultAsync(s => (s.Id == idOrCode || s.Code == idOrCode) && !s.IsDeleted) ?? throw NotFoundException.For("Підрозділ лабораторії", idOrCode);
+        await _db.Sections.Include(s => s.Department).FirstOrDefaultAsync(s => (s.Id == idOrCode || s.Code == idOrCode) && s.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Підрозділ лабораторії", idOrCode);
 
     private static object ToDto(LabSection s, int testsCount) => new
     {
-        s.Id, s.Code, s.Name, s.SectionType, s.DepartmentId, departmentName = s.Department?.Name, s.JournalMask, s.JournalResetPeriod, s.SecondaryMask,
+        s.Id, s.Code, s.Name, s.SectionType, s.DepartmentId, departmentName = s.Department?.Caption, s.JournalMask, s.JournalResetPeriod, s.SecondaryMask,
         s.AutoReleaseVerified, s.WorkflowTemplateCode, s.IsActive, s.CreatedOn, testsCount, sampleNumber = FormatMask(s.JournalMask, DateTime.UtcNow, 1, 1)
     };
 
@@ -63,7 +63,7 @@ public sealed class SectionJournalService
     {
         _policy.Require("Створення підрозділу лабораторії", LabRoles.Admin);
         Validate(req);
-        if (await _db.Sections.AnyAsync(s => s.Code == req.Code && !s.IsDeleted)) throw new ConflictException($"Підрозділ із кодом {req.Code} вже існує");
+        if (await _db.Sections.AnyAsync(s => s.Code == req.Code && s.RecordState != RecordStates.Deleted)) throw new ConflictException($"Підрозділ із кодом {req.Code} вже існує");
         var s = new LabSection();
         Apply(s, req);
         _db.Sections.Add(s);
@@ -79,7 +79,7 @@ public sealed class SectionJournalService
         if (string.IsNullOrWhiteSpace(req.Code)) req.Code = s.Code;
         if (string.IsNullOrWhiteSpace(req.Name)) req.Name = s.Name;
         Validate(req);
-        if (await _db.Sections.AnyAsync(x => x.Code == req.Code && x.Id != s.Id && !x.IsDeleted)) throw new ConflictException($"Підрозділ із кодом {req.Code} вже існує");
+        if (await _db.Sections.AnyAsync(x => x.Code == req.Code && x.Id != s.Id && x.RecordState != RecordStates.Deleted)) throw new ConflictException($"Підрозділ із кодом {req.Code} вже існує");
         var before = new { s.Code, s.Name, s.SectionType, s.JournalMask, s.JournalResetPeriod, s.AutoReleaseVerified, s.WorkflowTemplateCode, s.IsActive };
         Apply(s, req);
         _audit.Log("UPDATE", "lab_section", s.Id, before, req);
@@ -233,7 +233,7 @@ public sealed class SectionJournalService
             Items = items.Select(j => (object)new
             {
                 j.Id, j.JournalNumber, j.DayNumber, j.SecondaryNumber, j.RegisteredAt, j.RegisteredById, j.Status, j.OrderId, orderNumber = j.Order?.OrderNumber, isCito = j.Order?.IsUrgentCito,
-                patientName = j.Order?.Patient?.FullName, patientAgeGender = DtoMapper.AgeGender(j.Order?.Patient, j.RegisteredAt), barcode = j.Sample?.Barcode, sampleStatus = j.Sample?.Status,
+                patientName = j.Order?.Patient?.Caption, patientAgeGender = DtoMapper.AgeGender(j.Order?.Patient, j.RegisteredAt), barcode = j.Sample?.Barcode, sampleStatus = j.Sample?.Status,
                 tests = tests.Where(t => j.OrderTestIds.Contains(t.Id)).Select(t => new { t.Id, t.TestCode, t.TestName, t.Status, value = t.Result == null ? null : DtoMapper.FormatValue(t.Result.NumericValue, t.Result.StringValue, 2), flag = t.Result?.Flag, t.ReleasedAt })
             }).ToList()
         };

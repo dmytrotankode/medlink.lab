@@ -88,7 +88,7 @@ public class ApiIntegrationTests
         var admin = _f.As(DemoDataSeeder.Admin);
 
         // Реєстратор створює замовлення (біохімія + K)
-        var order = await Json(await registrar.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = "pat-0000-0000-0000-000000000003", doctorId = DemoDataSeeder.Doctor, departmentId = DemoDataSeeder.CollectionPoint, profileIds = new[] { "PROF_BIOCHEM_BASE" }, testIds = new[] { "K" } }));
+        var order = await Json(await registrar.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = "0b000000-0000-0000-0000-000000000003", doctorId = DemoDataSeeder.Doctor, departmentId = DemoDataSeeder.CollectionPoint, profileIds = new[] { "PROF_BIOCHEM_BASE" }, testIds = new[] { "K" } }));
         var orderId = order["id"]!.GetValue<string>();
         Assert.Matches(@"^\d{4}-\d{6}$", order["orderNumber"]!.GetValue<string>());
         Assert.Equal("NEW", order["status"]!.GetValue<string>());
@@ -189,7 +189,7 @@ public class ApiIntegrationTests
         Assert.Equal(HttpStatusCode.OK, pdf.StatusCode);
 
         // Портал: усі тести відкриті, прогрес 100%
-        var portal = await Json(await anon.GetAsync($"/api/v1/lab/portal/pat-0000-0000-0000-000000000003/orders/{orderId}"));
+        var portal = await Json(await anon.GetAsync($"/api/v1/lab/portal/0b000000-0000-0000-0000-000000000003/orders/{orderId}"));
         Assert.Equal(100, portal["progress"]!["percent"]!.GetValue<int>());
         Assert.True(portal["tests"]!.AsArray().Count >= 8);
 
@@ -204,11 +204,11 @@ public class ApiIntegrationTests
         var tech = _f.As(DemoDataSeeder.Technician);
         var doctor = _f.As(DemoDataSeeder.Doctor);
         // Mindray L1 GLU: ціль 4.2 ± 0.15 → 4.8 = z 4.0 → 1_3s
-        var qc = await Json(await tech.PostAsJsonAsync("/api/v1/lab/qc/results", new { qcMaterialId = "qcm-0000-0000-0000-000000000003", testCode = "GLU", measuredValue = 4.8 }));
+        var qc = await Json(await tech.PostAsJsonAsync("/api/v1/lab/qc/results", new { qcMaterialId = "09c00000-0000-0000-0000-000000000003", testCode = "GLU", measuredValue = 4.8 }));
         Assert.True(qc["isRejection"]!.GetValue<bool>());
         Assert.True(qc["lockoutEnforced"]!.GetValue<bool>());
         var lockoutId = qc["lockoutId"]!.GetValue<string>();
-        var lj = await Json(await tech.GetAsync("/api/v1/lab/qc/levey-jennings?testCode=GLU&materialId=qcm-0000-0000-0000-000000000003"));
+        var lj = await Json(await tech.GetAsync("/api/v1/lab/qc/levey-jennings?testCode=GLU&materialId=09c00000-0000-0000-0000-000000000003"));
         Assert.Equal("LOCKOUT", lj["currentStatus"]!.GetValue<string>());
         // лаборант не може розблокувати → 403
         await AssertProblem(await tech.PostAsJsonAsync($"/api/v1/lab/qc/lockouts/{lockoutId}/resolve", new { cause = "x", action = "y" }), HttpStatusCode.Forbidden);
@@ -251,7 +251,7 @@ public class ApiIntegrationTests
     public async Task Sample_split_creates_children_with_derived_barcodes_and_moves_tests()
     {
         var admin = _f.As(DemoDataSeeder.Admin);
-        var order = await Json(await admin.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = "pat-0000-0000-0000-000000000001", profileIds = new[] { "PROF_BIOCHEM_BASE" }, testIds = new[] { "TSH" } }));
+        var order = await Json(await admin.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = "0b000000-0000-0000-0000-000000000001", profileIds = new[] { "PROF_BIOCHEM_BASE" }, testIds = new[] { "TSH" } }));
         var barcode = order["samples"]![0]!["barcode"]!.GetValue<string>();
         await Json(await admin.PostAsJsonAsync($"/api/v1/lab/samples/{barcode}/collect", new { volumeMl = 5.0 }));
         await Json(await admin.PostAsJsonAsync($"/api/v1/lab/samples/{barcode}/receive", new { }));
@@ -274,10 +274,10 @@ public class ApiIntegrationTests
     public async Task Journal_numbering_preview_follows_mask_and_matrix_has_shape()
     {
         var admin = _f.As(DemoDataSeeder.Admin);
-        var preview = await Json(await admin.PostAsJsonAsync("/api/v1/lab/sections/sec-0000-0000-0000-000000000007/journal/renumber-preview", new { count = 3, at = "2026-03-05T10:00:00Z" }));
+        var preview = await Json(await admin.PostAsJsonAsync("/api/v1/lab/sections/05ec0000-0000-0000-0000-000000000007/journal/renumber-preview", new { count = 3, at = "2026-03-05T10:00:00Z" }));
         var numbers = preview["preview"]!.AsArray().Select(p => p!["journalNumber"]!.GetValue<string>()).ToList();
         Assert.All(numbers, n => Assert.Matches(@"^S26-\d{5}$", n));
-        var dayPreview = await Json(await admin.PostAsJsonAsync("/api/v1/lab/sections/sec-0000-0000-0000-000000000002/journal/renumber-preview", new { count = 1, at = "2026-03-05T10:00:00Z" }));
+        var dayPreview = await Json(await admin.PostAsJsonAsync("/api/v1/lab/sections/05ec0000-0000-0000-0000-000000000002/journal/renumber-preview", new { count = 1, at = "2026-03-05T10:00:00Z" }));
         Assert.Matches(@"^260305/\d{3}$", dayPreview["preview"]![0]!["journalNumber"]!.GetValue<string>());
         var matrix = await Json(await admin.GetAsync("/api/v1/lab/dictionaries/order-matrix"));
         Assert.Equal(8, matrix["sections"]!.AsArray().Count);
@@ -291,6 +291,6 @@ public class ApiIntegrationTests
     public async Task Unknown_employee_is_forbidden_for_mutations()
     {
         var ghost = _f.As("no-such-employee");
-        await AssertProblem(await ghost.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = "pat-0000-0000-0000-000000000001", testIds = new[] { "GLU" } }), HttpStatusCode.Forbidden);
+        await AssertProblem(await ghost.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = "0b000000-0000-0000-0000-000000000001", testIds = new[] { "GLU" } }), HttpStatusCode.Forbidden);
     }
 }

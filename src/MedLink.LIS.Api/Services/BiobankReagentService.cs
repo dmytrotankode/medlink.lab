@@ -62,7 +62,7 @@ public sealed class BiobankService
 
     public async Task<List<object>> RacksAsync()
     {
-        var racks = await _db.Racks.AsNoTracking().Include(r => r.Cells).Where(r => !r.IsDeleted).OrderBy(r => r.Code).ToListAsync();
+        var racks = await _db.Racks.AsNoTracking().Include(r => r.Cells).Where(r => r.RecordState != RecordStates.Deleted).OrderBy(r => r.Code).ToListAsync();
         return racks.Select(r => RackDto(r)).ToList();
     }
 
@@ -74,13 +74,13 @@ public sealed class BiobankService
     };
 
     public async Task<object> RackAsync(string id) => RackDto(await LoadRackAsync(id));
-    private async Task<LabArchiveRack> LoadRackAsync(string id) => await _db.Racks.Include(r => r.Cells).FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted) ?? throw NotFoundException.For("Штатив", id);
+    private async Task<LabArchiveRack> LoadRackAsync(string id) => await _db.Racks.Include(r => r.Cells).FirstOrDefaultAsync(r => r.Id == id && r.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Штатив", id);
 
     public async Task<object> CreateRackAsync(RackRequest req)
     {
         _policy.Require("Створення штатива", Roles);
         if (string.IsNullOrWhiteSpace(req.Code)) throw ValidationException.Field("code", "Вкажіть код штатива");
-        if (await _db.Racks.AnyAsync(r => r.Code == req.Code && !r.IsDeleted)) throw new ConflictException($"Штатив із кодом {req.Code} вже існує");
+        if (await _db.Racks.AnyAsync(r => r.Code == req.Code && r.RecordState != RecordStates.Deleted)) throw new ConflictException($"Штатив із кодом {req.Code} вже існує");
         if (req.RowsCount is < 1 or > 26 || req.ColsCount is < 1 or > 50) throw new ValidationException("Розмір штатива: рядків 1..26, колонок 1..50");
         var r = new LabArchiveRack { Code = req.Code, Name = req.Name, RoomNumber = req.RoomNumber, FreezerName = req.FreezerName, ShelfNumber = req.ShelfNumber, TemperatureCelsius = req.TemperatureCelsius, RowsCount = req.RowsCount, ColsCount = req.ColsCount, IsActive = req.IsActive };
         _db.Racks.Add(r);
@@ -129,7 +129,7 @@ public sealed class BiobankService
                 {
                     id = c?.Id, rackId, row, col, coordinate = $"{(char)('A' + row - 1)}{col:00}", isOccupied = c?.SampleId != null,
                     sampleId = c?.SampleId, barcode = c?.Barcode, storedAt = c?.StoredAt, expiryAt = c?.ExpiryAt, isExpired = c?.ExpiryAt < DateTime.UtcNow,
-                    patientName = c?.Sample?.Order?.Patient?.FullName, orderNumber = c?.Sample?.Order?.OrderNumber
+                    patientName = c?.Sample?.Order?.Patient?.Caption, orderNumber = c?.Sample?.Order?.OrderNumber
                 });
             }
         return new { rack = RackDto(rack), cells };
@@ -197,7 +197,7 @@ public sealed class BiobankService
         {
             cell.Id, rackId = cell.RackId, rackCode = cell.Rack?.Code, rackName = cell.Rack?.Name, freezer = cell.Rack?.FreezerName, shelf = cell.Rack?.ShelfNumber, temperature = cell.Rack?.TemperatureCelsius,
             row = cell.RowNum, col = cell.ColNum, coordinate = cell.Coordinate, cell.Barcode, cell.StoredAt, cell.ExpiryAt, isExpired = cell.ExpiryAt < DateTime.UtcNow,
-            patientName = cell.Sample?.Order?.Patient?.FullName, orderNumber = cell.Sample?.Order?.OrderNumber, sampleStatus = cell.Sample?.Status
+            patientName = cell.Sample?.Order?.Patient?.Caption, orderNumber = cell.Sample?.Order?.OrderNumber, sampleStatus = cell.Sample?.Status
         };
     }
 
@@ -227,10 +227,10 @@ public sealed class ReagentService
     public ReagentService(LisDbContext db, IRolePolicy policy, IAuditService audit) { _db = db; _policy = policy; _audit = audit; }
 
     public async Task<List<LabReagentLot>> ListAsync(string? analyzerId, bool? isActive) =>
-        await _db.ReagentLots.AsNoTracking().Include(l => l.Analyzer).Where(l => !l.IsDeleted && (analyzerId == null || l.AnalyzerId == analyzerId) && (isActive == null || l.IsActive == isActive))
+        await _db.ReagentLots.AsNoTracking().Include(l => l.Analyzer).Where(l => l.RecordState != RecordStates.Deleted && (analyzerId == null || l.AnalyzerId == analyzerId) && (isActive == null || l.IsActive == isActive))
             .OrderBy(l => l.ExpiryDate).ToListAsync();
 
-    public async Task<LabReagentLot> GetAsync(string id) => await _db.ReagentLots.AsNoTracking().Include(l => l.Analyzer).FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted) ?? throw NotFoundException.For("Лот реагенту", id);
+    public async Task<LabReagentLot> GetAsync(string id) => await _db.ReagentLots.AsNoTracking().Include(l => l.Analyzer).FirstOrDefaultAsync(l => l.Id == id && l.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Лот реагенту", id);
 
     public async Task<LabReagentLot> CreateAsync(ReagentLotRequest req)
     {
@@ -252,7 +252,7 @@ public sealed class ReagentService
     public async Task<LabReagentLot> UpdateAsync(string id, ReagentLotRequest req)
     {
         _policy.Require("Редагування лоту реагенту", Roles);
-        var lot = await _db.ReagentLots.FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted) ?? throw NotFoundException.For("Лот реагенту", id);
+        var lot = await _db.ReagentLots.FirstOrDefaultAsync(l => l.Id == id && l.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Лот реагенту", id);
         var before = new { lot.ReagentName, lot.LotNumber, lot.TestsRemaining, lot.MinimumTests, lot.ExpiryDate, lot.IsActive };
         if (!string.IsNullOrWhiteSpace(req.ReagentName)) lot.ReagentName = req.ReagentName;
         if (!string.IsNullOrWhiteSpace(req.LotNumber)) lot.LotNumber = req.LotNumber;
@@ -271,7 +271,7 @@ public sealed class ReagentService
     {
         _policy.Require("Видалення лоту реагенту", LabRoles.Admin, LabRoles.Doctor);
         var lot = await _db.ReagentLots.FirstOrDefaultAsync(l => l.Id == id) ?? throw NotFoundException.For("Лот реагенту", id);
-        if (lot.TestsRemaining != lot.TestsInitial) { lot.IsActive = false; lot.IsDeleted = true; _audit.Log("SOFT_DELETE", "lab_reagent_lot", id, null, null, "Лот частково використано — деактивовано"); }
+        if (lot.TestsRemaining != lot.TestsInitial) { lot.IsActive = false; lot.RecordState = RecordStates.Deleted; _audit.Log("SOFT_DELETE", "lab_reagent_lot", id, null, null, "Лот частково використано — деактивовано"); }
         else { _db.ReagentLots.Remove(lot); _audit.Log("DELETE", "lab_reagent_lot", id, new { lot.LotNumber }, null); }
         await _db.SaveChangesAsync();
     }
@@ -280,7 +280,7 @@ public sealed class ReagentService
     {
         _policy.Require("Списання реагенту", Roles);
         if (tests <= 0) throw ValidationException.Field("tests", "Кількість має бути > 0");
-        var lot = await _db.ReagentLots.FirstOrDefaultAsync(l => l.Id == id && !l.IsDeleted) ?? throw NotFoundException.For("Лот реагенту", id);
+        var lot = await _db.ReagentLots.FirstOrDefaultAsync(l => l.Id == id && l.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Лот реагенту", id);
         if (!lot.IsActive) throw new ConflictException("Лот неактивний");
         if (lot.TestsRemaining < tests) throw new ConflictException($"Недостатньо реагенту: залишок {lot.TestsRemaining}, потрібно {tests}");
         lot.TestsRemaining -= tests;
@@ -293,7 +293,7 @@ public sealed class ReagentService
     public async Task<List<object>> AlertsAsync()
     {
         var now = DateTime.UtcNow;
-        var lots = await _db.ReagentLots.AsNoTracking().Include(l => l.Analyzer).Where(l => l.IsActive && !l.IsDeleted).ToListAsync();
+        var lots = await _db.ReagentLots.AsNoTracking().Include(l => l.Analyzer).Where(l => l.IsActive && l.RecordState != RecordStates.Deleted).ToListAsync();
         var alerts = new List<object>();
         foreach (var l in lots)
         {

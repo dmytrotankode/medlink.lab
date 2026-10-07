@@ -81,16 +81,16 @@ export const DICTIONARIES = {
       active]
   },
   profiles: {
-    title: 'Послуги (профілі)', icon: 'fas fa-medical-services', description: 'Довідник послуг МІС (dct_service) + лабораторні атрибути: набір показників, TAT, підготовка',
-    sourceHint: 'Джерело: довідник послуг MedLink (dct_service). Код, назва та ціна послуги з misServiceId редагуються в МІС і тут лише для читання.',
-    columns: ['code', 'name', 'category', 'turnaroundHours', 'price', 'itemsCount', 'misServiceId', 'isActive'],
+    title: 'Послуги (профілі)', icon: 'fas fa-medical-services', description: 'Послуга прайсу MedLink (org_organization_service) + лабораторні атрибути: набір показників, TAT, підготовка',
+    sourceHint: 'Джерело: прайс послуг MedLink (org_organization_service). Назва та ціна послуги редагуються в МІС і тут лише для читання; код eHealth — з каталогу ehe_service_catalog_service.',
+    columns: ['code', 'name', 'category', 'turnaroundHours', 'price', 'itemsCount', 'organizationServiceId', 'isActive'],
     fields: [
-      { name: 'misServiceId', label: 'ID послуги МІС (dct_service)', type: 'text', col: 4, readonly: true, hint: 'призначається МІС' },
-      { name: 'code', label: 'Код', type: 'text', required: true, col: 3, readonlyIf: f => !!f.misServiceId },
-      { name: 'name', label: 'Назва', type: 'text', required: true, col: 5, readonlyIf: f => !!f.misServiceId },
+      { name: 'organizationServiceId', label: 'Послуга прайсу MedLink (org_organization_service)', type: 'text', col: 4, readonly: true, hint: 'призначається МІС' },
+      { name: 'code', label: 'Код', type: 'text', required: true, col: 3 },
+      { name: 'name', label: 'Назва', type: 'text', required: true, col: 5, readonlyIf: f => !!f.organizationServiceId },
       { name: 'category', label: 'Категорія', type: 'select', options: ['Гематологія', 'Біохімія', 'Гормони', 'Імунологія', 'Коагулологія', 'Загальноклінічні', 'Мікробіологія', 'ПЛР', 'Інше'], allowCustom: true, col: 4 },
       { name: 'turnaroundHours', label: 'TAT, год', type: 'number', col: 3, default: 24 },
-      { name: 'price', label: 'Ціна, грн (з МІС)', type: 'decimal', col: 3, readonlyIf: f => !!f.misServiceId },
+      { name: 'price', label: 'Ціна, грн (з МІС)', type: 'decimal', col: 3, readonlyIf: f => !!f.organizationServiceId },
       { name: 'fastingRequired', label: 'Натще', type: 'toggle', col: 2 },
       { name: 'items', label: 'Показники профілю', type: 'profileItems', col: 12 },
       active]
@@ -139,15 +139,16 @@ export const DICTIONARIES = {
       active]
   },
   departments: {
-    title: 'Відділення', icon: 'fas fa-hospital', description: 'Відділення МІС (org_department): замовники, пункти забору, лабораторія',
-    columns: ['code', 'name', 'type', 'phone', 'isActive'],
+    title: 'Відділення', icon: 'fas fa-hospital', description: 'Підрозділи MedLink (org_department) + вид підрозділу для ЛІС (lab_department_settings): лабораторія, пункт забору, клінічне, філія',
+    columns: ['code', 'name', 'labKind', 'departmentTypeName', 'address', 'phone', 'isActive'],
     fields: [...codeName,
-      { name: 'type', label: 'Тип', type: 'select', options: ['Лабораторія', 'Пункт забору', 'Стаціонар', 'Поліклініка', 'Інше'], allowCustom: true, col: 6 },
+      { name: 'labKind', label: 'Вид для ЛІС', type: 'select', options: [{ value: 'LABORATORY', label: 'Лабораторія' }, { value: 'COLLECTION_POINT', label: 'Пункт забору' }, { value: 'CLINICAL', label: 'Клінічне відділення' }, { value: 'BRANCH', label: 'Філія' }], required: true, col: 6, default: 'CLINICAL' },
       { name: 'phone', label: 'Телефон', type: 'text', col: 6 },
+      { name: 'address', label: 'Адреса', type: 'text', col: 12 },
       active]
   },
   employees: {
-    title: 'Співробітники', icon: 'fas fa-users', description: 'org_employee: ПІБ, посада, лабораторна роль (довідкова), відділення',
+    title: 'Співробітники', icon: 'fas fa-users', description: 'Співробітники MedLink (org_employee + cmn_person) + роль у ЛІС (lab_employee_settings)',
     columns: ['fullName', 'position', 'labRole', 'departmentId', 'phone', 'isActive'],
     fields: [
       { name: 'fullName', label: 'ПІБ', type: 'text', required: true, col: 6 },
@@ -165,5 +166,5 @@ export const DICTIONARY_LIST = Object.keys(DICTIONARIES).map(k => ({ name: k, ..
 export function columnLabel (dict, col) {
   const f = (dict.fields || []).find(x => x.name === col);
   if (f) return f.label;
-  return { itemsCount: 'Показників', colorCode: 'Колір', biomaterialTypeId: 'Біоматеріал', departmentId: 'Відділення', antibioticId: 'Антибіотик' }[col] || col;
+  return { itemsCount: 'Показників', colorCode: 'Колір', biomaterialTypeId: 'Біоматеріал', departmentId: 'Відділення', antibioticId: 'Антибіотик', departmentTypeName: 'Тип підрозділу MedLink' }[col] || col;
 }

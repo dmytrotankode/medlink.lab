@@ -26,11 +26,11 @@ public sealed class DemoDataSeeder
     private readonly ICurrentEmployee _current;
     private readonly ILogger<DemoDataSeeder> _logger;
 
-    public const string Admin = "emp-0000-0000-0000-000000000001", Doctor = "emp-0000-0000-0000-000000000002", Technician = "emp-0000-0000-0000-000000000003",
-        Nurse = "emp-0000-0000-0000-000000000004", Courier = "emp-0000-0000-0000-000000000005", Registrar = "emp-0000-0000-0000-000000000006";
-    public const string Dept = "dept-0000-0000-0000-000000000001", CollectionPoint = "dept-0000-0000-0000-000000000002";
-    public const string Sysmex = "anz-0000-0000-0000-000000000001", Mindray = "anz-0000-0000-0000-000000000002";
-    private static string Pat(int n) => $"pat-0000-0000-0000-00000000000{n}";
+    public const string Admin = "0e000000-0000-0000-0000-000000000001", Doctor = "0e000000-0000-0000-0000-000000000002", Technician = "0e000000-0000-0000-0000-000000000003",
+        Nurse = "0e000000-0000-0000-0000-000000000004", Courier = "0e000000-0000-0000-0000-000000000005", Registrar = "0e000000-0000-0000-0000-000000000006";
+    public const string Dept = "0d000000-0000-0000-0000-000000000001", CollectionPoint = "0d000000-0000-0000-0000-000000000002";
+    public const string Sysmex = "0a2a0000-0000-0000-0000-000000000001", Mindray = "0a2a0000-0000-0000-0000-000000000002";
+    private static string Pat(int n) => $"0b000000-0000-0000-0000-00000000000{n}";
 
     public DemoDataSeeder(LisDbContext db, OrderService orders, SampleService samples, ResultPipelineService pipeline, QcService qc, LogisticsService logistics,
         BiobankService biobank, ReagentService reagents, MicrobiologyService micro, WorklistService worklist, ICurrentEmployee current, ILogger<DemoDataSeeder> logger)
@@ -65,7 +65,7 @@ public sealed class DemoDataSeeder
         await Backdate(o2.Id, hoursAgo: 24 * 5);
 
         // 3. Повторна біохімія сьогодні → delta-check GLU (+55% > 20%) → NEEDS_REVIEW
-        var o3 = await _orders.CreateAsync(new CreateOrderRequest { PatientId = Pat(2), DoctorId = Doctor, DepartmentId = CollectionPoint, ClinicalNotes = "Контроль глюкози через 5 днів", ProfileIds = { "PROF_BIOCHEM_BASE" }, EhealthReferralId = "ref-0000-0000-0000-000000000002" });
+        var o3 = await _orders.CreateAsync(new CreateOrderRequest { PatientId = Pat(2), DoctorId = Doctor, DepartmentId = CollectionPoint, ClinicalNotes = "Контроль глюкози через 5 днів", ProfileIds = { "PROF_BIOCHEM_BASE" }, EhealthReferralId = "0c0f0000-0000-0000-0000-000000000002" });
         await CollectReceive(o3);
         await Enter(o3, new() { ["GLU"] = 7.9, ["CREAT"] = 76, ["UREA"] = 5.2, ["ALT"] = 24, ["AST"] = 21 }, Mindray);
         await Backdate(o3.Id, hoursAgo: 3);
@@ -113,8 +113,8 @@ public sealed class DemoDataSeeder
         await _orders.CreateAsync(new CreateOrderRequest { PatientId = Pat(1), DoctorId = Doctor, DepartmentId = Dept, ClinicalNotes = "Дисліпідемія, контроль статинотерапії", ProfileIds = { "PROF_LIPID" } });
 
         // QC: Sysmex L2 WBC — 10 нормальних точок + 1_3s (lockout); Mindray L1 GLU — 8 точок
-        var xn2 = await _db.QcMaterials.FirstAsync(m => m.Id == "qcm-0000-0000-0000-000000000002");
-        var ccm1 = await _db.QcMaterials.FirstAsync(m => m.Id == "qcm-0000-0000-0000-000000000003");
+        var xn2 = await _db.QcMaterials.FirstAsync(m => m.Id == "09c00000-0000-0000-0000-000000000002");
+        var ccm1 = await _db.QcMaterials.FirstAsync(m => m.Id == "09c00000-0000-0000-0000-000000000003");
         var wbcSeries = new[] { 7.18, 7.22, 7.15, 7.28, 7.20, 7.32, 7.19, 7.25, 7.10, 7.27 };
         for (var i = 0; i < wbcSeries.Length; i++)
             await _qc.AddResultAsync(new QcResultRequest { QcMaterialId = xn2.Id, TestCode = "WBC", MeasuredValue = wbcSeries[i], RunAt = DateTime.UtcNow.AddDays(-(wbcSeries.Length - i)).Date.AddHours(7).AddMinutes(45) });

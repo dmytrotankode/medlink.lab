@@ -1275,6 +1275,8 @@ MedLink.LabConnector (Worker Service, .NET 8)
 
 ## 7. Модель даних
 
+> **Актуалізовано 07.10.2026.** Таблиці MedLink (пацієнт, особа, співробітник, підрозділ, послуги, е-направлення, висновок) приведено до реальної схеми evomis, службові колонки — `record_state`/`created_by uuid`. Чинна відповідність сутностей і позначки [MedLink]/[MedLink+]/[ЛІС] — розд. 20.2; DDL — `db/postgres/medlink_lis_schema.sql`. Нижче — опис v4.0 для історії.
+
 ### 7.1. Угоди іменування та службові колонки
 
 - Таблиці та колонки — `snake_case`, префікс `lab_` для сутностей ЛІС; копії сутностей evomis зберігають оригінальні імена (`mis_patient_card`, `org_employee`…).
@@ -1763,6 +1765,7 @@ CSV/XLSX/XML (розд. 4.16); кодування автовизначаєтьс
 | Q-08 | Чи вводити транслітеровані ПІБ у `mis_patient_card` evomis, чи обчислювати на льоту? | на льоту (поточне) / зберігати | Перенесення | **Зберігати транслітеровані ПІБ одразу** у картці пацієнта (`last_name_latin`, `first_name_latin`, обчислюються за КМУ 2010 при збереженні; при перенесенні в evomis — додаткові колонки або розширення `mis_patient_card`). |
 | Q-09 | Термін зберігання журналу обміну та логів коннектора на сервері | 90 днів (поточне) / інший | R1 | **90 днів за замовчуванням, налаштовується** (`Lab:MessageRetentionDays`, `Lab:ConnectorLogRetentionDays`) із фоновим очищенням. |
 | Q-10 | Чи потрібен окремий бланк для CITO/попередніх результатів (водяний знак «Попередній»)? | так / ні | R1 | **Так, варіанти бланків через налаштування**: водяний знак «Попередній» для неверифікованих/часткових результатів, позначка CITO; шаблони вмикаються в налаштуваннях лабораторії. |
+| Q-11 | До якого медичного огляду (`mis_observation.medical_examination_id`, NOT NULL) прив'язувати лабораторні спостереження при публікації результатів у MedLink? | епізод/огляд замовника / окремий «лабораторний» огляд / послабити обмеження | R2 (ЕСОЗ) | Відкрите — до розробника MedLink (розд. 20.2.5) |
 
 ---
 
@@ -2247,6 +2250,129 @@ FR-PRE-004, FR-PRE-005, FR-PRE-001 (розд. 18) → FR-GAP-001, 003, 010, 011,
 
 - **Юніт-тести** `TubePlannerTests` (8): об'єднання та порядок забору, окрема тара, розбиття за об'ємом, first-fit, ліміт тестів (з типу тари й з тесту), групи сумісності, тест більший за тару, дозамовлення до наявних пробірок.
 - **API-тести** `TubePlanApiTests` (5): попередній план (S3), створення замовлення й дозамовлення (S3, S7), розбиття сироватки (S2), редагування правил у довіднику, `SchemaUpgrader` на БД попередньої версії (відсутні колонка й таблиця додаються, повторний запуск нічого не змінює).
+
+
+### 20.2. Вирівнювання моделі даних із MedLink (evomis) — **Реалізовано**
+
+#### 20.2.1. Що було не так у v4.0
+
+Аналіз вихідного коду evomis (`evomis/src/App.Data/Migrations/ApiDbContextModelSnapshot.cs`, `DbInitializer.cs`) показав, що «дзеркальні» таблиці ЛІС v4.0 не збігалися з реальною схемою MedLink:
+
+| Сутність v4.0 | Реальність evomis | Наслідок для перенесення |
+|---|---|---|
+| `dct_service` (код, назва, ціна) | Таблиці немає. Послуги — це прайс закладу `org_organization_service` (caption, price, duration, без коду) та національний каталог `ehe_service_catalog_service` (code, name) | Профіль ЛІС посилався на неіснуючу таблицю |
+| `mis_specimen` | Таблиці немає | Зайва сутність |
+| `mis_patient_card` з ПІБ, ІПН, телефоном | ПІБ, дата народження, стать, ІПН, телефон, e-mail зберігаються в `cmn_person`; картка посилається на неї через `person_id` і має `caption` (ПІБ), `gender_id`, `organization_id`, `reg_number` | ЛІС писала б у неіснуючі колонки |
+| `org_employee` з ПІБ, посадою, роллю | ПІБ у `caption` та `cmn_person`; посада — `position_type_id` (cmn_enum_record). Лабораторної ролі немає | Роль ЛІС треба зберігати окремо |
+| `org_department.department_type` = LABORATORY/COLLECTION_POINT… | `department_type_id` → cmn_enum_record DepartmentType (01–06); виду «пункт забору» немає | Вид підрозділу для ЛІС треба зберігати окремо |
+| Ключі — довільні рядки (`pat-0000-…`) | Ключі `uuid` | Демо-дані не переносилися б |
+| `is_deleted`, `created_by` — довільний рядок | `record_state` (2 — активний, 4 — видалений), `created_by/modified_by` — `uuid` NOT NULL | Розбіжність службових колонок |
+| `mis_diagnostic_report` з полями ЛІС | Реальна структура: `reg_number`, `status` (DiagnosticReportTransferStatus), `patient_card_id`, `ehealth_service_catalog_service_id` NOT NULL, `division_id`, `legal_entity_id`… | ЛІС створювала висновок у неіснуючому форматі |
+
+Також в evomis **немає власних таблиць лабораторних замовлень і результатів**: зараз лабораторні дослідження проходять через інтеграцію TerraLab (`ter_*`), е-направлення та `mis_diagnostic_report` + `mis_observation`. Тому весь лабораторний контур — це нові таблиці [ЛІС].
+
+#### 20.2.2. Принцип
+
+ЛІС **не змінює MedLink** і не відтворює його повністю. У SQLite ЛІС є мінімальна підмножина таблиць evomis, без якої автономна система не працює (пацієнт, особа, співробітник, підрозділ, заклад, послуга, е-направлення, медичний висновок):
+- назви таблиць і колонок, типи (uuid, timestamp) та семантика — як в evomis;
+- лише колонки, потрібні ЛІС.
+
+Під час перенесення ці класи замінюються моделями evomis, а таблиці [ЛІС] посилаються на реальні таблиці. Відсутні в evomis атрибути, потрібні ЛІС, зберігаються:
+- у власних таблицях [ЛІС] 1:1 (`lab_employee_settings`, `lab_department_settings`);
+- у мінімальних колонках [MedLink+] (латинізація ПІБ у `mis_patient_card`, рішення Q-08).
+
+#### 20.2.3. Відповідність сутностей
+
+| Сутність ЛІС (API) | Таблиця | Позначка | Колонки, які використовує ЛІС |
+|---|---|---|---|
+| Пацієнт: ПІБ, дата народження, стать, ІПН, телефон, e-mail, адреса | `cmn_person` | [MedLink] | `last_name`, `name`, `middle_name`, `birthday`, `gender_id`, `ipn`, `no_ipn`, `phone`, `email`, `location`, `caption` |
+| Пацієнт: картка закладу | `mis_patient_card` | [MedLink+] | `person_id`, `organization_id`, `reg_number`, `reg_date`, `caption` (ПІБ), `birthday`, `gender_id`, `document_type_id`, `patient_card_type_id`, `privacy_request_type_id`, `location`; **+** `last_name_latin`, `first_name_latin` |
+| Стать, тип підрозділу, тип посади, тип картки | `cmn_enum_record` | [MedLink] | `enum_type`, `code`, `caption`. GUID статі (M/F/U), типів підрозділу (02 Діагностичне, 03 Лікувальне, 05 Філія, 06 Підрозділ) і посад (0001, 0002, 0003, 0005) збігаються з evomis `DbInitializer` |
+| Заклад | `org_organization` | [MedLink] | `caption`, `code`, `full_name` |
+| Підрозділ | `org_department` | [MedLink] | `caption`, `code`, `full_name`, `department_type_id`, `organization_id`, `location` |
+| Вид підрозділу для ЛІС (лабораторія / пункт забору / клінічний / філія), телефон, активність | `lab_department_settings` | [ЛІС] | `department_id` (PK, FK → org_department), `lab_kind`, `phone`, `is_active`. Розширюється у FR-PRE-001 |
+| Співробітник | `org_employee` | [MedLink] | `caption` (ПІБ), `person_id`, `organization_id`, `department_id`, `position_type_id` |
+| Роль у ЛІС, посада для бланків, сертифікат КЕП, активність | `lab_employee_settings` | [ЛІС] | `employee_id` (PK, FK → org_employee), `lab_role`, `position_name`, `digital_signature_cert_id`, `is_active`. В evomis роль може видаватися через `sys_role`/`sys_user_profile` |
+| Послуга (назва, ціна) | `org_organization_service` | [MedLink] | `caption`, `price`, `duration`, `organization_id` |
+| Код послуги eHealth | `ehe_service_catalog_service` | [MedLink] | `code`, `name`, `medical_referral_category_id` |
+| Лабораторний профіль (набір показників, тара, TAT) | `lab_test_profile` | [ЛІС] | `organization_service_id` → org_organization_service, `ehealth_service_catalog_service_id` → ehe_service_catalog_service (замість `mis_service_id` → dct_service) |
+| Е-направлення | `ehe_incoming_medical_referral` | [MedLink] | `reg_number`, `patient_card_id`, `service_catalog_service_id`, `medical_referral_category_id`, `status_id`, `priority_id`, `expiration_date` |
+| Замовлення | `lab_order` | [ЛІС] | `patient_id` → mis_patient_card, `doctor_id` → org_employee, `department_id` → org_department, `ehealth_referral_id` → ehe_incoming_medical_referral, **нові**: `organization_id` → org_organization (для RLS evomis), `diagnostic_report_id` → mis_diagnostic_report |
+| Медичний висновок | `mis_diagnostic_report` | [MedLink] | Створюється при видачі замовлення (розд. 20.2.5) |
+| Усі інші сутності (проби, тести, результати, ВКЯ, коннектор, біобанк, мікробіологія, журнали…) | `lab_*` | [ЛІС] | Повний перелік — `db/postgres/medlink_lis_schema.sql` |
+
+Службові колонки **всіх** таблиць — як в evomis:
+- `created_on`, `created_by uuid`, `modified_on`, `modified_by uuid`;
+- `record_state` (2 — активний, 4 — видалений) замість `is_deleted`.
+
+Для системних дій `created_by` = нульовий GUID. Усі ключі — `uuid`, включно з демо-даними. Демо-ключі мають читабельні префікси:
+- `0b000000-…` — картки пацієнтів;
+- `0e000000-…` — співробітники;
+- `0d000000-…` — підрозділи;
+- `0a000000-…` — заклад.
+
+#### 20.2.4. Переліки (cmn_enum_record) і значення за замовчуванням
+
+| Призначення | ЛІС | evomis | Як зіставити при перенесенні |
+|---|---|---|---|
+| Стать | `Gender` M/F/U, GUID з evomis | ті самі GUID | збігаються |
+| Тип підрозділу | DepartmentType 02/03/05/06, GUID з evomis | ті самі GUID | збігаються. Вид для ЛІС: LABORATORY та COLLECTION_POINT → 02 «Діагностичне», CLINICAL → 03 «Лікувальне», BRANCH → 05 «Філія» |
+| Тип посади | OrgPositionType 0001/0002/0003/0005, GUID з evomis | ті самі GUID | збігаються. Роль → посада: LAB_DOCTOR/LAB_ADMIN → «Лікарі», LAB_TECHNICIAN → «Лаборанти», PHLEBOTOMIST → «Середній мед.персонал», інші → «Інші» |
+| Тип документа картки | MedicalDocumentType `AmbCard` (GUID з evomis) | той самий | збігається |
+| Тип картки пацієнта | PatientCardType `person` | створюється скриптом v002.30 без фіксованого id | за `enum_type + code` |
+| Категорія е-направлення, статус направлення | `laboratory_procedure`, `active` | довідники eHealth | за `code` |
+| Заклад | один демо-заклад `0a000000-…-000000000001` | заклад користувача | `organization_id` з контексту користувача evomis |
+
+#### 20.2.5. Публікація результатів у MedLink
+
+**При видачі замовлення (RELEASED)** ЛІС створює [MedLink] `mis_diagnostic_report` і зберігає посилання в `lab_order.diagnostic_report_id`:
+
+| Колонка | Значення |
+|---|---|
+| `reg_number` | номер замовлення |
+| `reg_date`, `issued_at` | час видачі |
+| `caption` | назви профілів/тестів |
+| `status` | 0 (`DiagnosticReportTransferStatus.NotTransfered`; передача в ЕСОЗ — R2) |
+| `patient_card_id` | картка пацієнта |
+| `organization_id`, `legal_entity_id` | заклад |
+| `ehealth_service_catalog_service_id` | послуга каталогу eHealth профілю, інакше — з е-направлення |
+| `ehealth_incoming_medical_referral_id` | е-направлення замовлення |
+| `effective_date_time_start/end` | забір → видача |
+| `performer_string` | лікар, що верифікував (до зіставлення з `ehe_employee` у R2) |
+| `description` | кількість показників і критичних значень |
+
+**Окремі показники.** В evomis результати висновку зберігаються в `mis_observation` з довідником показників `mis_observation_measurement` (`loinc_code`, `units_of_measure_id`, `range`). Зіставлення для R2:
+- `lab_test_definition.loinc_code` → `mis_observation_measurement.loinc_code`;
+- `lab_test_result.numeric_value`/`string_value` → `mis_observation.value`;
+- прапорець → `observation_interpretation_id`;
+- час виконання → `effective_date_time_start`.
+
+**Відкрите питання до розробника MedLink (Q-11).** У `mis_observation` поле `medical_examination_id` NOT NULL. Потрібно визначити, до якого медичного огляду/епізоду прив'язувати лабораторні спостереження, або послабити обмеження для лабораторних результатів. До рішення ЛІС зберігає результати лише в `lab_test_result`, а висновок — у `mis_diagnostic_report`.
+
+#### 20.2.6. API і сумісність
+
+- **Відповіді API не змінилися.** Пацієнт має ті самі поля (lastName, firstName, secondName, birthDate, gender, phone, email, taxId, address); сервер відображає їх на `cmn_person` + `mis_patient_card`.
+- **Довідник «Відділення».** Поля `code`, `name`, `labKind` (LABORATORY | COLLECTION_POINT | CLINICAL | BRANCH), `address`, `phone`, `isActive`, тільки для читання — `departmentTypeId/Name` (тип MedLink). Для сумісності приймається і `departmentType`.
+- **Довідник «Співробітники».** Поля `fullName` (розкладається на прізвище, ім'я та по батькові в `cmn_person`), `position`, `labRole`, `departmentId`, `phone`, `email`, `isActive`.
+- **Профіль (послуга).** `organizationServiceId`, `ehealthServiceCode` замість `misServiceId`, `misServiceCode`.
+- **Видалення** записів без залежностей — м'яке (`record_state = 4`), як в evomis. За наявності залежностей запис лише деактивується (`is_active = false` у таблиці [ЛІС]).
+
+#### 20.2.7. Перенесення та оновлення
+
+- **DDL PostgreSQL** `db/postgres/medlink_lis_schema.sql` генерується з EF-моделі: `dotnet run --project src/MedLink.LIS.Api -- --export-pg-ddl <шлях>`. Він:
+  - створює 50 таблиць [ЛІС] з типами evomis і зовнішні ключі на таблиці MedLink;
+  - не створює таблиці [MedLink], а наводить колонки, які використовує ЛІС;
+  - додає колонки [MedLink+].
+
+  Тест `Committed_schema_matches_model` не дає закомітити застарілий скрипт. Старі DDL v3 перенесено в `db/postgres/legacy_v3` (архів).
+- **Наявні SQLite-бази.** Бази попередньої структури (з `is_deleted` і без `cmn_person`) при запуску не видаляються. Файл перейменовується в `*.pre-medlink-<час>.bak`, і створюється нова БД з демо-даними. Подальші зміни схеми застосовує `SchemaUpgrader`.
+- **Тести** `MedLinkAlignmentTests` (5) і `PostgresDdlTests` (2) перевіряють:
+  - пацієнта в cmn_person + mis_patient_card, пошук за ПІБ, ІПН і телефоном;
+  - висновок при видачі;
+  - uuid-ключі та службові колонки, GUID переліків evomis;
+  - відділення та співробітників у таблицях MedLink і м'яке видалення;
+  - резервування старої БД;
+  - DDL та його актуальність.
 
 
 ## 15. Додатки

@@ -16,14 +16,21 @@ public class LisDbContext : DbContext
 {
     public LisDbContext(DbContextOptions<LisDbContext> options) : base(options) { }
 
-    // --- evomis mirror ---
+    // --- [MedLink] дзеркало таблиць evomis (структура як в evomis) ---
+    public DbSet<CmnEnumRecord> EnumRecords => Set<CmnEnumRecord>();
+    public DbSet<CmnPerson> Persons => Set<CmnPerson>();
+    public DbSet<OrgOrganization> Organizations => Set<OrgOrganization>();
     public DbSet<MisPatientCard> Patients => Set<MisPatientCard>();
-    public DbSet<MisSpecimen> Specimens => Set<MisSpecimen>();
     public DbSet<MisDiagnosticReport> DiagnosticReports => Set<MisDiagnosticReport>();
     public DbSet<OrgEmployee> Employees => Set<OrgEmployee>();
     public DbSet<OrgDepartment> Departments => Set<OrgDepartment>();
     public DbSet<EheIncomingMedicalReferral> Referrals => Set<EheIncomingMedicalReferral>();
-    public DbSet<DctService> Services => Set<DctService>();
+    public DbSet<EheServiceCatalogService> ServiceCatalog => Set<EheServiceCatalogService>();
+    public DbSet<OrgOrganizationService> OrganizationServices => Set<OrgOrganizationService>();
+
+    // --- [ЛІС] лабораторні атрибути сутностей MedLink ---
+    public DbSet<LabEmployeeSettings> EmployeeSettings => Set<LabEmployeeSettings>();
+    public DbSet<LabDepartmentSettings> DepartmentSettings => Set<LabDepartmentSettings>();
 
     // --- dictionaries ---
     public DbSet<LabBiomaterialType> BiomaterialTypes => Set<LabBiomaterialType>();
@@ -127,6 +134,17 @@ public class LisDbContext : DbContext
         mb.Entity<LabOrderSample>().HasOne(s => s.ParentSample).WithMany().HasForeignKey(s => s.ParentSampleId).OnDelete(DeleteBehavior.Restrict);
         mb.Entity<LabOrderTest>().HasIndex(t => t.ReleasedAt);
 
+        // [MedLink] персона та лабораторні атрибути завантажуються разом із карткою/співробітником/підрозділом
+        mb.Entity<OrgEmployee>().HasOne(e => e.LabSettings).WithOne(s => s.Employee).HasForeignKey<LabEmployeeSettings>(s => s.EmployeeId);
+        mb.Entity<OrgDepartment>().HasOne(d => d.LabSettings).WithOne(s => s.Department).HasForeignKey<LabDepartmentSettings>(s => s.DepartmentId);
+        mb.Entity<MisPatientCard>().Navigation(p => p.Person).AutoInclude();
+        mb.Entity<OrgEmployee>().Navigation(e => e.Person).AutoInclude();
+        mb.Entity<OrgEmployee>().Navigation(e => e.LabSettings).AutoInclude();
+        mb.Entity<OrgDepartment>().Navigation(d => d.LabSettings).AutoInclude();
+        mb.Entity<CmnPerson>().HasIndex(p => new { p.LastName, p.Name });
+        mb.Entity<MisPatientCard>().HasIndex(p => p.PersonId);
+        mb.Entity<MisPatientCard>().HasIndex(p => p.Caption);
+
         mb.Entity<LabOrderTest>().HasOne(t => t.Result).WithOne(r => r.OrderTest).HasForeignKey<LabTestResult>(r => r.OrderTestId);
         mb.Entity<LabOrder>().HasMany(o => o.Samples).WithOne(s => s.Order).HasForeignKey(s => s.OrderId).OnDelete(DeleteBehavior.Cascade);
         mb.Entity<LabOrder>().HasMany(o => o.Tests).WithOne(t => t.Order).HasForeignKey(t => t.OrderId).OnDelete(DeleteBehavior.Cascade);
@@ -183,6 +201,9 @@ public class LisDbContext : DbContext
     /// <summary>Поточний користувач для службових колонок (виставляється middleware через CurrentEmployee).</summary>
     public string? CurrentUserId { get; set; }
 
+    /// <summary>created_by/modified_by — uuid як в evomis: поточний співробітник або нульовий GUID для системних дій.</summary>
+    private string AuditUserId => Guid.TryParse(CurrentUserId, out _) ? CurrentUserId! : MedLinkEnums.EmptyGuid;
+
     private void StampAudit()
     {
         var now = DateTime.UtcNow;
@@ -191,12 +212,13 @@ public class LisDbContext : DbContext
             if (entry.State == EntityState.Added)
             {
                 if (entry.Entity.CreatedOn == default) entry.Entity.CreatedOn = now;
-                entry.Entity.CreatedBy ??= CurrentUserId;
+                if (string.IsNullOrEmpty(entry.Entity.CreatedBy) || entry.Entity.CreatedBy == MedLinkEnums.EmptyGuid) entry.Entity.CreatedBy = AuditUserId;
+                if (string.IsNullOrEmpty(entry.Entity.ModifiedBy) || entry.Entity.ModifiedBy == MedLinkEnums.EmptyGuid) entry.Entity.ModifiedBy = AuditUserId;
             }
             else if (entry.State == EntityState.Modified)
             {
                 entry.Entity.ModifiedOn = now;
-                entry.Entity.ModifiedBy = CurrentUserId;
+                entry.Entity.ModifiedBy = AuditUserId;
             }
         }
     }

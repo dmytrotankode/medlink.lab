@@ -8,7 +8,9 @@ const STORAGE_KEY = 'medlink.lis.employeeId';
 
 function readStored () {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) || null;
+    const v = window.localStorage.getItem(STORAGE_KEY) || null;
+    // До вирівнювання з MedLink демо-ключі мали вигляд emp-0000-…; тепер — uuid 0e000000-…
+    return v && v.startsWith('emp-0000-') ? v.replace('emp-0000-', '0e000000-') : v;
   } catch (e) {
     return null;
   }

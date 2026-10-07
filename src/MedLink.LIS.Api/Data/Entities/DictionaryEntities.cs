@@ -124,11 +124,14 @@ public class LabTestProfile : GuidEntity
     public decimal Price { get; set; }
     public int? DefaultBiomaterialTypeId { get; set; }
     public int? DefaultTubeTypeId { get; set; }
-    /// <summary>Послуга МІС evomis (dct_service): код/назва/ціна беруться звідти, ЛІС зберігає лише лабораторні атрибути (як dct_service_lab у Simplex).</summary>
-    [MaxLength(64)] public string? MisServiceId { get; set; }
+    /// <summary>Послуга прайсу закладу MedLink (org_organization_service): назва та ціна беруться звідти; ЛІС зберігає лише лабораторні атрибути (рішення Q-01).</summary>
+    [MaxLength(64)] public string? OrganizationServiceId { get; set; }
+    /// <summary>Послуга національного каталогу eHealth (ehe_service_catalog_service) — код для е-направлення та DiagnosticReport.</summary>
+    [MaxLength(64)] public string? EhealthServiceCatalogServiceId { get; set; }
     public bool IsActive { get; set; } = true;
 
-    [ForeignKey(nameof(MisServiceId))] public DctService? MisService { get; set; }
+    [ForeignKey(nameof(OrganizationServiceId))] public OrgOrganizationService? OrganizationService { get; set; }
+    [ForeignKey(nameof(EhealthServiceCatalogServiceId))] public EheServiceCatalogService? EhealthService { get; set; }
     public List<LabTestProfileItem> Items { get; set; } = new();
 }
 

@@ -23,6 +23,7 @@
             <template v-else-if="typeof props.value === 'boolean'"><q-icon :name="props.value ? 'check_circle' : 'radio_button_unchecked'" :color="props.value ? 'positive' : 'grey-5'" /></template>
             <template v-else-if="props.col.name.endsWith('Id')">{{ refLabel(props.col.name, props.value) }}</template>
             <template v-else-if="props.col.name === 'itemsCount'">{{ (props.row.items || []).length }}</template>
+            <template v-else-if="selectField(props.col.name)">{{ displayValue(selectField(props.col.name), props.value) }}</template>
             <template v-else>{{ props.value === null || props.value === undefined ? '—' : props.value }}</template>
           </q-td>
         </template>
@@ -105,11 +106,13 @@ export default {
       const it = this.$store.getters['dictionaries/byId'](d, id);
       return it ? (it.name || it.fullName || it.code) : id;
     },
+    selectField (col) { return (this.schema.fields || []).find(f => f.name === col && f.type === 'select' && Array.isArray(f.options) && typeof f.options[0] === 'object'); },
     displayValue (f, v) {
       if (v === null || v === undefined || v === '') return '—';
       if (f.type === 'toggle') return v ? 'так' : 'ні';
       if (f.type === 'dict') return this.refLabel(f.name, v) || v;
       if (f.type === 'select' && f.name === 'labRole') return this.roleLabel(v);
+      if (f.type === 'select' && Array.isArray(f.options)) { const o = f.options.find(x => x && x.value === v); if (o) return o.label; }
       if (Array.isArray(v)) return v.join(', ');
       return v;
     },

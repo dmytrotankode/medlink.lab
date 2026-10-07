@@ -62,7 +62,7 @@ public sealed class SampleService
 
     public async Task<PagedResult<SampleDto>> ListAsync(string? status, string? barcode, string? orderId, PagingQuery paging)
     {
-        var q = Query().AsNoTracking().Where(s => !s.IsDeleted);
+        var q = Query().AsNoTracking().Where(s => s.RecordState != RecordStates.Deleted);
         if (!string.IsNullOrWhiteSpace(status))
         {
             var statuses = status.ToUpperInvariant().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -240,7 +240,7 @@ public sealed class SampleService
 
     public LabelDto BuildLabel(LabOrderSample sample)
     {
-        var patientName = sample.Order?.Patient?.FullName ?? "";
+        var patientName = sample.Order?.Patient?.Caption ?? "";
         var tube = sample.TubeType?.Name ?? "";
         var at = sample.CollectedAt ?? sample.Order?.OrderDatetime ?? DateTime.UtcNow;
         return new LabelDto

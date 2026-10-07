@@ -19,26 +19,25 @@ public sealed class PatientService
 
     public async Task<PagedResult<PatientDto>> SearchAsync(string? search, PagingQuery paging)
     {
-        var q = _db.Patients.AsNoTracking().Where(p => !p.IsDeleted);
+        var q = _db.Patients.AsNoTracking().Where(p => p.RecordState != RecordStates.Deleted);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim();
-            q = q.Where(p => p.LastName.Contains(s) || p.FirstName.Contains(s) || (p.SecondName != null && p.SecondName.Contains(s)) || (p.Phone != null && p.Phone.Contains(s)) || (p.TaxId != null && p.TaxId.Contains(s)));
+            q = q.Where(p => (p.Caption != null && p.Caption.Contains(s)) || (p.Person!.Phone != null && p.Person.Phone.Contains(s)) || (p.Person.Ipn != null && p.Person.Ipn.Contains(s)));
         }
-        var paged = await q.OrderBy(p => p.LastName).ThenBy(p => p.FirstName).ToPagedAsync(paging);
+        var paged = await q.OrderBy(p => p.Caption).ToPagedAsync(paging);
         return new PagedResult<PatientDto> { Total = paged.Total, Page = paged.Page, PageSize = paged.PageSize, Items = paged.Items.Select(p => DtoMapper.ToDto(p)).ToList() };
     }
 
-    public async Task<MisPatientCard> LoadAsync(string id) => await _db.Patients.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted) ?? throw NotFoundException.For("Пацієнт", id);
+    public async Task<MisPatientCard> LoadAsync(string id) => await _db.Patients.FirstOrDefaultAsync(p => p.Id == id && p.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Пацієнт", id);
     public async Task<PatientDto> GetAsync(string id) => DtoMapper.ToDto(await LoadAsync(id));
 
     public async Task<PatientDto> CreateAsync(NewPatientRequest req)
     {
         _policy.Require("Створення картки пацієнта", EditorRoles);
         if (string.IsNullOrWhiteSpace(req.LastName) || string.IsNullOrWhiteSpace(req.FirstName)) throw new ValidationException("Прізвище та ім'я обов'язкові");
-        var p = new MisPatientCard { LastName = req.LastName.Trim(), FirstName = req.FirstName.Trim(), SecondName = req.SecondName?.Trim(), BirthDate = req.BirthDate, Gender = OrderService.NormalizeGender(req.Gender), Phone = req.Phone, Email = req.Email, TaxId = req.TaxId, Address = req.Address };
-        p.LastNameLatin = Core.Common.TransliterationKmu2010.ToLatin(p.LastName);
-        p.FirstNameLatin = Core.Common.TransliterationKmu2010.ToLatin(p.FirstName);
+        req.Gender = OrderService.NormalizeGender(req.Gender);
+        var p = MedLinkPeople.NewPatient(req, MedLinkDefaults.OrganizationId);
         _db.Patients.Add(p);
         _audit.Log("CREATE", "mis_patient_card", p.Id, null, req);
         await _db.SaveChangesAsync();
@@ -49,14 +48,9 @@ public sealed class PatientService
     {
         _policy.Require("Редагування картки пацієнта", EditorRoles);
         var p = await LoadAsync(id);
-        var before = new { p.LastName, p.FirstName, p.SecondName, p.BirthDate, p.Gender, p.Phone, p.Email, p.TaxId, p.Address };
-        if (!string.IsNullOrWhiteSpace(req.LastName)) p.LastName = req.LastName.Trim();
-        if (!string.IsNullOrWhiteSpace(req.FirstName)) p.FirstName = req.FirstName.Trim();
-        p.SecondName = req.SecondName ?? p.SecondName; p.BirthDate = req.BirthDate ?? p.BirthDate;
-        if (!string.IsNullOrWhiteSpace(req.Gender)) p.Gender = OrderService.NormalizeGender(req.Gender);
-        p.Phone = req.Phone ?? p.Phone; p.Email = req.Email ?? p.Email; p.TaxId = req.TaxId ?? p.TaxId; p.Address = req.Address ?? p.Address;
-        p.LastNameLatin = Core.Common.TransliterationKmu2010.ToLatin(p.LastName);
-        p.FirstNameLatin = Core.Common.TransliterationKmu2010.ToLatin(p.FirstName);
+        var before = MedLinkPeople.ToDto(p);
+        if (!string.IsNullOrWhiteSpace(req.Gender)) req.Gender = OrderService.NormalizeGender(req.Gender);
+        MedLinkPeople.Apply(p, req, isNew: false);
         _audit.Log("UPDATE", "mis_patient_card", p.Id, before, req);
         await _db.SaveChangesAsync();
         return DtoMapper.ToDto(p);
@@ -68,7 +62,9 @@ public sealed class PatientService
         var p = await LoadAsync(id);
         if (await _db.Orders.AnyAsync(o => o.PatientId == id)) throw new ConflictException("Пацієнт має замовлення — видалення неможливе (картку деактивовано)");
         _db.Patients.Remove(p);
-        _audit.Log("DELETE", "mis_patient_card", id, new { p.FullName }, null);
+        if (p.Person != null && !await _db.Patients.AnyAsync(x => x.PersonId == p.PersonId && x.Id != p.Id) && !await _db.Employees.AnyAsync(e => e.PersonId == p.PersonId))
+            _db.Persons.Remove(p.Person);
+        _audit.Log("DELETE", "mis_patient_card", id, new { p.Caption }, null);
         await _db.SaveChangesAsync();
     }
 

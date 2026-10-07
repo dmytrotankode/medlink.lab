@@ -10,7 +10,7 @@ namespace MedLink.LIS.Tests.Api;
 [Collection("api")]
 public class TubePlanApiTests
 {
-    private const string Patient = "pat-0000-0000-0000-000000000003";
+    private const string Patient = "0b000000-0000-0000-0000-000000000003";
     private readonly LisApiFactory _f;
     public TubePlanApiTests(LisApiFactory f) => _f = f;
 

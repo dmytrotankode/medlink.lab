@@ -78,7 +78,7 @@ public sealed class AnalyticsService
         var f = from ?? DateTime.UtcNow.AddDays(-30); var t = to ?? DateTime.UtcNow;
         var tests = await _db.OrderTests.AsNoTracking().Include(x => x.Order).Include(x => x.Profile).Include(x => x.Result).ThenInclude(r => r!.Analyzer)
             .Where(x => x.Order!.OrderDatetime >= f && x.Order.OrderDatetime <= t && x.Order.Status != OrderStatuses.Cancelled).ToListAsync();
-        var employees = await _db.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => e.FullName);
+        var employees = await _db.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => e.Caption ?? "");
         IEnumerable<IGrouping<string, LabOrderTest>> groups = groupBy.ToLowerInvariant() switch
         {
             "analyzer" => tests.GroupBy(x => x.Result?.Analyzer?.Name ?? "Ручне введення"),
@@ -166,9 +166,9 @@ public sealed class AnalyticsService
                 var row = 2;
                 foreach (var o in orders)
                 {
-                    ws.Cell(row, 1).Value = o.OrderNumber; ws.Cell(row, 2).Value = o.OrderDatetime; ws.Cell(row, 3).Value = o.Patient?.FullName ?? ""; ws.Cell(row, 4).Value = o.Patient?.Gender ?? "";
-                    if (o.Patient?.BirthDate != null) ws.Cell(row, 5).Value = o.Patient.BirthDate.Value;
-                    ws.Cell(row, 6).Value = o.Department?.Name ?? ""; ws.Cell(row, 7).Value = o.Status; ws.Cell(row, 8).Value = o.IsUrgentCito ? "Так" : ""; ws.Cell(row, 9).Value = o.Tests.Count; ws.Cell(row, 10).Value = o.TotalPrice;
+                    ws.Cell(row, 1).Value = o.OrderNumber; ws.Cell(row, 2).Value = o.OrderDatetime; ws.Cell(row, 3).Value = o.Patient?.Caption ?? ""; ws.Cell(row, 4).Value = o.Patient?.Gender ?? "";
+                    if (o.Patient?.Birthday != null) ws.Cell(row, 5).Value = o.Patient.Birthday.Value;
+                    ws.Cell(row, 6).Value = o.Department?.Caption ?? ""; ws.Cell(row, 7).Value = o.Status; ws.Cell(row, 8).Value = o.IsUrgentCito ? "Так" : ""; ws.Cell(row, 9).Value = o.Tests.Count; ws.Cell(row, 10).Value = o.TotalPrice;
                     row++;
                 }
                 break;

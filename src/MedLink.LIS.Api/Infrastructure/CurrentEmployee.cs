@@ -28,7 +28,7 @@ public sealed class CurrentEmployee : ICurrentEmployee
     public void Set(OrgEmployee? employee, string requestedId, string? ip)
     {
         EmployeeId = employee?.Id ?? requestedId;
-        FullName = employee?.FullName;
+        FullName = employee?.Caption;
         LabRole = employee?.LabRole;
         DepartmentId = employee?.DepartmentId;
         Ip = ip;

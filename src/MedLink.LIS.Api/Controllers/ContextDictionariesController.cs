@@ -24,11 +24,11 @@ public sealed class ContextController : LisControllerBase
     [HttpGet("context/me")]
     public async Task<IActionResult> Me()
     {
-        var emp = await _db.Employees.AsNoTracking().Include(e => e.Department).FirstOrDefaultAsync(e => e.Id == _current.EmployeeId);
+        var emp = await _db.Employees.AsNoTracking().Include(e => e.Department).Include(e => e.PositionType).FirstOrDefaultAsync(e => e.Id == _current.EmployeeId);
         var lab = await _db.Settings.AsNoTracking().FirstOrDefaultAsync();
         return Ok(new
         {
-            employee = emp == null ? null : new { emp.Id, emp.FullName, position = emp.PositionName, emp.LabRole, emp.DepartmentId, departmentName = emp.Department?.Name, emp.Email, emp.Phone },
+            employee = emp == null ? null : new { emp.Id, fullName = emp.Caption, position = emp.LabSettings?.PositionName ?? emp.PositionType?.Caption, emp.LabRole, emp.DepartmentId, departmentName = emp.Department?.Caption, emp.Person?.Email, emp.Person?.Phone },
             requestedEmployeeId = _current.EmployeeId, isResolved = _current.IsResolved,
             lab = lab == null ? null : new { lab.Name, lab.Edrpou, lab.Address, lab.Phone, lab.Email, lab.LicenseNumber, lab.DirectorName, lab.WorkingHours, lab.PanicPhone },
             roles = LabRoles.All, stateMachine = new { order = LisStateMachine.Describe(LisEntities.Order), sample = LisStateMachine.Describe(LisEntities.Sample), orderTest = LisStateMachine.Describe(LisEntities.OrderTest), manifest = LisStateMachine.Describe(LisEntities.Manifest), culture = LisStateMachine.Describe(LisEntities.Culture), connector = LisStateMachine.Describe(LisEntities.Connector) }
@@ -39,8 +39,8 @@ public sealed class ContextController : LisControllerBase
     [HttpGet("context/employees")]
     public async Task<IActionResult> Employees()
     {
-        var list = await _db.Employees.AsNoTracking().Include(e => e.Department).Where(e => e.IsActive && !e.IsDeleted).OrderBy(e => e.FullName)
-            .Select(e => new { e.Id, e.FullName, position = e.PositionName, e.LabRole, e.DepartmentId, departmentName = e.Department!.Name }).ToListAsync();
+        var list = await _db.Employees.AsNoTracking().Where(e => (e.LabSettings == null || e.LabSettings.IsActive) && e.RecordState != RecordStates.Deleted).OrderBy(e => e.Caption)
+            .Select(e => new { e.Id, fullName = e.Caption, position = e.LabSettings!.PositionName ?? e.PositionType!.Caption, labRole = e.LabSettings!.LabRole, e.DepartmentId, departmentName = e.Department!.Caption }).ToListAsync();
         return Ok(list);
     }
 }
@@ -228,7 +228,7 @@ public sealed class NormsController : LisControllerBase
     [HttpGet("norms/service-card/{profileId}")]
     public async Task<IActionResult> ServiceCard(string profileId)
     {
-        var p = await _db.Profiles.AsNoTracking().Include(x => x.MisService).Include(x => x.Items.OrderBy(i => i.DisplayOrder)).ThenInclude(i => i.Test).ThenInclude(t => t!.BiomaterialType)
+        var p = await _db.Profiles.AsNoTracking().Include(x => x.OrganizationService).Include(x => x.EhealthService).Include(x => x.Items.OrderBy(i => i.DisplayOrder)).ThenInclude(i => i.Test).ThenInclude(t => t!.BiomaterialType)
             .Include(x => x.Items).ThenInclude(i => i.Test).ThenInclude(t => t!.TubeType).Include(x => x.Items).ThenInclude(i => i.Test).ThenInclude(t => t!.Method)
             .Include(x => x.Items).ThenInclude(i => i.Test).ThenInclude(t => t!.LabSection)
             .FirstOrDefaultAsync(x => x.Id == profileId || x.Code == profileId) ?? throw NotFoundException.For("Профіль (послуга)", profileId);
@@ -242,8 +242,9 @@ public sealed class NormsController : LisControllerBase
             main = new
             {
                 p.Id, p.Code, p.Name, p.Category, p.IsActive, p.TurnaroundHours, p.FastingRequired,
-                misService = p.MisService == null ? null : new { p.MisService.Id, p.MisService.Code, p.MisService.Name, p.MisService.Price, p.MisService.IsActive },
-                price = p.MisService?.Price ?? p.Price, ordersCount = usage
+                organizationService = p.OrganizationService == null ? null : new { p.OrganizationService.Id, p.OrganizationService.Caption, p.OrganizationService.Price, p.OrganizationService.Duration },
+                ehealthService = p.EhealthService == null ? null : new { p.EhealthService.Id, p.EhealthService.Code, p.EhealthService.Name },
+                price = p.OrganizationService?.Price ?? p.Price, ordersCount = usage
             },
             tests = p.Items.Select(i => new { i.Test!.Id, i.Test.Code, i.Test.Name, i.Test.ShortName, i.Test.LoincCode, i.Test.Unit, i.Test.DecimalPlaces, i.Test.ResultType, i.Test.Category, method = i.Test.Method?.Name, i.Test.MethodCode, section = i.Test.LabSection?.Name, i.DisplayOrder, i.IsRequired, i.Test.DeltaCheckMaxPct, i.Test.DeltaCheckHours, i.Test.RequiresManualVerification, layersCount = layers.Count(l => l.TestCode == i.Test.Code) }),
             norms = layers,

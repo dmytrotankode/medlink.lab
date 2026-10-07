@@ -1,6 +1,6 @@
 [
   {
-    "id": "qcm-0000-0000-0000-000000000001", "analyzerId": "anz-0000-0000-0000-000000000001", "name": "XN CHECK Level 1 (Low)", "level": "LEVEL_1_LOW",
+    "id": "09c00000-0000-0000-0000-000000000001", "analyzerId": "0a2a0000-0000-0000-0000-000000000001", "name": "XN CHECK Level 1 (Low)", "level": "LEVEL_1_LOW",
     "lotNumber": "XN1-24091", "manufacturer": "Sysmex / Streck", "expiryDate": "2027-03-31", "openedAt": "2026-09-20", "openStabilityDays": 30,
     "targets": [
       { "testCode": "WBC", "targetMean": 2.9, "targetSd": 0.12, "unit": "10^9/л", "teaPct": 15 },
@@ -10,7 +10,7 @@
     ]
   },
   {
-    "id": "qcm-0000-0000-0000-000000000002", "analyzerId": "anz-0000-0000-0000-000000000001", "name": "XN CHECK Level 2 (Normal)", "level": "LEVEL_2_NORMAL",
+    "id": "09c00000-0000-0000-0000-000000000002", "analyzerId": "0a2a0000-0000-0000-0000-000000000001", "name": "XN CHECK Level 2 (Normal)", "level": "LEVEL_2_NORMAL",
     "lotNumber": "XN2-24092", "manufacturer": "Sysmex / Streck", "expiryDate": "2027-03-31", "openedAt": "2026-09-20", "openStabilityDays": 30,
     "targets": [
       { "testCode": "WBC", "targetMean": 7.2, "targetSd": 0.3, "unit": "10^9/л", "teaPct": 15 },
@@ -20,7 +20,7 @@
     ]
   },
   {
-    "id": "qcm-0000-0000-0000-000000000003", "analyzerId": "anz-0000-0000-0000-000000000002", "name": "ClinChem Multi Control Level 1", "level": "LEVEL_1_LOW",
+    "id": "09c00000-0000-0000-0000-000000000003", "analyzerId": "0a2a0000-0000-0000-0000-000000000002", "name": "ClinChem Multi Control Level 1", "level": "LEVEL_1_LOW",
     "lotNumber": "CCM1-5581", "manufacturer": "Bio-Rad Lyphochek", "expiryDate": "2027-06-30", "openedAt": "2026-09-25", "openStabilityDays": 14,
     "targets": [
       { "testCode": "GLU", "targetMean": 4.2, "targetSd": 0.15, "unit": "ммоль/л", "teaPct": 10 },
@@ -30,7 +30,7 @@
     ]
   },
   {
-    "id": "qcm-0000-0000-0000-000000000004", "analyzerId": "anz-0000-0000-0000-000000000002", "name": "ClinChem Multi Control Level 2", "level": "LEVEL_2_NORMAL",
+    "id": "09c00000-0000-0000-0000-000000000004", "analyzerId": "0a2a0000-0000-0000-0000-000000000002", "name": "ClinChem Multi Control Level 2", "level": "LEVEL_2_NORMAL",
     "lotNumber": "CCM2-5582", "manufacturer": "Bio-Rad Lyphochek", "expiryDate": "2027-06-30", "openedAt": "2026-09-25", "openStabilityDays": 14,
     "targets": [
       { "testCode": "GLU", "targetMean": 12.5, "targetSd": 0.4, "unit": "ммоль/л", "teaPct": 10 },

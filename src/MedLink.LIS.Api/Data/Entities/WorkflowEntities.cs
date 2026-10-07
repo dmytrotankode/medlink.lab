@@ -55,8 +55,13 @@ public class LabOrder : GuidEntity
     [MaxLength(128)] public string? VerifyToken { get; set; }
     [MaxLength(512)] public string? CancelReason { get; set; }
     [MaxLength(64)] public string? RepeatOfOrderId { get; set; }
+    /// <summary>Заклад MedLink (org_organization) — для розмежування даних (RLS evomis).</summary>
+    [MaxLength(64)] public string? OrganizationId { get; set; }
+    /// <summary>Медичний висновок MedLink (mis_diagnostic_report), створений при видачі.</summary>
+    [MaxLength(64)] public string? DiagnosticReportId { get; set; }
 
     [ForeignKey(nameof(PatientId))] public MisPatientCard? Patient { get; set; }
+    [ForeignKey(nameof(DiagnosticReportId))] public MisDiagnosticReport? DiagnosticReport { get; set; }
     [ForeignKey(nameof(DoctorId))] public OrgEmployee? Doctor { get; set; }
     [ForeignKey(nameof(DepartmentId))] public OrgDepartment? Department { get; set; }
     [ForeignKey(nameof(EhealthReferralId))] public EheIncomingMedicalReferral? Referral { get; set; }
