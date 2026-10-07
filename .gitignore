@@ -1,0 +1,29 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+publish/
+artifacts/
+# Node
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+# Python
+__pycache__/
+*.pyc
+# Local runtime data
+*.db-journal
+*.db-wal
+*.db-shm
+/data/
+src/MedLink.LIS.Api/App_Data/
+src/MedLink.LabConnector/data/
+medlink_offline_buffer.db
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/

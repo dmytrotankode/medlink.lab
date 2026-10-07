@@ -1,5 +1,0 @@
-C:\__MEDLINK___\LABA\MedLink.LabConnector\obj\Debug\net6.0\MedLink.LabConnector.csproj.AssemblyReference.cache
-C:\__MEDLINK___\LABA\MedLink.LabConnector\obj\Debug\net6.0\MedLink.LabConnector.GeneratedMSBuildEditorConfig.editorconfig
-C:\__MEDLINK___\LABA\MedLink.LabConnector\obj\Debug\net6.0\MedLink.LabConnector.AssemblyInfoInputs.cache
-C:\__MEDLINK___\LABA\MedLink.LabConnector\obj\Debug\net6.0\MedLink.LabConnector.AssemblyInfo.cs
-C:\__MEDLINK___\LABA\MedLink.LabConnector\obj\Debug\net6.0\MedLink.LabConnector.csproj.CoreCompileInputs.cache
