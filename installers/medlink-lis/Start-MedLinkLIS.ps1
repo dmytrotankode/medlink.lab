@@ -14,7 +14,8 @@ $port = 5055
 $url = "http://localhost:$port"
 
 function Test-Lis {
-    try { $r = Invoke-WebRequest -UseBasicParsing -Uri "$url/health" -TimeoutSec 2; return $r.Content -match '"status"\s*:\s*"Healthy"' } catch { return $false }
+    # 127.0.0.1, а не localhost: Kestrel слухає IPv4 0.0.0.0, а localhost у PowerShell 5.1 спершу йде на ::1
+    try { $r = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$port/health" -TimeoutSec 3; return $r.Content -match '"status"\s*:\s*"Healthy"' } catch { return $false }
 }
 
 function Open-Browser {

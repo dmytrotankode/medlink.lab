@@ -6999,8 +6999,8 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 </tr>
 <tr>
 <td><strong>Відеоогляд</strong> <code>MedLink_LIS_demo_UA.mp4</code></td>
-<td>Запис екрана Microsoft Edge (Playwright, channel msedge), 17 сцен за розділами ТЗ на демо-прикладі, озвучка чоловічим голосом Microsoft uk-UA-OstapNeural</td>
-<td><code>tools/video</code>: <code>scenes.json</code> (текст сцен) → <code>tts.py</code> (edge-tts) → <code>prepare.py</code> (демо-сценарій через API) → <code>record.mjs</code> (запис) → <code>mux.py</code> (ffmpeg, синхронізація озвучки за таймлайном)</td>
+<td>Запис екрана Microsoft Edge (Playwright, channel msedge; кадри — CDP screencast), 17 сцен за розділами ТЗ на демо-прикладі, озвучка чоловічим голосом Microsoft uk-UA-OstapNeural</td>
+<td><code>tools/video</code>: <code>scenes.json</code> (текст сцен) → <code>tts.py</code> (edge-tts) → <code>prepare.py</code> (демо-сценарій через API) → <code>record.mjs</code> (запис кадрів CDP screencast + таймлайн) → <code>mux.py</code> (ffmpeg: кадри за часовими мітками, озвучка за таймлайном сцен)</td>
 </tr>
 </tbody>
 </table>

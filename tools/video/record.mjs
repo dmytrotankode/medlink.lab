@@ -1,5 +1,5 @@
 // Запис відеоогляду в Microsoft Edge (Playwright, channel msedge): сцени зі scenes.json, тривалість кожної ≥ озвучки.
-// Результат: artifacts/video/raw/*.webm + timeline.json (час початку кожної сцени від старту відео, мс).
+// Кадри — CDP screencast (artifacts/video/frames) + timeline.json (часові мітки кадрів і початок кожної сцени, мс).
 import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
@@ -18,11 +18,25 @@ const ADMIN = '0e000000-0000-0000-0000-000000000001';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const browser = await chromium.launch({ channel: 'msedge', headless: false, args: ['--window-size=1400,900', '--lang=uk-UA'] });
-const context = await browser.newContext({ viewport: { width: 1366, height: 768 }, recordVideo: { dir: path.join(OUT, 'raw'), size: { width: 1366, height: 768 } }, locale: 'uk-UA' });
+const context = await browser.newContext({ viewport: { width: 1366, height: 768 }, locale: 'uk-UA' });
 await context.addInitScript(id => { try { localStorage.setItem('medlink.lis.employeeId', id); } catch (e) {} }, ADMIN);
 const page = await context.newPage();
 const t0 = Date.now();
 const timeline = [];
+// Захоплення кадрів через CDP screencast (надійніше за вбудований запис Playwright): кадри з часовими мітками → frames.json
+const FRAMES = path.join(OUT, 'frames');
+fs.rmSync(FRAMES, { recursive: true, force: true }); fs.mkdirSync(FRAMES, { recursive: true });
+const frames = [];
+const cdp = await context.newCDPSession(page);
+cdp.on('Page.screencastFrame', async f => {
+  const name = String(frames.length).padStart(6, '0') + '.jpg';
+  fs.writeFileSync(path.join(FRAMES, name), Buffer.from(f.data, 'base64'));
+  frames.push({ name, t: Date.now() - t0 });
+  try { await cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }); } catch (e) {}
+});
+const startCast = () => cdp.send('Page.startScreencast', { format: 'jpeg', quality: 70, maxWidth: 1366, maxHeight: 768, everyNthFrame: 1 }).catch(() => {});
+await startCast();
+page.on('framenavigated', fr => { if (fr === page.mainFrame()) startCast(); });
 
 const go = async (route) => { await page.goto(BASE + route, { waitUntil: 'networkidle' }).catch(() => {}); await sleep(1200); };
 const smoothScroll = async (px, steps = 8) => { for (let i = 0; i < steps; i++) { await page.mouse.wheel(0, px / steps); await sleep(180); } };
@@ -61,7 +75,9 @@ const actions = {
       const id = await page.evaluate(async () => { const r = await fetch('/api/v1/lab/orders?pageSize=1', { headers: { 'X-MedLink-Employee-Id': '0e000000-0000-0000-0000-000000000001' } }); return (await r.json()).items[0].id; });
       await go('/laboratory/orders/' + id);
     }
-    await sleep(3000); await smoothScroll(450); await sleep(3500); await smoothScroll(450);
+    // Після створення відкривається діалог друку етикеток — закриваємо, щоб показати картку
+    await sleep(1200); await page.keyboard.press('Escape'); await sleep(500); await clickText('Закрити'); await sleep(800);
+    await sleep(2500); await smoothScroll(450); await sleep(3500); await smoothScroll(450);
   },
   insurance: async () => {
     await go('/laboratory/orders/' + prepared.insuranceOrderId);
@@ -77,14 +93,19 @@ const actions = {
   workstation: async () => { await go('/laboratory/workstation'); await sleep(5000); await smoothScroll(400); },
   validation: async () => { await go('/laboratory/validation'); await sleep(4000); await smoothScroll(300); },
   sendout: async () => {
-    await go('/laboratory/send-out'); await sleep(5000);
-    await clickText('Реєстри'); await sleep(2000);
-    await clickText('SO-'); await sleep(4000);
-    await clickText('Лабораторії ('); await sleep(2000); await clickText('Сінево Україна');
+    await go('/laboratory/send-out'); await sleep(4000);
+    await page.getByRole('tab', { name: /Реєстри/ }).click({ timeout: 3000 }).catch(() => {}); await sleep(1500);
+    await page.getByText(/SO-\d{4}-\d{4}/).first().click({ timeout: 3000 }).catch(() => {}); await sleep(6000);
+    await page.getByRole('tab', { name: /Лабораторії/ }).click({ timeout: 3000 }).catch(() => {}); await sleep(1500);
+    await page.getByText('Сінево Україна').first().click({ timeout: 3000 }).catch(() => {});
   },
   clients: async () => { await go('/laboratory/clients'); await sleep(6000); await smoothScroll(300); },
   referrals: async () => { await go('/laboratory/referrals'); },
-  pricing: async () => { await go('/laboratory/pricing'); await sleep(6000); await clickText('Прайс-листи'); await sleep(2000); await clickText('УНІКА — прайс'); },
+  pricing: async () => {
+    await go('/laboratory/pricing'); await sleep(6000);
+    await page.getByRole('tab', { name: /Прайс-листи/ }).click({ timeout: 3000 }).catch(() => {}); await sleep(1500);
+    await page.getByText('УНІКА — прайс').first().click({ timeout: 3000 }).catch(() => {});
+  },
   qc: async () => { await go('/laboratory/quality-control'); },
   analyzers: async () => { await go('/laboratory/analyzers'); await sleep(6000); await smoothScroll(300); },
   tat: async () => { await go('/laboratory/analytics-tat'); },
@@ -100,8 +121,9 @@ for (const s of scenes) {
   if (left > 0) await sleep(left);
   console.log('scene', s.id, 'done at', ((Date.now() - t0) / 1000).toFixed(1), 's');
 }
-const videoPath = await page.video().path();
+await cdp.send('Page.stopScreencast').catch(() => {});
+const endMs = Date.now() - t0;
 await context.close();
 await browser.close();
-fs.writeFileSync(path.join(OUT, 'timeline.json'), JSON.stringify({ video: videoPath, scenes: timeline }, null, 1));
-console.log('video', videoPath);
+fs.writeFileSync(path.join(OUT, 'timeline.json'), JSON.stringify({ frames: FRAMES, frameList: frames, endMs, scenes: timeline }, null, 1));
+console.log('frames', frames.length, 'end', (endMs / 1000).toFixed(1), 's');
