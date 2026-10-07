@@ -8,7 +8,10 @@
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider quasar dev",
     "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider quasar build",
-    "serve": "node tools/serve-dist.js"
+    "serve": "node tools/serve-dist.js",
+    "e2e": "playwright test",
+    "e2e:mock": "cross-env E2E_MOCK=1 playwright test tests/e2e/ui-smoke.spec.js",
+    "mock-api": "node tools/mock-api.js 5055"
   },
   "dependencies": {
     "@fontsource/source-sans-pro": "^5.0.0",
@@ -21,6 +24,7 @@
     "vuex": "^3.6.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@quasar/app": "^1.9.6",
     "cross-env": "^7.0.3",
     "vue-template-compiler": "2.6.14"

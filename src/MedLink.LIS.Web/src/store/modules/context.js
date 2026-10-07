@@ -26,6 +26,7 @@ const state = {
   employees: [],
   employee: null,
   lab: null,
+  labSettings: null, // GET /settings/lab (принтер етикеток, бланки, retention)
   loaded: false,
   loading: false
 };
@@ -53,6 +54,7 @@ const mutations = {
     s.lab = (me && me.lab) || null;
     s.loaded = true;
   },
+  SET_LAB_SETTINGS (s, v) { s.labSettings = v || null; },
   SET_LOADING (s, v) { s.loading = v; }
 };
 
@@ -81,6 +83,16 @@ const actions = {
     }
   },
 
+  async loadLabSettings ({ commit }) {
+    try {
+      const s = await labApi.labSettings();
+      commit('SET_LAB_SETTINGS', s);
+      return s;
+    } catch (e) {
+      return null;
+    }
+  },
+
   async init ({ dispatch }) {
     try {
       await dispatch('loadEmployees');
@@ -88,6 +100,7 @@ const actions = {
     try {
       await dispatch('loadMe');
     } catch (e) { /* ignore */ }
+    dispatch('loadLabSettings');
   },
 
   async switchEmployee ({ commit, dispatch }, id) {

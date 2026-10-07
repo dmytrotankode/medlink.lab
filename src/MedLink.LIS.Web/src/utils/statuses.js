@@ -9,6 +9,7 @@ export const ORDER_STATUS = {
   IN_TRANSIT: { label: 'У дорозі', color: 'indigo-5', icon: 'local_shipping' },
   RECEIVED: { label: 'Прийнято', color: 'cyan-7', icon: 'inbox' },
   IN_PROGRESS: { label: 'У роботі', color: 'orange-7', icon: 'science' },
+  PARTIALLY_COMPLETED: { label: 'Частково видано', color: 'lime-8', icon: 'donut_large' },
   COMPLETED: { label: 'Виконано', color: 'light-green-7', icon: 'task_alt' },
   RELEASED: { label: 'Видано', color: 'positive', icon: 'verified' },
   CANCELLED: { label: 'Скасовано', color: 'grey-6', icon: 'cancel' },
@@ -16,6 +17,16 @@ export const ORDER_STATUS = {
 };
 
 export const ORDER_STATUS_FLOW = ['NEW', 'COLLECTED', 'IN_TRANSIT', 'RECEIVED', 'IN_PROGRESS', 'COMPLETED', 'RELEASED'];
+
+export const LAB_SECTIONS = ['Біохімія', 'Гематологія', 'Імунохімія', 'Коагулологія', 'Сеча', 'Мікробіологія', 'Патогістологія', 'Цитологія'];
+
+export const DERIVATION_TYPES = [
+  { value: 'ALIQUOT', label: 'Аліквота', icon: 'water_drop' },
+  { value: 'CASSETTE', label: 'Касета', icon: 'inventory_2' },
+  { value: 'BLOCK', label: 'Блок', icon: 'view_in_ar' },
+  { value: 'SLIDE', label: 'Скло', icon: 'crop_7_5' },
+  { value: 'PLATE', label: 'Чашка', icon: 'album' }
+];
 
 export const SAMPLE_STATUS = {
   PENDING: { label: 'Очікує забору', color: 'grey-6', icon: 'hourglass_empty' },
