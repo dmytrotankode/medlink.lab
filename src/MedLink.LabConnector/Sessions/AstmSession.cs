@@ -58,7 +58,7 @@ public sealed class AstmSession : SessionBase
         }
     }
 
-    private async Task OnIdleTimeoutAsync(CancellationToken ct)
+    private Task OnIdleTimeoutAsync(CancellationToken ct)
     {
         if (_state == State.Receiving && (DateTime.UtcNow - _lastByteAt) > TimeSpan.FromSeconds(30))
         {
@@ -84,6 +84,7 @@ public sealed class AstmSession : SessionBase
                 _ = Task.Run(() => HandleInboundAsync(text, ct), ct);
             }
         }
+        return Task.CompletedTask;
     }
 
     private async Task OnByteAsync(byte b, CancellationToken ct)
@@ -208,10 +209,10 @@ public sealed class AstmSession : SessionBase
         await SendControlAsync(AstmControl.ACK, ct);
     }
 
-    private async Task OnEotAsync(CancellationToken ct)
+    private Task OnEotAsync(CancellationToken ct)
     {
-        if (_state == State.Sending) { CompleteControl(AstmControl.EOT); return; }
-        if (_state != State.Receiving) return;
+        if (_state == State.Sending) { CompleteControl(AstmControl.EOT); return Task.CompletedTask; }
+        if (_state != State.Receiving) return Task.CompletedTask;
         var message = AstmFrameCodec.AssembleMessage(_frames);
         int frames = _frames.Count;
         ResetReceive();
@@ -222,6 +223,7 @@ public sealed class AstmSession : SessionBase
             // Обробка поза циклом, щоб приймання ACK/NAK вихідної сесії не блокувалося
             _ = Task.Run(() => HandleInboundAsync(message, ct), ct);
         }
+        return Task.CompletedTask;
     }
 
     private bool CompleteControl(byte b)

@@ -1,26 +1,37 @@
 [Unit]
-Description=MedLink LIS Analyzer Driver Connector Daemon
+Description=MedLink LIS Analyzer Connector (ASTM/HL7 аналізатори → ЛІС MedLink)
 Documentation=https://medlink.ua/docs/lis/connector
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
+# Type=notify: .NET (UseSystemd) повідомляє про готовність та watchdog
 Type=notify
-WorkingDirectory=/opt/medlink/labconnector
-ExecStart=/opt/medlink/labconnector/MedLink.LabConnector
+WorkingDirectory=@INSTALL_DIR@
+ExecStart=@INSTALL_DIR@/MedLink.LabConnector run --data-dir @DATA_DIR@
 Restart=always
 RestartSec=10
+TimeoutStopSec=30
 KillSignal=SIGINT
 SyslogIdentifier=medlink-labconnector
 User=medlink
 Group=medlink
+# dialout — COM/USB-порти приладів, lp — локальні принтери етикеток (lp -o raw)
+SupplementaryGroups=dialout lp
 Environment=DOTNET_ENVIRONMENT=Production
-Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
+Environment=DOTNET_gcServer=0
+Environment=MEDLINK_CONNECTOR_DATA=@DATA_DIR@
 
-# Security hardening
-ProtectSystem=full
-ProtectHome=true
+# Захист
 NoNewPrivileges=true
 PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=@DATA_DIR@
+DeviceAllow=char-ttyUSB rw
+DeviceAllow=char-ttyS rw
+DeviceAllow=char-ttyACM rw
 
 [Install]
 WantedBy=multi-user.target

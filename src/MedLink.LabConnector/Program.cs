@@ -60,6 +60,8 @@ public static class Program
             ApplicationName = "MedLink.LabConnector",
         };
         var builder = WebApplication.CreateBuilder(options);
+        // Налаштування принтера, записані інсталятором (Inno Setup / install-windows.ps1)
+        builder.Configuration.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.Printing.json"), optional: true, reloadOnChange: true);
         builder.Configuration.AddJsonFile(paths.LocalSettingsFile, optional: true, reloadOnChange: true);
         builder.Configuration.AddEnvironmentVariables("MEDLINK_");
 
