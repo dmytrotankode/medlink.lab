@@ -85,6 +85,7 @@ builder.Services.AddScoped<MedLink.LIS.Api.Services.Ehealth.IEhealthClient, MedL
 builder.Services.AddScoped<IEhealthReferralGateway, EhealthReferralGateway>();
 builder.Services.AddScoped<ReferralService>();
 builder.Services.AddScoped<BillingService>();
+builder.Services.AddScoped<ClientService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<SampleService>();
 builder.Services.AddScoped<ResultPipelineService>();

@@ -134,4 +134,28 @@ public class BillingApiTests
         Assert.Contains("безоплатно (ПМГ)", receipt);
         Assert.Contains("не покривається програмою", receipt);
     }
+
+    [Fact]
+    public async Task Cancelled_paid_order_shows_refund_and_cancelled_invoice_can_be_reissued()
+    {
+        var reg = _f.As(DemoDataSeeder.Registrar);
+        var admin = _f.As(DemoDataSeeder.Admin);
+        var order = await Json(await reg.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = "0b000000-0000-0000-0000-000000000005", profileIds = new[] { "PROF_CBC" } }));
+        var id = S(order["id"]);
+        await Json(await reg.PostAsJsonAsync($"/api/v1/lab/orders/{id}/payments", new { amount = 250, method = "CASH" }));
+        await Json(await reg.PostAsJsonAsync($"/api/v1/lab/orders/{id}/cancel", new { reason = "Пацієнт відмовився" }));
+        var bill = await Json(await reg.GetAsync($"/api/v1/lab/orders/{id}/billing"));
+        Assert.Equal(0m, D(bill["patientAmount"]));
+        Assert.Equal(250m, D(bill["refundDue"]));
+        bill = await Json(await reg.PostAsJsonAsync($"/api/v1/lab/orders/{id}/payments", new { amount = 250, method = "REFUND" }));
+        Assert.Equal(0m, D(bill["paidAmount"]));
+
+        var ins = await Json(await reg.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = "0b000000-0000-0000-0000-000000000003", payerId = "UNIQA-GOLD", profileIds = new[] { "PROF_URINE" } }));
+        var inv = await Json(await reg.PostAsync($"/api/v1/lab/orders/{S(ins["id"])}/invoice", null));
+        await Json(await admin.PostAsJsonAsync($"/api/v1/lab/invoices/{S(inv["id"])}/cancel", new { reason = "Помилка в даних полісу" }));
+        var again = await Json(await reg.PostAsync($"/api/v1/lab/orders/{S(ins["id"])}/invoice", null));
+        Assert.NotEqual(S(inv["number"]), S(again["number"]));
+        var paid = await Json(await admin.PostAsync($"/api/v1/lab/invoices/{S(again["id"])}/paid", null));
+        Assert.Equal("PAID", S(paid["status"]));
+    }
 }

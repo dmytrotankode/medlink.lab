@@ -285,6 +285,32 @@ public sealed class BillingService
         return new { inv.Id, inv.Number, inv.Amount, inv.Status, inv.IssuedAt, payerName = payer.Name };
     }
 
+    /// <summary>Анулювання рахунку платнику (помилка, перевиставлення). Нарахування повертаються до невиставлених.</summary>
+    public async Task<object> CancelInvoiceAsync(string invoiceId, string reason)
+    {
+        _policy.Require("Анулювання рахунку", LabRoles.Admin, LabRoles.Registrar);
+        if (string.IsNullOrWhiteSpace(reason)) throw ValidationException.Field("reason", "Вкажіть причину анулювання");
+        var inv = await _db.Invoices.FirstOrDefaultAsync(i => i.Id == invoiceId || i.Number == invoiceId) ?? throw NotFoundException.For("Рахунок", invoiceId);
+        if (inv.Status == "PAID") throw new ConflictException("Рахунок уже сплачено — анулювання неможливе");
+        if (inv.Status == "CANCELLED") throw new ConflictException("Рахунок уже анульовано");
+        inv.Status = "CANCELLED";
+        _audit.Log("CANCEL_INVOICE", "lab_invoice", inv.Id, null, new { inv.Number }, reason);
+        await _db.SaveChangesAsync();
+        return new { inv.Id, inv.Number, inv.Status };
+    }
+
+    /// <summary>Позначка оплати рахунку платником (банківська виписка).</summary>
+    public async Task<object> MarkInvoicePaidAsync(string invoiceId)
+    {
+        _policy.Require("Оплата рахунку платником", LabRoles.Admin, LabRoles.Registrar);
+        var inv = await _db.Invoices.FirstOrDefaultAsync(i => i.Id == invoiceId || i.Number == invoiceId) ?? throw NotFoundException.For("Рахунок", invoiceId);
+        if (inv.Status != "ISSUED") throw new ConflictException($"Рахунок у статусі {inv.Status}");
+        inv.Status = "PAID"; inv.PaidAt = DateTime.UtcNow;
+        _audit.Log("INVOICE_PAID", "lab_invoice", inv.Id, null, new { inv.Number, inv.Amount });
+        await _db.SaveChangesAsync();
+        return new { inv.Id, inv.Number, inv.Status, inv.PaidAt };
+    }
+
     private async Task<string> NumberAsync(string prefix, DateTime at) => $"{prefix}-{at:yyMM}-{await _numerators.NextCounterAsync("lab_" + prefix.ToLowerInvariant() + ":" + at.ToString("yyMM")):00000}";
 
     public async Task<object> BillingAsync(string orderId)
@@ -296,6 +322,7 @@ public sealed class BillingService
         {
             order.Id, order.OrderNumber, payerId = order.PayerId, payerName = order.Payer?.Name, payerKind = order.Payer?.Kind, payerKindName = order.Payer == null ? null : PayerKinds.Label(order.Payer.Kind),
             order.InsurancePolicyNumber, order.AuthorizationNumber, total = order.TotalPrice, order.PayerAmount, order.PatientAmount, order.PaidAmount, due = order.PatientAmount - order.PaidAmount,
+            refundDue = order.PaidAmount > order.PatientAmount ? order.PaidAmount - order.PatientAmount : 0m,
             charges = order.Charges.OrderBy(c => c.Code).Select(c => new { c.Id, c.Code, c.Name, c.Amount, c.PayerAmount, c.PatientAmount, payerName = c.Payer?.Name, c.PayerKind, c.IsNotCovered, c.IsPatientChoice, isPackage = c.PackageId != null }),
             payments = payments.Select(p => new { p.Id, p.Amount, p.Method, p.ReceiptNumber, p.PaidAt }),
             invoices = invoices.Select(i => new { i.Id, i.Number, i.Amount, i.Status, i.IssuedAt })

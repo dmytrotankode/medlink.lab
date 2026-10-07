@@ -329,6 +329,12 @@ public sealed class OrderService
         await _referrals.ReleaseAsync(order, reason);
         foreach (var t in order.Tests.Where(t => !OrderTestStatuses.Final.Contains(t.Status))) { t.Status = OrderTestStatuses.Rejected; t.RejectReason = "Замовлення скасовано: " + reason; }
         foreach (var s in order.Samples.Where(s => s.Status == SampleStatuses.Pending || s.Status == SampleStatuses.Collected)) { s.Status = SampleStatuses.Rejected; s.RejectReason = "Замовлення скасовано"; }
+        // Позиції у відкритих реєстрах зовнішніх лабораторій — відкликати
+        var testIds = order.Tests.Select(t => t.Id).ToList();
+        foreach (var item in await _db.SendOutItems.Where(i => testIds.Contains(i.OrderTestId) && SendOutItemStatuses.Open.Contains(i.Status)).ToListAsync())
+        { item.Status = SendOutItemStatuses.Recalled; item.RejectReason = "Замовлення скасовано: " + reason; }
+        // Перерахунок вартості: скасовані позиції не тарифікуються; сплачене пацієнтом стає сумою до повернення
+        await _billing.RecalculateAsync(order);
         _audit.Log("CANCEL", "lab_order", order.Id, new { status = before }, new { status = order.Status, reason });
         await _db.SaveChangesAsync();
         return await GetAsync(id);

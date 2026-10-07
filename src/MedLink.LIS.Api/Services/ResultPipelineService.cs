@@ -47,10 +47,12 @@ public sealed class ResultPipelineService
     private readonly ProgressiveReleaseService _release;
     private readonly ILogger<ResultPipelineService> _logger;
 
+    private readonly BillingService _billing;
+
     public ResultPipelineService(LisDbContext db, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state,
-        SampleService samples, ProgressiveReleaseService release, ILogger<ResultPipelineService> logger)
+        SampleService samples, ProgressiveReleaseService release, ILogger<ResultPipelineService> logger, BillingService billing)
     {
-        _db = db; _audit = audit; _policy = policy; _current = current; _state = state; _samples = samples; _release = release; _logger = logger;
+        _db = db; _audit = audit; _policy = policy; _current = current; _state = state; _samples = samples; _release = release; _logger = logger; _billing = billing;
     }
 
     private IRolePolicy PolicyFor(bool isSystem) => isSystem ? new SystemRolePolicy() : _policy;
@@ -324,6 +326,8 @@ public sealed class ResultPipelineService
         if (test.Result != null)
             _db.ResultHistory.Add(new LabResultHistory { OrderTestId = test.Id, ResultId = test.Result.Id, Version = test.Result.Version, Action = "REJECTED", Flag = test.Result.Flag, ActorId = _current.EmployeeId, Comment = reason });
         _state.RecomputeCompletion(test.Order!);
+        // Відхилений до отримання результату тест не тарифікується (FR-GAP-060)
+        if (test.Result == null && !await _db.Invoices.AnyAsync(i => i.OrderId == test.OrderId && i.Status != "CANCELLED")) await _billing.RecalculateAsync(test.Order!);
         _audit.Log("REJECT", "lab_order_test", test.Id, new { status = before }, new { test.Status, reason });
         await _db.SaveChangesAsync();
         return await RowAsync(test.Id);

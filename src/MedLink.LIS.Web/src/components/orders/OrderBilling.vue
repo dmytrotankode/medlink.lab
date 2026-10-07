@@ -31,9 +31,10 @@
         </tbody>
       </q-markup-table>
       <div class="row items-center q-mt-sm q-gutter-sm">
-        <div class="text-subtitle2">Сплачено {{ b.paidAmount | money }} · <span :class="b.due > 0 ? 'text-negative' : 'text-positive'">до сплати {{ b.due | money }}</span></div>
+        <div class="text-subtitle2">Сплачено {{ b.paidAmount | money }} · <span v-if="b.refundDue > 0" class="text-deep-orange-8">до повернення {{ b.refundDue | money }}</span><span v-else :class="b.due > 0 ? 'text-negative' : 'text-positive'">до сплати {{ b.due | money }}</span></div>
         <q-space />
         <q-btn v-if="b.due > 0" dense unelevated color="positive" icon="point_of_sale" label="Прийняти оплату" data-testid="payBtn" @click="pay" />
+        <q-btn v-if="b.refundDue > 0" dense unelevated color="deep-orange-6" icon="undo" label="Повернення коштів" @click="refund" />
         <q-btn dense outline color="primary" icon="receipt_long" label="Квитанція" :href="$api.receiptUrl(orderId)" target="_blank" />
         <q-btn v-if="b.payerKind !== 'PATIENT' && !b.invoices.length" dense outline color="purple-6" icon="request_quote" label="Рахунок платнику" @click="invoice" />
         <q-btn v-for="i in b.invoices" :key="i.id" dense flat color="purple-6" icon="print" :label="i.number" :href="$api.invoicePrintUrl(i.id)" target="_blank" />
@@ -61,6 +62,10 @@ export default {
           this.$q.dialog({ title: 'Сума оплати, грн', message: `До сплати: ${this.b.due}`, prompt: { model: String(this.b.due), type: 'text' }, cancel: true })
             .onOk(v => this.run(() => this.$api.addPayment(this.orderId, { amount: Number(String(v).replace(',', '.')), method }), 'Оплату прийнято'));
         });
+    },
+    refund () {
+      this.$q.dialog({ title: 'Повернення коштів', message: `До повернення: ${this.b.refundDue} грн`, prompt: { model: String(this.b.refundDue), type: 'text' }, cancel: true })
+        .onOk(v => this.run(() => this.$api.addPayment(this.orderId, { amount: Number(String(v).replace(',', '.')), method: 'REFUND' }), 'Повернення проведено'));
     },
     toggleChoice (c) { this.run(() => this.$api.setChargePatientChoice(this.orderId, c.id, !c.isPatientChoice)); },
     async invoice () {

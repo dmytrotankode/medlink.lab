@@ -36,5 +36,7 @@ public sealed class BillingController : LisControllerBase
     /// <summary>Друк: замовлення-квитанція пацієнту (HTML).</summary>
     [HttpGet("orders/{id}/receipt")] public async Task<IActionResult> Receipt(string id) => Content(await _svc.OrderReceiptHtmlAsync(id), "text/html; charset=utf-8");
     /// <summary>Друк: рахунок платнику (HTML).</summary>
+    [HttpPost("invoices/{id}/cancel")] public async Task<IActionResult> CancelInvoice(string id, [FromBody] SendOutItemRejectRequest req) => Ok(await _svc.CancelInvoiceAsync(id, req.Reason));
+    [HttpPost("invoices/{id}/paid")] public async Task<IActionResult> InvoicePaid(string id) => Ok(await _svc.MarkInvoicePaidAsync(id));
     [HttpGet("invoices/{id}/print")] public async Task<IActionResult> InvoicePrint(string id) => Content(await _svc.InvoiceHtmlAsync(id), "text/html; charset=utf-8");
 }
