@@ -1,0 +1,6 @@
+<ENQ>
+<STX>1H|\^&|||host^1|||||cobas-e411|TSDWN^REPLY|P|1<CR><ETX>B1<CR><LF>
+<STX>2P|1<CR><ETX>3F<CR><LF>
+<STX>3O|1|10260048|S1^SC|^^^TSH^\^^^FT4^\^^^FT3^|R||||||A||||1||||||||||O<CR><ETX>A9<CR><LF>
+<STX>4L|1|N<CR><ETX>07<CR><LF>
+<EOT>

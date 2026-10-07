@@ -1,0 +1,16 @@
+<ENQ>
+<STX>1H|\^&|||URISYS1100^1.0|||||||P|1|20261006160000<CR><ETX>8C<CR><LF>
+<STX>2P|1|||||||||||||||||||||||||||||||||<CR><ETX>3B<CR><LF>
+<STX>3O|1|10260051||^^^|R|20261006160000|||||||||URINE<CR><ETX>3D<CR><LF>
+<STX>4R|1|01^SG|1.020|||||F<CR><ETX>37<CR><LF>
+<STX>5R|2|02^pH|6.0|||||F<CR><ETX>FB<CR><LF>
+<STX>6R|3|03^LEU|neg^|Leu/uL|||||F<CR><ETX>C2<CR><LF>
+<STX>7R|4|04^NIT|neg^|||||F<CR><ETX>38<CR><LF>
+<STX>0R|5|05^PRO|neg^|mg/dL|||||F<CR><ETX>68<CR><LF>
+<STX>1R|6|06^GLU|norm^|mg/dL|||||F<CR><ETX>E4<CR><LF>
+<STX>2R|7|07^KET|neg^|mg/dL|||||F<CR><ETX>61<CR><LF>
+<STX>3R|8|08^UBG|norm^|mg/dL|||||F<CR><ETX>E0<CR><LF>
+<STX>4R|9|09^BIL|neg^|||||F<CR><ETX>2B<CR><LF>
+<STX>5R|10|10^ERY|neg^|Ery/uL|||||F<CR><ETX>01<CR><LF>
+<STX>6L|1|N<CR><ETX>09<CR><LF>
+<EOT>

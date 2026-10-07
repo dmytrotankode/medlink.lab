@@ -1,0 +1,10 @@
+<SOH>
+09 CBINTEGRA 400    10
+<STX>
+53 10260053       07/10/2026 SER
+55 GLU
+00 5.21     mmol/l
+55 ALT
+00 31.0     U/l
+<ETX>
+<EOT>
