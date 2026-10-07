@@ -97,6 +97,13 @@ public sealed class SampleDto
     public int BiomaterialTypeId { get; set; }
     public string? BiomaterialName { get; set; }
     public int GroupNumb { get; set; }
+    /// <summary>Порядок забору (CLSI) типу тари.</summary>
+    public int OrderOfDrawIndex { get; set; }
+    /// <summary>Сумарний об'єм матеріалу, потрібний тестам пробірки, мл (FR-PRE-004).</summary>
+    public double? PlannedVolumeMl { get; set; }
+    public double? CapacityMl { get; set; }
+    /// <summary>Коди причин окремої пробірки (TubePlanReasons).</summary>
+    public List<string> PlanReasons { get; set; } = new();
     public string? ParentSampleId { get; set; }
     public string DerivationType { get; set; } = "PRIMARY";
     public int DerivationIndex { get; set; }
@@ -356,4 +363,54 @@ public sealed class TransitionRequest
 {
     public string Status { get; set; } = "";
     public string? Comment { get; set; }
+}
+
+// ------------------------------------------------------------------ план пробірок (FR-PRE-004)
+public sealed class TubePlanRequest
+{
+    public List<string> ProfileIds { get; set; } = new();
+    public List<string> TestIds { get; set; } = new();
+    /// <summary>Для дозамовлення: план з урахуванням наявних пробірок замовлення.</summary>
+    public string? OrderId { get; set; }
+}
+
+public sealed class TubePlanTestDto
+{
+    public string TestId { get; set; } = "";
+    public string Code { get; set; } = "";
+    public string Name { get; set; } = "";
+    public double? RequiredVolumeMl { get; set; }
+    /// <summary>false — тест уже був у цій пробірці (дозамовлення).</summary>
+    public bool IsNew { get; set; } = true;
+}
+
+public sealed class TubePlanItemDto
+{
+    public int Index { get; set; }
+    public string? ExistingSampleId { get; set; }
+    public string? ExistingBarcode { get; set; }
+    public int TubeTypeId { get; set; }
+    public string? TubeCode { get; set; }
+    public string? TubeName { get; set; }
+    public string? ColorCode { get; set; }
+    public string? Anticoagulant { get; set; }
+    public int InversionsCount { get; set; }
+    public int OrderOfDrawIndex { get; set; }
+    public int BiomaterialTypeId { get; set; }
+    public string? BiomaterialName { get; set; }
+    public string? CompatibilityGroup { get; set; }
+    public bool IsSeparate { get; set; }
+    public double? CapacityMl { get; set; }
+    public double UsedVolumeMl { get; set; }
+    public int? MaxTests { get; set; }
+    public List<string> Reasons { get; set; } = new();
+    public List<string> ReasonTexts { get; set; } = new();
+    public List<TubePlanTestDto> Tests { get; set; } = new();
+}
+
+public sealed class TubePlanDto
+{
+    public List<TubePlanItemDto> Tubes { get; set; } = new();
+    public int NewTubesCount { get; set; }
+    public List<string> Warnings { get; set; } = new();
 }

@@ -18,7 +18,11 @@
   "price": 60,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "RBC",
@@ -39,7 +43,11 @@
   "price": 60,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "HGB",
@@ -60,7 +68,11 @@
   "price": 60,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "HCT",
@@ -81,7 +93,11 @@
   "price": 60,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "MCV",
@@ -102,7 +118,11 @@
   "price": 60,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "MCH",
@@ -123,7 +143,11 @@
   "price": 60,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "MCHC",
@@ -144,7 +168,11 @@
   "price": 60,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "PLT",
@@ -165,7 +193,11 @@
   "price": 60,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "NEUT_PCT",
@@ -186,7 +218,11 @@
   "price": 60,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "LYMPH_PCT",
@@ -207,7 +243,11 @@
   "price": 60,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "ESR",
@@ -228,7 +268,11 @@
   "price": 50,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "GLU",
@@ -249,7 +293,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "CREAT",
@@ -270,7 +318,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "UREA",
@@ -291,7 +343,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "ALT",
@@ -312,7 +368,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "AST",
@@ -333,7 +393,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "BIL_TOT",
@@ -354,7 +418,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "PROT_TOT",
@@ -375,7 +443,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "ALB",
@@ -396,7 +468,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "GGT",
@@ -417,7 +493,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "ALP",
@@ -438,7 +518,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "AMYL",
@@ -459,7 +543,11 @@
   "price": 110,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "CHOL",
@@ -480,7 +568,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "HDL",
@@ -501,7 +593,11 @@
   "price": 110,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "LDL",
@@ -522,7 +618,11 @@
   "price": 110,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "TG",
@@ -543,7 +643,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "URIC",
@@ -564,7 +668,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "CRP",
@@ -585,7 +693,11 @@
   "price": 120,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "K",
@@ -606,7 +718,11 @@
   "price": 80,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "NA",
@@ -627,7 +743,11 @@
   "price": 80,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "CL",
@@ -648,7 +768,11 @@
   "price": 80,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "CA",
@@ -669,7 +793,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "FE",
@@ -690,7 +818,11 @@
   "price": 100,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.05,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "HBA1C",
@@ -711,7 +843,11 @@
   "price": 250,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "TROP_I",
@@ -732,7 +868,11 @@
   "price": 320,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.15,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "LACTATE",
@@ -753,7 +893,11 @@
   "price": 120,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.1,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "PT",
@@ -774,7 +918,11 @@
   "price": 80,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.1,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "INR",
@@ -795,7 +943,11 @@
   "price": 80,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.1,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "APTT",
@@ -816,7 +968,11 @@
   "price": 80,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.1,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "FIBRINOGEN",
@@ -837,7 +993,11 @@
   "price": 90,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.1,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "TSH",
@@ -858,7 +1018,11 @@
   "price": 180,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.15,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "FT4",
@@ -879,7 +1043,11 @@
   "price": 180,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.15,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "PSA",
@@ -900,7 +1068,11 @@
   "price": 220,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.15,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "FPSA",
@@ -921,7 +1093,11 @@
   "price": 220,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": true
+  "isQcTracked": true,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": 0.15,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "U_SG",
@@ -942,7 +1118,11 @@
   "price": 20,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "U_PH",
@@ -963,7 +1143,11 @@
   "price": 20,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "U_PRO",
@@ -984,7 +1168,11 @@
   "price": 20,
   "normText": "не виявлено;negative",
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "U_GLU",
@@ -1005,7 +1193,11 @@
   "price": 20,
   "normText": "не виявлено;negative",
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "U_KET",
@@ -1026,7 +1218,11 @@
   "price": 20,
   "normText": "не виявлено;negative",
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "U_LEU",
@@ -1047,7 +1243,11 @@
   "price": 20,
   "normText": "не виявлено;negative",
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "U_ERY",
@@ -1068,7 +1268,11 @@
   "price": 20,
   "normText": "не виявлено;negative",
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "U_NIT",
@@ -1089,7 +1293,11 @@
   "price": 20,
   "normText": "не виявлено;negative",
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "U_COLOR",
@@ -1119,7 +1327,11 @@
    "коричневий",
    "безбарвний"
   ],
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "U_CLARITY",
@@ -1144,7 +1356,11 @@
    "слабко мутна",
    "мутна"
   ],
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "HISTO",
@@ -1165,7 +1381,11 @@
   "price": 900,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "CYTO",
@@ -1186,7 +1406,11 @@
   "price": 450,
   "normText": null,
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": false,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  },
  {
   "code": "URINE_CULTURE",
@@ -1207,6 +1431,10 @@
   "price": 350,
   "normText": "росту не виявлено",
   "dropdownOptions": null,
-  "isQcTracked": false
+  "isQcTracked": false,
+  "requiresSeparateTube": true,
+  "maxTestsPerTube": null,
+  "requiredVolumeMl": null,
+  "tubeCompatibilityGroup": null
  }
 ]

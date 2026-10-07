@@ -80,6 +80,7 @@ const labApi = {
   getOrders: params => data(http.get('/orders', { params: clean(params) })),
   getOrder: id => data(http.get(`/orders/${id}`)),
   createOrder: body => data(http.post('/orders', body)),
+  tubePlan: body => data(http.post('/orders/tube-plan', body)),
   updateOrder: (id, body) => data(http.put(`/orders/${id}`, body)),
   deleteOrder: id => data(http.delete(`/orders/${id}`)),
   createOrdersBatch: list => data(http.post('/orders/batch', list)),

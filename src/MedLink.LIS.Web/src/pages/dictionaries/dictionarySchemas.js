@@ -23,13 +23,15 @@ export const DICTIONARIES = {
   },
   'tube-types': {
     title: 'Пробірки', icon: 'fas fa-vial', description: 'Типи пробірок ISO 6710: колір кришки, антикоагулянт, об’єм, порядок забору',
-    columns: ['colorCode', 'code', 'name', 'anticoagulant', 'volumeMl', 'orderOfDrawIndex', 'inversionsCount', 'isActive'],
+    columns: ['colorCode', 'code', 'name', 'anticoagulant', 'volumeMl', 'usableVolumeMl', 'maxTestsPerTube', 'orderOfDrawIndex', 'inversionsCount', 'isActive'],
     fields: [...codeName,
       { name: 'colorCode', label: 'Колір кришки', type: 'color', col: 3 },
       { name: 'anticoagulant', label: 'Антикоагулянт', type: 'select', options: ['—', 'K2-ЕДТА', 'K3-ЕДТА', 'Na-цитрат 3,2%', 'Na-цитрат 3,8%', 'Li-гепарин', 'Na-гепарин', 'NaF / K-оксалат', 'Гель-активатор згортання', 'Без добавок'], col: 3 },
       { name: 'volumeMl', label: 'Об’єм, мл', type: 'decimal', col: 2 },
       { name: 'orderOfDrawIndex', label: 'Порядок забору', type: 'number', col: 2 },
       { name: 'inversionsCount', label: 'Інверсій', type: 'number', col: 2 },
+      { name: 'usableVolumeMl', label: 'Корисний об’єм матеріалу, мл', type: 'decimal', col: 3, hint: 'сироватка/плазма/сеча; порожньо — не контролюється' },
+      { name: 'maxTestsPerTube', label: 'Макс. тестів на пробірку', type: 'number', col: 3, hint: 'порожньо — без обмеження' },
       active]
   },
   'method-types': {
@@ -54,7 +56,7 @@ export const DICTIONARIES = {
   },
   tests: {
     title: 'Показники', icon: 'fas fa-list-ol', description: 'Лабораторні показники: LOINC, одиниці, тип результату, біоматеріал, методика, delta-check',
-    columns: ['code', 'name', 'unit', 'resultType', 'category', 'biomaterialTypeId', 'deltaCheckMaxPct', 'requiresManualVerification', 'isQcTracked', 'isActive'],
+    columns: ['code', 'name', 'unit', 'resultType', 'category', 'biomaterialTypeId', 'tubeTypeId', 'requiredVolumeMl', 'requiresSeparateTube', 'deltaCheckMaxPct', 'requiresManualVerification', 'isQcTracked', 'isActive'],
     fields: [...codeName,
       { name: 'shortName', label: 'Коротка назва', type: 'text', col: 4 },
       { name: 'loincCode', label: 'LOINC', type: 'text', col: 4 },
@@ -67,6 +69,11 @@ export const DICTIONARIES = {
       { name: 'formula', label: 'Формула (CALCULATED)', type: 'text', col: 6, showIf: f => f.resultType === 'CALCULATED' },
       { name: 'biomaterialTypeId', label: 'Біоматеріал', type: 'dict', dict: 'biomaterials', col: 6 },
       { name: 'methodId', label: 'Методика', type: 'dict', dict: 'method-types', col: 6 },
+      { name: 'tubeTypeId', label: 'Тара (пробірка/контейнер)', type: 'dict', dict: 'tube-types', col: 6 },
+      { name: 'requiredVolumeMl', label: 'Потрібний об’єм матеріалу, мл', type: 'decimal', col: 3 },
+      { name: 'maxTestsPerTube', label: 'Макс. тестів у пробірці', type: 'number', col: 3 },
+      { name: 'requiresSeparateTube', label: 'Окрема пробірка', type: 'toggle', col: 3 },
+      { name: 'tubeCompatibilityGroup', label: 'Група сумісності тари', type: 'text', col: 3, hint: 'однакова група — можна в одну пробірку' },
       { name: 'deltaCheckMaxPct', label: 'Delta-check, % (поріг)', type: 'decimal', col: 3 },
       { name: 'deltaCheckHours', label: 'Delta-check, год', type: 'number', col: 3, default: 72 },
       { name: 'requiresManualVerification', label: 'Потребує ручної верифікації', type: 'toggle', col: 3 },

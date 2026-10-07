@@ -73,6 +73,8 @@ public class LabOrderSample : GuidEntity
     public int BiomaterialTypeId { get; set; }
     /// <summary>group_numb Simplex — різні штрихкоди при однаковому tube_type_id</summary>
     public int GroupNumb { get; set; }
+    /// <summary>Пояснення плану пробірок для медсестри: чому пробірка окрема (коди TubePlanReasons через кому).</summary>
+    [MaxLength(128)] public string? PlanReasons { get; set; }
     // --- Преаналітична простежуваність (ISO 15189): батьківська/дочірня проба ---
     [MaxLength(64)] public string? ParentSampleId { get; set; }
     /// <summary>PRIMARY|ALIQUOT|CASSETTE|BLOCK|SLIDE|CULTURE_PLATE|DILUTION</summary>

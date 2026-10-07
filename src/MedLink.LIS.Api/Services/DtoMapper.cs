@@ -63,6 +63,10 @@ public static class DtoMapper
         CollectedAt = s.CollectedAt, CollectedById = s.CollectedById, ReceivedAt = s.ReceivedAt, VolumeMl = s.VolumeMl,
         IsHemolyzed = s.IsHemolyzed, IsLipemic = s.IsLipemic, IsIcteric = s.IsIcteric, IsClotted = s.IsClotted, IsInsufficientVolume = s.IsInsufficientVolume,
         RejectReason = s.RejectReason, TestCodes = tests.Where(t => t.SampleId == s.Id).Select(t => t.TestCode).ToList(),
+        OrderOfDrawIndex = s.TubeType?.OrderOfDrawIndex ?? 99,
+        PlannedVolumeMl = tests.Where(t => t.SampleId == s.Id && t.Test?.RequiredVolumeMl > 0).Sum(t => t.Test!.RequiredVolumeMl) is double v && v > 0 ? Math.Round(v, 3) : null,
+        CapacityMl = s.TubeType == null ? null : TubePlanService.CapacityOf(s.TubeType),
+        PlanReasons = string.IsNullOrEmpty(s.PlanReasons) ? new() : s.PlanReasons.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
         AllowedActions = policy.AllowedActions(LisEntities.Sample, s.Status)
     };
 

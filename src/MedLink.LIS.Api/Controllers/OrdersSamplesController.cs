@@ -12,7 +12,8 @@ public sealed class OrdersController : LisControllerBase
     private readonly SampleService _samples;
     private readonly ReportService _reports;
     private readonly SectionJournalService _journal;
-    public OrdersController(OrderService orders, SampleService samples, ReportService reports, SectionJournalService journal) { _orders = orders; _samples = samples; _reports = reports; _journal = journal; }
+    private readonly TubePlanService _tubePlan;
+    public OrdersController(OrderService orders, SampleService samples, ReportService reports, SectionJournalService journal, TubePlanService tubePlan) { _orders = orders; _samples = samples; _reports = reports; _journal = journal; _tubePlan = tubePlan; }
 
     /// <summary>Черга замовлень із фільтрами та пагінацією.</summary>
     [HttpGet("orders")]
@@ -29,6 +30,10 @@ public sealed class OrdersController : LisControllerBase
     /// <summary>Дозволені дії для поточного статусу та ролі + опис машини станів.</summary>
     [HttpGet("orders/{id}/transitions")]
     public async Task<IActionResult> Transitions(string id) => Ok(await _orders.TransitionsAsync(id));
+
+    /// <summary>Попередній план пробірок (FR-PRE-004) для обраних профілів/тестів; з orderId — для дозамовлення до наявних пробірок. Нічого не зберігає.</summary>
+    [HttpPost("orders/tube-plan")]
+    public async Task<IActionResult> TubePlan([FromBody] TubePlanRequest req) => Ok(await _tubePlan.PreviewAsync(req));
 
     [HttpPost("orders")]
     public async Task<IActionResult> Create([FromBody] CreateOrderRequest req) { var o = await _orders.CreateAsync(req); return CreatedAtAction(nameof(Get), new { id = o.Id }, o); }

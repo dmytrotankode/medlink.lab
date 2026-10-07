@@ -16,10 +16,11 @@ public sealed class OrderService
     private readonly IRolePolicy _policy;
     private readonly ICurrentEmployee _current;
     private readonly OrderStateService _state;
+    private readonly TubePlanService _tubes;
 
-    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state)
+    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state, TubePlanService tubes)
     {
-        _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state;
+        _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state; _tubes = tubes;
     }
 
     public static readonly string[] CreatorRoles = { LabRoles.Admin, LabRoles.Registrar, LabRoles.Doctor, LabRoles.Phlebotomist, LabRoles.Technician };
@@ -195,77 +196,42 @@ public sealed class OrderService
         if (order.EhealthReferralId != null && !await _db.Referrals.AnyAsync(r => r.Id == order.EhealthReferralId)) throw ValidationException.Field("ehealthReferralId", "Направлення eHealth не знайдено");
     }
 
-    /// <summary>Додає тести/профілі до замовлення з автопідбором пробірок (одна пробірка на пару біоматеріал+тип пробірки).</summary>
+    /// <summary>Додає тести/профілі до замовлення з плануванням пробірок за правилами тари (FR-PRE-004).</summary>
     private async Task AddTestsInternalAsync(LabOrder order, List<string> profileIds, List<string> testIds)
     {
-        var profiles = new List<LabTestProfile>();
-        foreach (var pid in profileIds.Distinct())
-        {
-            var p = await _db.Profiles.Include(x => x.Items).ThenInclude(i => i.Test).FirstOrDefaultAsync(x => (x.Id == pid || x.Code == pid) && x.IsActive)
-                    ?? throw NotFoundException.For("Профіль", pid);
-            profiles.Add(p);
-        }
-        var singles = new List<LabTestDefinition>();
-        foreach (var tid in testIds.Distinct())
-        {
-            var t = await _db.Tests.FirstOrDefaultAsync(x => (x.Id == tid || x.Code == tid) && x.IsActive) ?? throw NotFoundException.For("Тест", tid);
-            singles.Add(t);
-        }
-
         var existingCodes = new HashSet<string>(order.Tests.Select(t => t.TestCode));
-        var toAdd = new List<(LabTestDefinition test, LabTestProfile? profile, int order)>();
-        foreach (var p in profiles)
-        {
-            foreach (var item in p.Items.OrderBy(i => i.DisplayOrder))
-            {
-                if (item.Test == null || existingCodes.Contains(item.Test.Code)) continue;
-                existingCodes.Add(item.Test.Code);
-                toAdd.Add((item.Test, p, item.DisplayOrder));
-            }
-            order.TotalPrice += p.Price;
-        }
-        foreach (var t in singles)
-        {
-            if (existingCodes.Contains(t.Code)) continue;
-            existingCodes.Add(t.Code);
-            toAdd.Add((t, null, 100));
-            order.TotalPrice += t.Price;
-        }
+        var (toAdd, profiles, singles) = await _tubes.ResolveAsync(profileIds, testIds, existingCodes);
+        foreach (var p in profiles) order.TotalPrice += p.Price;
+        foreach (var t in singles.Where(t => toAdd.Any(a => a.Test.Id == t.Id && a.Profile == null))) order.TotalPrice += t.Price;
         if (toAdd.Count == 0 && order.Tests.Count == 0) throw new ValidationException("Немає нових тестів для додавання");
 
-        var displayOrder = order.Tests.Count == 0 ? 0 : order.Tests.Max(t => t.DisplayOrder);
-        foreach (var (test, profile, _) in toAdd)
+        var plan = await _tubes.BuildAsync(toAdd, order);
+        var sampleByTest = new Dictionary<string, string>();
+        foreach (var tube in plan.Tubes.Where(t => t.NewTests.Count > 0))
         {
-            var tubeId = test.TubeTypeId ?? profile?.DefaultTubeTypeId ?? await DefaultTubeForBiomaterialAsync(test.BiomaterialTypeId);
-            var biomaterialId = test.BiomaterialTypeId;
-            var sample = order.Samples.FirstOrDefault(s => s.TubeTypeId == tubeId && s.BiomaterialTypeId == biomaterialId && s.Status != SampleStatuses.Rejected && s.Status != SampleStatuses.Disposed);
+            var sample = tube.ExistingSampleId == null ? null : order.Samples.First(s => s.Id == tube.ExistingSampleId);
             if (sample == null)
             {
                 sample = new LabOrderSample
                 {
-                    OrderId = order.Id, Barcode = await _numerators.NextTubeBarcodeAsync(), TubeTypeId = tubeId, BiomaterialTypeId = biomaterialId,
-                    GroupNumb = order.Samples.Count + 1, Status = SampleStatuses.Pending
+                    OrderId = order.Id, Barcode = await _numerators.NextTubeBarcodeAsync(), TubeTypeId = tube.TubeTypeId, BiomaterialTypeId = tube.BiomaterialTypeId,
+                    GroupNumb = order.Samples.Count + 1, Status = SampleStatuses.Pending,
+                    PlanReasons = tube.Reasons.Count == 0 ? null : string.Join(",", tube.Reasons)
                 };
                 order.Samples.Add(sample);
             }
+            foreach (var t in tube.NewTests) sampleByTest[t.TestId] = sample.Id;
+        }
+
+        var displayOrder = order.Tests.Count == 0 ? 0 : order.Tests.Max(t => t.DisplayOrder);
+        foreach (var sel in toAdd)
+        {
             order.Tests.Add(new LabOrderTest
             {
-                OrderId = order.Id, SampleId = sample.Id, ProfileId = profile?.Id, TestId = test.Id, TestCode = test.Code, TestName = test.Name,
-                Status = OrderTestStatuses.Pending, DisplayOrder = ++displayOrder
+                OrderId = order.Id, SampleId = sampleByTest[sel.Test.Id], ProfileId = sel.Profile?.Id, TestId = sel.Test.Id, TestCode = sel.Test.Code, TestName = sel.Test.Name,
+                Status = OrderTestStatuses.Pending, DisplayOrder = ++displayOrder, Test = sel.Test
             });
         }
-    }
-
-    private async Task<int> DefaultTubeForBiomaterialAsync(int biomaterialTypeId)
-    {
-        // Евристика за назвою біоматеріалу → тип пробірки; інакше перша активна пробірка
-        var bm = await _db.BiomaterialTypes.AsNoTracking().FirstOrDefaultAsync(b => b.Id == biomaterialTypeId);
-        var name = bm?.Name?.ToLowerInvariant() ?? "";
-        string? code = name.Contains("сеч") ? "URINE_CONTAINER" : name.Contains("кал") ? "STOOL_CONTAINER" : name.Contains("сироват") ? "SERUM_GEL"
-            : name.Contains("плазм") ? "CITRATE" : name.Contains("кров") ? "EDTA_CBC" : null;
-        var tube = code == null ? null : await _db.TubeTypes.AsNoTracking().FirstOrDefaultAsync(t => t.Code == code);
-        tube ??= await _db.TubeTypes.AsNoTracking().OrderBy(t => t.Id).FirstOrDefaultAsync(t => t.IsActive);
-        return tube?.Id ?? throw new ValidationException("Довідник пробірок порожній");
     }
 
     // ------------------------------------------------------------------ edit

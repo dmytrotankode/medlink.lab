@@ -28,6 +28,10 @@ public class LabTubeType : IntEntity
     /// <summary>Порядок забору CLSI</summary>
     public int OrderOfDrawIndex { get; set; } = 99;
     public int InversionsCount { get; set; } = 8;
+    /// <summary>Корисний об'єм матеріалу (сироватка/плазма/сеча), мл, для контролю об'єднання тестів (FR-PRE-004). null — не контролюється.</summary>
+    public double? UsableVolumeMl { get; set; }
+    /// <summary>Ліміт тестів на одну пробірку цього типу (FR-PRE-004). null — без обмеження.</summary>
+    public int? MaxTestsPerTube { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -84,6 +88,15 @@ public class LabTestDefinition : GuidEntity
     public int DeltaCheckHours { get; set; } = 72;
     public bool RequiresManualVerification { get; set; }
     public bool IsQcTracked { get; set; } = true;
+    // --- Правила тари (FR-PRE-004) ---
+    /// <summary>Тест завжди виконується з окремої пробірки (посів, стерильний контейнер тощо).</summary>
+    public bool RequiresSeparateTube { get; set; }
+    /// <summary>Ліміт тестів у пробірці, куди потрапляє цей тест. null — без обмеження.</summary>
+    public int? MaxTestsPerTube { get; set; }
+    /// <summary>Об'єм матеріалу, який споживає тест (з урахуванням мертвого об'єму), мл.</summary>
+    public double? RequiredVolumeMl { get; set; }
+    /// <summary>Група сумісності: в одну пробірку об'єднуються лише тести з однаковою групою (null — загальна).</summary>
+    [MaxLength(32)] public string? TubeCompatibilityGroup { get; set; }
     public decimal Price { get; set; }
     public bool IsActive { get; set; } = true;
 

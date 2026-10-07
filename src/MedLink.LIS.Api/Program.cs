@@ -67,6 +67,7 @@ builder.Services.AddScoped<IRolePolicy, RolePolicy>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<INumeratorService, NumeratorService>();
 builder.Services.AddScoped<OrderStateService>();
+builder.Services.AddScoped<TubePlanService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<SampleService>();
 builder.Services.AddScoped<ResultPipelineService>();
@@ -103,6 +104,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<LisDbContext>();
     await db.Database.EnsureCreatedAsync();
+    foreach (var change in await SchemaUpgrader.UpgradeAsync(db)) app.Logger.LogWarning("Оновлення схеми БД: {Sql}", change);
     await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
     await scope.ServiceProvider.GetRequiredService<SeedService>().SeedAsync();
     if (app.Configuration.GetValue<bool?>("Lab:SeedDemoData") ?? true)

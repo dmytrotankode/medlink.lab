@@ -108,30 +108,27 @@
             </div>
           </div>
 
-          <!-- План пробірок + ціна -->
-          <div v-show="pickMode === 'lists'" class="row q-col-gutter-md q-mt-xs">
+          <!-- План пробірок (сервер, FR-PRE-004) + ціна -->
+          <div class="row q-col-gutter-md q-mt-xs">
             <div class="col-12 col-md-7">
-              <div class="medlink-card">
-                <div class="medlink-card__title"><span><q-icon name="science" class="q-mr-xs" />Автопідбір пробірок (попередній план)</span><span class="text-grey-6 text-caption">{{ tubePlan.length }} пробірк.</span></div>
-                <q-list v-if="tubePlan.length" dense separator>
-                  <q-item v-for="t in tubePlan" :key="t.key">
-                    <q-item-section avatar>
-                      <div :style="{ background: t.color, width: '18px', height: '28px', borderRadius: '3px 3px 8px 8px', border: '1px solid #999' }" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label>{{ t.tubeName }} <span class="text-grey-7">· {{ t.biomaterialName }}</span></q-item-label>
-                      <q-item-label caption>{{ t.tests.join(', ') }}</q-item-label>
-                    </q-item-section>
-                    <q-item-section side><q-badge color="grey-7" :label="`${t.tests.length} тест.`" /></q-item-section>
-                  </q-item>
-                </q-list>
-                <div v-else class="q-pa-md text-grey-6 text-caption">Оберіть профілі або показники — план пробірок сформується автоматично. Остаточний підбір і штрихкоди генерує сервер.</div>
+              <div class="medlink-card" data-testid="tubePlanCard">
+                <div class="medlink-card__title">
+                  <span><q-icon name="science" class="q-mr-xs" />План пробірок у порядку забору</span>
+                  <span class="text-grey-6 text-caption"><q-spinner v-if="planLoading" size="14px" class="q-mr-xs" />{{ planItems.length }} пробірк.</span>
+                </div>
+                <q-banner v-for="(w, i) in planWarnings" :key="i" dense class="bg-orange-1 text-deep-orange-9 q-ma-sm" rounded>
+                  <template v-slot:avatar><q-icon name="warning" color="deep-orange" /></template>{{ w }}
+                </q-banner>
+                <tube-plan-list v-if="planItems.length" :items="planItems" />
+                <div v-else-if="planError" class="q-pa-md text-negative text-caption">{{ planError }}</div>
+                <div v-else class="q-pa-md text-grey-6 text-caption">Оберіть профілі або показники — сервер сформує план пробірок за правилами тари: окремі пробірки, об’єм, ліміт тестів, сумісність.</div>
               </div>
             </div>
             <div class="col-12 col-md-5">
               <div class="medlink-card q-pa-md">
                 <div class="row items-center justify-between"><span class="text-grey-7">Показників усього</span><b>{{ allTestCodes.length }}</b></div>
                 <div class="row items-center justify-between"><span class="text-grey-7">Профілів</span><b>{{ form.profileIds.length }}</b></div>
+                <div class="row items-center justify-between"><span class="text-grey-7">Пробірок до забору</span><b>{{ planItems.length }}</b></div>
                 <q-separator class="q-my-sm" />
                 <div class="row items-center justify-between text-h6"><span>До сплати</span><span class="text-primary">{{ totalPrice | money }}</span></div>
                 <div v-if="form.isUrgentCito" class="text-caption text-deep-orange-7 q-mt-xs"><q-icon name="bolt" /> CITO — пріоритетна черга та окрема позначка на етикетках</div>
@@ -153,6 +150,7 @@
 <script>
 import PatientSelect from '../../../components/common/PatientSelect.vue';
 import OrderMatrix from '../../../components/orders/OrderMatrix.vue';
+import TubePlanList from '../../../components/samples/TubePlanList.vue';
 import { patientDisplay, genderLabel, ageFromBirthDate } from '../../../utils/format';
 
 const emptyForm = () => ({
@@ -167,7 +165,7 @@ const emptyForm = () => ({
 
 export default {
   name: 'CreateOrderDialog',
-  components: { PatientSelect, OrderMatrix },
+  components: { PatientSelect, OrderMatrix, TubePlanList },
   props: { value: Boolean },
   data () {
     return {
@@ -180,7 +178,12 @@ export default {
       submitError: '',
       profileFilter: '',
       testFilter: '',
-      doctorFilter: ''
+      doctorFilter: '',
+      plan: null,
+      planLoading: false,
+      planError: '',
+      planTimer: null,
+      planSeq: 0
     };
   },
   computed: {
@@ -218,26 +221,14 @@ export default {
       const singles = this.tests.filter(t => this.form.testIds.includes(t.id) && !inProfiles.has(t.id)).reduce((s, t) => s + (Number(t.price) || 0), 0);
       return profiles + singles;
     },
-    tubePlan () {
-      const groups = {};
-      this.selectedTests.forEach(t => {
-        const bio = this.biomaterials.find(b => b.id === t.biomaterialTypeId);
-        const tube = this.tubeTypes.find(tt => bio && (tt.code === bio.defaultContainer || tt.name === bio.defaultContainer || tt.id === bio.defaultTubeTypeId));
-        const key = `${t.biomaterialTypeId || 'x'}-${tube ? tube.id : 'def'}`;
-        if (!groups[key]) {
-          groups[key] = {
-            key,
-            biomaterialName: bio ? bio.name : 'Біоматеріал',
-            tubeName: tube ? tube.name : (bio && bio.defaultContainer) || 'Пробірка за замовчуванням',
-            color: tube ? tube.colorCode : '#bbb',
-            order: tube ? tube.orderOfDrawIndex : 99,
-            tests: []
-          };
-        }
-        groups[key].tests.push(t.code);
-      });
-      return Object.values(groups).sort((a, b) => a.order - b.order);
+    planItems () {
+      return ((this.plan && this.plan.tubes) || []).map(t => ({
+        key: String(t.index), index: t.index, color: t.colorCode, tubeName: t.tubeName, biomaterialName: t.biomaterialName,
+        tests: t.tests, usedVolumeMl: t.usedVolumeMl, capacityMl: t.capacityMl, reasonTexts: t.reasonTexts,
+        isSeparate: t.isSeparate, inversionsCount: t.inversionsCount, barcode: t.existingBarcode, existing: !!t.existingSampleId
+      }));
     },
+    planWarnings () { return (this.plan && this.plan.warnings) || []; },
     patientName () { return patientDisplay(this.patient); },
     patientAge () { return ageFromBirthDate(this.patient && this.patient.birthDate); },
     canSubmit () {
@@ -246,16 +237,42 @@ export default {
     }
   },
   watch: {
-    value (v) {
-      if (v) {
-        this.reset();
-        this.$store.dispatch('dictionaries/loadMany', ['profiles', 'tests', 'biomaterials', 'tube-types', 'employees', 'departments']);
+    'form.profileIds' () { this.schedulePlan(); },
+    'form.testIds' () { this.schedulePlan(); },
+    value: {
+      // immediate: діалог може бути відкритий одразу при завантаженні сторінки (?create=1)
+      immediate: true,
+      handler (v) {
+        if (v) {
+          this.reset();
+          this.$store.dispatch('dictionaries/loadMany', ['profiles', 'tests', 'biomaterials', 'tube-types', 'employees', 'departments']);
+        }
       }
     }
   },
   methods: {
     genderLabel,
+    schedulePlan () {
+      clearTimeout(this.planTimer);
+      this.planTimer = setTimeout(this.loadPlan, 300);
+    },
+    async loadPlan () {
+      const body = { profileIds: this.form.profileIds, testIds: this.form.testIds };
+      if (!body.profileIds.length && !body.testIds.length) { this.plan = null; this.planError = ''; return; }
+      const seq = ++this.planSeq;
+      this.planLoading = true;
+      try {
+        const plan = await this.$api.tubePlan(body);
+        if (seq === this.planSeq) { this.plan = plan; this.planError = ''; }
+      } catch (e) {
+        if (seq === this.planSeq) { this.plan = null; this.planError = e.userMessage || 'Не вдалося побудувати план пробірок'; }
+      } finally {
+        if (seq === this.planSeq) this.planLoading = false;
+      }
+    },
     reset () {
+      this.plan = null;
+      this.planError = '';
       this.patient = null;
       this.newPatientMode = false;
       this.form = emptyForm();
