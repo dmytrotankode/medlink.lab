@@ -70,5 +70,5 @@ public static class MedLinkDefaults
     /// <summary>ehe_medical_referral_category «laboratory_procedure» (в evomis — довідник eHealth; зіставляти за code).</summary>
     public const string ReferralCategoryLaboratoryId = "0c000000-0000-0000-0000-00000000e002";
     /// <summary>cmn_enum_record статусу направлення «active» (зіставляти за code).</summary>
-    public const string ReferralStatusActiveId = "0c000000-0000-0000-0000-00000000e003";
+    public const string ReferralStatusActiveId = MedLinkEnums.ReferralStatusActive;
 }

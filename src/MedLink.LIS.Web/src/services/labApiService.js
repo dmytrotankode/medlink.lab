@@ -231,6 +231,10 @@ const labApi = {
     params: { dryRun: !!dryRun }, headers: { 'Content-Type': 'multipart/form-data' }
   })),
 
+  // ---------- Направлення (FR-REF-001) ----------
+  lookupEhealthReferral: (number, patientId) => data(http.get('/referrals/ehealth/lookup', { params: clean({ number, patientId }) })),
+  referralJournal: params => data(http.get('/referrals/journal', { params: clean(params || {}) })),
+
   // ---------- Зовнішні лабораторії (send-out) ----------
   performers: includeInactive => data(http.get('/performers', { params: clean({ includeInactive }) })),
   savePerformer: (id, body) => data(id ? http.put(`/performers/${id}`, body) : http.post('/performers', body)),

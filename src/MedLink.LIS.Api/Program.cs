@@ -70,6 +70,20 @@ builder.Services.AddScoped<OrderStateService>();
 builder.Services.AddScoped<TubePlanService>();
 builder.Services.AddScoped<OrgDictionaryService>();
 builder.Services.AddScoped<SendOutService>();
+// --- ЕСОЗ (eHealth): реальні виклики API; у режимі Mock відповідає EhealthMockHandler (автономна робота й тести) ---
+var ehealthOptions = builder.Configuration.GetSection("Ehealth").Get<MedLink.LIS.Api.Services.Ehealth.EhealthOptions>() ?? new();
+builder.Services.AddSingleton(ehealthOptions);
+builder.Services.AddSingleton<MedLink.LIS.Api.Services.Ehealth.EhealthMockState>();
+builder.Services.AddTransient<MedLink.LIS.Api.Services.Ehealth.EhealthMockHandler>();
+var ehealthHttp = builder.Services.AddHttpClient(MedLink.LIS.Api.Services.Ehealth.EhealthClient.HttpClientName, c =>
+{
+    c.BaseAddress = new Uri(ehealthOptions.BaseUrl.EndsWith('/') ? ehealthOptions.BaseUrl : ehealthOptions.BaseUrl + "/");
+    c.Timeout = TimeSpan.FromSeconds(60);
+});
+if (ehealthOptions.IsMock) ehealthHttp.ConfigurePrimaryHttpMessageHandler<MedLink.LIS.Api.Services.Ehealth.EhealthMockHandler>();
+builder.Services.AddScoped<MedLink.LIS.Api.Services.Ehealth.IEhealthClient, MedLink.LIS.Api.Services.Ehealth.EhealthClient>();
+builder.Services.AddScoped<IEhealthReferralGateway, EhealthReferralGateway>();
+builder.Services.AddScoped<ReferralService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<SampleService>();
 builder.Services.AddScoped<ResultPipelineService>();

@@ -21,6 +21,26 @@ public static class SampleStatuses
         Processing = "PROCESSING", Stored = "STORED", Disposed = "DISPOSED", Rejected = "REJECTED";
 }
 
+/// <summary>Типи направлень на лабораторне дослідження (FR-REF-001).</summary>
+public static class ReferralTypes
+{
+    /// <summary>Електронне направлення ЕСОЗ (ehe_incoming_medical_referral).</summary>
+    public const string Ehealth = "EHEALTH";
+    /// <summary>Паперове направлення (ehe_paper_medical_referral).</summary>
+    public const string Paper = "PAPER";
+    /// <summary>Внутрішнє — лікар закладу (org_employee).</summary>
+    public const string Internal = "INTERNAL";
+    /// <summary>Клініка-партнер / сторонній заклад.</summary>
+    public const string ExternalClinic = "EXTERNAL_CLINIC";
+    /// <summary>Самозвернення пацієнта.</summary>
+    public const string Self = "SELF";
+    public static readonly string[] All = { Ehealth, Paper, Internal, ExternalClinic, Self };
+    public static string Label(string t) => t switch
+    {
+        Ehealth => "Е-направлення", Paper => "Паперове направлення", Internal => "Внутрішнє", ExternalClinic => "Клініка-партнер", _ => "Самозвернення"
+    };
+}
+
 public static class OrderTestStatuses
 {
     public const string Pending = "PENDING", InAnalysis = "IN_ANALYSIS", Resulted = "RESULTED", NeedsReview = "NEEDS_REVIEW",
@@ -57,6 +77,17 @@ public class LabOrder : GuidEntity
     [MaxLength(128)] public string? VerifyToken { get; set; }
     [MaxLength(512)] public string? CancelReason { get; set; }
     [MaxLength(64)] public string? RepeatOfOrderId { get; set; }
+    /// <summary>Тип направлення (FR-REF-001): EHEALTH | PAPER | INTERNAL | EXTERNAL_CLINIC | SELF.</summary>
+    [MaxLength(16)] public string ReferralType { get; set; } = ReferralTypes.Self;
+    /// <summary>Паперове направлення MedLink (ehe_paper_medical_referral).</summary>
+    [MaxLength(64)] public string? PaperReferralId { get; set; }
+    /// <summary>Заклад-направник (для EXTERNAL_CLINIC/PAPER без картки контрагента).</summary>
+    [MaxLength(256)] public string? ReferrerOrganizationName { get; set; }
+    [MaxLength(16)] public string? ReferrerOrganizationEdrpou { get; set; }
+    /// <summary>ПІБ лікаря-направника поза закладом.</summary>
+    [MaxLength(256)] public string? ReferrerDoctorName { get; set; }
+    /// <summary>Номер направлення в системі направника (клініки-партнера).</summary>
+    [MaxLength(64)] public string? ReferrerNumber { get; set; }
     /// <summary>Заклад MedLink (org_organization) — для розмежування даних (RLS evomis).</summary>
     [MaxLength(64)] public string? OrganizationId { get; set; }
     /// <summary>Медичний висновок MedLink (mis_diagnostic_report), створений при видачі.</summary>
@@ -64,6 +95,7 @@ public class LabOrder : GuidEntity
 
     [ForeignKey(nameof(PatientId))] public MisPatientCard? Patient { get; set; }
     [ForeignKey(nameof(DiagnosticReportId))] public MisDiagnosticReport? DiagnosticReport { get; set; }
+    [ForeignKey(nameof(PaperReferralId))] public EhePaperMedicalReferral? PaperReferral { get; set; }
     [ForeignKey(nameof(DoctorId))] public OrgEmployee? Doctor { get; set; }
     [ForeignKey(nameof(DepartmentId))] public OrgDepartment? Department { get; set; }
     [ForeignKey(nameof(EhealthReferralId))] public EheIncomingMedicalReferral? Referral { get; set; }

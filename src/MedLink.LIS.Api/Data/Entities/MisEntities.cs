@@ -185,9 +185,49 @@ public class EheIncomingMedicalReferral : GuidEntity
     public DateTime? ExpirationDate { get; set; }
     [MaxLength(64)] public string? EhealthId { get; set; }
     [MaxLength(2000)] public string? PatientInstruction { get; set; }
+    // --- обробка направлення виконавцем (як в evomis EhealthIncomingMedicalReferralService) ---
+    /// <summary>cmn_enum_record MedicalReferralProcessingStatusInEhealth: new | in_progress | completed …</summary>
+    [MaxLength(64)] public string? ProcessingStatusInEhealthId { get; set; }
+    /// <summary>Взято в роботу (UseMedicalReferralInEhealth).</summary>
+    public DateTime? TakeInWorkDate { get; set; }
+    /// <summary>Погашено (CompleteMedicalReferralInEhealth).</summary>
+    public DateTime? CompleteDateInEhealth { get; set; }
+    /// <summary>Документ, яким погашено направлення (mis_diagnostic_report.id).</summary>
+    [MaxLength(64)] public string? CompletedWithItemEntityId { get; set; }
+    /// <summary>Тип документа погашення: DiagnosticReport | Encounter | Procedure.</summary>
+    public string? CompletedWithItemEntityName { get; set; }
 
     [ForeignKey(nameof(PatientCardId))] public MisPatientCard? PatientCard { get; set; }
+    [ForeignKey(nameof(StatusId))] public CmnEnumRecord? Status { get; set; }
+    [ForeignKey(nameof(ProcessingStatusInEhealthId))] public CmnEnumRecord? ProcessingStatus { get; set; }
     [ForeignKey(nameof(ServiceCatalogServiceId))] public EheServiceCatalogService? ServiceCatalogService { get; set; }
+}
+
+/// <summary>[MedLink] ehe_paper_medical_referral — паперове направлення (ЛІС створює його при реєстрації замовлення за паперовим направленням).</summary>
+[Table("ehe_paper_medical_referral")]
+public class EhePaperMedicalReferral : GuidEntity
+{
+    /// <summary>Номер паперового направлення.</summary>
+    public string? RegNumber { get; set; }
+    public DateTime RegDate { get; set; } = DateTime.UtcNow;
+    public string? Caption { get; set; }
+    [MaxLength(64)] public string OrganizationId { get; set; } = "";
+    [MaxLength(64)] public string PatientCardId { get; set; } = "";
+    /// <summary>ПІБ лікаря-направника.</summary>
+    public string? RequesterEmployeeName { get; set; }
+    public string? RequesterLegalEntityName { get; set; }
+    [MaxLength(50)] public string? RequesterLegalEntityEdrpou { get; set; }
+    /// <summary>EhealthPaperMedicalReferralStatus: 0 PROJECT, 1 ACTIVE, 2 COMPLETED, 3 INACTIVE.</summary>
+    public int Status { get; set; } = PaperReferralStatuses.Active;
+    public DateTime? ProcessedDate { get; set; }
+    [MaxLength(3000)] public string? Description { get; set; }
+
+    [ForeignKey(nameof(PatientCardId))] public MisPatientCard? PatientCard { get; set; }
+}
+
+public static class PaperReferralStatuses
+{
+    public const int Project = 0, Active = 1, Completed = 2, Inactive = 3;
 }
 
 /// <summary>[MedLink] mis_diagnostic_report — медичний висновок (DiagnosticReport). ЛІС створює його при видачі замовлення; зв'язок — lab_order.diagnostic_report_id.</summary>
@@ -239,4 +279,11 @@ public static class MedLinkEnums
         PositionLabTechs = "401fc1d1-064d-43a5-b0b1-3db57201abdd", PositionNurses = "0f284af5-ff01-4d12-93c1-410f4ec9f13f";
     // PrivacyRequestType
     public const string PrivacyUnknown = "64b66b71-581b-4c52-aff4-abf352fa6a6d";
+
+    // MedicalReferralStatus (enum_type, коди як у evomis Constants.MedicalReferralStatus; GUID — власні, зіставляти за code)
+    public const string ReferralStatusActive = "0c000000-0000-0000-0000-00000000e003", ReferralStatusCompleted = "0c000000-0000-0000-0000-00000000e004",
+        ReferralStatusRecalled = "0c000000-0000-0000-0000-00000000e005";
+    // MedicalReferralProcessingStatusInEhealth (коди як у evomis Constants)
+    public const string ProcessingNew = "0c000000-0000-0000-0000-00000000e006", ProcessingInProgress = "0c000000-0000-0000-0000-00000000e007",
+        ProcessingCompleted = "0c000000-0000-0000-0000-00000000e008";
 }

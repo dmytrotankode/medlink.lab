@@ -44,16 +44,43 @@
           </div>
 
           <!-- Направлення -->
-          <div class="section-title q-mt-md">2. Направлення</div>
+          <div class="section-title q-mt-md row items-center justify-between">
+            <span>2. Направлення</span>
+            <q-btn-toggle v-model="form.referralType" dense no-caps unelevated toggle-color="primary" color="white" text-color="grey-8" :options="referralTypeOptions" data-testid="referralType" />
+          </div>
           <div class="row q-col-gutter-sm">
+            <template v-if="form.referralType === 'EHEALTH'">
+              <div class="col-12 col-md-4">
+                <q-input v-model="ehealthNumber" outlined dense label="Номер е-направлення *" data-testid="ehealthNumber" @keyup.enter="lookupReferral">
+                  <template v-slot:append><q-btn flat dense icon="search" :loading="referralLoading" @click="lookupReferral" /></template>
+                </q-input>
+              </div>
+              <div class="col-12 col-md-8">
+                <q-banner v-if="referralInfo" dense rounded :class="referralInfo.canUse ? 'bg-green-1' : 'bg-red-1'" data-testid="referralInfo">
+                  <b>{{ referralInfo.serviceName }}</b> · {{ referralInfo.patientName }} · дійсне до {{ referralInfo.expirationDate | date }} · {{ referralInfo.statusName }}
+                  <div v-for="(p, i) in referralInfo.problems" :key="i" class="text-negative text-caption">{{ p }}</div>
+                </q-banner>
+                <div v-else class="text-caption text-grey-7 q-pt-sm">Знайдіть направлення ЕСОЗ — пацієнт і послуга підставляться автоматично; при видачі результатів направлення буде погашено висновком.</div>
+              </div>
+            </template>
+            <template v-if="form.referralType === 'PAPER'">
+              <div class="col-6 col-md-3"><q-input v-model="paper.number" outlined dense label="№ паперового направлення *" /></div>
+              <div class="col-6 col-md-3"><q-input v-model="paper.date" outlined dense type="date" stack-label label="Дата" /></div>
+              <div class="col-12 col-md-4"><q-input v-model="paper.requesterLegalEntityName" outlined dense label="Заклад-направник *" /></div>
+              <div class="col-6 col-md-2"><q-input v-model="paper.requesterLegalEntityEdrpou" outlined dense label="ЄДРПОУ" mask="########" /></div>
+              <div class="col-6 col-md-4"><q-input v-model="paper.requesterEmployeeName" outlined dense label="Лікар-направник" /></div>
+            </template>
+            <template v-if="form.referralType === 'EXTERNAL_CLINIC'">
+              <div class="col-12 col-md-4"><q-input v-model="form.referrerOrganizationName" outlined dense label="Клініка-партнер *" /></div>
+              <div class="col-6 col-md-2"><q-input v-model="form.referrerOrganizationEdrpou" outlined dense label="ЄДРПОУ" mask="########" /></div>
+              <div class="col-6 col-md-3"><q-input v-model="form.referrerDoctorName" outlined dense label="Лікар клініки" /></div>
+              <div class="col-12 col-md-3"><q-input v-model="form.referrerNumber" outlined dense label="№ направлення клініки" /></div>
+            </template>
             <div class="col-12 col-md-4">
-              <q-select v-model="form.doctorId" outlined dense clearable label="Лікар-замовник" :options="doctorOptions" emit-value map-options use-input input-debounce="0" @filter="filterDoctors" />
+              <q-select v-model="form.doctorId" outlined dense clearable :label="form.referralType === 'INTERNAL' ? 'Лікар закладу *' : 'Лікар-замовник'" :options="doctorOptions" emit-value map-options use-input input-debounce="0" @filter="filterDoctors" />
             </div>
             <div class="col-12 col-md-4">
               <q-select v-model="form.departmentId" outlined dense clearable label="Відділення" :options="departmentOptions" emit-value map-options />
-            </div>
-            <div class="col-12 col-md-4">
-              <q-input v-model="form.ehealthReferralId" outlined dense label="ID е-направлення (eHealth)" />
             </div>
             <div class="col-12">
               <q-input v-model="form.clinicalNotes" outlined dense autogrow label="Клінічні дані / діагноз (МКХ-10), коментар" />
@@ -153,8 +180,14 @@ import OrderMatrix from '../../../components/orders/OrderMatrix.vue';
 import TubePlanList from '../../../components/samples/TubePlanList.vue';
 import { patientDisplay, genderLabel, ageFromBirthDate } from '../../../utils/format';
 
+const emptyPaper = () => ({ number: '', date: '', requesterLegalEntityName: '', requesterLegalEntityEdrpou: '', requesterEmployeeName: '' });
 const emptyForm = () => ({
   isUrgentCito: false,
+  referralType: 'SELF',
+  referrerOrganizationName: '',
+  referrerOrganizationEdrpou: '',
+  referrerDoctorName: '',
+  referrerNumber: '',
   doctorId: null,
   departmentId: null,
   ehealthReferralId: '',
@@ -179,6 +212,14 @@ export default {
       profileFilter: '',
       testFilter: '',
       doctorFilter: '',
+      ehealthNumber: '',
+      referralInfo: null,
+      referralLoading: false,
+      paper: emptyPaper(),
+      referralTypeOptions: [
+        { value: 'SELF', label: 'Самозвернення' }, { value: 'INTERNAL', label: 'Внутрішнє' }, { value: 'EHEALTH', label: 'Е-направлення' },
+        { value: 'PAPER', label: 'Паперове' }, { value: 'EXTERNAL_CLINIC', label: 'Клініка-партнер' }
+      ],
       plan: null,
       planLoading: false,
       planError: '',
@@ -270,7 +311,26 @@ export default {
         if (seq === this.planSeq) this.planLoading = false;
       }
     },
+    async lookupReferral () {
+      if (!this.ehealthNumber) return;
+      this.referralLoading = true;
+      try {
+        const info = await this.$api.lookupEhealthReferral(this.ehealthNumber.trim(), this.patient && this.patient.id);
+        this.referralInfo = info;
+        if (info.canUse && !this.patient && info.patientId) {
+          try { const p = await this.$api.getPatient(info.patientId); this.patient = { ...p, display: p.fullName || [p.lastName, p.firstName, p.secondName].filter(Boolean).join(' ') }; } catch (e) { /* пацієнта оберуть вручну */ }
+        }
+        (info.matchingProfiles || []).forEach(p => { if (!this.form.profileIds.includes(p.id)) this.form.profileIds.push(p.id); });
+      } catch (e) {
+        this.referralInfo = { canUse: false, problems: [e.userMessage || 'Направлення не знайдено'] };
+      } finally {
+        this.referralLoading = false;
+      }
+    },
     reset () {
+      this.ehealthNumber = '';
+      this.referralInfo = null;
+      this.paper = emptyPaper();
       this.plan = null;
       this.planError = '';
       this.patient = null;
@@ -299,9 +359,12 @@ export default {
       this.submitError = '';
       const body = {
         ...this.form,
-        ehealthReferralId: this.form.ehealthReferralId || null,
+        ehealthReferralId: null,
+        ehealthReferralNumber: this.form.referralType === 'EHEALTH' ? (this.ehealthNumber || '').trim() : null,
+        paperReferral: this.form.referralType === 'PAPER' ? { ...this.paper, date: this.paper.date || null } : null,
         clinicalNotes: this.form.clinicalNotes || null
       };
+      ['referrerOrganizationName', 'referrerOrganizationEdrpou', 'referrerDoctorName', 'referrerNumber'].forEach(k => { if (this.form.referralType !== 'EXTERNAL_CLINIC' || !body[k]) body[k] = null; });
       if (this.newPatientMode) body.newPatient = { ...this.newPatient };
       else body.patientId = this.patient.id;
       try {

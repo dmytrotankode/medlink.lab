@@ -93,7 +93,12 @@ public sealed class SeedService
             E(MedLinkEnums.PrivacyUnknown, "PrivacyRequestType", "Uknown", "Не опитували");
             E(MedLinkDefaults.PatientCardDocumentTypeId, "MedicalDocumentType", "AmbCard", "Амбулаторна карта");
             E(MedLinkDefaults.PatientCardTypePersonId, "PatientCardType", "person", "Особа");
-            E(MedLinkDefaults.ReferralStatusActiveId, "MedicalReferralStatus", "active", "Активне");
+            E(MedLinkEnums.ReferralStatusActive, "MedicalReferralStatus", "active", "Активне");
+            E(MedLinkEnums.ReferralStatusCompleted, "MedicalReferralStatus", "completed", "Погашене");
+            E(MedLinkEnums.ReferralStatusRecalled, "MedicalReferralStatus", "recalled", "Відкликане");
+            E(MedLinkEnums.ProcessingNew, "MedicalReferralProcessingStatusInEhealth", "new", "Нове");
+            E(MedLinkEnums.ProcessingInProgress, "MedicalReferralProcessingStatusInEhealth", "in_progress", "Взято в роботу");
+            E(MedLinkEnums.ProcessingCompleted, "MedicalReferralProcessingStatusInEhealth", "completed", "Виконано");
         }
         if (!await _db.Organizations.AnyAsync())
             _db.Organizations.Add(new OrgOrganization { Id = MedLinkDefaults.OrganizationId, Code = "MEDLINK-LAB", Caption = "ТОВ «МедЛінк» — Клініко-діагностична лабораторія", FullName = "Товариство з обмеженою відповідальністю «МедЛінк»" });
@@ -166,6 +171,7 @@ public sealed class SeedService
                     Id = el.GetProperty("id").GetString()!, RegNumber = Str(el, "referralCode"), Caption = Str(el, "serviceName"), OrganizationId = MedLinkDefaults.OrganizationId,
                     PatientCardId = patientId, PatientShortName = patient?.Caption, ServiceCatalogServiceId = DeterministicGuid.For("ehealth-service:" + Str(el, "serviceCode")),
                     MedicalReferralCategoryId = MedLinkDefaults.ReferralCategoryLaboratoryId, StatusId = MedLinkDefaults.ReferralStatusActiveId, PriorityId = MedLinkEnums.EmptyGuid,
+                    ProcessingStatusInEhealthId = MedLinkEnums.ProcessingNew,
                     ExpirationDate = DateTime.UtcNow.Date.AddDays(30)
                 });
             }

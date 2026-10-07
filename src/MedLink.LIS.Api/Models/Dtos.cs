@@ -141,6 +141,13 @@ public sealed class OrderDto
     public DateTime OrderDatetime { get; set; }
     public string Status { get; set; } = "";
     public bool IsUrgentCito { get; set; }
+    public string ReferralType { get; set; } = "SELF";
+    public string? ReferralTypeName { get; set; }
+    /// <summary>Номер направлення: е-направлення / паперового / клініки-партнера.</summary>
+    public string? ReferralNumber { get; set; }
+    public string? ReferralStatus { get; set; }
+    public string? ReferrerOrganizationName { get; set; }
+    public string? ReferrerDoctorName { get; set; }
     public string? EhealthReferralId { get; set; }
     public string? ClinicalNotes { get; set; }
     public bool IsPregnant { get; set; }
@@ -241,7 +248,16 @@ public sealed class CreateOrderRequest
     public string? DoctorId { get; set; }
     public string? DepartmentId { get; set; }
     public bool IsUrgentCito { get; set; }
+    /// <summary>Тип направлення (FR-REF-001): EHEALTH | PAPER | INTERNAL | EXTERNAL_CLINIC | SELF; порожньо — визначається автоматично.</summary>
+    public string? ReferralType { get; set; }
     public string? EhealthReferralId { get; set; }
+    /// <summary>Номер е-направлення (альтернатива ehealthReferralId).</summary>
+    public string? EhealthReferralNumber { get; set; }
+    public MedLink.LIS.Api.Services.PaperReferralRequest? PaperReferral { get; set; }
+    public string? ReferrerOrganizationName { get; set; }
+    public string? ReferrerOrganizationEdrpou { get; set; }
+    public string? ReferrerDoctorName { get; set; }
+    public string? ReferrerNumber { get; set; }
     public string? ClinicalNotes { get; set; }
     public bool IsPregnant { get; set; }
     public int? PregnancyWeek { get; set; }

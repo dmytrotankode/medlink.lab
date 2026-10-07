@@ -17,10 +17,11 @@ public sealed class OrderService
     private readonly ICurrentEmployee _current;
     private readonly OrderStateService _state;
     private readonly TubePlanService _tubes;
+    private readonly ReferralService _referrals;
 
-    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state, TubePlanService tubes)
+    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state, TubePlanService tubes, ReferralService referrals)
     {
-        _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state; _tubes = tubes;
+        _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state; _tubes = tubes; _referrals = referrals;
     }
 
     public static readonly string[] CreatorRoles = { LabRoles.Admin, LabRoles.Registrar, LabRoles.Doctor, LabRoles.Phlebotomist, LabRoles.Technician };
@@ -28,6 +29,7 @@ public sealed class OrderService
     // ------------------------------------------------------------------ queries
     public IQueryable<LabOrder> FullQuery() => _db.Orders
         .Include(o => o.Patient).Include(o => o.Doctor).Include(o => o.Department)
+        .Include(o => o.Referral).ThenInclude(r => r!.Status).Include(o => o.PaperReferral)
         .Include(o => o.Samples).ThenInclude(s => s.TubeType)
         .Include(o => o.Samples).ThenInclude(s => s.BiomaterialType)
         .Include(o => o.Tests).ThenInclude(t => t.Test).ThenInclude(d => d!.LabSection)
@@ -167,7 +169,7 @@ public sealed class OrderService
             OrderDatetime = at,
             Status = OrderStatuses.New,
             IsUrgentCito = req.IsUrgentCito,
-            EhealthReferralId = NullIfEmpty(req.EhealthReferralId),
+
             ClinicalNotes = req.ClinicalNotes,
             IsPregnant = req.IsPregnant,
             PregnancyWeek = req.PregnancyWeek,
@@ -178,6 +180,7 @@ public sealed class OrderService
             OrganizationId = MedLinkDefaults.OrganizationId
         };
         await ValidateRefsAsync(order);
+        await _referrals.ApplyAsync(order, req, patient);
         _db.Orders.Add(order);
 
         await AddTestsInternalAsync(order, req.ProfileIds, req.TestIds);
@@ -189,7 +192,6 @@ public sealed class OrderService
     {
         if (order.DoctorId != null && !await _db.Employees.AnyAsync(e => e.Id == order.DoctorId)) throw ValidationException.Field("doctorId", "Лікаря не знайдено");
         if (order.DepartmentId != null && !await _db.Departments.AnyAsync(d => d.Id == order.DepartmentId)) throw ValidationException.Field("departmentId", "Підрозділ не знайдено");
-        if (order.EhealthReferralId != null && !await _db.Referrals.AnyAsync(r => r.Id == order.EhealthReferralId)) throw ValidationException.Field("ehealthReferralId", "Направлення eHealth не знайдено");
     }
 
     /// <summary>Додає тести/профілі до замовлення з плануванням пробірок за правилами тари (FR-PRE-004).</summary>
@@ -239,7 +241,8 @@ public sealed class OrderService
         if (req.DoctorId != null) order.DoctorId = NullIfEmpty(req.DoctorId);
         if (req.DepartmentId != null) order.DepartmentId = NullIfEmpty(req.DepartmentId);
         if (req.IsUrgentCito.HasValue) order.IsUrgentCito = req.IsUrgentCito.Value;
-        if (req.EhealthReferralId != null) order.EhealthReferralId = NullIfEmpty(req.EhealthReferralId);
+        if (req.EhealthReferralId != null && NullIfEmpty(req.EhealthReferralId) != order.EhealthReferralId)
+            throw new ConflictException("Е-направлення змінюється лише перереєстрацією замовлення (скасуйте замовлення — направлення буде звільнено)");
         if (req.ClinicalNotes != null) order.ClinicalNotes = req.ClinicalNotes;
         if (req.IsPregnant.HasValue) order.IsPregnant = req.IsPregnant.Value;
         if (req.PregnancyWeek.HasValue) order.PregnancyWeek = req.PregnancyWeek;
@@ -318,6 +321,7 @@ public sealed class OrderService
         var before = order.Status;
         order.Status = rule.ToStatus!;
         order.CancelReason = reason;
+        await _referrals.ReleaseAsync(order, reason);
         foreach (var t in order.Tests.Where(t => !OrderTestStatuses.Final.Contains(t.Status))) { t.Status = OrderTestStatuses.Rejected; t.RejectReason = "Замовлення скасовано: " + reason; }
         foreach (var s in order.Samples.Where(s => s.Status == SampleStatuses.Pending || s.Status == SampleStatuses.Collected)) { s.Status = SampleStatuses.Rejected; s.RejectReason = "Замовлення скасовано"; }
         _audit.Log("CANCEL", "lab_order", order.Id, new { status = before }, new { status = order.Status, reason });
@@ -398,6 +402,7 @@ public sealed class OrderService
         };
         _db.DiagnosticReports.Add(report);
         order.DiagnosticReportId = report.Id;
+        await _referrals.CompleteAsync(order, report, now);
 
         var channel = !string.IsNullOrWhiteSpace(order.Patient?.Person?.Email) ? "EMAIL" : "SMS";
         _db.Notifications.Add(new LabPatientNotification

@@ -10,7 +10,8 @@ BEGIN;
 -- ----------------------------------------------------------------------------- [MedLink]
 -- [MedLink] cmn_enum_record: id, caption, code, created_by, created_on, enum_type, modified_by, modified_on, parent_id, record_state, value_type
 -- [MedLink] cmn_person: id, birthday, caption, created_by, created_on, description, email, gender_id, ipn, last_name, location, middle_name, modified_by, modified_on, name, no_ipn, phone, record_state, subscribed_to_notifications
--- [MedLink] ehe_incoming_medical_referral: id, caption, created_by, created_on, ehealth_id, expiration_date, medical_referral_category_id, modified_by, modified_on, organization_id, patient_card_id, patient_instruction, patient_short_name, priority_id, record_state, reg_date, reg_number, requester_id, service_catalog_service_id, status_id
+-- [MedLink] ehe_incoming_medical_referral: id, caption, complete_date_in_ehealth, completed_with_item_entity_id, completed_with_item_entity_name, created_by, created_on, ehealth_id, expiration_date, medical_referral_category_id, modified_by, modified_on, organization_id, patient_card_id, patient_instruction, patient_short_name, priority_id, processing_status_in_ehealth_id, record_state, reg_date, reg_number, requester_id, service_catalog_service_id, status_id, take_in_work_date
+-- [MedLink] ehe_paper_medical_referral: id, caption, created_by, created_on, description, modified_by, modified_on, organization_id, patient_card_id, processed_date, record_state, reg_date, reg_number, requester_employee_name, requester_legal_entity_edrpou, requester_legal_entity_name, status
 -- [MedLink] ehe_service_catalog_service: id, caption, code, created_by, created_on, ehealth_id, inserted_at_in_ehealth, is_active, is_composition, medical_referral_category_id, modified_by, modified_on, name, record_state, request_allowed
 -- [MedLink] mis_diagnostic_report: id, caption, comment, created_by, created_on, description, diagnostic_report_category_id, division_id, document_type_id, effective_date_time_end, effective_date_time_start, ehealth_id, ehealth_incoming_medical_referral_id, ehealth_service_catalog_service_id, is_performer_string, is_primary_source, issued_at, legal_entity_id, modified_by, modified_on, organization_id, patient_card_id, performer_id, performer_string, record_state, recorded_by_id, reg_date, reg_number, status
 -- [MedLink] mis_patient_card: id, birthday, caption, created_by, created_on, description, document_type_id, gender_id, location, modified_by, modified_on, organization_id, patient_card_type_id, person_id, privacy_request_type_id, record_state, reg_date, reg_number
@@ -346,6 +347,26 @@ CREATE TABLE IF NOT EXISTS lab_department_settings (
     CONSTRAINT pk_lab_department_settings PRIMARY KEY (department_id)
 );
 
+-- [ЛІС] lab_ehealth_exchange_log (LabEhealthExchangeLog)
+CREATE TABLE IF NOT EXISTS lab_ehealth_exchange_log (
+    id uuid NOT NULL,
+    at timestamp without time zone NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    duration_ms integer NOT NULL,
+    method varchar(8) NOT NULL,
+    mode varchar(8) NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    record_state integer NOT NULL DEFAULT 2,
+    request_json text,
+    response_json text,
+    status_code integer,
+    url varchar(512) NOT NULL,
+    CONSTRAINT pk_lab_ehealth_exchange_log PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_ehealth_exchange_log_at ON lab_ehealth_exchange_log (at);
+
 -- [ЛІС] lab_employee_settings (LabEmployeeSettings)
 CREATE TABLE IF NOT EXISTS lab_employee_settings (
     employee_id uuid NOT NULL,
@@ -472,9 +493,15 @@ CREATE TABLE IF NOT EXISTS lab_order (
     order_datetime timestamp without time zone NOT NULL,
     order_number varchar(32) NOT NULL,
     organization_id uuid,
+    paper_referral_id uuid,
     patient_id uuid NOT NULL,
     pregnancy_week integer,
     record_state integer NOT NULL DEFAULT 2,
+    referral_type varchar(16) NOT NULL,
+    referrer_doctor_name varchar(256),
+    referrer_number varchar(64),
+    referrer_organization_edrpou varchar(16),
+    referrer_organization_name varchar(256),
     released_at timestamp without time zone,
     released_by_id uuid,
     repeat_of_order_id uuid,
@@ -489,7 +516,9 @@ CREATE INDEX IF NOT EXISTS ix_lab_order_doctor_id ON lab_order (doctor_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_ehealth_referral_id ON lab_order (ehealth_referral_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_order_datetime ON lab_order (order_datetime);
 CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_order_order_number ON lab_order (order_number);
+CREATE INDEX IF NOT EXISTS ix_lab_order_paper_referral_id ON lab_order (paper_referral_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_patient_id ON lab_order (patient_id);
+CREATE INDEX IF NOT EXISTS ix_lab_order_referral_type ON lab_order (referral_type);
 CREATE INDEX IF NOT EXISTS ix_lab_order_status ON lab_order (status);
 CREATE INDEX IF NOT EXISTS ix_lab_order_verify_token ON lab_order (verify_token);
 
@@ -1311,6 +1340,7 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_o
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_diagnostic_report_id') THEN ALTER TABLE lab_order ADD CONSTRAINT fk_lab_order_diagnostic_report_id FOREIGN KEY (diagnostic_report_id) REFERENCES mis_diagnostic_report (id); END IF; END $$; -- → [MedLink]
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_doctor_id') THEN ALTER TABLE lab_order ADD CONSTRAINT fk_lab_order_doctor_id FOREIGN KEY (doctor_id) REFERENCES org_employee (id); END IF; END $$; -- → [MedLink]
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_ehealth_referral_id') THEN ALTER TABLE lab_order ADD CONSTRAINT fk_lab_order_ehealth_referral_id FOREIGN KEY (ehealth_referral_id) REFERENCES ehe_incoming_medical_referral (id); END IF; END $$; -- → [MedLink]
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_paper_referral_id') THEN ALTER TABLE lab_order ADD CONSTRAINT fk_lab_order_paper_referral_id FOREIGN KEY (paper_referral_id) REFERENCES ehe_paper_medical_referral (id); END IF; END $$; -- → [MedLink]
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_patient_id') THEN ALTER TABLE lab_order ADD CONSTRAINT fk_lab_order_patient_id FOREIGN KEY (patient_id) REFERENCES mis_patient_card (id) ON DELETE CASCADE; END IF; END $$; -- → [MedLink]
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_attachment_order_id') THEN ALTER TABLE lab_order_attachment ADD CONSTRAINT fk_lab_order_attachment_order_id FOREIGN KEY (order_id) REFERENCES lab_order (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_sample_biomaterial_type_id') THEN ALTER TABLE lab_order_sample ADD CONSTRAINT fk_lab_order_sample_biomaterial_type_id FOREIGN KEY (biomaterial_type_id) REFERENCES lab_biomaterial_type (id) ON DELETE CASCADE; END IF; END $$;

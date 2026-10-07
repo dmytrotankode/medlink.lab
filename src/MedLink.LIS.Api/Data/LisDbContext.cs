@@ -25,6 +25,7 @@ public class LisDbContext : DbContext
     public DbSet<OrgEmployee> Employees => Set<OrgEmployee>();
     public DbSet<OrgDepartment> Departments => Set<OrgDepartment>();
     public DbSet<EheIncomingMedicalReferral> Referrals => Set<EheIncomingMedicalReferral>();
+    public DbSet<EhePaperMedicalReferral> PaperReferrals => Set<EhePaperMedicalReferral>();
     public DbSet<EheServiceCatalogService> ServiceCatalog => Set<EheServiceCatalogService>();
     public DbSet<OrgOrganizationService> OrganizationServices => Set<OrgOrganizationService>();
 
@@ -96,6 +97,7 @@ public class LisDbContext : DbContext
     public DbSet<LabSendOut> SendOuts => Set<LabSendOut>();
     public DbSet<LabSendOutItem> SendOutItems => Set<LabSendOutItem>();
     public DbSet<LabOrderAttachment> Attachments => Set<LabOrderAttachment>();
+    public DbSet<LabEhealthExchangeLog> EhealthExchangeLog => Set<LabEhealthExchangeLog>();
 
     // --- system ---
     public DbSet<LabAuditLog> AuditLog => Set<LabAuditLog>();
@@ -142,6 +144,10 @@ public class LisDbContext : DbContext
         mb.Entity<LabOrderTest>().HasIndex(t => t.ReleasedAt);
 
         // [MedLink] персона та лабораторні атрибути завантажуються разом із карткою/співробітником/підрозділом
+        mb.Entity<LabEhealthExchangeLog>().HasIndex(l => l.At);
+        mb.Entity<LabOrder>().HasIndex(o => o.EhealthReferralId);
+        mb.Entity<LabOrder>().HasIndex(o => o.ReferralType);
+        mb.Entity<EheIncomingMedicalReferral>().HasIndex(r => r.RegNumber);
         mb.Entity<LabPerformer>().HasIndex(p => p.Code).IsUnique();
         mb.Entity<LabPerformerTest>().HasIndex(p => new { p.PerformerId, p.TestId }).IsUnique();
         mb.Entity<LabSendOut>().HasIndex(s => s.Number).IsUnique();

@@ -21,6 +21,7 @@ export default [
       // ----- Процеси -----
       lab('dashboard', 'lab-dashboard', 'Дашборд лабораторії', () => import('pages/laboratory/LabDashboard.vue')),
       lab('orders', 'lab-orders', 'Реєстрація направлень', () => import('pages/laboratory/orders/OrdersQueue.vue')),
+      lab('referrals', 'lab-referrals', 'Журнал направлень', () => import('pages/laboratory/orders/ReferralJournal.vue')),
       lab('orders/:id', 'lab-order-card', 'Картка замовлення', () => import('pages/laboratory/orders/OrderCard.vue'), { props: true }),
       lab('order-matrix', 'lab-order-matrix', 'Матриця призначень', () => import('pages/laboratory/orders/OrderMatrixPage.vue')),
       lab('phlebotomy', 'lab-phlebotomy', 'Пункт забору біоматеріалу', () => import('pages/laboratory/PhlebotomyStation.vue')),

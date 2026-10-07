@@ -58,8 +58,9 @@
             <div class="text-weight-bold">{{ order.totalPrice | money }}</div>
           </div>
           <div class="col-6 col-md-2">
-            <div class="text-caption text-grey-7">е-Направлення</div>
-            <div class="mono">{{ order.ehealthReferralId || '—' }}</div>
+            <div class="text-caption text-grey-7">Направлення</div>
+            <div data-testid="orderReferral"><b>{{ order.referralTypeName || 'Самозвернення' }}</b> <span v-if="order.referralNumber" class="mono">№ {{ order.referralNumber }}</span></div>
+            <div v-if="order.referralStatus || order.referrerOrganizationName" class="text-caption text-grey-7">{{ [order.referralStatus, order.referrerOrganizationName, order.referrerDoctorName].filter(Boolean).join(' · ') }}</div>
           </div>
           <div v-if="order.clinicalNotes" class="col-12 text-caption"><q-icon name="notes" /> {{ order.clinicalNotes }}</div>
         </div>
