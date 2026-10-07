@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedLink LIS 3.0 — Головний гід по проєкту</title>
+  <link rel="stylesheet" href="file_viewer_modal.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #1e293b;
+      background: #f8fafc;
+      margin: 0;
+      padding: 30px 20px;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+    }
+    h1 { color: #0178BC; margin-top: 0; }
+    h2 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 32px; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { border: 1px solid #cbd5e1; padding: 10px 14px; text-align: left; font-size: 14px; }
+    th { background: #f1f5f9; font-weight: 600; color: #334155; }
+    .btn-portal {
+      display: inline-block;
+      background: #0178BC;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-right: 12px;
+      margin-bottom: 12px;
+    }
+    .btn-portal:hover { background: #005a8e; }
+    code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>MedLink LIS 3.0 — Головний гід по проєкту</h1>
+    <p><strong>ТОВ "МедЛінк" © 2026</strong> | Комплексна лабораторна інформаційна система, шлюз аналізаторів та клінічні модулі.</p>
+    
+    <div style="margin: 24px 0;">
+      <a href="http://localhost:8088/medlink_lab_frontend/run_prototype.html" target="_blank" class="btn-portal">🚀 Відкрити інтерактивний прототип (8088)</a>
+      <a href="http://localhost:8088/ТЗ_ЛІС_MedLink_v3_Master_Specification.html" target="_blank" class="btn-portal" style="background: #4f46e5;">📖 Повне ТЗ зі скріншотами (Master Spec)</a>
+      <a href="http://localhost:8088/specs_html/index.html" target="_blank" class="btn-portal" style="background: #2c3e50;">📚 Портал документації та API</a>
+      <a href="http://localhost:8088/ТЗ_ЛІС_MedLink_v3_Повне.html" target="_blank" class="btn-portal" style="background: #059669;">📋 Повне ТЗ v3.0</a>
+    </div>
+
+    <h2>Швидкий перегляд DDL-скриптів та вихідного коду (Попап):</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;">
+      <button class="doc-file-btn" onclick="openMedlinkFileModal('sql/00_master_deploy_all.sql')">🚀 00_master_deploy_all.sql</button>
+      <button class="doc-file-btn" onclick="openMedlinkFileModal('sql/01_lis_schema_core.sql')">🏛️ 01_lis_schema_core.sql (Базовий DDL)</button>
+      <button class="doc-file-btn" onclick="openMedlinkFileModal('sql/02_lis_schema_microbiology_eucast.sql')">🧫 02_lis_schema_microbiology_eucast.sql</button>
+      <button class="doc-file-btn" onclick="openMedlinkFileModal('sql/03_evomis_integration_views_and_fk.sql')">🔗 03_evomis_integration_views_and_fk.sql</button>
+      <button class="doc-file-btn" onclick="openMedlinkFileModal('sql/08_seed_parameters_and_profiles.sql')">📊 08_seed_parameters_and_profiles.sql</button>
+      <button class="doc-file-btn" onclick="openMedlinkFileModal('MedLink.LabConnector/Core/AstmDriver.cs')">⚙️ AstmDriver.cs (.NET 8)</button>
+      <button class="doc-file-btn" onclick="openMedlinkFileModal('MedLink.LabConnector/Core/Hl7V2Driver.cs')">⚙️ Hl7V2Driver.cs (.NET 8)</button>
+      <button class="doc-file-btn" onclick="openMedlinkFileModal('test_examples/01_astm_query_sysmex.txt')">📡 ASTM Query (Sysmex)</button>
+      <button class="doc-file-btn" onclick="openMedlinkFileModal('test_examples/07_fhir_diagnostic_report_bundle.json')">🌐 FHIR Bundle (JSON)</button>
+    </div>
+
+    <h2>Основні каталоги проєкту для команди розробників</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Каталог</th>
+          <th>Призначення</th>
+          <th>Ключові файли</th>
+          <th>Для кого</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong><code>sql/</code></strong></td>
+          <td>Повний набір PostgreSQL міграцій та клінічних довідників</td>
+          <td><code>00_master_deploy_all.sql</code>, <code>01_lis_schema_core.sql</code>, <code>03_evomis_integration_views_and_fk.sql</code></td>
+          <td>DBA / Backend</td>
+        </tr>
+        <tr>
+          <td><strong><code>medlink_lab_frontend/</code></strong></td>
+          <td>Готовий SPA на Quasar v1 + Vue 2 для вбудовування в <code>evomis/src/App.View</code></td>
+          <td><code>run_prototype.html</code>, <code>src/router/</code>, <code>src/store/</code>, <code>src/pages/laboratory/</code></td>
+          <td>Frontend</td>
+        </tr>
+        <tr>
+          <td><strong><code>MedLink.LabConnector/</code></strong></td>
+          <td>Фоновий .NET 8 демон зв'язку з приладами (ASTM/HL7/COM/TCP)</td>
+          <td><code>AstmDriver.cs</code>, <code>Hl7V2Driver.cs</code>, <code>install-windows.cmd</code>, <code>install-linux.sh</code></td>
+          <td>.NET Backend / Інтегратор</td>
+        </tr>
+        <tr>
+          <td><strong><code>specs_html/</code></strong></td>
+          <td>Технічна документація для розробників з ендпоінтами</td>
+          <td><code>index.html</code>, <code>02_database_schema_and_relations.html</code>, <code>03_api_endpoints_specification.html</code></td>
+          <td>Вся команда</td>
+        </tr>
+        <tr>
+          <td><strong><code>test_examples/</code></strong></td>
+          <td>Тестові пакети протоколів та емулятор приладів</td>
+          <td><code>run_analyzer_simulation.py</code>, дампи ASTM, дампи HL7, FHIR JSON</td>
+          <td>QA / Інтегратор</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Команда створення архіву для передачі:</h2>
+    <pre>Compress-Archive -Path "C:\__MEDLINK___\LABA\*" -DestinationPath "C:\__MEDLINK___\MedLink_LIS_3.0_Full_Project.zip" -CompressionLevel Optimal</pre>
+  </div>
+
+  <script src="file_viewer_modal.js"></script>
+</body>
+</html>

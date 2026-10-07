@@ -1,0 +1,64 @@
+1|SYSMEX XS-1000I|Sysmex XS-1000i|{"exch_type":"ASTM"}
+2|СOBAS 411|Сobas 111|{"exch_type":"ASTM"}
+3|VITROS|Vitros|{"exch_type":"ASTM"}
+4|VITROS EVIQ|Vitros EViQ|{"exch_type":"ASTM"}
+5|AUTOVUE INOVA|AutoVue Inova|{"exch_type":"ASTM"}
+6|URISYS|Urisys 1100|{"exch_type":"ASTM"}
+7|STAGO START|Stago start|{"exch_type":"ASTM"}
+8|REFLOTRON|Reflotron|{"exch_type":"ASTM"}
+9|BIOKSEL|Bioksel|{"exch_type":"ASTM"}
+10|TOSO|TOSO|{"exch_type":"ASTM"}
+11|COBAS311|COBAS 311|{"exch_type":"ASTM"}
+12|COBAS411|COBAS 411|{"exch_type":"ASTM"}
+13|SYSMEX2000|SYSMEX2000|{"exch_type":"ASTM"}
+14|COBAS111|COBAS 111|{"exch_type":"ASTM"}
+15|INTEGRA|INTEGRA|{"exch_type":"ASTM"}
+16|GEM4000|GEM 4000|{"exch_type":"ASTM"}
+17|SYSMEXSUIT|SYSMEXSUIT|{"exch_type":"ASTM"}
+18|SYSMEX2500|SYSMEX2500|{"exch_type":"ASTM"}
+19|SYSMEXCA600|SYSMEXCA600|{"exch_type":"ASTM"}
+20|CLINTEC|CLINTEC|{"eop": "DQ==", "exch_type": "TEXT"}
+21|PENTRA|PENTRA|{"exch_type":"ASTM"}
+22|ABL80|RADIOMETER ABL80|{"exch_type":"ASTM"}
+23|AQT90|RADIOMETER AQT90|{"exch_type":"ASTM"}
+24|SIEMENS|SIEMENS VANTAGE|{"exch_type":"ASTM"}
+25|BIOSYSTEMA15|BIOSYSTEM A15|{"exch_type":"ASTM"}
+26|NIHON9100|Nihon 9100|{"exch_type":"ASTM"}
+27|HUMACOUNT5D|Huma Count 5D|{"exch_type":"ASTM"}
+28|HUMACOUNT5L|Huma Count 5L|{"bop": "AQ==", "eop": "BA==", "exch_type": "HUMA5L", "full_text": 1, "control_sum": 1}
+29|MAGLUMI|MAGLUMI|{"exch_type": "ASTM"}
+30|HUMASTAR|Huma Star|{"exch_type": "ASTM"}
+31|PRESTIGE|PRESTIGE|{"exch_type": "ASTM"}
+32|SYSMEXXN|SYSMEXXN|{"exch_type": "ASTM_ASK"}
+33|MINDRAY|MINDRAY|{"exch_type": "ASTM"}
+34|ACCESS|ACCESS|{"exch_type": "ASTM"}
+36|BECKMAN|BECKMAN|{"exch_type": "ASTM"}
+37|MINDRAYBS30|MINDRAYBS30|{"exch_type": "HL7"}
+38|MINDRAY240|MINDRAY240|{"exch_type": "HL7"}
+39|MINDRAY3100|MINDRAY3100|{"exch_type": "HL7"}
+40|VITROS5600|VITROS5600|{"exch_type": "ASTM"}
+41|ACLTOP300|ACLTOP300|{"sleep": 500, "exch_type": "ASTM", "control_sum": 1}
+42|URILYZER100PRO|URILYZER100PRO|{"exch_type": "ASTM"}
+43|BECKMANCOULTER500|BECKMANCOULTER500|{"exch_type": "ASTM"}
+44|WONDFOFINECARE|WONDFOFINECARE|{"exch_type": "ASTM"}
+45|CYAN|CYAN|{"exch_type": "CYAN"}
+46|UWAM|UWAM|{"exch_type": "ASTM"}
+47|BIOSYSTEMS|BIOSYSTEMS|{"exch_type": "ASTM"}
+48|JUNIOR|JUNIOR|{"exch_type": "JUNIOR"}
+49|ACCESS2|ACCESS2|{"exch_type": "ASTM"}
+50|UC1000|UC-1000|{"bop": "Ag==", "eop": "Aw==", "exch_type": "UC1000"}
+51|ABL9|RADIOMETER ABL9|{"bop": "AQ==", "exch_type": "ASTM"}
+52|ICHROMA3|iChroma III|{"bop": "Cw==", "eop": "HA==", "exch_type": "HL7"}
+53|IRISIQ200|IRIS IQ 200|{"exch_type": "IRIS"}
+54|MEK7300|MEK-7300|{"exch_type": "ASTM"}
+55|APOTI|APOTI|{"eop": "DQ==", "exch_type": "ASTM"}
+56|RAPID|RAPID|{"bop": "Ag==", "eop": "BA==", "exch_type": "RAPID"}
+57|EASYRA|EASYRA|{"exch_type": "ASTM"}
+58|FUJI|FUJI|{"bop": "Ag==", "eop": "Aw==", "exch_type": "FUJI"}
+59|IFLASH|iFlash|{"exch_type": "ASTM"}
+60|BA200|BA200|{"exch_type": "ASTM"}
+61|DIRUI_H100|DIRUI H100|{"bop": "Ag==", "eop": "Aw==", "exch_type": "TXT"}
+62|Phadia 250|Phadia 250|{"bop": "Ag==", "eop": "Aw==", "exch_type": "TXT"}
+63|ELYTEPLUS|ELYTEPLUS|{"bop": "U2FtcGxlIFJlcG9ydA==", "eop": "RW5k", "exch_type": "TXT"}
+64|ERBA|ERBA|{"exch_type": "ASTM"}
+65|TOUCHPRO|TOUCHPRO|{"exch_type": "ASTM"}

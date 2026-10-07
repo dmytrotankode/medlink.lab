@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Документація MedLink LIS 3.0 (.NET 8 Core + Vue + SQLite)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --medlink-primary: #4274A7;
+      --medlink-primary-dark: #2F5276;
+      --medlink-accent: #0178BC;
+      --medlink-success: #21ba45;
+      --medlink-danger: #d04f45;
+      --medlink-warning: #f2c037;
+      --medlink-bg: #f8fafc;
+      --medlink-text: #1e293b;
+      --medlink-border: #e2e8f0;
+      --code-bg: #0f172a;
+    }
+    body {
+      font-family: 'Source Sans Pro', sans-serif;
+      background: var(--medlink-bg);
+      color: var(--medlink-text);
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: linear-gradient(135deg, var(--medlink-primary), var(--medlink-accent));
+      color: white;
+      padding: 30px 40px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .header-title {
+      font-size: 28px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-sub {
+      font-size: 15px;
+      opacity: 0.9;
+      margin-top: 6px;
+    }
+    .quick-links {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .quick-btn {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .quick-btn:hover {
+      background: white;
+      color: var(--medlink-primary);
+    }
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--medlink-border);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    h2 {
+      color: var(--medlink-primary);
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-top: 0;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h3 {
+      color: var(--medlink-primary-dark);
+      font-size: 18px;
+      margin-top: 20px;
+    }
+    pre {
+      background: var(--code-bg);
+      color: #f8fafc;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0f172a;
+      font-size: 13px;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--medlink-border);
+      padding: 10px 14px;
+      text-align: left;
+    }
+    th {
+      background: #f1f5f9;
+      color: var(--medlink-primary-dark);
+      font-weight: 600;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+    }
+    .badge-success { background: var(--medlink-success); }
+    .badge-primary { background: var(--medlink-primary); }
+    .badge-danger { background: var(--medlink-danger); }
+    .badge-pink { background: #e91e63; }
+    .badge-purple { background: #9c27b0; }
+    .badge-orange { background: #ef6c00; }
+    .badge-teal { background: #009688; }
+    .status-banner {
+      background: #e8f5e9;
+      border: 2px solid var(--medlink-success);
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .status-icon {
+      font-size: 32px;
+      color: var(--medlink-success);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title">
+      <i class="fa-solid fa-microscope"></i> MedLink LIS 3.0 Web API (.NET 8 Core + Vue + SQLite)
+    </div>
+    <div class="header-sub">
+      Повноцінний автономний лабораторний сервіс на технологічному стеку MedLink MIS (evomis) з підтримкою каскадної архітектури норм Delphi
+    </div>
+    <div class="quick-links">
+      <a href="http://localhost:5055/swagger" target="_blank" class="quick-btn"><i class="fa-solid fa-code"></i> Інтерактивний Swagger UI</a>
+      <a href="http://localhost:5055/medlink_lab_frontend/run_prototype.html" target="_blank" class="quick-btn"><i class="fa-solid fa-desktop"></i> Робочий інтерфейс ЛІС (Vue/Quasar)</a>
+      <a href="http://localhost:5055/TZ_LIS_MedLink_v3_Master_Specification.html" target="_blank" class="quick-btn"><i class="fa-solid fa-book"></i> Генеральне ТЗ v3</a>
+      <a href="http://localhost:5055/swagger/v1/swagger.json" target="_blank" class="quick-btn"><i class="fa-solid fa-file-code"></i> OpenAPI 3.0 JSON</a>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <div class="status-banner">
+      <div class="status-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <div>
+        <div style="font-weight: 700; font-size: 16px; color: #1b5e20;">.NET 8 CORE ДОДАТОК ПОВНІСТЮ РОБОЧИЙ І ЗАПУЩЕНИЙ В РЕАЛЬНОМУ ЧАСІ!</div>
+        <div style="font-size: 14px; color: #2e7d32;">
+          Сервер Kestrel слухає на порту <strong>5055</strong>, обслуговує 4 контролери, 18 REST endpoints, повноцінний Swagger UI, каскадний сервіс норм, а також роздає статичні файли інтерфейсу MedLink LIS безпосередньо з робочої бази даних SQLite <code>medlink_lab_local.db</code>.
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. СТРУКТУРА ПРОЄКТУ -->
+    <div class="card">
+      <h2><i class="fa-solid fa-folder-tree"></i> 1. Структура кодової бази .NET Core 8</h2>
+      <p>Фізичне розташування проєкту: <code>C:\__MEDLINK___\LABA\MedLink.LIS.Api</code></p>
+      <table>
+        <thead>
+          <tr>
+            <th>Каталог / Файл</th>
+            <th>Призначення</th>
+            <th>Зв'язок із системою MedLink (evomis)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Controllers/LaboratoryNormsController.cs</code></td>
+            <td>Багатошаровий каскадний конструктор норм Delphi</td>
+            <td>Переноситься в <code>evomis/src/App.Api/Controllers/Laboratory/</code></td>
+          </tr>
+          <tr>
+            <td><code>Controllers/LaboratoryWorklistController.cs</code></td>
+            <td>Робочий журнал лаборанта, валідація лікарем, автовалідація, CITO паніка</td>
+            <td>Зв'язаний з <code>mis_patient_card</code>, <code>org_employee</code>, <code>mis_diagnostic_report</code></td>
+          </tr>
+          <tr>
+            <td><code>Controllers/LaboratoryQcController.cs</code></td>
+            <td>Внутрішній контроль якості, карти Леві-Дженнінгса, блокування аналізаторів</td>
+            <td>Модуль ВКЯ для валідації допусків приладів</td>
+          </tr>
+          <tr>
+            <td><code>Controllers/LaboratoryBiobankAndDictionariesController.cs</code></td>
+            <td>Біобанк зразків, довідники біоматеріалів, пробірок, аналізаторів, тестів</td>
+            <td>Синхронізація з класифікаторами MedLink MIS</td>
+          </tr>
+          <tr>
+            <td><code>Services/LabNormsCascadeService.cs</code></td>
+            <td>Рушій каскадного нашарування норм за пріоритетами Delphi</td>
+            <td>Сервісний шар <code>evomis/src/App.Business/Laboratory/</code></td>
+          </tr>
+          <tr>
+            <td><code>Data/MedLinkLabDbContext.cs</code></td>
+            <td>Entity Framework Core DbContext для SQLite</td>
+            <td>Об'єднується з <code>evomis/src/App.DataAccess/MedLinkDbContext.cs</code></td>
+          </tr>
+          <tr>
+            <td><code>Models/Entities.cs</code></td>
+            <td>10 сутностей доменної моделі зі зв'язками з eHealth та MedLink</td>
+            <td>Переноситься в <code>evomis/src/App.Domain/Models/Laboratory/</code></td>
+          </tr>
+          <tr>
+            <td><code>Program.cs</code></td>
+            <td>Конфігурація Kestrel :5055, Swagger, CORS, Static Files, DI</td>
+            <td>Шаблон запуску автономного мікросервісу</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 2. СТЕК НАШАРУВАННЯ НОРМ -->
+    <div class="card">
+      <h2><i class="fa-solid fa-layer-group"></i> 2. Багатошарове каскадне нашарування норм Delphi (C# Engine)</h2>
+      <p>
+        У спадковій Delphi-системі норма ніколи не була статичною. Для кожної конкретної методики (напр. <code>HEX_IFCC</code>) діє багатошаровий каскад правил, де шар із вищим пріоритетом перекриває нижчі:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Пріоритет</th>
+            <th>Архітектурний шар</th>
+            <th>Критерії активації</th>
+            <th>Приклад клінічної дії</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-pink">P = 100</span></td>
+            <td><strong>ШАР 3: PREGNANCY (Вагітність)</strong></td>
+            <td>Пацієнт жіночої статі, вказано термін вагітності в тижнях</td>
+            <td>Триместр 2 (14-27 тиж.): коридор [3.5 — 5.3] ммоль/л перекриває звичайні норми</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-purple">P = 80</span></td>
+            <td><strong>ШАР 2: MENSTRUAL_PHASE (Менструальний цикл)</strong></td>
+            <td>Жінки, вказано фазу (Фолікулярна, Овуляторна, Лютеїнова, Менопауза)</td>
+            <td>Лютеїнова фаза коригує норму прогестерону чи глюкози</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-orange">P = 60</span></td>
+            <td><strong>ШАР 4: CLINICAL_ICD10 (Клініко-нозологічний)</strong></td>
+            <td>Встановлено клінічний діагноз МКХ-10 (напр. E11, N18)</td>
+            <td>Таргетний терапевтичний коридор компенсації цукрового діабету</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-primary">P = 40</span></td>
+            <td><strong>ШАР 1: DEMOGRAPHIC (Вік та стать)</strong></td>
+            <td>Стратифікація: Немовлята (0-28 днів), діти (1-14 р.), дорослі, літні (65+)</td>
+            <td>Вік нормалізується у дні для точного відсікання немовлят від дорослих</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-teal">P = 10</span></td>
+            <td><strong>ШАР 0: BASELINE (Базовий оптимум методики)</strong></td>
+            <td>Завжди активний як універсальний запасний fallback</td>
+            <td>Стандартний референтний інтервал аналізатора за замовчуванням</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Реалізація у C# сервісі (LabNormsCascadeService.cs):</h3>
+      <pre><code>// Нормалізація віку пацієнта до днів для медично точного порівняння:
+double ToDays(double val, string unit) => (unit?.ToUpperInvariant()) switch
+{
+    "DAYS" => val,
+    "MONTHS" => val * 30.4375,
+    _ => val * 365.25
+};
+
+double pDays = ToDays(req.Age, req.AgeUnit);
+double lFromDays = ToDays(layer.AgeFrom, layer.AgeUnit);
+double lToDays = ToDays(layer.AgeTo, layer.AgeUnit);
+
+if (pDays &lt; lFromDays || pDays &gt; lToDays)
+{
+    match = false;
+    reason = $"Вік {req.Age} {req.AgeUnit} поза межами діапазону [{layer.AgeFrom}-{layer.AgeTo} {layer.AgeUnit}]";
+}</code></pre>
+    </div>
+
+    <!-- 3. ТЕСТОВІ ЗАПИТИ ДО .NET СЕРВІСУ -->
+    <div class="card">
+      <h2><i class="fa-solid fa-terminal"></i> 3. Перевірка працездатності через PowerShell / cURL</h2>
+      <p>Усі команди виконуються проти робочого .NET сервісу на порту <strong>5055</strong>:</p>
+
+      <h3>1. Перевірка Swagger UI:</h3>
+      <pre><code>curl.exe -s http://localhost:5055/swagger/index.html | Select-String "&lt;title&gt;"
+# Відповідь: &lt;title&gt;Swagger UI&lt;/title&gt;</code></pre>
+
+      <h3>2. Завантаження 49 шарів правил із бази даних SQLite:</h3>
+      <pre><code>(Invoke-RestMethod -Uri "http://localhost:5055/api/laboratory/norms/combinations").data.Count
+# Відповідь: 49</code></pre>
+
+      <h3>3. Запуск каскадного резолвінгу для вагітної пацієнтки 2-го триместру:</h3>
+      <pre><code>$body = @{
+    testCode = "GLU"
+    methodCode = "HEX_IFCC"
+    gender = "F"
+    age = 28
+    isPregnant = $true
+    pregnancyWeek = 20
+    measuredValue = 5.2
+    previousValue = 4.8
+} | ConvertTo-Json
+
+$res = Invoke-RestMethod -Uri "http://localhost:5055/api/laboratory/norms/resolve-cascade" -Method Post -Body $body -ContentType "application/json"
+$res.winningLayer.normName
+# Відповідь: Вагітні: 2-й триместр (14-27 тиж.)</code></pre>
+
+      <h3>4. Перевірка роздачі веб-інтерфейсу сервером Kestrel:</h3>
+      <pre><code>curl.exe -I http://localhost:5055/medlink_lab_frontend/run_prototype.html
+# Відповідь: HTTP/1.1 200 OK (Content-Length: 282777, Server: Kestrel)</code></pre>
+    </div>
+
+  </div>
+
+</body>
+</html>

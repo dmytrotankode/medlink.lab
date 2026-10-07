@@ -1,0 +1,213 @@
+/* ==========================================================================
+   MedLink LIS: Interactive File & DDL Modal Viewer
+   ========================================================================== */
+
+#medlinkFileModalOverlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 999999;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#medlinkFileModalOverlay.active {
+  display: flex;
+}
+
+.medlink-modal-card {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  width: 95vw;
+  max-width: 1250px;
+  height: 88vh;
+  max-height: 920px;
+  border-radius: 10px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.medlink-modal-header {
+  background: #252526;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #333333;
+}
+
+.medlink-modal-title-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.medlink-modal-badge {
+  background: #0178BC;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.medlink-modal-filename {
+  font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.medlink-modal-path {
+  font-size: 11px;
+  color: #888888;
+  font-family: "JetBrains Mono", Consolas, monospace;
+}
+
+.medlink-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.medlink-btn {
+  background: #333333;
+  color: #ffffff;
+  border: 1px solid #444444;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+
+.medlink-btn:hover {
+  background: #444444;
+  border-color: #555555;
+  color: #ffffff;
+}
+
+.medlink-btn-primary {
+  background: #0178BC;
+  border-color: #0178BC;
+}
+
+.medlink-btn-primary:hover {
+  background: #005a8e;
+  border-color: #005a8e;
+}
+
+.medlink-btn-close {
+  background: transparent;
+  border: none;
+  color: #aaaaaa;
+  font-size: 20px;
+  line-height: 1;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.medlink-btn-close:hover {
+  background: #d04f45;
+  color: #ffffff;
+}
+
+.medlink-modal-toolbar {
+  background: #2d2d2d;
+  padding: 6px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #999999;
+  border-bottom: 1px solid #333333;
+}
+
+.medlink-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 16px 20px;
+  background: #1e1e1e;
+}
+
+.medlink-code-pre {
+  margin: 0;
+  padding: 0;
+  font-family: "JetBrains Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #d4d4d4;
+  white-space: pre;
+  tab-size: 2;
+}
+
+/* Modal Trigger Buttons In Documentation */
+.doc-file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  border-radius: 5px;
+  padding: 4px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
+  margin: 2px 2px;
+  font-family: inherit;
+}
+
+.doc-file-btn:hover {
+  background: #0178BC;
+  color: #ffffff;
+  border-color: #0178BC;
+  box-shadow: 0 2px 4px rgba(1, 120, 188, 0.25);
+}
+
+.doc-file-btn-dark {
+  background: #2c3e50;
+  color: #ffffff;
+  border: 1px solid #34495e;
+}
+
+.doc-file-btn-dark:hover {
+  background: #0178BC;
+  border-color: #0178BC;
+}
+
+.doc-file-badge {
+  background: #0284c7;
+  color: #fff;
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 1px 5px;
+  text-transform: uppercase;
+}

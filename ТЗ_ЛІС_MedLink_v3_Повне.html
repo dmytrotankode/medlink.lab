@@ -1,0 +1,2033 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ТЕХНІЧНЕ ЗАВДАННЯ: Модуль «Лабораторна інформаційна система» (MedLink LIS 3.0)</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #eff6ff;
+  --secondary: #0f172a;
+  --accent: #0ea5e9;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --purple: #8b5cf6;
+  --surface: #ffffff;
+  --background: #f8fafc;
+  --border: #e2e8f0;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --code-bg: #1e293b;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--background); color: var(--text-main); line-height: 1.6; }
+
+/* Layout */
+.app-container { display: flex; min-height: 100vh; }
+.sidebar { width: 310px; background: #0f172a; color: #f8fafc; position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 24px 16px; flex-shrink: 0; border-right: 1px solid #1e293b; }
+.sidebar-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #334155; }
+.sidebar-logo .badge { background: #3b82f6; color: white; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 12px; }
+.sidebar-logo h2 { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+.nav-group-title { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 1px; margin: 20px 8px 8px; }
+.nav-link { display: block; padding: 8px 12px; color: #cbd5e1; text-decoration: none; border-radius: 6px; font-size: 13.5px; margin-bottom: 2px; transition: all 0.2s; }
+.nav-link:hover { background: #1e293b; color: #fff; }
+.nav-link.active { background: #2563eb; color: #fff; font-weight: 600; }
+
+.main-content { flex: 1; padding: 40px 48px; max-width: 1200px; }
+
+/* Typography & Headers */
+h1 { font-size: 32px; font-weight: 800; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.5px; }
+h2 { font-size: 24px; font-weight: 700; color: #0f172a; margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 10px; }
+h3 { font-size: 18px; font-weight: 600; color: #1e293b; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; color: #334155; margin: 16px 0 8px; }
+p { margin-bottom: 14px; font-size: 15px; color: #334155; }
+
+/* Hero Card */
+.hero-card { background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%); color: white; border-radius: 16px; padding: 32px; margin-bottom: 32px; box-shadow: var(--shadow-lg); }
+.hero-card h1 { color: white; }
+.hero-card p { color: #e0f2fe; font-size: 16px; margin-bottom: 20px; }
+.meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 20px; background: rgba(255, 255, 255, 0.1); padding: 16px; border-radius: 10px; }
+.meta-item { display: flex; flex-direction: column; }
+.meta-label { font-size: 12px; text-transform: uppercase; color: #bae6fd; font-weight: 600; }
+.meta-value { font-size: 14px; font-weight: 700; color: #ffffff; }
+
+/* Cards & Containers */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
+.alert-box { padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid; display: flex; gap: 12px; align-items: flex-start; }
+.alert-info { background: #eff6ff; border-color: #3b82f6; color: #1e40af; }
+.alert-success { background: #ecfdf5; border-color: #10b981; color: #065f46; }
+.alert-warning { background: #fffbeb; border-color: #f59e0b; color: #92400e; }
+.alert-danger { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 9999px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+.badge-must { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+.badge-should { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+.badge-could { background: #e0e7ff; color: #4338ca; border: 1px solid #a5b4fc; }
+.badge-r1 { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.badge-r2 { background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
+.badge-r3 { background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; }
+
+/* Tables */
+.table-wrapper { overflow-x: auto; margin: 16px 0 24px; border-radius: 8px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+table { width: 100%; border-collapse: collapse; background: var(--surface); text-align: left; font-size: 13.5px; }
+th { background: #f1f5f9; padding: 12px 14px; font-weight: 600; color: #334155; border-bottom: 2px solid var(--border); }
+td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: #334155; vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8fafc; }
+
+/* Code Blocks */
+pre { background: var(--code-bg); color: #e2e8f0; padding: 18px; border-radius: 8px; overflow-x: auto; font-family: "Consolas", "Courier New", monospace; font-size: 13px; line-height: 1.5; margin: 14px 0 20px; }
+code { background: #f1f5f9; color: #0f172a; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+pre code { background: none; color: inherit; padding: 0; }
+
+/* Interactive Simulator Containers */
+.simulator-box { border: 2px solid #3b82f6; border-radius: 12px; background: #ffffff; padding: 20px; margin: 24px 0; box-shadow: var(--shadow-md); }
+.sim-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; }
+.sim-title { font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 8px; }
+
+/* Buttons & Inputs */
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; border: none; }
+.btn-primary { background: #2563eb; color: #fff; }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-success { background: #10b981; color: #fff; }
+.btn-success:hover { background: #059669; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: #334155; }
+.btn-outline:hover { background: #f1f5f9; }
+
+/* Grid columns */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+</style>
+  <link rel="stylesheet" href="file_viewer_modal.css">
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="badge">LIS 3.0</span>
+      <h2>MedLink LIS</h2>
+    </div>
+    
+    <div class="nav-group-title">СТРАТЕГІЯ ТА КОНТЕКСТ</div>
+    <a href="#sec-summary" class="nav-link active">1. Паспорт проєкту & Vision</a>
+    <a href="#sec-benchmark" class="nav-link">2. Аналіз конкурентів & Delphi</a>
+    <a href="#sec-processes-directory" class="nav-link" style="color: #60a5fa; font-weight:bold;">⚡ 2.1. Реєстр 12 процесів & Прототипи</a>
+    <a href="#sec-registry" class="nav-link">3. Реєстр 48 модулів (MoSCoW)</a>
+    
+    <div class="nav-group-title">КЛІНІЧНІ РОБОЧІ МІСЦЯ</div>
+    <a href="#sec-phlebotomy" class="nav-link">4. Кабінет забору & Штрихкоди</a>
+    <a href="#sec-logistics" class="nav-link">5. Логістика & Бракераж зразків</a>
+    <a href="#sec-workstation" class="nav-link">6. Робоче місце «Дослідження»</a>
+    <a href="#sec-qc" class="nav-link">7. Контроль якості (ВЯК / Levey-J)</a>
+    
+    <div class="nav-group-title">ІНТЕГРАЦІЇ ТА ДРАЙВЕРИ</div>
+    <a href="#sec-connector" class="nav-link">8. Драйверний коннектор (.NET)</a>
+    <a href="#sec-interop" class="nav-link">9. HL7, FHIR, eHealth, СМЕ</a>
+    <a href="#sec-patient" class="nav-link">10. Кабінет пацієнта & Трекінг</a>
+    
+    <div class="nav-group-title">ТЕХНІЧНА АРХІТЕКТУРА</div>
+    <a href="#sec-architecture" class="nav-link">11. Архітектура в MedLink (evomis)</a>
+    <a href="#sec-db" class="nav-link">12. Схема БД PostgreSQL</a>
+    <a href="#sec-gaps" class="nav-link">13. GAP-аналіз & Що додали</a>
+    <a href="#sec-roadmap" class="nav-link">14. Дорожня карта релізів</a>
+    <a href="#sec-appendix" class="nav-link">15. Додатки: Довідники (JSON/SQL)</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    
+    <!-- Hero Banner -->
+    <div class="hero-card" id="sec-summary">
+      <h1>ТЕХНІЧНЕ ЗАВДАННЯ НА РОЗРОБКУ ЛІС</h1>
+      <p>Повнофункціональна лабораторна інформаційна система (MedLink LIS 3.0): вбудований модуль платформи MedLink (evomis) та автономний продукт для мереж лабораторій</p>
+      
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Правовласник</span>
+          <span class="meta-value">ТОВ «МедЛінк» (MedLink LLC)</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Версія документа</span>
+          <span class="meta-value">3.0 Comprehensive (Жовтень 2026)</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Технічний стек</span>
+          <span class="meta-value">.NET 6 / PostgreSQL / Vue Quasar / .NET Core Worker</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Статус узгодження</span>
+          <span class="meta-value">Затверджено до розробки (Sprints 1–6)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 1: Executive Summary -->
+    <section>
+      <h2>1. Паспорт проєкту та продуктове позиціонування</h2>
+      
+      <p>Проєкт <strong>MedLink LIS 3.0</strong> покликаний реалізувати сучасну, високоавтоматизовану, клінічно достовірну лабораторну інформаційну систему з відкритою інтеграційною шиною, що вирішує подвійне бізнес-завдання:</p>
+      
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="color: #2563eb;">1. Вбудований лабораторний контур MedLink</h3>
+          <p>Безшовна частина діючої медичної інформаційної системи <code>evomis</code>. Закриває повний діагностичний цикл для лікарень та приватних клінік: лікар у картці створює призначення або електронне направлення ЕСОЗ &rarr; лаборант у пункті забору маркує пробірку &rarr; аналізатор видає результат &rarr; лікар-лаборант валідує &rarr; дані автоматично повертаються в ЕМК пацієнта та гасяться в eHealth (DiagnosticReport) з КЕП.</p>
+        </div>
+        <div class="card">
+          <h3 style="color: #0d9488;">2. Standalone LIS (Самостійний продукт)</h3>
+          <p>Автономна LIS корпоративного рівня для комерційних лабораторних мереж, пунктів забору та приватних кабінетів, що не використовують МІС MedLink. Включає власний білінг, склад реагентів, логістику зразків, модуль внутрішнього контролю якості (ВЯК) за Вестгардом та інтеграцію із зовнішніми МІС через HL7 v2 / FHIR / REST API.</p>
+        </div>
+      </div>
+
+      <div class="alert-box alert-info">
+        <div>
+          <strong>Ключова перевага MedLink LIS:</strong> Повна ліквідація десктопного легасі-коду (Delphi). Перехід на 100% хмарну архітектуру (Web/PWA на Quasar) з кросплатформним системним демоном зв'язку з приладами на .NET Core (Windows Service / Linux systemd daemon), що забезпечує безвідмовний обмін з приладами без прив'язки до робочого місця оператора.
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Competitive Benchmark & Delphi Audit -->
+    <section id="sec-benchmark">
+      <h2>2. Аналіз конкурентів, матеріалів MCLAB/TerraLab та аудит Delphi</h2>
+      
+      <p>В ході ретельного аудиту проаналізовано 4 ключові джерела: legacy-код Delphi (<code>C:\Desktop\src</code>, база <code>hospital_etalon</code>, плагін <code>AConnect</code>), систему LIMS TerraLab Pro, документацію MCLAB (папка <code>C:\__MEDLINK___\Лаборатория\MCLAB</code>) та функціонал промислових LIS (STARLIS, LISmart):</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Компонент / Система</th>
+              <th>Legacy Delphi (AConnect / hospital_etalon)</th>
+              <th>Конкуренти (TerraLab, MCLAB, LISmart)</th>
+              <th>Рішення MedLink LIS 3.0 (.NET 6 / Web)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Архітектура зв'язку з приладами</strong></td>
+              <td>Delphi VCL застосунок (AConnectAstm.exe), прив'язаний до COM/TCP. Монолітний розбір в SQL процедурі <code>parse_lab_message</code> (142 КБ коду з блокуваннями таблиць).</td>
+              <td>Окремі десктопні драйвери під кожен прилад, часті падіння при перезавантаженні ПК, відсутність буферизації.</td>
+              <td><strong>MedLink.LabConnector:</strong> фоновий worker на .NET Core (Windows Service + Linux systemd). Локальний SQLite offline-буфер. Асинхронний розбір ASTM E1381/E1394 та HL7 MLLP на рівні коду C# з відправкою JSON через HTTPS REST API.</td>
+            </tr>
+            <tr>
+              <td><strong>Контроль якості (QC / ВЯК)</strong></td>
+              <td>Повністю відсутній у коді Delphi та базі даних.</td>
+              <td>У TerraLab/STARLIS є графіки Леві-Дженнінгса та правила Вестгарда, але жорстко прив'язані до десктопу, без автоматичного блокування видачі пацієнтських результатів.</td>
+              <td><strong>Повноцінний веб-модуль ВЯК:</strong> 3 рівні контролів (Low/Normal/High), мультивідхилення Вестгарда (1-2s, 1-3s, 2-2s, R-4s, 4-1s, 10-x), автоматичний <em>Lockout</em> (блокування валідації пацієнтських тестів при порушенні), інтерактивні карти Леві-Дженнінгса.</td>
+            </tr>
+            <tr>
+              <td><strong>Пункт забору & Маркування</strong></td>
+              <td>Базовий друк штрихкодів через генератор <code>gen_lab_tube_barcode</code> (EAN-8/128). Немає контролю черговості пробірок (Order of Draw).</td>
+              <td>В MCLAB є окремі інструкції («Додавання біоматеріалу та друк етикеток.pdf»). Підтримка термопринтерів.</td>
+              <td><strong>Інтелектуальний кабінет забору:</strong> автогрупування тестів у пробірки за типами біоматеріалу, обов'язковий порядок набору за CLSI (культури &rarr; цитрат &rarr; сироватка &rarr; гепарин &rarr; ЕДТА &rarr; фторид), прямий друк на Zebra/TSC через ZPL/TSPL.</td>
+            </tr>
+            <tr>
+              <td><strong>Логістика & Температурний ланцюг</strong></td>
+              <td>Відсутня логістика в Delphi.</td>
+              <td>У TerraLab є маршрутні листи кур'єра, але без фіксації температури в точках передачі.</td>
+              <td><strong>Модуль логістики зразків:</strong> електронні акти прийому-передачі (термосумки), валідація холодового ланцюга (t° відправки та прибуття), мобільний інтерфейс кур'єра зі скануванням штрихкодів сумок.</td>
+            </tr>
+            <tr>
+              <td><strong>Кабінет пацієнта & Моніторинг</strong></td>
+              <td>Відсутній.</td>
+              <td>Більшість LIS не мають пацієнтського кабінету, віддаючи результати тільки PDF-файлом на email.</td>
+              <td><strong>Live-трекер для пацієнта:</strong> інтерактивний таймлайн виконання (Забір &rarr; В дорозі &rarr; Доставлено &rarr; В аналізі &rarr; Готово), графіки персональної динаміки показників, завантаження бланка з захисним QR-кодом автентифікації.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    
+    <!-- Section 2.1: Master Directory of 12 Laboratory Processes & Interactive Prototypes -->
+    <section id="sec-processes-directory">
+      <h2>2.1. Зведений реєстр 12 наскрізних процесів лабораторії та перехід до прототипів</h2>
+      
+      <p>Для кожного клініко-діагностичного та управлінського процесу лабораторії розроблено повнофункціональний інтерактивний прототип сторінки у фірмовому стилі <strong>MedLink (evomis Quasar Design System)</strong>. Кожен прототип містить клінічні інструкції, валідатори, симуляцію даних та інтерактивні елементи:</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">№</th>
+              <th style="width: 220px;">Клінічний процес ЛІС</th>
+              <th style="width: 160px;">Відповідальна роль</th>
+              <th>Ключовий функціонал, стандарти та бізнес-правила</th>
+              <th style="width: 140px; text-align: center;">Прототип інтерфейсу</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>01</strong></td>
+              <td><strong>Пункт забору біоматеріалу & Маркування</strong></td>
+              <td><span class="badge badge-r1">Медсестра забору</span></td>
+              <td>Пошук за е-направленням ЕСОЗ, 2-факторна ідентифікація, преаналітичний чек-лист, CLSI Order of Draw (порядок наповнення пробірок), автоконсолідація у мінімальну кількість контейнерів, прямий ZPL-друк штрихкодів.</td>
+              <td style="text-align: center;">
+                <a href="prototypes/01_phlebotomy_station.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 01 &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>02</strong></td>
+              <td><strong>Логістика зразків & Приймальний стіл</strong></td>
+              <td><span class="badge badge-r2">Кур'єр / Сортувальник</span></td>
+              <td>Електронні акти передачі (маніфести термосумок), моніторинг температурних логерів (+2...+8°C), бракеражний стіл за 12 дефектами (гемоліз, хілоз, згусток, недобір) з автонаправленням на повторний забір.</td>
+              <td style="text-align: center;">
+                <a href="prototypes/02_specimen_logistics.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 02 &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>03</strong></td>
+              <td><strong>Робоче місце лаборанта «Дослідження»</strong></td>
+              <td><span class="badge badge-r1">Фельдшер-лаборант</span></td>
+              <td>Апаратна черга аналізаторів (Sysmex, Cobas, Mindray), inline-введення з клавіатури, розрахункові індекси (лейкоформула, HOMA-IR), світлова сигналізація відхилень і Delta-Check.</td>
+              <td style="text-align: center;">
+                <a href="prototypes/03_lab_workstation.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 03 &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>04</strong></td>
+              <td><strong>Верифікація лікаря & Panic Values</strong></td>
+              <td><span class="badge badge-must">Лікар-лаборант</span></td>
+              <td>Екстрений банер панічних значень (глюкоза 26.4 ммоль/л) з таймером 15 хв передачі алерту, допризначення тестів Reflex-Engine (ТТГ -> вТ4), підписання висновку КЕП/ЕЦП для передачі в ЕСОЗ.</td>
+              <td style="text-align: center;">
+                <a href="prototypes/04_validation_and_panic.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 04 &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>05</strong></td>
+              <td><strong>Внутрішній контроль якості (ВЯК)</strong></td>
+              <td><span class="badge badge-must">Менеджер якості</span></td>
+              <td>Інтерактивні карти Леві-Дженнінгса з межами ±1SD, ±2SD, ±3SD, аналіз 6 правил Вестгарда, автоматичний Lockout приладу при порушенні правила 1-3s до внесення протоколу CAPA.</td>
+              <td style="text-align: center;">
+                <a href="prototypes/05_quality_control.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 05 &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>06</strong></td>
+              <td><strong>Особистий кабінет пацієнта</strong></td>
+              <td><span class="badge badge-r3">Пацієнт</span></td>
+              <td>Live-трекінг етапів замовлення (Оформлено -> Забір -> В дорозі -> Аналіз -> Готово), інтерпретація норм, графік динаміки показників за роками, PDF-бланк з перевірочним QR-кодом.</td>
+              <td style="text-align: center;">
+                <a href="prototypes/06_patient_portal.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 06 &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>07</strong></td>
+              <td><strong>Фізичний архів біоматеріалів (Біобанк)</strong></td>
+              <td><span class="badge badge-r2">Архіваріус</span></td>
+              <td>Координатна матриця 10x10 кріоштатива морозильної камери (-20°C), пошук пробірки за штрихкодом, кольорове маркування активних/прострочених проб, формування актів утилізації.</td>
+              <td style="text-align: center;">
+                <a href="prototypes/07_biobank_archive.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 07 &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>08</strong></td>
+              <td><strong>Складський облік реагентів (Lot Tracking)</strong></td>
+              <td><span class="badge badge-should">Старший лаборант</span></td>
+              <td>On-board облік залишку тестів у касетах аналізаторів, контроль стабільності після розкриття флакона (On-board Stability), журнал верифікації зміни партій (Lot-to-lot).</td>
+              <td style="text-align: center;">
+                <a href="prototypes/08_reagent_inventory.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 08 &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>09</strong></td>
+              <td><strong>Бактеріологічний посів & Антибіотикограма</strong></td>
+              <td><span class="badge badge-r1">Бактеріолог</span></td>
+              <td>Облік первинного посіву, ідентифікація патогенів (E. coli, S. aureus), автоінтерпретація чутливості до антибіотиків за критеріями EUCAST v14.0 (категорії S / I / R, виявлення MRSA/ESBL).</td>
+              <td style="text-align: center;">
+                <a href="prototypes/09_microbiology_culture.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 09 &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>10</strong></td>
+              <td><strong>Аналітичний дашборд лабораторії (TAT & KPI)</strong></td>
+              <td><span class="badge badge-must">Головний лікар</span></td>
+              <td>Моніторинг нормативів Turn-Around Time (CITO &lt; 60 хв, планові &lt; 6 год), графіки обсягів досліджень за підрозділами, аналітика преаналітичного браку за філіями забору.</td>
+              <td style="text-align: center;">
+                <a href="prototypes/10_lab_analytics_tat.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 10 &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>11</strong></td>
+              <td><strong>Монітор шлюзу аналізаторів (LabConnector)</strong></td>
+              <td><span class="badge badge-r2">Інженер ЛІС</span></td>
+              <td>Стан фізичних з'єднань (RS-232, TCP/IP), живий монітор сирих фреймів ASTM E1381/E1394 та HL7 MLLP, перевірка контрольних сум, черга локальної SQLite-буферизації.</td>
+              <td style="text-align: center;">
+                <a href="prototypes/11_analyzer_connector_monitor.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 11 &rarr;</a>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>12</strong></td>
+              <td><strong>Конструктор норм, методик та розрахунків</strong></td>
+              <td><span class="badge badge-should">Методолог КДЛ</span></td>
+              <td>Багатовимірна матриця референтних інтервалів (стать, вік у днях/роках, триместри вагітності), межі панічних порогів, налаштування формул (eGFR CKD-EPI, індекс HOMA).</td>
+              <td style="text-align: center;">
+                <a href="prototypes/12_norms_and_methodologies.html" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 11.5px; text-decoration: none;">🖥 Відкрити 12 &rarr;</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 3: Master Registry of 48 Modules -->
+    <section id="sec-registry">
+      <h2>3. Зведений реєстр 48 модулів MedLink LIS (Матриця MoSCoW & Релізи)</h2>
+      
+      <p>Реєстр структуровано на 8 функціональних блоків. Він об'єднує всі вимоги початкового ТЗ, розширення зі STARLIS/LISmart, специфікацію MCLAB/TerraLab та нові модулі, розроблені спеціально для екосистеми MedLink:</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 60px;">ID</th>
+              <th style="width: 220px;">Модуль / Підсистема</th>
+              <th style="width: 140px;">Категорія</th>
+              <th>Функціональний обсяг та ключові можливості</th>
+              <th style="width: 90px;">Пріоритет</th>
+              <th style="width: 70px;">Реліз</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Core Block -->
+            <tr>
+              <td><strong>CORE-01</strong></td>
+              <td>Автентифікація & RBAC</td>
+              <td>Ядро ЛІС</td>
+              <td>Авторизація через JWT/MedLink SSO, матриця ролей (Лаборант, Лікар-верифікатор, Завідувач, Медсестра забору, Кур'єр, Реєстратор), журнал аудиту доступу.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-02</strong></td>
+              <td>Довідник номенклатури & Показники</td>
+              <td>Ядро ЛІС</td>
+              <td>Коди тестів (LOINC/внутрішні), одиниці виміру, групи показників, типи результату (число, текст, dropdown), формули розрахункових індексів (ШКФ, індекс атерогенності).</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-03</strong></td>
+              <td>Довідник послуг & Пакети досліджень</td>
+              <td>Ядро ЛІС</td>
+              <td>Картка послуги: групування окремих тестів у комплексні панелі (ЗАК, Біохімія, Тиреоїдна панель, Ліпідограма), тарифи, тривалість виконання (TAT).</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-04</strong></td>
+              <td>Багатовимірні референтні норми</td>
+              <td>Ядро ЛІС</td>
+              <td>Гнучкі референтні діапазони за статтю, віком (дні/місяці/роки), триместрами вагітності, фазами менструального циклу, діагнозами МКХ-10 та приладами/методиками.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-05</strong></td>
+              <td>Реєстрація направлень (Замовлень)</td>
+              <td>Ядро ЛІС</td>
+              <td>Швидка реєстрація направлення з ЕМК або самостійно, пошук пацієнта, терміновість (CITO), друк зведеного направлення та фінансовий статус.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-06</strong></td>
+              <td>Штрихкодування & Маркування пробірок</td>
+              <td>Ядро ЛІС</td>
+              <td>Генерація унікальних штрихкодів (Code128 / DataMatrix), авторозподіл тестів на мінімальну кількість контейнерів, друк етикеток на термопринтерах.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-07</strong></td>
+              <td>Черга досліджень (Робоче місце)</td>
+              <td>Ядро ЛІС</td>
+              <td>Віртуальний скролінг на 1000+ записів, фільтри за статусом/підрозділом/CITO, inline-введення результатів з клавіатури, автопідсвічування критичності.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-08</strong></td>
+              <td>Верифікація результатів (Лікар-лаборант)</td>
+              <td>Ядро ЛІС</td>
+              <td>Окреме робоче місце валідації лікаря: перевірка на прапорці аналізатора, обов'язковий коментар при патологіях, можливість повернення на повторний аналіз.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-09</strong></td>
+              <td>Робочі списки (Батчі / Постановки)</td>
+              <td>Ядро ЛІС</td>
+              <td>Формування партій зразків під планшети, штативи ІФА або завантажувальні каруселі аналізаторів, масове призначення та масове закриття.</td>
+              <td><span class="badge badge-should">Should</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-10</strong></td>
+              <td>Друк офіційних PDF-бланків</td>
+              <td>Ядро ЛІС</td>
+              <td>Генерація брендованих бланків (логотип лабораторії, норми пацієнта, таблиця показників, ПІБ лікаря-лаборанта, унікальний перевірочний QR-код).</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-11</strong></td>
+              <td>Автоматична розсилка (Email / Месенджери)</td>
+              <td>Ядро ЛІС</td>
+              <td>Відправка захищеного PDF-файлу на пошту пацієнта або лікаря-замовника одразу після верифікації, журнал доставок, SMS/Viber сповіщення з посиланням.</td>
+              <td><span class="badge badge-should">Should</span></td>
+              <td><span class="badge badge-r2">R2</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-12</strong></td>
+              <td>Журнал дій та повний аудит (Audit Trail)</td>
+              <td>Ядро ЛІС</td>
+              <td>Незмінний лог кожної модифікації результату: хто ввів, хто змінив, старе значення, нове значення, точний час до мілісекунд, IP-адреса.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-13</strong></td>
+              <td>Базова оперативна звітність</td>
+              <td>Ядро ЛІС</td>
+              <td>Звіти за період: кількість виконаних тестів за підрозділами, виконавцями, приладами, відсоток патологічних результатів, експорт в Excel/CSV.</td>
+              <td><span class="badge badge-should">Should</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-14</strong></td>
+              <td>Дизайнер шаблонів бланків</td>
+              <td>Ядро ЛІС</td>
+              <td>Налаштування вигляду PDF-бланка адміністратором без програмування (шапка, підвал, шрифти, додаткові примітки лабораторії).</td>
+              <td><span class="badge badge-could">Could</span></td>
+              <td><span class="badge badge-r2">R2</span></td>
+            </tr>
+            <tr>
+              <td><strong>CORE-15</strong></td>
+              <td>Налаштування нумераторів та параметрів ЗОЗ</td>
+              <td>Ядро ЛІС</td>
+              <td>Конфігурація масок номерів замовлень, префіксів філій, реквізитів ліцензій МОЗ, колірних тем інтерфейсу.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+
+            <!-- Quality Control & Safety Block -->
+            <tr>
+              <td><strong>QC-01</strong></td>
+              <td>Автоверифікація результатів (Rule Engine)</td>
+              <td>Клінічна якість</td>
+              <td>Автоматичне закриття результату, якщо: значення суворо в межах норми, відсутні прапорці приладу, delta-check у нормі, тест не вимагає обов'язкового ручного перегляду.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>QC-02</strong></td>
+              <td>Delta-Check (Порівняння з анамнезом)</td>
+              <td>Клінічна якість</td>
+              <td>Порівняння поточного показника з попереднім результатом пацієнта за вікно 72 год. При стрибку понад заданий % (напр. >25% для креатиніну) — блокування автовидачі.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>QC-03</strong></td>
+              <td>Reflex-тестування (Автодопризначення)</td>
+              <td>Клінічна якість</td>
+              <td>Алгоритмічні ланцюжки: якщо ТТГ патологічний &rarr; автододавання вТ4; якщо позитивний скринінг гепатиту &rarr; автопризначення підтверджуючого блоту.</td>
+              <td><span class="badge badge-should">Should</span></td>
+              <td><span class="badge badge-r2">R2</span></td>
+            </tr>
+            <tr>
+              <td><strong>QC-04</strong></td>
+              <td>Маршрутизація критичних значень (Panic Values)</td>
+              <td>Клінічна якість</td>
+              <td>При виявленні загрозливих значень (глюкоза <2.5 або >25 ммоль/л, калій >6.5): миттєвий екранний алерт, push-сповіщення лікарю з вимогою підтвердити ознайомлення.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>QC-05</strong></td>
+              <td>Довідник контрольних матеріалів & Серії</td>
+              <td>Клінічна якість</td>
+              <td>Облік контрольних сироваток (Level 1, 2, 3), номери партій, терміни придатності, стабільність відкритого флакона, паспортні середні та SD від виробника.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>QC-06</strong></td>
+              <td>Контрольні карти Леві-Дженнінгса</td>
+              <td>Клінічна якість</td>
+              <td>Побудова інтерактивних графіків Levey-Jennings у вебі: лінії цільового значення Mean, ±1SD, ±2SD, ±3SD, розрахунок фактичного CV% та зсуву (Bias%).</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>QC-07</strong></td>
+              <td>Мультиправила Вестгарда & Lockout приладу</td>
+              <td>Клінічна якість</td>
+              <td>Автоматична перевірка правил: 1-2s (попередження), 1-3s, 2-2s, R-4s, 4-1s, 10-x (відхилення). <strong>При порушенні блокується видача пацієнтських результатів</strong> до внесення корегуючих дій.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>QC-08</strong></td>
+              <td>Зовнішній контроль якості (EQA / ФСВЯ)</td>
+              <td>Клінічна якість</td>
+              <td>Облік раундів міжлабораторних порівнянь, реєстрація шифрованих проб, розрахунок Z-індексу щодо консенсусного значення, формування звіту для аудиту ISO 15189.</td>
+              <td><span class="badge badge-should">Should</span></td>
+              <td><span class="badge badge-r2">R2</span></td>
+            </tr>
+
+            <!-- Pre-analytical & Phlebotomy Block -->
+            <tr>
+              <td><strong>PRE-01</strong></td>
+              <td>Кабінет забору біоматеріалу (Phlebotomy Station)</td>
+              <td>Преаналітика</td>
+              <td>Спеціалізоване ергономічне вікно маніпуляційної медсестри: пошук пацієнта за штрихкодом/номером, чек-лист підготовки (натще, ліки), фіксація часу пункції.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>PRE-02</strong></td>
+              <td>Стандарт CLSI Order of Draw (Черговість забору)</td>
+              <td>Преаналітика</td>
+              <td>Підказка медсестрі на екрані правильної послідовності наповнення пробірок для виключення перехресного забруднення антикоагулянтами.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>PRE-03</strong></td>
+              <td>Консолідація та мінімізація кількості пробірок</td>
+              <td>Преаналітика</td>
+              <td>Алгоритм об'єднання тестів: аналізи, що виконуються на одному типі біоматеріалу (напр. сироватка) та потребують однакового контейнера, автоматично призначаються на 1 пробірку.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>PRE-04</strong></td>
+              <td>Прямий друк етикеток на термопринтери (ZPL/TSPL)</td>
+              <td>Преаналітика</td>
+              <td>Генерація нативних команд ZPL II / TSPL для швидкісного друку етикеток (Zebra, TSC, Xprinter) через мережу (RAW TCP порт 9100) або USB без вікна діалогу Windows.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>PRE-05</strong></td>
+              <td>Бракераж зразків & Причини відхилення</td>
+              <td>Преаналітика</td>
+              <td>Реєстрація дефектів проби на приймальному столі: гемоліз (+/++/+++), ліпемія, хілоз, згусток, невідповідний об'єм. Автоповідомлення лікаря на перезабір.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+
+            <!-- Logistics & Biobank Block -->
+            <tr>
+              <td><strong>LOG-01</strong></td>
+              <td>Електронні акти передачі зразків (Маніфести)</td>
+              <td>Логістика</td>
+              <td>Формування партій пробірок у термосумку/контейнер, генерація супровідного акта зі штрихкодом сумки, передача кур'єру з підписом/скануванням.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>LOG-02</strong></td>
+              <td>Контроль холодового ланцюга (Температурний журнал)</td>
+              <td>Логістика</td>
+              <td>Фіксація температури при відправленні з пункту забору та при прийомі в центральній лабораторії (+2...+8°C, -20°C). Алерти при порушенні терморежиму.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>LOG-03</strong></td>
+              <td>Сортування та акцепт у центральній лабораторії</td>
+              <td>Логістика</td>
+              <td>Швидкісне сканування пробірок сканером штрихкоду на сортувальному столі: миттєве підтвердження доставки, зміна статусу на «В лабораторії», розподіл по відділах.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>LOG-04</strong></td>
+              <td>Архів біоматеріалів (Біобанк / Штативи)</td>
+              <td>Логістика</td>
+              <td>Облік фізичного зберігання зразків: холодильники, полиці, матричні штативи (напр. 10x10), пошук пробірки за штрихкодом (Ряд A, Колонка 5), акти утилізації за терміном.</td>
+              <td><span class="badge badge-should">Should</span></td>
+              <td><span class="badge badge-r2">R2</span></td>
+            </tr>
+
+            <!-- Analyzer Drivers Block -->
+            <tr>
+              <td><strong>DEV-01</strong></td>
+              <td>Драйверний коннектор MedLink.LabConnector (.NET)</td>
+              <td>Драйвери приладів</td>
+              <td>Фонова служба на .NET 6/8 для Windows Service та Linux systemd daemon. Багатопотоковий моніторинг десятків приладів, права належать ТОВ «МедЛінк».</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>DEV-02</strong></td>
+              <td>Протокол ASTM E1381 / ASTM E1394</td>
+              <td>Драйвери приладів</td>
+              <td>Низькорівневий фреймінг (ENQ/ACK/STX/ETX/CRC/EOT) та розбір повідомлень H/P/O/R/C/Q/L. Двосторонній запит завдань за штрихкодом (Query mode).</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>DEV-03</strong></td>
+              <td>Протокол HL7 v2.x MLLP (ORU^R01, OML^O21)</td>
+              <td>Драйвери приладів</td>
+              <td>Мінімальний протокол MLLP (0x0B...0x1C 0x0D), сегменти MSH, PID, OBR, OBX, генерація квитанцій ACK, підтримка сучасних аналізаторів Mindray, Beckman.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>DEV-04</strong></td>
+              <td>Каталог драйверів (Sysmex, Cobas, Mindray та ін.)</td>
+              <td>Драйвери приладів</td>
+              <td>Підтримка понад 60 моделей аналізаторів: гематологія (Sysmex XN/XS, Mindray BC), біохімія (Cobas, BS-240/300, BioSystems), імунохімія (Maglumi, Access).</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>DEV-05</strong></td>
+              <td>Офлайн-буферизація (SQLite Store-and-Forward)</td>
+              <td>Драйвери приладів</td>
+              <td>При обриві інтернет-зв'язку з хмарою MedLink результати від аналізаторів накопичуються в локальній SQLite БД коннектора та автоматично синхронізуються при відновленні.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+
+            <!-- Patient Experience Block -->
+            <tr>
+              <td><strong>PT-01</strong></td>
+              <td>Автентифікація в кабінеті пацієнта</td>
+              <td>Кабінет пацієнта</td>
+              <td>Вхід за номером телефону через SMS OTP, автоприв'язка до ЕМК пацієнта в MedLink, опційна верифікація через Дія.Підпис / BankID.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>PT-02</strong></td>
+              <td>Live-трекінг етапів дослідження</td>
+              <td>Кабінет пацієнта</td>
+              <td>Покроковий онлайн-трекер замовлення в реальному часі: [Зареєстровано] &rarr; [Забір біоматеріалу] &rarr; [В дорозі] &rarr; [В аналізі] &rarr; [Верифіковано]. Знімає 80% дзвінків у реєстратуру.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>PT-03</strong></td>
+              <td>Графіки динаміки та трендів аналізів</td>
+              <td>Кабінет пацієнта</td>
+              <td>Інтерактивні графіки зміни показників у часі (глюкоза, холестерин, ТТГ) з виділенням «зеленої коридору» референтних меж.</td>
+              <td><span class="badge badge-should">Should</span></td>
+              <td><span class="badge badge-r2">R2</span></td>
+            </tr>
+            <tr>
+              <td><strong>PT-04</strong></td>
+              <td>Офіційний PDF-бланк із захисним QR-кодом</td>
+              <td>Кабінет пацієнта</td>
+              <td>Завантаження офіційного бланку з цифровим підписом. QR-код верифікації відкриває публічну сторінку підтвердження автентичності документа на порталі MedLink.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+
+            <!-- Interoperability Block -->
+            <tr>
+              <td><strong>INT-01</strong></td>
+              <td>Інтеграція з eHealth / ЕСОЗ (НСЗУ)</td>
+              <td>Інтероперабельність</td>
+              <td>Погашення електронних направлень (Service Request) та відправка підписаного КЕП медичного висновку DiagnosticReport згідно з вимогами МОЗ України.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>INT-02</strong></td>
+              <td>Інтеграція з ЕМК лікаря MedLink (evomis)</td>
+              <td>Інтероперабельність</td>
+              <td>Миттєве відображення лабораторних висновків у картці пацієнта, сигналізація лікуючому лікарю про патологічні та критичні показники.</td>
+              <td><span class="badge badge-must">Must</span></td>
+              <td><span class="badge badge-r1">R1 (MVP)</span></td>
+            </tr>
+            <tr>
+              <td><strong>INT-03</strong></td>
+              <td>Відкритий HL7 FHIR REST API</td>
+              <td>Інтероперабельність</td>
+              <td>FHIR R4 ендпоінти: <code>/fhir/DiagnosticReport</code>, <code>/fhir/Observation</code>, <code>/fhir/Specimen</code>, <code>/fhir/ServiceRequest</code> для зв'язку зі сторонніми МІС.</td>
+              <td><span class="badge badge-should">Should</span></td>
+              <td><span class="badge badge-r2">R2</span></td>
+            </tr>
+            <tr>
+              <td><strong>INT-04</strong></td>
+              <td>Шлюзи до референс-лабораторій (Аутсорс тестів)</td>
+              <td>Інтероперабельність</td>
+              <td>Send-Out тести: направлення проб до партнерських лабораторій (Сінево, Діла, CSD, TerraLab) з автоматичним імпортом готових результатів.</td>
+              <td><span class="badge badge-could">Could</span></td>
+              <td><span class="badge badge-r3">R3</span></td>
+            </tr>
+
+            <!-- Management, Reagents & Billing Block -->
+            <tr>
+              <td><strong>MGT-01</strong></td>
+              <td>Облік реагентів & Партії (Lot Tracking)</td>
+              <td>Управління & Склад</td>
+              <td>Облік наборів тестів на борту аналізаторів: лічильник залишкових тестів, дата відкриття, контроль терміну придатності реагентів.</td>
+              <td><span class="badge badge-should">Should</span></td>
+              <td><span class="badge badge-r2">R2</span></td>
+            </tr>
+            <tr>
+              <td><strong>MGT-02</strong></td>
+              <td>Тарифікація & Калькуляція собівартості</td>
+              <td>Управління & Білінг</td>
+              <td>Гнучкі прайс-листи, собівартість досліджень (реагенти + калібратори + амортизація), знижки, пакети платних послуг.</td>
+              <td><span class="badge badge-should">Should</span></td>
+              <td><span class="badge badge-r2">R2</span></td>
+            </tr>
+            <tr>
+              <td><strong>MGT-03</strong></td>
+              <td>Фіскалізація платних послуг (ПРРО)</td>
+              <td>Управління & Білінг</td>
+              <td>Інтеграція з програмним РРО (Checkbox, Вчасно.Каса) для друку електронних фіскальних чеків при розрахунку пацієнтів у пункті забору.</td>
+              <td><span class="badge badge-could">Could</span></td>
+              <td><span class="badge badge-r2">R2</span></td>
+            </tr>
+            <tr>
+              <td><strong>MGT-04</strong></td>
+              <td>Аналітичний дашборд лабораторії (TAT & KPI)</td>
+              <td>Управління & Аналітика</td>
+              <td>Графіки Turn-Around Time (час виконання від забору до видачі), завантаженість приладів, статистика преаналітичного браку за філіями.</td>
+              <td><span class="badge badge-should">Should</span></td>
+              <td><span class="badge badge-r2">R2</span></td>
+            </tr>
+            <tr>
+              <td><strong>MGT-05</strong></td>
+              <td>Мікробіологічний модуль & Антибіотикограми</td>
+              <td>Спеціалізовані</td>
+              <td>Посіви, ідентифікація збудників, формуляр антибіотикочутливості за стандартами EUCAST (S - чутливий, I - помірний, R - стійкий).</td>
+              <td><span class="badge badge-could">Could</span></td>
+              <td><span class="badge badge-r3">R3</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 4: Phlebotomy Station & Labeling -->
+    <section id="sec-phlebotomy">
+      <h2>4. Кабінет забору біоматеріалу (Phlebotomy Station) та маркування</h2>
+      <div style="margin-bottom:16px;"><a href="prototypes/01_phlebotomy_station.html" target="_blank" class="btn btn-outline" style="border-color:#3b82f6; color:#2563eb; font-weight:bold;">🖥 Відкрити повноцінний екранний прототип Кабінету забору &rarr;</a></div>
+      
+      <p>Пункт забору біоматеріалу (як при стаціонарі/поліклініці, так і віддалене відділення) є критичною точкою преаналітичного етапу, де виникає до 70% усіх діагностичних помилок. Модуль MedLink LIS проектується для максимального захисту від людського фактору:</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>Клінічний чек-лист взяття біоматеріалу</h4>
+          <ul style="padding-left: 20px; font-size: 14px; color: #334155; line-height: 1.8;">
+            <li><strong>Ідентифікація пацієнта:</strong> двофакторне підтвердження (ПІБ + дата народження або номер карти).</li>
+            <li><strong>Верифікація підготовки:</strong> фіксація статусу (натщесерце / не натщесерце, прийом антикоагулянтів/гормонів).</li>
+            <li><strong>Анатомічна локалізація:</strong> вибір вени (ліктьова права/ліва, тил кисті, капілярний забір).</li>
+            <li><strong>Фіксація часу:</strong> точний системний таймштамп пункції з прив'язкою до ідентифікатора медсестри.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4>Міжнародний стандарт CLSI H3-A6: Order of Draw</h4>
+          <p style="font-size: 13.5px; margin-bottom: 8px;">Суворе дотримання черговості наповнення пробірок запобігає перенесенню добавок з однієї пробірки в іншу через голку:</p>
+          <ol style="padding-left: 20px; font-size: 13.5px; color: #334155; line-height: 1.6;">
+            <li><strong style="color: #ca8a04;">Флакони для гемокультури</strong> (посів крові на стерильність)</li>
+            <li><strong style="color: #0284c7;">Цитрат натрію 3.2%</strong> (Блакитна кришка — коагулограма)</li>
+            <li><strong style="color: #dc2626;">Активатор згортання / Гель</strong> (Червона/Жовта — біохімія, імунохімія)</li>
+            <li><strong style="color: #16a34a;">Літій-гепарин</strong> (Зелена кришка — експрес-біохімія, електроліти)</li>
+            <li><strong style="color: #9333ea;">К2/К3 ЕДТА</strong> (Фіолетова кришка — загальний аналіз крові, HbA1c)</li>
+            <li><strong style="color: #475569;">Фторид натрію / Оксалат</strong> (Сіра кришка — глюкоза, лактат)</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Interactive Widget: Barcode & Tube Visualizer -->
+      <div class="simulator-box">
+        <div class="sim-header">
+          <span class="sim-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h3v10H7zM14 7h3v10h-3z"/></svg>
+            Інтерактивний візуалізатор пробірки та термодрук етикетки
+          </span>
+          <span style="font-size: 12px; color: #64748b;">MedLink Pre-Analytical Engine</span>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <div style="margin-bottom: 12px;">
+              <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">Тип контейнера / Пробірки:</label>
+              <select id="simTubeSelect" onchange="updateTubePreview()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;">
+                <option value="EDTA">K2/K3 ЕДТА (Фіолетова) — Загальний аналіз крові</option>
+                <option value="CITRATE">Цитрат натрію 3.2% (Блакитна) — Коагулограма</option>
+                <option value="GEL">Гель / Активатор (Жовта) — Біохімія & Імунохімія</option>
+                <option value="HEPARIN">Li-Гепарин (Зелена) — Гази & Електроліти</option>
+                <option value="URINE">Стерильний контейнер (Біла/Жовта) — Сеча</option>
+              </select>
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+              <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px;">ПІБ Пацієнта:</label>
+              <input type="text" id="simPatientInput" value="Коваленко Олександр Сергійович" oninput="updateTubePreview()" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;">
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary" onclick="simulateZplPrint()">Друк ZPL на термопринтер</button>
+              <button class="btn btn-outline" onclick="copyZplCode()">Копіювати ZPL код</button>
+            </div>
+          </div>
+
+          <!-- Live Visual Tube & Label Mockup -->
+          <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; display: flex; align-items: center; justify-content: space-around;">
+            <!-- Tube graphic -->
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <div id="tubeCap" style="width: 34px; height: 38px; background: #9333ea; border-radius: 6px 6px 0 0; border: 2px solid #581c87; box-shadow: inset 0 2px 4px rgba(255,255,255,0.4);"></div>
+              <div style="width: 30px; height: 110px; background: rgba(226, 232, 240, 0.6); border: 2px solid #94a3b8; border-top: none; border-radius: 0 0 15px 15px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;">
+                <div id="tubeLiquid" style="width: 100%; height: 75%; background: #991b1b; opacity: 0.85;"></div>
+              </div>
+              <span id="tubeLabelVol" style="font-size: 11px; font-weight: 700; color: #475569; margin-top: 4px;">2.6 мл</span>
+            </div>
+
+            <!-- Thermal Label (50x30 mm) Preview -->
+            <div style="width: 200px; height: 120px; background: #ffffff; border: 1px solid #1e293b; border-radius: 4px; padding: 8px; box-shadow: var(--shadow-sm); font-family: monospace; font-size: 10px; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div style="display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 2px; font-size: 9px;">
+                  <span>MedLink LIS</span>
+                  <span id="lblDate">06.10.2026 15:45</span>
+                </div>
+                <div id="lblPatient" style="font-weight: 700; font-size: 10px; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Коваленко О.С. 1985 р.н.</div>
+                <div id="lblTests" style="font-size: 8.5px; color: #334155;">ЗАК + Лейкоформула + ШОЕ</div>
+              </div>
+              
+              <!-- SVG 1D Barcode -->
+              <div style="text-align: center; margin: 4px 0;">
+                <svg width="170" height="32" viewBox="0 0 170 32">
+                  <rect x="0" y="0" width="3" height="26" fill="#000"/>
+                  <rect x="5" y="0" width="2" height="26" fill="#000"/>
+                  <rect x="9" y="0" width="5" height="26" fill="#000"/>
+                  <rect x="17" y="0" width="2" height="26" fill="#000"/>
+                  <rect x="22" y="0" width="4" height="26" fill="#000"/>
+                  <rect x="29" y="0" width="3" height="26" fill="#000"/>
+                  <rect x="34" y="0" width="6" height="26" fill="#000"/>
+                  <rect x="43" y="0" width="2" height="26" fill="#000"/>
+                  <rect x="48" y="0" width="4" height="26" fill="#000"/>
+                  <rect x="55" y="0" width="5" height="26" fill="#000"/>
+                  <rect x="63" y="0" width="2" height="26" fill="#000"/>
+                  <rect x="68" y="0" width="6" height="26" fill="#000"/>
+                  <rect x="77" y="0" width="3" height="26" fill="#000"/>
+                  <rect x="83" y="0" width="2" height="26" fill="#000"/>
+                  <rect x="88" y="0" width="5" height="26" fill="#000"/>
+                  <rect x="96" y="0" width="4" height="26" fill="#000"/>
+                  <rect x="103" y="0" width="2" height="26" fill="#000"/>
+                  <rect x="108" y="0" width="6" height="26" fill="#000"/>
+                  <rect x="117" y="0" width="3" height="26" fill="#000"/>
+                  <rect x="123" y="0" width="5" height="26" fill="#000"/>
+                  <rect x="131" y="0" width="2" height="26" fill="#000"/>
+                  <rect x="136" y="0" width="4" height="26" fill="#000"/>
+                  <rect x="143" y="0" width="6" height="26" fill="#000"/>
+                  <rect x="152" y="0" width="3" height="26" fill="#000"/>
+                  <rect x="158" y="0" width="4" height="26" fill="#000"/>
+                  <rect x="165" y="0" width="3" height="26" fill="#000"/>
+                  <text x="85" y="32" text-anchor="middle" font-size="8" fill="#000" font-family="monospace">1026004819</text>
+                </svg>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; font-size: 8px;">
+                <span id="lblTubeType">K2 EDTA 2.6ml</span>
+                <span>Відділення №1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: Specimen Logistics & Accessioning -->
+    <section id="sec-logistics">
+      <h2>5. Логістика біоматеріалу, холодовий ланцюг та лабораторний бракераж</h2>
+      <div style="margin-bottom:16px;"><a href="prototypes/02_specimen_logistics.html" target="_blank" class="btn btn-outline" style="border-color:#3b82f6; color:#2563eb; font-weight:bold;">🚚 Відкрити прототип Логістики та бракеражу &rarr;</a></div>
+      
+      <p>Для мереж лабораторій або лікарень із відокремленими корпусами транспортування зразків регламентується модулем логістики:</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <h4>1. Електронний маніфест передачі</h4>
+          <p style="font-size: 13.5px;">Партія пробірок сканується в термосумку. Формується Акт прийому-передачі з QR-кодом контейнера. Кур'єр підтверджує прийом в один клік у веб-інтерфейсі смартфону.</p>
+        </div>
+        <div class="card">
+          <h4>2. Контроль холодового ланцюга</h4>
+          <p style="font-size: 13.5px;">Обов'язкова фіксація температури за термодатчиком: при виїзді з пункту забору (+4°C) та при прибутті в лабораторію (+5°C). При відхиленні понад +8°C система маркує рейс як інцидент.</p>
+        </div>
+        <div class="card">
+          <h4>3. Стіл акцепту та бракеражу</h4>
+          <p style="font-size: 13.5px;">Оператор приймального відділення сканує пробірку. При виявленні преаналітичного дефекту вказується статус браку з автоматичним сповіщенням на повторний забір.</p>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Тип браку зразка</th>
+              <th>Клінічний вплив на аналіз</th>
+              <th>Дія системи MedLink LIS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Гемоліз (+, ++, +++)</strong></td>
+              <td>Штучне завищення Калію (K+), ЛДГ, АСТ, АЛТ, заліза через руйнування еритроцитів.</td>
+              <td>Блокування аналізу біохімічних тестів, автоматичне завдання медсестрі на перезабір, повідомлення лікарю.</td>
+            </tr>
+            <tr>
+              <td><strong>Хілоз / Ліпемія</strong></td>
+              <td>Каламутність сироватки спотворює оптичну фотометрію та нефелометрію.</td>
+              <td>Рекомендація повторного забору після 12-годинного голодування.</td>
+            </tr>
+            <tr>
+              <td><strong>Наявність мікрозгустків</strong></td>
+              <td>Забиває капілярну гідравліку гематологічного аналізатора, спотворює тромбоцити.</td>
+              <td>Категорична відмова в аналізі ЗАК/коагулограми.</td>
+            </tr>
+            <tr>
+              <td><strong>Недостатній об'єм (Underfilling)</strong></td>
+              <td>Порушує співвідношення кров/антикоагулянт (особливо для цитрату 1:9).</td>
+              <td>Анулювання направлення на коагулограму (непридатний результат МНВ/АЧТЧ).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 6: Laboratory Workstation (Вікно Дослідження) -->
+    <section id="sec-workstation">
+      <h2>6. Робоче місце «Дослідження» та обробка результатів</h2>
+      <div style="margin-bottom:16px; display:flex; gap:10px;"><a href="prototypes/03_lab_workstation.html" target="_blank" class="btn btn-outline" style="border-color:#3b82f6; color:#2563eb; font-weight:bold;">🔬 Відкрити робоче місце лаборанта &rarr;</a><a href="prototypes/04_validation_and_panic.html" target="_blank" class="btn btn-outline" style="border-color:#ef4444; color:#dc2626; font-weight:bold;">🚨 Прототип верифікації лікаря & Panic Alert &rarr;</a></div>
+      
+      <p>Головний екран лаборанта та лікаря-верифікатора оптимізовано під високу швидкість обробки (до 500–1000 проб за зміну):</p>
+
+      <!-- Interactive Lab Queue Simulator -->
+      <div class="simulator-box">
+        <div class="sim-header">
+          <span class="sim-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+            Симулятор черги досліджень (Віртуальний скролінг & Inline-введення)
+          </span>
+          <div>
+            <button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px;" onclick="toggleAutoFilter('ALL')">Всі (5)</button>
+            <button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; color: #b91c1c;" onclick="toggleAutoFilter('PANIC')">Критичні (1)</button>
+            <button class="btn btn-outline" style="font-size: 11px; padding: 4px 8px; color: #0369a1;" onclick="toggleAutoFilter('IN_PROGRESS')">В роботі (2)</button>
+          </div>
+        </div>
+
+        <div class="table-wrapper" style="margin: 0;">
+          <table id="simQueueTable">
+            <thead>
+              <tr>
+                <th>Штрихкод</th>
+                <th>Пацієнт</th>
+                <th>Дослідження</th>
+                <th>Аналізатор</th>
+                <th>Показник</th>
+                <th>Результат</th>
+                <th>Норма</th>
+                <th>Статус / Алерт</th>
+                <th>Дія</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="background: #fef2f2;">
+                <td><code>1026004812</code></td>
+                <td><strong>Мельник Ю.В.</strong> (48 р., Ч)</td>
+                <td>Глюкоза крові</td>
+                <td>Roche Cobas e411</td>
+                <td>Глюкоза</td>
+                <td><strong style="color: #b91c1c;">26.4</strong> ммоль/л</td>
+                <td>4.1 – 5.9</td>
+                <td><span class="badge" style="background: #ef4444; color: white;">PANIC HIGH</span></td>
+                <td><button class="btn btn-primary" style="padding: 2px 8px; font-size: 11px;" onclick="alert('Відкрито модальне вікно екстреного виклику лікаря! Сповіщення надіслано в МІС лікуючому лікарю.')">Алерт лікарю</button></td>
+              </tr>
+              <tr>
+                <td><code>1026004815</code></td>
+                <td><strong>Шевченко І.П.</strong> (32 р., Ж)</td>
+                <td>ЗАК розгорнутий</td>
+                <td>Sysmex XN-1000</td>
+                <td>Гемоглобін (HGB)</td>
+                <td><input type="text" value="128.0" style="width: 60px; padding: 2px 4px; border: 1px solid #94a3b8; border-radius: 4px; font-weight: bold;"> г/л</td>
+                <td>120 – 140</td>
+                <td><span class="badge" style="background: #ecfdf5; color: #065f46;">НОРМА (Авто)</span></td>
+                <td><button class="btn btn-success" style="padding: 2px 8px; font-size: 11px;" onclick="alert('Результат верифіковано лікарем!')">Верифікувати</button></td>
+              </tr>
+              <tr>
+                <td><code>1026004819</code></td>
+                <td><strong>Коваленко О.С.</strong> (41 р., Ч)</td>
+                <td>Печінкові проби</td>
+                <td>Mindray BS-240</td>
+                <td>АЛТ</td>
+                <td><strong style="color: #b45309;">68.5</strong> Од/л</td>
+                <td>0 – 41</td>
+                <td><span class="badge badge-should">ВИЩЕ НОРМИ</span></td>
+                <td><button class="btn btn-success" style="padding: 2px 8px; font-size: 11px;" onclick="alert('Результат верифіковано з приміткою лікаря!')">Верифікувати</button></td>
+              </tr>
+              <tr>
+                <td><code>1026004822</code></td>
+                <td><strong>Бондар Т.М.</strong> (64 р., Ж)</td>
+                <td>Коагулограма</td>
+                <td>Sysmex CA-600</td>
+                <td>МНВ (INR)</td>
+                <td><input type="text" value="1.05" style="width: 60px; padding: 2px 4px; border: 1px solid #94a3b8; border-radius: 4px; font-weight: bold;"> од</td>
+                <td>0.85 – 1.15</td>
+                <td><span class="badge" style="background: #ecfdf5; color: #065f46;">НОРМА</span></td>
+                <td><button class="btn btn-success" style="padding: 2px 8px; font-size: 11px;" onclick="alert('Результат верифіковано!')">Верифікувати</button></td>
+              </tr>
+              <tr>
+                <td><code>1026004825</code></td>
+                <td><strong>Ткач В.А.</strong> (29 р., Ч)</td>
+                <td>Тиреоїдна панель</td>
+                <td>Snibe Maglumi 800</td>
+                <td>ТТГ (TSH)</td>
+                <td><strong style="color: #4338ca;">0.12</strong> мкМО/мл</td>
+                <td>0.4 – 4.0</td>
+                <td><span class="badge" style="background: #fef3c7; color: #92400e;">REFLEX TRIGGER</span></td>
+                <td><button class="btn btn-outline" style="padding: 2px 8px; font-size: 11px;" onclick="alert('Reflex-правило активовано: автоматично призначено вТ4 без потреби нового направлення!')">+ Додати вТ4</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 7: Quality Control (Levey-Jennings & Westgard) -->
+    <section id="sec-qc">
+      <h2>7. Внутрішній контроль якості (ВЯК): Карти Леві-Дженнінгса та правила Вестгарда</h2>
+      <div style="margin-bottom:16px;"><a href="prototypes/05_quality_control.html" target="_blank" class="btn btn-outline" style="border-color:#10b981; color:#059669; font-weight:bold;">📊 Відкрити прототип ВЯК & Levey-Jennings &rarr;</a></div>
+      
+      <p>Модуль ВЯК гарантує метрологічну достовірність результатів згідно з міжнародними стандартами ISO 15189. Він повністю відсутній у колишньому Delphi-рішенні та реалізується в MedLink LIS з нуля на базі алгоритмів Westgard Multirule:</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Правило Вестгарда</th>
+              <th>Тип помилки</th>
+              <th>Умова спрацювання</th>
+              <th>Реакція MedLink LIS (Lockout Engine)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1-2s</strong></td>
+              <td>Попередження</td>
+              <td>1 контрольне вимірювання вийшло за межі Mean &plusmn; 2SD.</td>
+              <td>Попереджувальний жовтий маркер. Видача пацієнтських тестів <strong>дозволена</strong>, вимагає пильності оператора.</td>
+            </tr>
+            <tr>
+              <td><strong>1-3s</strong></td>
+              <td>Випадкова помилка</td>
+              <td>1 вимірювання вийшло за межі Mean &plusmn; 3SD.</td>
+              <td><strong>ВІДХИЛЕННЯ СЕРІЇ. Автоматичний Lockout:</strong> блокування видачі результатів пацієнтів цього приладу/тесту!</td>
+            </tr>
+            <tr>
+              <td><strong>2-2s</strong></td>
+              <td>Систематична помилка</td>
+              <td>2 послідовних вимірювання вийшли за межі &plusmn; 2SD по один бік від середнього.</td>
+              <td><strong>ВІДХИЛЕННЯ СЕРІЇ. Lockout.</strong> Потрібне калібрування приладу або заміна лоту реагенту.</td>
+            </tr>
+            <tr>
+              <td><strong>R-4s</strong></td>
+              <td>Випадкова помилка</td>
+              <td>Різниця між двома контролями в серії перевищує 4SD (один > +2SD, інший < -2SD).</td>
+              <td><strong>ВІДХИЛЕННЯ СЕРІЇ. Lockout.</strong> Помилка дозування або дефект оптичного каналу.</td>
+            </tr>
+            <tr>
+              <td><strong>4-1s</strong></td>
+              <td>Систематичний зсув</td>
+              <td>4 послідовних вимірювання перевищують 1SD по один бік від середнього.</td>
+              <td><strong>ВІДХИЛЕННЯ СЕРІЇ.</strong> Систематичний дрейф калібрувальної кривої.</td>
+            </tr>
+            <tr>
+              <td><strong>10-x</strong></td>
+              <td>Систематичний зсув</td>
+              <td>10 послідовних вимірювань лежать по один бік від Mean.</td>
+              <td><strong>ВІДХИЛЕННЯ СЕРІЇ.</strong> Знос лампи фотометра або старіння робочого буферу.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Interactive Levey-Jennings SVG Chart Widget -->
+      <div class="simulator-box">
+        <div class="sim-header">
+          <span class="sim-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Інтерактивна контрольна карта Леві-Дженнінгса (Sysmex XN-1000 / WBC)
+          </span>
+          <div style="font-size: 12px; display: flex; gap: 10px; align-items: center;">
+            <span>Цільове: <strong>7.20</strong> &times; 10^9/л</span>
+            <span>SD: <strong>0.30</strong></span>
+            <span>CV: <strong>4.16%</strong></span>
+          </div>
+        </div>
+
+        <!-- SVG Chart -->
+        <div style="background: #ffffff; border-radius: 8px; padding: 10px; position: relative;">
+          <svg id="ljSvgChart" width="100%" height="260" viewBox="0 0 700 260" style="overflow: visible;">
+            <!-- Background bands -->
+            <rect x="50" y="20" width="630" height="200" fill="#f8fafc"/>
+            <rect x="50" y="53" width="630" height="134" fill="#ecfdf5" opacity="0.6"/> <!-- +/- 2SD zone -->
+            <rect x="50" y="86" width="630" height="68" fill="#dcfce7" opacity="0.8"/> <!-- +/- 1SD zone -->
+
+            <!-- Grid Lines -->
+            <!-- +3SD Line -->
+            <line x1="50" y1="20" x2="680" y2="20" stroke="#ef4444" stroke-dasharray="4,4" stroke-width="1.5"/>
+            <text x="42" y="24" text-anchor="end" font-size="10" fill="#ef4444" font-weight="bold">+3SD (8.10)</text>
+
+            <!-- +2SD Line -->
+            <line x1="50" y1="53" x2="680" y2="53" stroke="#f59e0b" stroke-dasharray="3,3" stroke-width="1"/>
+            <text x="42" y="57" text-anchor="end" font-size="10" fill="#f59e0b">+2SD (7.80)</text>
+
+            <!-- +1SD Line -->
+            <line x1="50" y1="86" x2="680" y2="86" stroke="#94a3b8" stroke-dasharray="2,2" stroke-width="1"/>
+            <text x="42" y="90" text-anchor="end" font-size="10" fill="#64748b">+1SD (7.50)</text>
+
+            <!-- Mean Center Line -->
+            <line x1="50" y1="120" x2="680" y2="120" stroke="#0284c7" stroke-width="2"/>
+            <text x="42" y="124" text-anchor="end" font-size="10" fill="#0284c7" font-weight="bold">Mean (7.20)</text>
+
+            <!-- -1SD Line -->
+            <line x1="50" y1="154" x2="680" y2="154" stroke="#94a3b8" stroke-dasharray="2,2" stroke-width="1"/>
+            <text x="42" y="158" text-anchor="end" font-size="10" fill="#64748b">-1SD (6.90)</text>
+
+            <!-- -2SD Line -->
+            <line x1="50" y1="187" x2="680" y2="187" stroke="#f59e0b" stroke-dasharray="3,3" stroke-width="1"/>
+            <text x="42" y="191" text-anchor="end" font-size="10" fill="#f59e0b">-2SD (6.60)</text>
+
+            <!-- -3SD Line -->
+            <line x1="50" y1="220" x2="680" y2="220" stroke="#ef4444" stroke-dasharray="4,4" stroke-width="1.5"/>
+            <text x="42" y="224" text-anchor="end" font-size="10" fill="#ef4444" font-weight="bold">-3SD (6.30)</text>
+
+            <!-- Data Polyline -->
+            <polyline fill="none" stroke="#2563eb" stroke-width="2" points="
+              70,118 110,105 150,130 190,95 230,122 270,110 310,88 350,125 390,140 430,115 470,60 510,120 550,108 590,125 630,12
+            "/>
+
+            <!-- Normal Points -->
+            <circle cx="70" cy="118" r="4.5" fill="#2563eb"/>
+            <circle cx="110" cy="105" r="4.5" fill="#2563eb"/>
+            <circle cx="150" cy="130" r="4.5" fill="#2563eb"/>
+            <circle cx="190" cy="95" r="4.5" fill="#2563eb"/>
+            <circle cx="230" cy="122" r="4.5" fill="#2563eb"/>
+            <circle cx="270" cy="110" r="4.5" fill="#2563eb"/>
+            <circle cx="310" cy="88" r="4.5" fill="#2563eb"/>
+            <circle cx="350" cy="125" r="4.5" fill="#2563eb"/>
+            <circle cx="390" cy="140" r="4.5" fill="#2563eb"/>
+            <circle cx="430" cy="115" r="4.5" fill="#2563eb"/>
+
+            <!-- Warning Point (1-2s): Day 11, y=60 (~2.1SD) -->
+            <circle cx="470" cy="60" r="6" fill="#f59e0b" stroke="#ffffff" stroke-width="2"/>
+            
+            <circle cx="510" cy="120" r="4.5" fill="#2563eb"/>
+            <circle cx="550" cy="108" r="4.5" fill="#2563eb"/>
+            <circle cx="590" cy="125" r="4.5" fill="#2563eb"/>
+
+            <!-- Violation Point (1-3s Out of Control): Day 15, y=12 (> +3SD) -->
+            <circle cx="630" cy="12" r="7" fill="#ef4444" stroke="#ffffff" stroke-width="2" style="cursor: pointer;" onclick="alert('Порушення правила Вестгарда 1-3s (WBC = 8.28)! Активовано режим Lockout: видача ЗАК на Sysmex XN-1000 заблокована до калібрування.')"/>
+
+            <!-- Day Axis Labels -->
+            <text x="70" y="245" text-anchor="middle" font-size="10" fill="#64748b">1</text>
+            <text x="150" y="245" text-anchor="middle" font-size="10" fill="#64748b">3</text>
+            <text x="230" y="245" text-anchor="middle" font-size="10" fill="#64748b">5</text>
+            <text x="310" y="245" text-anchor="middle" font-size="10" fill="#64748b">7</text>
+            <text x="390" y="245" text-anchor="middle" font-size="10" fill="#64748b">9</text>
+            <text x="470" y="245" text-anchor="middle" font-size="10" fill="#64748b">11</text>
+            <text x="550" y="245" text-anchor="middle" font-size="10" fill="#64748b">13</text>
+            <text x="630" y="245" text-anchor="middle" font-size="10" fill="#64748b">15</text>
+            <text x="360" y="258" text-anchor="middle" font-size="11" font-weight="600" fill="#334155">Дні вимірювання контрольної сироватки (Партія QC-WBC-2026B)</text>
+          </svg>
+        </div>
+
+        <div style="margin-top: 14px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 13px; color: #991b1b;">
+            <strong>Увага! Спрацював автоматичний Lockout:</strong> Точка №15 (8.28 &times; 10^9/л) порушила правило Вестгарда <strong>1-3s</strong> (перевищення +3.6 SD).
+          </div>
+          <button class="btn btn-outline" style="border-color: #f87171; color: #b91c1c; font-size: 12px; padding: 4px 10px;" onclick="alert('Форма внесення коригуючих дій лікаря-лаборанта: перевірка температури кювети, повторне калібрування.')">Внести протокол усунення</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 8: Analyzer Driver Connector -->
+    <section id="sec-connector">
+      <h2>8. Драйверний коннектор MedLink.LabConnector (.NET Core Worker)</h2>
+      
+      <p>Драйверний коннектор <code>MedLink.LabConnector</code> — це високопродуктивний кросплатформний фоновий сервіс, розроблений компанією MedLink на платформі <strong>.NET 6 / .NET 8 Worker Service</strong>. Він повністю замінює застарілу 32-бітну програму на Delphi (<code>AConnectAstm.exe</code>) та забезпечує роботу як у середовищі Windows (Windows Service / Tray), так і в Linux (systemd daemon для шлюзів на базі Ubuntu/Debian або Raspberry Pi / компактних контролерів біля приладів).</p>
+
+      <div class="alert-box alert-success">
+        <div>
+          <strong>Правовий статус та інтелектуальна власність:</strong> Всі майнові та авторські права на вихідний код, протокольні парсери (ASTM, HL7, MLLP), схеми буферизації та інсталятори коннектора належать виключно <strong>ТОВ «МедЛінк» (MedLink LLC)</strong>. Ліцензійна угода (EULA) та підпис цифровим сертифікатом фіксують авторство MedLink.
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>Архітектурні особливості коннектора</h4>
+          <ul style="padding-left: 18px; font-size: 13.5px; color: #334155; line-height: 1.8;">
+            <li><strong>Асинхронний мультиплексинг:</strong> Один екземпляр коннектора одночасно обслуговує до 32 лабораторних приладів без взаємних затримок (Task-based asynchronous I/O).</li>
+            <li><strong>Підтримка інтерфейсів:</strong> Serial RS-232 (COM-порти через перехідники USB-to-COM або MOXA), TCP/IP Client/Server (порт 1000–9999), спільні файлові каталоги (Folder Watcher).</li>
+            <li><strong>Локальний SQLite буфер:</strong> При зникненні Інтернету дані аналізів надійно зберігаються на диску ПК біля приладу та скидаються в хмару MedLink автоматично після відновлення зв'язку.</li>
+            <li><strong>Відкритий REST API обміну:</strong> Коннектор спілкується з хмарним ядром MedLink через захищений HTTPS REST API з авторизацією за токеном клініки <code>X-MedLink-ApiKey</code>.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4>Підтримувані протоколи обміну</h4>
+          <ul style="padding-left: 18px; font-size: 13.5px; color: #334155; line-height: 1.8;">
+            <li><strong>ASTM E1381 / E1394:</strong> Стандарт де-факто для аналізаторів. Повний цикл: кадр <code>ENQ &rarr; ACK &rarr; STX [Data] ETX [CRC] &rarr; EOT</code>. Двосторонній запит рознарядки за штрихкодом (Query mode).</li>
+            <li><strong>HL7 v2.3.1 / v2.5 MLLP:</strong> Сучасний медичний стандарт: сегменти <code>MSH, PID, OBR, OBX</code>, квитування <code>MSA|AA</code>.</li>
+            <li><strong>HL7 FHIR R4:</strong> Передача сутностей <code>Observation</code> та <code>DiagnosticReport</code>.</li>
+            <li><strong>File Drop / Polling:</strong> Авторозбір CSV, XML та форматованого тексту з мережевих папок.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Каталог підтримуваного лабораторного обладнання (60+ моделей)</h3>
+      <p>Завдяки аналізу збережених процедур etalon-бази (таблиця <code>ac_analyzer_type</code>) та практик ринку, в MedLink LIS включено готові профілі драйверів для всіх поширених приладів в Україні:</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Діагностичний профіль</th>
+              <th>Виробники</th>
+              <th>Підтримувані моделі аналізаторів</th>
+              <th>Протокол</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Гематологічні аналізатори</strong></td>
+              <td>Sysmex, Mindray, Nihon Kohden, Horiba, Dymind</td>
+              <td>Sysmex XN-1000/2000, XS-1000i, XP-300; Mindray BC-5300, BC-6200; Nihon Kohden MEK-7300, 9100; Pentra 60/80; Dymind D5.</td>
+              <td>ASTM E1394, HL7 v2.x (COM / TCP)</td>
+            </tr>
+            <tr>
+              <td><strong>Біохімічні аналізатори</strong></td>
+              <td>Roche, Mindray, BioSystems, Erba, Vital</td>
+              <td>Cobas c111, c311; Mindray BS-240, BS-300, BS-800; BioSystems BA400, A15; Erba XL-200, XL-640; Vital Junior.</td>
+              <td>ASTM E1394, HL7 v2.x (COM / TCP / File)</td>
+            </tr>
+            <tr>
+              <td><strong>Імунохімічні аналізатори</strong></td>
+              <td>Roche, Snibe, Beckman Coulter, YHLO, Boditech</td>
+              <td>Cobas e411; Maglumi 800, 2000 Plus; Beckman Access 2; iFlash 1800; Boditech iChroma II/III.</td>
+              <td>ASTM E1394, HL7 v2.x (COM / TCP)</td>
+            </tr>
+            <tr>
+              <td><strong>Коагулометри (Гемостаз)</strong></td>
+              <td>Sysmex, Stago, Werfen (IL)</td>
+              <td>Sysmex CA-600, CA-1500, CS-2500; Stago Start 4, Compact Max; ACL TOP 300, 500 CTS.</td>
+              <td>ASTM E1394 (COM / TCP)</td>
+            </tr>
+            <tr>
+              <td><strong>Аналізатори сечі</strong></td>
+              <td>Roche, Dirui, Beckman (Iris), Sysmex</td>
+              <td>Urisys 1100, 2400; Dirui H-100, H-500; Iris iQ200; Sysmex UC-1000, UF-1000i.</td>
+              <td>ASTM E1394 (COM / TCP)</td>
+            </tr>
+            <tr>
+              <td><strong>Гази крові & Електроліти</strong></td>
+              <td>Radiometer, Werfen</td>
+              <td>Radiometer ABL80, ABL9, AQT90 FLEX; GEM Premier 3500, 4000.</td>
+              <td>ASTM E1394 (TCP / File)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>Інсталятор для Windows (Inno Setup / MSI)</h4>
+          <p style="font-size: 13.5px;">Майстер встановлення з брендуванням MedLink. Автоматично встановлює службу <code>MedLinkLabConnector</code>, відкриває порти в брандмауері Windows, налаштовує автозапуск при завантаженні ОС та створює утиліту конфігурації в панелі задач.</p>
+          <pre><code>; Фрагмент інсталятора Inno Setup
+AppPublisher="ТОВ 'МедЛінк' (MedLink LLC)"
+AppCopyright="Copyright (c) 2026 MedLink"
+DefaultDirName={autopf}\MedLink\LabConnector
+sc.exe create MedLinkLabConnector binPath= "{app}\MedLink.LabConnector.exe" start= auto</code></pre>
+        </div>
+
+        <div class="card">
+          <h4>Інсталятор для Linux (Systemd Service)</h4>
+          <p style="font-size: 13.5px;">Для розгортання на Linux-серверах та мікрокомп'ютерах. Забезпечує безпеку (непривілейований користувач <code>medlink</code>), доступ до портів <code>dialout</code> та миттєвий перезапуск у разі збоїв.</p>
+          <pre><code># /etc/systemd/system/medlink-labconnector.service
+[Unit]
+Description=MedLink LIS Analyzer Driver Connector Daemon
+After=network.target
+
+[Service]
+ExecStart=/opt/medlink/labconnector/MedLink.LabConnector
+Restart=always
+User=medlink</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 9: Interoperability (HL7, FHIR, eHealth) -->
+    <section id="sec-interop">
+      <h2>9. Інтероперабельність: eHealth (ЕСОЗ), HL7 v2, FHIR R4 та Аутсорс</h2>
+      
+      <p>MedLink LIS спроектовано для безшовної роботи в розподіленій медичній екосистемі України та міжнародних стандартів:</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <h4 style="color: #2563eb;">1. eHealth / ЕСОЗ (НСЗУ)</h4>
+          <p style="font-size: 13.5px;">Повна інтеграція з центральною базою даних eHealth. Погашення електронного направлення пацієнта (Service Request). Підпис фінального висновку кваліфікованим електронним підписом (КЕП лікаря-лаборанта) та публікація ресурсу <code>DiagnosticReport</code> з прив'язкою до візиту.</p>
+        </div>
+
+        <div class="card">
+          <h4 style="color: #0d9488;">2. HL7 FHIR REST API</h4>
+          <p style="font-size: 13.5px;">Сучасний RESTful інтерфейс обміну за стандартом FHIR R4. Дозволяє стороннім клінікам та системам направляти замовлення (<code>ServiceRequest</code>) та отримувати структуровані результати (<code>DiagnosticReport</code> & <code>Observation</code> з кодами LOINC).</p>
+        </div>
+
+        <div class="card">
+          <h4 style="color: #ca8a04;">3. Зовнішні лабораторії (Send-Out)</h4>
+          <p style="font-size: 13.5px;">Автоматизоване направлення рідкісних або високовартісних аналізів (генетика, рідкісні онкомаркери) до лабораторій-партнерів (Сінево, Діла, CSD, TerraLab) із відстеженням статусу та автоімпортом результату.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 10: Patient Portal & Monitoring -->
+    <section id="sec-patient">
+      <h2>10. Кабінет пацієнта: Live-моніторинг етапів та графіки динаміки</h2>
+      <div style="margin-bottom:16px;"><a href="prototypes/06_patient_portal.html" target="_blank" class="btn btn-outline" style="border-color:#3b82f6; color:#2563eb; font-weight:bold;">📱 Відкрити прототип Кабінету пацієнта &rarr;</a></div>
+      
+      <p>Кабінет пацієнта MedLink LIS перетворює лабораторну службу з «чорної скриньки» на прозорий сервіс, ліквідуючи понад 80% телефонних запитів у реєстратуру:</p>
+
+      <!-- Interactive Patient Portal Tracker Simulator -->
+      <div class="simulator-box">
+        <div class="sim-header">
+          <span class="sim-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Інтерактивний кабінет пацієнта (Live-трекер замовлення №1026-004812)
+          </span>
+          <span style="font-size: 12px; background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-weight: bold;">Дослідження завершено</span>
+        </div>
+
+        <!-- Stepper Progress Tracker -->
+        <div style="display: flex; justify-content: space-between; position: relative; margin: 30px 20px 40px;">
+          <!-- Progress Line -->
+          <div style="position: absolute; top: 14px; left: 0; right: 0; height: 4px; background: #10b981; z-index: 1;"></div>
+
+          <!-- Step 1 -->
+          <div style="position: relative; z-index: 2; text-align: center; width: 80px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-weight: bold;">&#10003;</div>
+            <div style="font-size: 11px; font-weight: 700; color: #1e293b;">Створено</div>
+            <div style="font-size: 10px; color: #64748b;">08:15</div>
+          </div>
+
+          <!-- Step 2 -->
+          <div style="position: relative; z-index: 2; text-align: center; width: 80px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-weight: bold;">&#10003;</div>
+            <div style="font-size: 11px; font-weight: 700; color: #1e293b;">Забір проби</div>
+            <div style="font-size: 10px; color: #64748b;">08:30</div>
+          </div>
+
+          <!-- Step 3 -->
+          <div style="position: relative; z-index: 2; text-align: center; width: 80px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-weight: bold;">&#10003;</div>
+            <div style="font-size: 11px; font-weight: 700; color: #1e293b;">В дорозі</div>
+            <div style="font-size: 10px; color: #64748b;">09:10 (+4°C)</div>
+          </div>
+
+          <!-- Step 4 -->
+          <div style="position: relative; z-index: 2; text-align: center; width: 80px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-weight: bold;">&#10003;</div>
+            <div style="font-size: 11px; font-weight: 700; color: #1e293b;">В лабораторії</div>
+            <div style="font-size: 10px; color: #64748b;">09:45</div>
+          </div>
+
+          <!-- Step 5 -->
+          <div style="position: relative; z-index: 2; text-align: center; width: 80px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-weight: bold;">&#10003;</div>
+            <div style="font-size: 11px; font-weight: 700; color: #1e293b;">Аналізатор</div>
+            <div style="font-size: 10px; color: #64748b;">10:20</div>
+          </div>
+
+          <!-- Step 6 -->
+          <div style="position: relative; z-index: 2; text-align: center; width: 80px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-weight: bold;">&#10003;</div>
+            <div style="font-size: 11px; font-weight: 700; color: #1e293b;">Верифіковано</div>
+            <div style="font-size: 10px; color: #64748b;">11:05 (КЕП)</div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="background: #f8fafc; padding: 16px; border-radius: 8px;">
+          <div>
+            <h4 style="margin-top: 0;">Результати дослідження:</h4>
+            <div style="font-size: 13.5px; line-height: 1.8;">
+              <div>• Глюкоза сироватки: <strong>5.2 ммоль/л</strong> (Норма 4.1 – 5.9) — <span style="color: #16a34a; font-weight: 600;">В нормі</span></div>
+              <div>• Глікований гемоглобін (HbA1c): <strong>5.4%</strong> (Норма &lt; 5.7%) — <span style="color: #16a34a; font-weight: 600;">В нормі</span></div>
+            </div>
+            
+            <div style="margin-top: 14px;">
+              <button class="btn btn-primary" onclick="alert('Завантажується офіційний підписаний КЕП PDF-бланк з QR-кодом верифікації!')">Завантажити офіційний PDF з QR</button>
+            </div>
+          </div>
+
+          <!-- Longitudinal Trend Mini-Chart -->
+          <div>
+            <h4 style="margin-top: 0;">Динаміка глюкози в часі (Тренд):</h4>
+            <svg width="100%" height="90" viewBox="0 0 300 90">
+              <!-- Normal corridor -->
+              <rect x="20" y="25" width="260" height="35" fill="#dcfce7" opacity="0.6"/>
+              <line x1="20" y1="25" x2="280" y2="25" stroke="#86efac" stroke-dasharray="2,2"/>
+              <line x1="20" y1="60" x2="280" y2="60" stroke="#86efac" stroke-dasharray="2,2"/>
+              <text x="285" y="28" font-size="8" fill="#16a34a">5.9</text>
+              <text x="285" y="63" font-size="8" fill="#16a34a">4.1</text>
+              
+              <!-- Trend Line -->
+              <polyline fill="none" stroke="#2563eb" stroke-width="2" points="30,55 90,48 150,65 210,40 270,38"/>
+              <circle cx="30" cy="55" r="3" fill="#2563eb"/>
+              <circle cx="90" cy="48" r="3" fill="#2563eb"/>
+              <circle cx="150" cy="65" r="3" fill="#ef4444"/> <!-- low point -->
+              <circle cx="210" cy="40" r="3" fill="#2563eb"/>
+              <circle cx="270" cy="38" r="4" fill="#16a34a"/> <!-- current -->
+              
+              <text x="30" y="80" text-anchor="middle" font-size="8" fill="#64748b">Січ</text>
+              <text x="90" y="80" text-anchor="middle" font-size="8" fill="#64748b">Кві</text>
+              <text x="150" y="80" text-anchor="middle" font-size="8" fill="#64748b">Лип</text>
+              <text x="210" y="80" text-anchor="middle" font-size="8" fill="#64748b">Вер</text>
+              <text x="270" y="80" text-anchor="middle" font-size="8" fill="#16a34a" font-weight="bold">Жов (Сьогодні)</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 11: Technical Architecture in MedLink (evomis) -->
+    <section id="sec-architecture">
+      <h2>11. Технічна архітектура модуля в MedLink (evomis)</h2>
+      
+      <p>Лабораторний модуль розробляється як повноцінна підсистема у складі рішення <strong>MIS.Api.sln</strong> (каталог <code>C:\__MEDLINK___\__MEDLINK\evomis</code>) з дотриманням існуючих патернів Clean Architecture та модульності платформи:</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4>Структура Backend (.NET 6 / C#)</h4>
+          <pre><code>evomis/src/
+├── App.Contracts/Lab/            # DTOs, Enums, інтерфейси
+│   ├── Dtos/                     # OrderDto, ResultDto, QcDto
+│   └── IAnalyzerDataService.cs
+├── App.Domain/Models/lab/        # EF Core сутності (PostgreSQL)
+│   ├── LabOrder.cs
+│   ├── LabOrderSample.cs
+│   ├── LabTestResult.cs
+│   ├── LabQcMaterial.cs
+│   └── LabSampleLogistics.cs
+├── App.Data/Configurations/Lab/  # Fluent API мапінг таблиць
+├── App.Lab.Module/               # Бізнес-логіка модуля
+│   ├── Services/                 # LabOrderService, QcService
+│   ├── RuleEngines/              # WestgardEngine, DeltaCheck
+│   └── DependencyInjection.cs
+└── App.Api/
+    ├── Controllers/Lab/          # REST API контролери
+    │   ├── LabOrdersController.cs
+    │   ├── LabResultsController.cs
+    │   ├── LabAnalyzersController.cs
+    │   └── LabQcController.cs
+    └── Hubs/LabHub.cs            # SignalR для оновлень у реальному часі</code></pre>
+        </div>
+
+        <div class="card">
+          <h4>Структура Frontend (Vue.js / Quasar PWA)</h4>
+          <pre><code>evomis/src/App.View/src/
+├── pages/lab/
+│   ├── PhlebotomyStation.vue    # Кабінет забору & друк ZPL
+│   ├── LabWorkstation.vue       # Вікно «Дослідження» (500+ рядків)
+│   ├── ValidationDesk.vue       # Робоче місце лікаря-лаборанта
+│   ├── QualityControl.vue       # Контрольні карти Леві-Дженнінгса
+│   ├── LogisticsManifest.vue    # Акти прийому-передачі та t°
+│   ├── ArchiveRacks.vue         # Біобанк та архівні штативи
+│   └── ReagentStock.vue         # Лічильники залишків тестів
+├── components/lab/
+│   ├── TubeCapBadge.vue         # Колірний бейдж кришки пробірки
+│   ├── LeveyJenningsChart.vue   # SVG-графік Леві-Дженнінгса
+│   ├── ZplBarcodeLabel.vue      # Прев'ю термостікера
+│   └── CriticalAlertBanner.vue  # Спливаючий алерт паніки
+└── stores/
+    └── labStore.js              # Pinia/Vuex сховище черги</code></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>Реальний час: SignalR Hub (LabHub.cs)</h4>
+        <p style="font-size: 13.5px;">Для запобігання постійному опитуванню сервера (polling), результати від аналізаторів, що надходять через <code>MedLink.LabConnector</code>, миттєво публікуються через SignalR у відповідну вкладку лаборанта:</p>
+        <pre><code>// App.Api/Hubs/LabHub.cs
+public class LabHub : Hub
+{
+    public async Task SendAnalyzerResult(string analyzerCode, LabResultDto result)
+    {
+        await Clients.Group($"Analyzer_{analyzerCode}").SendAsync("ResultReceived", result);
+        if (result.IsPanicValue)
+        {
+            await Clients.Group("Physicians").SendAsync("PanicAlert", result);
+        }
+    }
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- Section 12: PostgreSQL Database Schema -->
+    <section id="sec-db">
+      <h2>12. Схема бази даних PostgreSQL (MedLink LIS)</h2>
+      
+      <p>Всі сутності лабораторного контуру зберігаються в реляційній БД PostgreSQL платформи <code>evomis</code> з префіксом <code>lab_</code>. Повна міграція міститься у підготовленому файлі <code>C:\__MEDLINK___\LABA\dictionaries\06_medlink_lab_schema_postgres.sql</code>:</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <h4 style="color: #2563eb;">1. Довідники & Номенклатура</h4>
+          <ul style="font-size: 13px; line-height: 1.8; color: #334155;">
+            <li><code>lab_biomaterial_types</code></li>
+            <li><code>lab_tube_types</code></li>
+            <li><code>lab_method_types</code></li>
+            <li><code>lab_analyzer_types</code></li>
+            <li><code>lab_analyzers</code></li>
+            <li><code>lab_test_definitions</code></li>
+            <li><code>lab_test_profiles</code></li>
+            <li><code>lab_reference_ranges</code></li>
+            <li><code>lab_reflex_rules</code></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4 style="color: #0d9488;">2. Замовлення, Зразки & Рутина</h4>
+          <ul style="font-size: 13px; line-height: 1.8; color: #334155;">
+            <li><code>lab_orders</code></li>
+            <li><code>lab_order_samples</code></li>
+            <li><code>lab_order_tests</code></li>
+            <li><code>lab_test_results</code></li>
+            <li><code>lab_batches</code> (робочі листи)</li>
+            <li><code>lab_audit_logs</code></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4 style="color: #8b5cf6;">3. Контроль якості, Склад & Біобанк</h4>
+          <ul style="font-size: 13px; line-height: 1.8; color: #334155;">
+            <li><code>lab_qc_materials</code></li>
+            <li><code>lab_qc_targets</code></li>
+            <li><code>lab_qc_results</code></li>
+            <li><code>lab_sample_logistics</code></li>
+            <li><code>lab_sample_archive_racks</code></li>
+            <li><code>lab_reagent_lots</code></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 13: GAP Analysis & Missed Features -->
+    <section id="sec-gaps">
+      <h2>13. GAP-аналіз: Що було упущено в старих ТЗ та як це вирішено</h2>
+      
+      <p>На основі детального аналізу предметної області та зіставлення legacy-коду Delphi, LISmart, STARLIS і MCLAB виявлено та усунуто 10 критичних прогалин:</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;">№</th>
+              <th style="width: 220px;">Упущений аспект у старих версіях</th>
+              <th>Клінічний або операційний ризик</th>
+              <th>Рішення, впроваджене в MedLink LIS 3.0</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><strong>Порядок забору (Order of Draw)</strong></td>
+              <td>Перенесення ЕДТА в цитратну пробірку спотворює час згортання та руйнує аналіз гемостазу.</td>
+              <td>Вбудовано візуальну діаграму та обов'язкову черговість забору за стандартом CLSI H3-A6 у Кабінеті забору.</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><strong>Холодовий ланцюг у логістиці</strong></td>
+              <td>Перегрів зразків у дорозі призводить до лізису клітин та деградації глюкози і ферментів.</td>
+              <td>Обов'язкова валідація температури термосумки (+2...+8°C) при відправці та прийомі в електронному акті.</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><strong>Pre-analytical Бракераж</strong></td>
+              <td>Виконання аналізу на гемолізованій або згущеній крові видає хибні результати пацієнту.</td>
+              <td>Спеціалізований інтерфейс приймального столу з фіксацією гемолізу, ліпемії та автонаправленням на перезабір.</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><strong>Блокування приладу (QC Lockout)</strong></td>
+              <td>При виході контролю якості з ладу лаборант міг випадково валідувати пацієнтські проби.</td>
+              <td>Автоматичний Lockout: порушення правил Вестгарда 1-3s, 2-2s блокує вихід пацієнтських тестів цього приладу.</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><strong>Миттєвий алерт панічних значень</strong></td>
+              <td>Лікар дізнається про смертельно небезпечну глюкозу (26 ммоль/л) лише після планового друку.</td>
+              <td>Push/SMS сповіщення в МІС з вимогою обов'язкового клінічного підтвердження протягом 15 хвилин.</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><strong>Delta-Check за вікном 72 години</strong></td>
+              <td>Пропуск підміни пробірки або раптового гострого погіршення стану нирок (креатинін).</td>
+              <td>Автоматичний розрахунок дельти у % та мг/дл щодо попереднього дослідження пацієнта за останні 72 години.</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td><strong>Reflex-правила без зайвих візитів</strong></td>
+              <td>Пацієнт змушений чекати дні та повторно стояти в черзі, якщо виявлено патологію ТТГ.</td>
+              <td>Автоматичне допризначення зв'язаних тестів (вТ4, антитіла) з тієї ж пробірки за затвердженим протоколом.</td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td><strong>Офлайн-стійкість коннектора</strong></td>
+              <td>При збої Інтернету прилади видавали помилку переповнення буфера (Buffer Overflow).</td>
+              <td>Локальна база SQLite на рівні служби <code>MedLink.LabConnector</code> зі збереженням та фоновим ретраєм.</td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td><strong>Live-моніторинг для пацієнта</strong></td>
+              <td>Сотні дзвінків у реєстратуру з питанням «чи готові мої аналізи?».</td>
+              <td>Публічний віджет-трекер у кабінеті пацієнта зі статусами «В дорозі», «В аналізі», «Готово».</td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td><strong>Фізичний архів (Біобанк)</strong></td>
+              <td>Неможливість знайти пробірку пацієнта через 2 дні для додаткового тестування або перепровірки.</td>
+              <td>Координатний облік пробірок у віртуальних штативах (Холодильник &rarr; Полиця &rarr; Штатив &rarr; Комірка [X, Y]).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 14: Roadmap -->
+    <section id="sec-roadmap">
+      <h2>14. Дорожня карта релізів (Спринти 1–6)</h2>
+      
+      <div class="grid-3">
+        <div class="card" style="border-top: 4px solid #10b981;">
+          <span class="badge badge-r1" style="margin-bottom: 8px;">Реліз 1 (MVP) · Спринти 1–2</span>
+          <h4>Базовий повноцінний цикл</h4>
+          <ul style="font-size: 13px; line-height: 1.7; color: #334155; padding-left: 16px;">
+            <li>Ядро ЛІС: реєстрація, черга, inline-введення.</li>
+            <li>Кабінет забору та прямий друк ZPL-етикеток.</li>
+            <li>Служба <code>MedLink.LabConnector</code> (ASTM + HL7).</li>
+            <li>Базовий ВЯК: графіки Леві-Дженнінгса.</li>
+            <li>Верифікація лікарем & PDF-бланк з QR-кодом.</li>
+            <li>Інтеграція з eHealth (погашення ЕН, КЕП).</li>
+          </ul>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #0284c7;">
+          <span class="badge badge-r2" style="margin-bottom: 8px;">Реліз 2 · Спринти 3–4</span>
+          <h4>Клінічна довіра & Логістика</h4>
+          <ul style="font-size: 13px; line-height: 1.7; color: #334155; padding-left: 16px;">
+            <li>Мультиправила Вестгарда & Авто-Lockout приладу.</li>
+            <li>Delta-Check (72 год) & Reflex-правила.</li>
+            <li>Модуль логістики зразків та холодовий ланцюг.</li>
+            <li>Стіл сортування та преаналітичний бракераж.</li>
+            <li>Кабінет пацієнта: динаміка показників у часі.</li>
+            <li>Складський облік реагентів (Lot Tracking).</li>
+          </ul>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #8b5cf6;">
+          <span class="badge badge-r3" style="margin-bottom: 8px;">Реліз 3 · Спринти 5–6</span>
+          <h4>Корпоративна глибина & Біобанк</h4>
+          <ul style="font-size: 13px; line-height: 1.7; color: #334155; padding-left: 16px;">
+            <li>Архів фізичного зберігання зразків (Біобанк).</li>
+            <li>Мікробіологічний блок & антибіотикограми EUCAST.</li>
+            <li>Зовнішній контроль якості (EQA / ФСВЯ).</li>
+            <li>FHIR REST API для зовнішніх партнерів.</li>
+            <li>Інтеграція з референс-лабораторіями (Send-Out).</li>
+            <li>Конструктор управлінських звітів та TAT аналітика.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 15: Appendix Dictionaries -->
+    <section id="sec-appendix">
+      <h2>15. Додатки: Підготовлені файли довідників, міграцій та DDL для бази MedLink</h2>
+      
+      <p>Всі DDL-структури таблиць, індекси, зовнішні ключі до <code>evomis</code> та клінічні довідники нормалізовано, структуровано та розміщено в каталозі <code>C:\__MEDLINK___\LABA\sql\</code>. Ви можете відкрити та переглянути будь-який DDL/SQL-скрипт безпосередньо у великому скрольованому модальному вікні, скопіювати запити в буфер або завантажити:</p>
+
+      <!-- Quick Action Toolbar -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+        <div style="font-weight: 700; color: #1e293b; margin-bottom: 8px; font-size: 14px;">
+          ⚡ Швидкий перегляд основних DDL скриптів та коннекторів:
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/00_master_deploy_all.sql')">
+            <span class="btn-icon">🚀</span> 00_master_deploy_all.sql <span class="doc-file-badge">All-in-One</span>
+          </button>
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/01_lis_schema_core.sql')">
+            <span class="btn-icon">🏛️</span> 01_lis_schema_core.sql <span class="doc-file-badge">28 Таблиць</span>
+          </button>
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/02_lis_schema_microbiology_eucast.sql')">
+            <span class="btn-icon">🧫</span> 02_lis_schema_microbiology_eucast.sql <span class="doc-file-badge">EUCAST</span>
+          </button>
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/03_evomis_integration_views_and_fk.sql')">
+            <span class="btn-icon">🔗</span> 03_evomis_integration_views_and_fk.sql <span class="doc-file-badge">evomis FK</span>
+          </button>
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('MedLink.LabConnector/Core/AstmDriver.cs')">
+            <span class="btn-icon">⚙️</span> AstmDriver.cs <span class="doc-file-badge">.NET 8</span>
+          </button>
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('MedLink.LabConnector/Core/Hl7V2Driver.cs')">
+            <span class="btn-icon">⚙️</span> Hl7V2Driver.cs <span class="doc-file-badge">HL7 v2</span>
+          </button>
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('test_examples/01_astm_query_sysmex.txt')">
+            <span class="btn-icon">📡</span> ASTM Query Sysmex <span class="doc-file-badge">E1394</span>
+          </button>
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('test_examples/07_fhir_diagnostic_report_bundle.json')">
+            <span class="btn-icon">🌐</span> FHIR DiagnosticReport <span class="doc-file-badge">JSON</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Файл додатку / Скрипт</th>
+              <th>Формат</th>
+              <th>К-сть записів / Розмір</th>
+              <th>Опис вмісту та зв'язків</th>
+              <th>Цільовий об'єкт / Таблиця</th>
+              <th>Дія</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background: #f0fdf4;">
+              <td><strong><code>00_master_deploy_all.sql</code></strong></td>
+              <td><span class="doc-file-badge" style="background:#16a34a;">SQL Master</span></td>
+              <td>1.3 КБ (9 кроків)</td>
+              <td>Мастер-скрипт розгортання всієї ЛІС в єдиній стійкій транзакції psql.</td>
+              <td>Вся схема MedLink LIS</td>
+              <td>
+                <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/00_master_deploy_all.sql')">👁 Переглянути у попапі</button>
+              </td>
+            </tr>
+            <tr>
+              <td><strong><code>01_lis_schema_core.sql</code></strong></td>
+              <td><span class="doc-file-badge">PostgreSQL DDL</span></td>
+              <td>17.7 КБ / 380 рядків</td>
+              <td>Повний DDL: 28 базових таблиць (замовлення, штрихкоди, результати, валідація, ВКЯ Вестгард, біобанк, склад, логістика).</td>
+              <td><code>lab_orders</code>, <code>lab_order_samples</code>, <code>lab_test_results</code> та ін.</td>
+              <td>
+                <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/01_lis_schema_core.sql')">👁 Переглянути у попапі</button>
+              </td>
+            </tr>
+            <tr>
+              <td><strong><code>02_lis_schema_microbiology_eucast.sql</code></strong></td>
+              <td><span class="doc-file-badge">PostgreSQL DDL</span></td>
+              <td>5.6 КБ / 120 рядків</td>
+              <td>DDL мікробіології: посіви, виділені ізоляти, діаметри зон затримки росту, МІК, чутливість EUCAST (S/I/R).</td>
+              <td><code>lab_micro_organisms</code>, <code>lab_eucast_breakpoints</code></td>
+              <td>
+                <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/02_lis_schema_microbiology_eucast.sql')">👁 Переглянути у попапі</button>
+              </td>
+            </tr>
+            <tr>
+              <td><strong><code>03_evomis_integration_views_and_fk.sql</code></strong></td>
+              <td><span class="doc-file-badge">Views & FK</span></td>
+              <td>5.2 КБ / 110 рядків</td>
+              <td>Зовнішні ключі до <code>mis_patient_card</code>, <code>org_employee</code>, <code>org_department</code>, <code>ehe_incoming_medical_referral</code> та аналітичні View.</td>
+              <td><code>v_patient_laboratory_history</code>, <code>v_lab_turnaround_time_analytics</code></td>
+              <td>
+                <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/03_evomis_integration_views_and_fk.sql')">👁 Переглянути у попапі</button>
+              </td>
+            </tr>
+            <tr>
+              <td><code>04_seed_biomaterials.sql</code></td>
+              <td><span class="doc-file-badge" style="background:#475569;">Seed SQL</span></td>
+              <td>18 записів</td>
+              <td>Види біоматеріалів (венозна/капілярна кров, сироватка, сеча, ліквор, біоптати) з міграції Delphi.</td>
+              <td><code>lab_biomaterial_types</code></td>
+              <td>
+                <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/04_seed_biomaterials.sql')">👁 Переглянути у попапі</button>
+              </td>
+            </tr>
+            <tr>
+              <td><code>05_seed_tube_types.sql</code></td>
+              <td><span class="doc-file-badge" style="background:#475569;">Seed SQL</span></td>
+              <td>12 записів</td>
+              <td>Типи вакуумних пробірок, кольори кришок (HEX), об'єми, порядок забору CLSI (Order of Draw).</td>
+              <td><code>lab_tube_types</code></td>
+              <td>
+                <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/05_seed_tube_types.sql')">👁 Переглянути у попапі</button>
+              </td>
+            </tr>
+            <tr>
+              <td><code>06_seed_method_types.sql</code></td>
+              <td><span class="doc-file-badge" style="background:#475569;">Seed SQL</span></td>
+              <td>46 записів</td>
+              <td>Методики досліджень (фотометрія, ІФА, хемілюмінесценція, коагулометрія, ПЦР, проточна цитометрія).</td>
+              <td><code>lab_method_types</code></td>
+              <td>
+                <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/06_seed_method_types.sql')">👁 Переглянути у попапі</button>
+              </td>
+            </tr>
+            <tr>
+              <td><code>07_seed_analyzer_types.sql</code></td>
+              <td><span class="doc-file-badge" style="background:#475569;">Seed SQL</span></td>
+              <td>64 записи</td>
+              <td>Каталог моделей аналізаторів (Sysmex, Cobas, Mindray, Access, Maglumi, Vitros, Radiometer) з протоколами ASTM/HL7.</td>
+              <td><code>lab_analyzer_types</code></td>
+              <td>
+                <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/07_seed_analyzer_types.sql')">👁 Переглянути у попапі</button>
+              </td>
+            </tr>
+            <tr>
+              <td><code>08_seed_parameters_and_profiles.sql</code></td>
+              <td><span class="doc-file-badge" style="background:#475569;">Seed SQL</span></td>
+              <td>19.2 КБ / Пакети & Тести</td>
+              <td>Клінічні панелі (ЗАК, Біохімія, Коагулограма, Ліпідограма) з LOINC-кодами, референсами за віком/статтю та Delta-check.</td>
+              <td><code>lab_test_profiles</code>, <code>lab_test_definitions</code>, <code>lab_reference_ranges</code></td>
+              <td>
+                <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/08_seed_parameters_and_profiles.sql')">👁 Переглянути у попапі</button>
+              </td>
+            </tr>
+            <tr>
+              <td><code>09_seed_microbiology_eucast.sql</code></td>
+              <td><span class="doc-file-badge" style="background:#475569;">Seed SQL</span></td>
+              <td>9 мікроорганізмів, 13 АБ</td>
+              <td>Клінічні збудники (MRSA, E.coli, P.aeruginosa), антибіотики за класами та прикордонні значення EUCAST v14.0.</td>
+              <td><code>lab_micro_organisms</code>, <code>lab_antibiotics</code>, <code>lab_eucast_breakpoints</code></td>
+              <td>
+                <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/09_seed_microbiology_eucast.sql')">👁 Переглянути у попапі</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert-box alert-info">
+        <div>
+          <strong>🚀 Порядок застосування міграцій в базі MedLink (evomis / evomis-test):</strong><br>
+          Для виконання розгортання достатньо виконати одну команду в консолі psql або pgAdmin:<br>
+          <code style="background:#0f172a; color:#38bdf8; padding: 4px 10px; border-radius: 4px; display:inline-block; margin-top: 6px;">psql -h 192.168.255.1 -U d.tanko -d evomis-test -f C:\__MEDLINK___\LABA\sql\00_master_deploy_all.sql</code><br>
+          <span style="font-size: 12px; color: #64748b; margin-top: 4px; display: block;">Скрипт перевіряє наявність сутностей (<code>CREATE TABLE IF NOT EXISTS</code>), безпечно створює зв'язки та оновлює довідники без ризику втрати даних.</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Embedded Interactive Scripts for Simulator Widgets -->
+<script>
+// Interactive Tube & Label Visualizer
+function updateTubePreview() {
+  const type = document.getElementById("simTubeSelect").value;
+  const patient = document.getElementById("simPatientInput").value;
+  
+  const cap = document.getElementById("tubeCap");
+  const liquid = document.getElementById("tubeLiquid");
+  const vol = document.getElementById("tubeLabelVol");
+  const lblTube = document.getElementById("lblTubeType");
+  const lblTests = document.getElementById("lblTests");
+  const lblPatient = document.getElementById("lblPatient");
+
+  lblPatient.innerText = patient + " 1985 р.н.";
+
+  if (type === "EDTA") {
+    cap.style.background = "#9333ea"; // Purple
+    cap.style.borderColor = "#581c87";
+    liquid.style.background = "#991b1b"; // Blood
+    vol.innerText = "2.6 мл";
+    lblTube.innerText = "K2 EDTA 2.6ml";
+    lblTests.innerText = "ЗАК + Лейкоформула + ШОЕ";
+  } else if (type === "CITRATE") {
+    cap.style.background = "#0284c7"; // Light Blue
+    cap.style.borderColor = "#0369a1";
+    liquid.style.background = "#991b1b";
+    vol.innerText = "3.0 мл";
+    lblTube.innerText = "Na-Citrate 3.2% 3.0ml";
+    lblTests.innerText = "Коагулограма (МНВ, АЧТЧ, Фібриноген)";
+  } else if (type === "GEL") {
+    cap.style.background = "#eab308"; // Gold/Yellow
+    cap.style.borderColor = "#ca8a04";
+    liquid.style.background = "#991b1b";
+    vol.innerText = "5.0 мл";
+    lblTube.innerText = "Serum Gel 5.0ml";
+    lblTests.innerText = "Біохімія розширена + Тиреоїдна панель";
+  } else if (type === "HEPARIN") {
+    cap.style.background = "#16a34a"; // Green
+    cap.style.borderColor = "#15803d";
+    liquid.style.background = "#991b1b";
+    vol.innerText = "4.0 мл";
+    lblTube.innerText = "Li-Heparin 4.0ml";
+    lblTests.innerText = "Гази крові & Електроліти";
+  } else if (type === "URINE") {
+    cap.style.background = "#f59e0b";
+    cap.style.borderColor = "#d97706";
+    liquid.style.background = "#fef08a"; // Yellow urine
+    vol.innerText = "60 мл";
+    lblTube.innerText = "Контейнер сечі 60ml";
+    lblTests.innerText = "Загальний аналіз сечі (ЗАС)";
+  }
+}
+
+function simulateZplPrint() {
+  alert("Команда ZPL успішно надіслана на термопринтер Zebra ZD420 (RAW TCP 9100)!
+Етикетка надрукована за 0.4 сек.");
+}
+
+function copyZplCode() {
+  const zpl = `^XA
+^PW400
+^LL240
+^PON
+^FO20,15^A0N,20,20^FDMedLink LIS^FS
+^FO200,15^A0N,18,18^FD06.10.2026 15:45^FS
+^FO20,38^GB360,1,2^FS
+^FO20,45^A0N,22,22^FDКоваленко О.С. 1985^FS
+^FO20,70^A0N,18,18^FDЗАК + Лейкоформула^FS
+^FO40,95^BY2,2.5,45^BCN,45,Y,N,N^FD1026004819^FS
+^FO20,195^A0N,18,18^FDK2 EDTA 2.6ml^FS
+^FO260,195^A0N,18,18^FDПункт N1^FS
+^XZ`;
+  navigator.clipboard.writeText(zpl).then(() => {
+    alert("Код ZPL скопійовано в буфер обміну!");
+  });
+}
+
+function toggleAutoFilter(status) {
+  const rows = document.querySelectorAll("#simQueueTable tbody tr");
+  rows.forEach(r => {
+    if (status === "ALL") {
+      r.style.display = "";
+    } else if (status === "PANIC") {
+      r.style.display = r.innerText.includes("PANIC") ? "" : "none";
+    } else if (status === "IN_PROGRESS") {
+      r.style.display = r.innerText.includes("В роботі") || r.innerText.includes("ВИЩЕ") ? "" : "none";
+    }
+  });
+}
+
+// Smooth scroll for nav links
+document.querySelectorAll(".nav-link").forEach(link => {
+  link.addEventListener("click", e => {
+    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+    link.classList.add("active");
+  });
+});
+</script>
+
+  <script src="file_viewer_modal.js"></script>
+</body>
+</html>

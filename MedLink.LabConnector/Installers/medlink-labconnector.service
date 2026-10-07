@@ -1,0 +1,26 @@
+[Unit]
+Description=MedLink LIS Analyzer Driver Connector Daemon
+Documentation=https://medlink.ua/docs/lis/connector
+After=network.target
+
+[Service]
+Type=notify
+WorkingDirectory=/opt/medlink/labconnector
+ExecStart=/opt/medlink/labconnector/MedLink.LabConnector
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=medlink-labconnector
+User=medlink
+Group=medlink
+Environment=DOTNET_ENVIRONMENT=Production
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+
+# Security hardening
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

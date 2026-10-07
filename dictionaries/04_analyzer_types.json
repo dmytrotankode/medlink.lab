@@ -1,0 +1,601 @@
+[
+  {
+    "id": 1,
+    "code": "SYSMEX XS-1000I",
+    "name": "Sysmex XS-1000i",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 2,
+    "code": "СOBAS 411",
+    "name": "Сobas 111",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 3,
+    "code": "VITROS",
+    "name": "Vitros",
+    "note": "Vitros 5600,4600,3600,XT7600,XT3400",
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 4,
+    "code": "VITROS EVIQ",
+    "name": "Vitros EViQ",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 5,
+    "code": "AUTOVUE INOVA",
+    "name": "AutoVue Inova",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 6,
+    "code": "URISYS",
+    "name": "Urisys 1100",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 7,
+    "code": "STAGO START",
+    "name": "Stago start",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 8,
+    "code": "REFLOTRON",
+    "name": "Reflotron",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 9,
+    "code": "BIOKSEL",
+    "name": "Bioksel",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 10,
+    "code": "TOSO",
+    "name": "TOSO",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 11,
+    "code": "COBAS311",
+    "name": "COBAS 311",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 12,
+    "code": "COBAS411",
+    "name": "COBAS 411",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 13,
+    "code": "SYSMEX2000",
+    "name": "SYSMEX2000",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 14,
+    "code": "COBAS111",
+    "name": "COBAS 111",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 15,
+    "code": "INTEGRA",
+    "name": "INTEGRA",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 16,
+    "code": "GEM4000",
+    "name": "GEM 4000",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 17,
+    "code": "SYSMEXSUIT",
+    "name": "SYSMEXSUIT",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 18,
+    "code": "SYSMEX2500",
+    "name": "SYSMEX2500",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 19,
+    "code": "SYSMEXCA600",
+    "name": "SYSMEXCA600",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 20,
+    "code": "CLINTEC",
+    "name": "CLINTEC",
+    "note": null,
+    "config": {
+      "eop": "DQ==",
+      "exch_type": "TEXT"
+    }
+  },
+  {
+    "id": 21,
+    "code": "PENTRA",
+    "name": "PENTRA",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 22,
+    "code": "ABL80",
+    "name": "RADIOMETER ABL80",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 23,
+    "code": "AQT90",
+    "name": "RADIOMETER AQT90",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 24,
+    "code": "SIEMENS",
+    "name": "SIEMENS VANTAGE",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 25,
+    "code": "BIOSYSTEMA15",
+    "name": "BIOSYSTEM A15",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 26,
+    "code": "NIHON9100",
+    "name": "Nihon 9100",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 27,
+    "code": "HUMACOUNT5D",
+    "name": "Huma Count 5D",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 28,
+    "code": "HUMACOUNT5L",
+    "name": "Huma Count 5L",
+    "note": null,
+    "config": {
+      "bop": "AQ==",
+      "eop": "BA==",
+      "exch_type": "HUMA5L",
+      "full_text": 1,
+      "control_sum": 1
+    }
+  },
+  {
+    "id": 29,
+    "code": "MAGLUMI",
+    "name": "MAGLUMI",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 30,
+    "code": "HUMASTAR",
+    "name": "Huma Star",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 31,
+    "code": "PRESTIGE",
+    "name": "PRESTIGE",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 32,
+    "code": "SYSMEXXN",
+    "name": "SYSMEXXN",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM_ASK"
+    }
+  },
+  {
+    "id": 33,
+    "code": "MINDRAY",
+    "name": "MINDRAY",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 34,
+    "code": "ACCESS",
+    "name": "ACCESS",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 36,
+    "code": "BECKMAN",
+    "name": "BECKMAN",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 37,
+    "code": "MINDRAYBS30",
+    "name": "MINDRAYBS30",
+    "note": null,
+    "config": {
+      "exch_type": "HL7"
+    }
+  },
+  {
+    "id": 38,
+    "code": "MINDRAY240",
+    "name": "MINDRAY240",
+    "note": null,
+    "config": {
+      "exch_type": "HL7"
+    }
+  },
+  {
+    "id": 39,
+    "code": "MINDRAY3100",
+    "name": "MINDRAY3100",
+    "note": null,
+    "config": {
+      "exch_type": "HL7"
+    }
+  },
+  {
+    "id": 40,
+    "code": "VITROS5600",
+    "name": "VITROS5600",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 41,
+    "code": "ACLTOP300",
+    "name": "ACLTOP300",
+    "note": null,
+    "config": {
+      "sleep": 500,
+      "exch_type": "ASTM",
+      "control_sum": 1
+    }
+  },
+  {
+    "id": 42,
+    "code": "URILYZER100PRO",
+    "name": "URILYZER100PRO",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 43,
+    "code": "BECKMANCOULTER500",
+    "name": "BECKMANCOULTER500",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 44,
+    "code": "WONDFOFINECARE",
+    "name": "WONDFOFINECARE",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 45,
+    "code": "CYAN",
+    "name": "CYAN",
+    "note": null,
+    "config": {
+      "exch_type": "CYAN"
+    }
+  },
+  {
+    "id": 46,
+    "code": "UWAM",
+    "name": "UWAM",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 47,
+    "code": "BIOSYSTEMS",
+    "name": "BIOSYSTEMS",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 48,
+    "code": "JUNIOR",
+    "name": "JUNIOR",
+    "note": null,
+    "config": {
+      "exch_type": "JUNIOR"
+    }
+  },
+  {
+    "id": 49,
+    "code": "ACCESS2",
+    "name": "ACCESS2",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 50,
+    "code": "UC1000",
+    "name": "UC-1000",
+    "note": null,
+    "config": {
+      "bop": "Ag==",
+      "eop": "Aw==",
+      "exch_type": "UC1000"
+    }
+  },
+  {
+    "id": 51,
+    "code": "ABL9",
+    "name": "RADIOMETER ABL9",
+    "note": null,
+    "config": {
+      "bop": "AQ==",
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 52,
+    "code": "ICHROMA3",
+    "name": "iChroma III",
+    "note": null,
+    "config": {
+      "bop": "Cw==",
+      "eop": "HA==",
+      "exch_type": "HL7"
+    }
+  },
+  {
+    "id": 53,
+    "code": "IRISIQ200",
+    "name": "IRIS IQ 200",
+    "note": null,
+    "config": {
+      "exch_type": "IRIS"
+    }
+  },
+  {
+    "id": 54,
+    "code": "MEK7300",
+    "name": "MEK-7300",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 55,
+    "code": "APOTI",
+    "name": "APOTI",
+    "note": null,
+    "config": {
+      "eop": "DQ==",
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 56,
+    "code": "RAPID",
+    "name": "RAPID",
+    "note": null,
+    "config": {
+      "bop": "Ag==",
+      "eop": "BA==",
+      "exch_type": "RAPID"
+    }
+  },
+  {
+    "id": 57,
+    "code": "EASYRA",
+    "name": "EASYRA",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 58,
+    "code": "FUJI",
+    "name": "FUJI",
+    "note": null,
+    "config": {
+      "bop": "Ag==",
+      "eop": "Aw==",
+      "exch_type": "FUJI"
+    }
+  },
+  {
+    "id": 59,
+    "code": "IFLASH",
+    "name": "iFlash",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 60,
+    "code": "BA200",
+    "name": "BA200",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 61,
+    "code": "DIRUI_H100",
+    "name": "DIRUI H100",
+    "note": null,
+    "config": {
+      "bop": "Ag==",
+      "eop": "Aw==",
+      "exch_type": "TXT"
+    }
+  },
+  {
+    "id": 62,
+    "code": "Phadia 250",
+    "name": "Phadia 250",
+    "note": null,
+    "config": {
+      "bop": "Ag==",
+      "eop": "Aw==",
+      "exch_type": "TXT"
+    }
+  },
+  {
+    "id": 63,
+    "code": "ELYTEPLUS",
+    "name": "ELYTEPLUS",
+    "note": null,
+    "config": {
+      "bop": "U2FtcGxlIFJlcG9ydA==",
+      "eop": "RW5k",
+      "exch_type": "TXT"
+    }
+  },
+  {
+    "id": 64,
+    "code": "ERBA",
+    "name": "ERBA",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  },
+  {
+    "id": 65,
+    "code": "TOUCHPRO",
+    "name": "TOUCHPRO",
+    "note": null,
+    "config": {
+      "exch_type": "ASTM"
+    }
+  }
+]

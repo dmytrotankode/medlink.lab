@@ -1,0 +1,146 @@
+[
+  {
+    "id": 1,
+    "code": "BM_01",
+    "name": "Цільна кров (капілярна)",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 2,
+    "code": "BM_02",
+    "name": "Кал",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 3,
+    "code": "BM_03",
+    "name": "Сироватка, гепаринизована плазма",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 4,
+    "code": "BM_04",
+    "name": "Сироватка",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 5,
+    "code": "BM_05",
+    "name": "Плазма",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 6,
+    "code": "BM_06",
+    "name": "Плевральна рідина",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 7,
+    "code": "BM_07",
+    "name": "Сеча",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 8,
+    "code": "BM_08",
+    "name": "Частинки органів",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 9,
+    "code": "BM_09",
+    "name": "Дренажна рідина",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 10,
+    "code": "BM_10",
+    "name": "Ліквор",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 11,
+    "code": "BM_11",
+    "name": "Харкотіння",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 12,
+    "code": "BM_12",
+    "name": "Біологічна речовина",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 13,
+    "code": "BM_13",
+    "name": "Випотні рідини",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 14,
+    "code": "BM_14",
+    "name": "Грудне молоко",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 15,
+    "code": "BM_15",
+    "name": "Цільна кров венозна або капілярна",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 16,
+    "code": "BM_16",
+    "name": "Гепаринизована плазма",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 17,
+    "code": "BM_17",
+    "name": "Перикардиальна рідина",
+    "config": {
+      "curr_numb": 0
+    }
+  },
+  {
+    "id": 18,
+    "code": "BM_18",
+    "name": "Цільна кров (венозна)",
+    "config": {
+      "curr_numb": 0
+    }
+  }
+]

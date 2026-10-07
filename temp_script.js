@@ -1,0 +1,912 @@
+
+    if (window.Quasar && window.Quasar.lang && window.Quasar.lang.uk) {
+      Quasar.lang.set(Quasar.lang.uk);
+    }
+
+    new Vue({
+      el: '#q-app',
+      data: {
+
+        selectedQcParam: 'WBC',
+        selectedLjPointIndex: 17, // default to violation point (Day 18)
+        activeLjPoint: {
+          day: 18,
+          date: '2026-10-06',
+          time: '07:45',
+          val: 8.28,
+          zScore: 3.60,
+          status: 'VIOLATION_1_3S',
+          ruleLabel: 'ПОРУШЕНО 1-3s (LOCK)',
+          operator: 'Коваленко О.В.'
+        },
+        selectedBiobankCell: {
+          coord: 'C-05',
+          barcode: '1026004812',
+          patient: 'Мельник Юрій Володимирович',
+          biomaterial: 'Сироватка венозної крові (Аліквота №1)',
+          volume: '1.5 мл',
+          frozenAt: '2026-10-06 09:15',
+          expiresAt: '2027-04-06',
+          defrostCount: 0,
+          status: 'АКТИВНИЙ ЗРАЗОК'
+        },
+        eucastAntibiotics: [
+          { name: 'Амоксицилін / Клавуланат', dose: '20/10 мкг', zone: 14, percent: 35, category: 'R', rCutoff: 16, sCutoff: 19 },
+          { name: 'Ципрофлоксацин', dose: '5 мкг', zone: 26, percent: 65, category: 'S', rCutoff: 22, sCutoff: 25 },
+          { name: 'Меропенем', dose: '10 мкг', zone: 31, percent: 78, category: 'S', rCutoff: 22, sCutoff: 28 },
+          { name: 'Цефтріаксон', dose: '30 мкг', zone: 19, percent: 48, category: 'I', rCutoff: 17, sCutoff: 20 },
+          { name: 'Гентаміцин', dose: '10 мкг', zone: 21, percent: 53, category: 'S', rCutoff: 15, sCutoff: 18 }
+        ],
+
+
+        apiPipelineStep: 4,
+        showIntegrationNotes: true,
+        pipelineDbState: {
+          barcode: '1026004812',
+          patient: 'Мельник Юрій Володимирович',
+          status: 'ANALYZING',
+          lastEndpoint: 'GET /api/laboratory/pipeline/state'
+        },
+
+
+        showGuide: true,
+        guides: {
+        "workstation": {
+                "title": "Аналітичний етап: Робочий стіл лаборанта (Журнал досліджень)",
+                "what": "Автоматичний прийом даних з підключених аналізаторів через шлюз .NET 8 (ASTM E1381/E1394, HL7). Перевірка результатів за референсними діапазонами пацієнта, перевірка Delta-check (зрушення > 40%) та пакетна авто-валідація нормальних результатів.",
+                "why": "Скорочує час обробки досліджень (TAT) на 75%, виключає людський фактор ручного переписування цифр з приладу в комп'ютер, миттєво підсвічує приховані небезпечні зрушення показників пацієнта.",
+                "where": "БД PostgreSQL: <code>lab_orders</code>, <code>lab_order_samples</code>, <code>lab_test_results</code>. Прилади: порти TCP/COM через фоновий демон <code>MedLink.LabConnector</code>."
+        },
+        "phlebotomy": {
+                "title": "Преаналітичний етап: Пункт забору біоматеріалу (Кабінет медсестри)",
+                "what": "Ідентифікація пацієнта за електронним направленням, перевірка правил підготовки (натще, медикаменти), відбір біоматеріалу в пробірки згідно з міжнародним порядком (CLSI Order of Draw), миттєвий друк термоштрихкодів Code128 та наклеювання на пробірку.",
+                "why": "До 70% усіх лабораторних помилок стаються на преаналітичному етапі! Чітке дотримання кольору пробірки, типу антикоагулянту та стандарту маркування гарантує збереження зразка та точність аналізу.",
+                "where": "БД: <code>mis_patient_card</code> (ЕМК пацієнта), <code>ehe_incoming_medical_referral</code> (е-направлення ЕСОЗ), <code>lab_orders</code>, <code>lab_order_samples</code>, довідник <code>lab_tube_types</code>."
+        },
+        "logistics": {
+                "title": "Преаналітичний етап: Логістика зразків та Холодовий ланцюг",
+                "what": "Формування кур'єрських маніфестів / актів передачі зразків між віддаленими пунктами забору та центральною лабораторією. Фіксація температури відправки (+2..+8°C) та вхідний контроль бракеражу (гемоліз, хілоз, згусток, недостатній об'єм).",
+                "why": "Порушення холодового ланцюга призводить до руйнування еритроцитів (гемолізу) та спотворення ферментів. Система гарантує безперервний аудит умов транспортування згідно з ДСТУ EN ISO 15189.",
+                "where": "БД: <code>lab_sample_logistics</code>, <code>lab_sample_logistics_items</code>, зв'язок пунктів <code>org_department</code> (пункт відправки → центральна лабораторія)."
+        },
+        "validation": {
+                "title": "Постаналітичний етап: Валідація результатів, CITO & Паніка",
+                "what": "Клінічна верифікація патологічних та сумнівних результатів лікарем-лаборантом. Обов'язкова фіксація телефонного сповіщення лікаря стаціонару при критичних значеннях (глюкоза > 25, калій > 6.5, гемоглобін < 70). Підписання фінального діагностичного звіту КЕП лікаря.",
+                "why": "Захист життя пацієнта: негайне інформування реанімації або стаціонару про критичний стан. Юридична значущість та погашення електронного направлення в центральній базі eHealth (DiagnosticReport).",
+                "where": "БД: <code>lab_test_results</code>, <code>lab_orders</code>, <code>org_employee</code> (КЕП сертифікат лікаря), інтеграція з eHealth API."
+        },
+        "qc": {
+                "title": "Контроль якості (ВКЯ): Карти Леві-Дженнінгса та правила Вестгарда",
+                "what": "Щоденний моніторинг стабільності вимірювальних систем лабораторії за трьома рівнями контрольних матеріалів (Low/Normal/High). Побудова карт Леві-Дженнінгса, перевірка статистичних правил Вестгарда (1-3s, 2-2s, R-4s, 4-1s, 10-x) та автоматичне блокування видачі тестів (Lockout) при збої.",
+                "why": "Фундамент клінічної довіри та обов'язкова вимога акредитації ISO 15189. Запобігає видачі недостовірних результатів пацієнтам через збій реактивів або дрейф оптичної системи аналізатора.",
+                "where": "БД: <code>lab_qc_materials</code>, <code>lab_qc_targets</code>, <code>lab_qc_results</code>. Аналізатори: щоденні контрольні сироватки."
+        },
+        "patient": {
+                "title": "Кабінет пацієнта: Моніторинг, Тренди та Офіційні бланки",
+                "what": "Особистий кабінет пацієнта з безпечним доступом до всієї історії досліджень. Відображення динаміки показників на графіках (зелена зона норми), статус готовності аналізу в реальному часі та завантаження офіційного бланка PDF з печаткою, КЕП та QR-кодом.",
+                "why": "Зручність для пацієнта, ліквідація черг на повторні візити за паперовими бланками, наочне відстеження ефективності лікування хронічних захворювань (діабет, ліпідний профіль).",
+                "where": "БД: <code>v_patient_laboratory_history</code>, <code>lab_orders</code>, <code>mis_patient_card</code>, генератор PDF з цифровим підписом."
+        },
+        "biobank": {
+                "title": "Біобанк та Архів: Фізичне зберігання зразків у кріобоксах",
+                "what": "Візуальне розміщення пробірок у сітці кріобоксів (8x12), прив'язка до приміщення, морозильної камери (-20°C / -80°C), полиці та штатива. Автоматичний контроль терміну зберігання (3-30 днів) та протоколювання утилізації біологічних відходів.",
+                "why": "Можливість повторного або додаткового дослідження (Reflex/Add-on) без повторного виклику пацієнта на забір крові; аудит зразків згідно з санітарними нормами.",
+                "where": "БД: <code>lab_sample_archive_racks</code>, <code>lab_sample_archive_cells</code>, зв'язок зі зразком <code>lab_order_samples</code>."
+        },
+        "reagents": {
+                "title": "Склад реактивів, калібраторів та контрольних матеріалів",
+                "what": "Партійний облік картриджів, реагентів та розчинів для кожного аналізатора. Відстеження кількості тестів, термінів придатності, стабільності після відкриття та авто-блокування прострочених лотів.",
+                "why": "Запобігає зупинці лабораторії через раптову нестачу реактивів та виключає виконання аналізів на прострочених картриджах.",
+                "where": "БД: <code>lab_reagent_lots</code>, прив'язка до аналізаторів <code>lab_analyzers</code> та тестів <code>lab_test_definitions</code>."
+        },
+        "microbiology": {
+                "title": "Мікробіологія & EUCAST: Посіви, Збудники та Антибіотикограми",
+                "what": "Реєстрація посівів, фіксація росту (КУО/мл), ідентифікація мікроорганізмів (E.coli, S.aureus, Klebsiella) та визначення чутливості за європейськими стандартами EUCAST v14.0 (S/I/R, діаметр зони, МІК).",
+                "why": "Раціональна антибіотикотерапія та боротьба з внутрішньолікарняною резистентністю. Вимоги інфекційного контролю МОЗ України.",
+                "where": "БД: <code>lab_micro_organisms</code>, <code>lab_antibiotics</code>, <code>lab_eucast_breakpoints</code>, <code>lab_culture_orders</code>, <code>lab_antibiotic_susceptibility_results</code>."
+        },
+        "tat": {
+                "title": "Аналітика лабораторії & Turnaround Time (TAT)",
+                "what": "Моніторинг тривалості кожного етапу: від призначення лікарем → забору медсестрою → кур'єрської доставки → аналізу на приладі → до підпису КЕП лікарем. Виявлення вузьких місць та затримок.",
+                "why": "Дотримання регламентів лікування (особливо для CITO-ургентних тестів, де ліміт TAT < 60 хвилин) та оптимізація завантаження персоналу і приладів.",
+                "where": "БД: View <code>v_lab_turnaround_time_analytics</code>, розрахунок різниці таймстемпів <code>order_datetime</code>, <code>collected_at</code>, <code>received_at</code>, <code>verified_at</code>."
+        },
+        "analyzers": {
+                "title": "Шлюз аналізаторів: Драйвери .NET 8 (ASTM E1381/E1394, HL7)",
+                "what": "Моніторинг портів підключення медичного обладнання (RS-232, TCP Socket, File Drop). Статус обміну в реальному часі, лічильники отриманих/відправлених пакетів, журнал сирих повідомлень ASTM/HL7 та локальний SQLite-буфер.",
+                "why": "Ключова технологічна ланка автоматизації: прилади самостійно запитують завдання за штрихкодом пробірки та передають готові вимірювання в ЛІС без втручання людини.",
+                "where": "Системний сервіс <code>MedLink.LabConnector</code>, конфігурація <code>appsettings.json</code>, таблиця <code>lab_analyzers</code>."
+        },
+        "norms": {
+                "title": "Налаштування референсних норм, методик та правил Delta-check",
+                "what": "Конструктор багатомірних норм: діапазони за віком (від 0 днів до 120 років), статтю, вагітністю, фазою циклу; визначення рівнів уваги (Alert) та паніки (Panic), лімітів відхилення Delta-check (%) за 72 години.",
+                "why": "Клінічна достовірність інтерпретації: у новонароджених, вагітних та дорослих норми багатьох показників (гемоглобін, білірубін, лужна фосфатаза) кардинально відрізняються.",
+                "where": "БД: <code>lab_reference_ranges</code>, <code>lab_test_definitions</code>, <code>lab_method_types</code>."
+        },
+        "dict_biomaterials": {
+                "title": "Довідник біоматеріалів (18 видів з міграції Delphi)",
+                "what": "Класифікація біологічних рідин та тканин: венозна кров, капілярна кров, сироватка, сеча, ліквор, харкотиння, біоптати тощо.",
+                "why": "Коректний вибір біоматеріалу визначає тип контейнера, умови зберігання та методику дослідження.",
+                "where": "БД: <code>lab_biomaterial_types</code> (міграція з MySQL hospital_etalon)."
+        },
+        "dict_tubes": {
+                "title": "Довідник типів вакуумних пробірок та контейнерів",
+                "what": "Каталог вакутейнерів: колір кришки (фіолетовий EDTA, блакитний цитрат, червоний/жовтий гель, зелений гепарин), об'єм, порядок забору CLSI Order of Draw.",
+                "why": "Захист від перехресного забруднення наповнювачами пробірок під час венопункції.",
+                "where": "БД: <code>lab_tube_types</code>."
+        },
+        "dict_analyzers": {
+                "title": "Довідник моделей аналізаторів та протоколів зв'язку",
+                "what": "64 моделі лабораторних приладів: Sysmex, Cobas, Mindray, Access, Maglumi, Vitros із налаштуванням протоколів (ASTM, HL7, ASCII).",
+                "why": "Автоматичний підбір драйвера зв'язку в шлюзі <code>MedLink.LabConnector</code>.",
+                "where": "БД: <code>lab_analyzer_types</code>."
+        },
+        "dict_parameters": {
+                "title": "Довідник лабораторних показників, профілів та LOINC",
+                "what": "Номенклатура досліджень, профілі (ЗАК, біохімія, коагулограма), зв'язок з міжнародними кодами LOINC, одиниці вимірювання, формули розрахункових тестів.",
+                "why": "Стандартизація медичних даних для сумісності з eHealth ЕСОЗ та іншими медичними системами.",
+                "where": "БД: <code>lab_test_definitions</code>, <code>lab_test_profiles</code>, <code>lab_test_profile_items</code>."
+        }
+},
+        barcodeDialog: false,
+        activeSample: {
+          patientName: 'Мельник Юрій Володимирович',
+          patientId: 'PT-10482',
+          birthYear: '1982',
+          orderDate: '06.10.2026',
+          barcode: '1026004812',
+          tubeType: 'K2 EDTA (Фіолетова)',
+          testsList: 'ЗАК + Лейкоцитарна формула + ШОЕ'
+        },
+        pdfDialog: false,
+        activeReport: {
+          orderNumber: 'ORD-2026-10-0924',
+          patientName: 'Коваленко Олена Сергіївна',
+          gender: 'Жіноча',
+          age: 41,
+          doctor: 'Д-р Іванов П.М.',
+          department: 'Терапевтичне відділення №1',
+          collectedAt: '06.10.2026 08:30',
+          completedAt: '06.10.2026 11:15',
+          eHealthId: '01HJ89A5K2P89Z1TR0041',
+          profileName: 'Печінкові проби + Біохімічний профіль',
+          items: [
+            { testName: 'Аланінамінотрансфераза (АЛТ)', value: '68.5', unit: 'U/L', norm: '0 - 41', flag: 'ВИСОКИЙ', method: 'Кінетичний IFCC / Mindray BS-240', isAbnormal: true },
+            { testName: 'Аспартатамінотрансфераза (АСТ)', value: '42.1', unit: 'U/L', norm: '0 - 38', flag: 'ВИСОКИЙ', method: 'Кінетичний IFCC / Mindray BS-240', isAbnormal: true },
+            { testName: 'Білірубін загальний', value: '14.2', unit: 'мкмоль/л', norm: '3.4 - 20.5', flag: null, method: 'Колориметричний / Mindray BS-240', isAbnormal: false },
+            { testName: 'Глюкоза сироватки', value: '5.1', unit: 'ммоль/л', norm: '4.1 - 5.9', flag: null, method: 'Гексокіназний / Cobas e411', isAbnormal: false },
+            { testName: 'Креатинін сироватки', value: '84.0', unit: 'мкмоль/л', norm: '62 - 115', flag: null, method: 'Яффе кінетичний / Mindray BS-240', isAbnormal: false }
+          ]
+        },
+        panicDialog: false,
+        panicRecord: {
+          patient: 'Мельник Ю.В.',
+          test: 'Глюкоза сироватки',
+          value: '26.4',
+          unit: 'ммоль/л',
+          norm: '4.1 - 5.9'
+        },
+        panicForm: {
+          doctorNotified: 'Д-р Сидоренко А.В. (Кардіологія)',
+          phone: '+38 (067) 123-45-67',
+          comment: 'Прийнято до відома, терміново призначено інсулін короткої дії'
+        },
+        qcLockoutDialog: false,
+        qcActionType: 'Промивка гідравлічної системи та повторний контроль',
+        qcActionComment: 'Виконано Cycle Clean розчином Cellclean, повторний прогін контролю: значення в межах ±1.1 SD.',
+
+        leftDrawerOpen: true,
+        currentView: 'workstation',
+        currentViewTitle: 'Робочий стіл лаборанта',
+        defaultPagination: { rowsPerPage: 10 },
+        
+        // Dialog visibility
+        showBarcodeDialog: false,
+        showCollectDialog: false,
+        showCallDialog: false,
+        showEditResultDialog: false,
+        showLogDialog: false,
+        showQcUnlockDialog: false,
+        showRejectionDialog: false,
+
+        activeOrder: null,
+        editingRow: null,
+        patientStep: 4,
+        qcCorrectiveAction: 'Промито оптичну кювету Cellclean, виконано заміну ділюента, контрольний замір L2 = 7.21 (OK).',
+
+        collectCheck: { fasting: true, idVerified: true, orderOfDraw: true, mixing: true },
+        callLog: {
+          doctor: 'Савченко І.О. (Черговий реаніматолог)',
+          department: 'ВРІТ',
+          phone: 'вн. 214',
+          readback: 'Значення 26.4 ммоль/л підтверджено голосом'
+        },
+
+        // Filters
+        worklistSearch: '',
+        worklistAnalyzerFilter: 'Всі прилади',
+        worklistFlagFilter: 'Всі результати',
+
+        // Mock Datasets
+        ordersList: [
+          {
+            id: "ord-2026-004819",
+            orderNumber: "1026-004819",
+            patientName: "Коваленко О.С.",
+            patientAge: 41,
+            patientGender: "M",
+            department: "Поліклініка №1",
+            createdAt: "2026-10-06 08:30",
+            priority: "ROUTINE",
+            status: "IN_PROGRESS",
+            ehealthReferralCode: "5491-8821-9012"
+          },
+          {
+            id: "ord-2026-004812",
+            orderNumber: "1026-004812",
+            patientName: "Мельник Ю.В.",
+            patientAge: 48,
+            patientGender: "M",
+            department: "ВРІТ",
+            createdAt: "2026-10-06 09:10",
+            priority: "CITO",
+            status: "PANIC_ALERT",
+            ehealthReferralCode: "7721-3310-4491"
+          },
+          {
+            id: "ord-2026-004825",
+            orderNumber: "1026-004825",
+            patientName: "Василенко О.П.",
+            patientAge: 34,
+            patientGender: "F",
+            department: "Жіноча конс.",
+            createdAt: "2026-10-04 11:20",
+            priority: "ROUTINE",
+            status: "VERIFIED",
+            ehealthReferralCode: "8821-4401-1192"
+          }
+        ],
+
+        samplesList: [
+          { barcode: "1026004818", orderId: "ord-2026-004819", biomaterial: "Венозна кров (плазма)", tubeType: "Цитрат натрію 3.2%", capColor: "#0284c7", capName: "Блакитна", volume: "3.0 мл", orderOfDraw: 1, status: "COLLECTED" },
+          { barcode: "1026004819", orderId: "ord-2026-004819", biomaterial: "Сироватка крові", tubeType: "Активатор згортання / Гель", capColor: "#ca8a04", capName: "Жовта", volume: "5.0 мл", orderOfDraw: 2, status: "IN_LAB" },
+          { barcode: "1026004820", orderId: "ord-2026-004819", biomaterial: "Цільна венозна кров", tubeType: "K2/K3 ЕДТА", capColor: "#9333ea", capName: "Фіолетова", volume: "2.6 мл", orderOfDraw: 3, status: "COLLECTED" }
+        ],
+
+        worklist: [
+          { id: "res-101", barcode: "1026004812", patientName: "Мельник Ю.В.", analyzer: "Cobas e411", testCode: "GLU", testName: "Глюкоза сироватки", value: 26.4, unit: "ммоль/л", normMin: 4.1, normMax: 5.9, flag: "PANIC_HIGH", deltaPercent: "+185%", status: "PENDING_VERIFY", comment: "Критично високий рівень! Ризик гіперосмолярної коми." },
+          { id: "res-102", barcode: "1026004819", patientName: "Коваленко О.С.", analyzer: "Mindray BS-240", testCode: "ALT", testName: "Аланінамінотрансфераза (АЛТ)", value: 68.5, unit: "U/L", normMin: 0.0, normMax: 41.0, flag: "DELTA_ALERT", deltaPercent: "+42.7%", status: "PENDING_VERIFY", comment: "Помірний цитоліз. Delta-чек перевищує поріг 25%." },
+          { id: "res-103", barcode: "1026004819", patientName: "Коваленко О.С.", analyzer: "Mindray BS-240", testCode: "CREAT", testName: "Креатинін сироватки", value: 84.0, unit: "мкмоль/л", normMin: 62.0, normMax: 115.0, flag: "NORMAL", deltaPercent: "-2.1%", status: "AUTO_VERIFIED", comment: "В межах норми." },
+          { id: "res-104", barcode: "1026004820", patientName: "Коваленко О.С.", analyzer: "Sysmex XN-1000", testCode: "WBC", testName: "Лейкоцити (WBC)", value: 7.45, unit: "10*9/л", normMin: 4.0, normMax: 9.0, flag: "NORMAL", deltaPercent: "+1.2%", status: "AUTO_VERIFIED", comment: "В межах норми." },
+          { id: "res-105", barcode: "1026004820", patientName: "Коваленко О.С.", analyzer: "Sysmex XN-1000", testCode: "HGB", testName: "Гемоглобін (HGB)", value: 148.0, unit: "г/л", normMin: 130.0, normMax: 160.0, flag: "NORMAL", deltaPercent: "0.0%", status: "AUTO_VERIFIED", comment: "В межах норми." }
+        ],
+
+        qcData: {
+          analyzer: "Sysmex XN-1000 (#SN-41029)",
+          controlMaterial: "XN-CHECK Level 2 (Normal)",
+          lotNumber: "LOT-XN-2026-L2",
+          parameter: "WBC (Лейкоцити)",
+          targetMean: 7.20,
+          targetSd: 0.30,
+          cvPercent: 4.1,
+          dataPoints: [
+            { day: 1, val: 7.15, status: "OK" },
+            { day: 2, val: 7.22, status: "OK" },
+            { day: 3, val: 7.05, status: "OK" },
+            { day: 4, val: 7.35, status: "OK" },
+            { day: 5, val: 7.18, status: "OK" },
+            { day: 6, val: 7.25, status: "OK" },
+            { day: 7, val: 7.42, status: "WARN_1_2S" },
+            { day: 8, val: 7.10, status: "OK" },
+            { day: 9, val: 7.02, status: "OK" },
+            { day: 10, val: 7.21, status: "OK" },
+            { day: 11, val: 7.55, status: "WARN_1_2S" },
+            { day: 12, val: 7.19, status: "OK" },
+            { day: 13, val: 7.28, status: "OK" },
+            { day: 14, val: 7.32, status: "OK" },
+            { day: 15, val: 8.28, status: "FAIL_1_3S" }
+          ]
+        },
+
+        microbiologyData: {
+          antibiotics: [
+            { name: "Фосфоміцин", mic: "≤ 1.0", zone: 28, eucast: "S", interpretation: "Чутливий (1-а лінія)" },
+            { name: "Нітрофурантоїн", mic: "16.0", zone: 22, eucast: "S", interpretation: "Чутливий" },
+            { name: "Ципрофлоксацин", mic: "0.25", zone: 26, eucast: "S", interpretation: "Чутливий" },
+            { name: "Ампіцилін", mic: "> 32.0", zone: 11, eucast: "R", interpretation: "Резистентний (Стійкий)" },
+            { name: "Амоксицилін / Клаванат", mic: "8.0", zone: 17, eucast: "I", interpretation: "Помірно-чутливий" }
+          ]
+        },
+
+        reagentsList: [
+          { id: "reag-01", analyzer: "Sysmex XN-1000", name: "Cellpack DCL (Ділюент)", lotNumber: "LOT-2026-XN08", testsRemaining: 1420, testsTotal: 2000, openedAt: "2026-10-01", expiresAt: "2027-12-31", status: "ACTIVE" },
+          { id: "reag-02", analyzer: "Roche Cobas e411", name: "Elecsys TSH (ТТГ)", lotNumber: "LOT-682190-01", testsRemaining: 18, testsTotal: 200, openedAt: "2026-09-28", expiresAt: "2026-10-28", status: "LOW_STOCK" },
+          { id: "reag-03", analyzer: "Mindray BS-240", name: "Glucose GOD-POD", lotNumber: "LOT-GLU-9902", testsRemaining: 85, testsTotal: 500, openedAt: "2026-09-05", expiresAt: "2026-10-05", status: "EXPIRED" }
+        ],
+
+        analyzersList: [
+          { id: "an-01", name: "Sysmex XN-1000", type: "Гематологічний 5-diff", protocol: "ASTM E1381/E1394", connection: "TCP/IP 192.168.1.101:5100", status: "ONLINE" },
+          { id: "an-02", name: "Roche Cobas e411", type: "Імунохімічний", protocol: "ASTM E1394", connection: "COM3 (9600 8N1)", status: "ONLINE" },
+          { id: "an-03", name: "Mindray BS-240", type: "Біохімічний", protocol: "HL7 v2.3.1 MLLP", connection: "TCP/IP 192.168.1.105:5000", status: "ONLINE" },
+          { id: "an-04", name: "Sysmex CA-660", type: "Коагулометр", protocol: "ASTM E1381", connection: "COM4 (9600 8N1)", status: "STANDBY" }
+        ],
+
+        normsList: [
+          { id: 1, param: 'Глюкоза сироватки', gender: 'Обидва', ageGroup: 'Дорослі (18-60 р.)', method: 'Гексокіназний (IFCC)', unit: 'ммоль/л', normMin: 4.10, normMax: 5.90, panicLow: 2.50, panicHigh: 25.00 },
+          { id: 2, param: 'Гемоглобін (HGB)', gender: 'Чоловіки', ageGroup: 'Дорослі (>18 р.)', method: 'SLS-метод (безціанідний)', unit: 'г/л', normMin: 130.0, normMax: 160.0, panicLow: 70.0, panicHigh: 200.0 },
+          { id: 3, param: 'Гемоглобін (HGB)', gender: 'Жінки', ageGroup: 'Дорослі (>18 р.)', method: 'SLS-метод (безціанідний)', unit: 'г/л', normMin: 120.0, normMax: 150.0, panicLow: 70.0, panicHigh: 200.0 },
+          { id: 4, param: 'Креатинін сироватки', gender: 'Чоловіки', ageGroup: 'Дорослі (>18 р.)', method: 'Ензиматичний (IDMS)', unit: 'мкмоль/л', normMin: 62.0, normMax: 115.0, panicLow: 30.0, panicHigh: 350.0 }
+        ],
+
+        biomaterialsList: [
+          { code: "BLDV", name: "Цільна кров венозна", container: "EDTA / Цитрат", snomed: "122555007", storage: "2-8°C до 24 год" },
+          { code: "SER", name: "Сироватка крові", container: "Активатор згортання / Гель", snomed: "119364003", storage: "2-8°C до 7 діб, -20°C до 6 міс" },
+          { code: "PLAS", name: "Плазма крові (цитратна)", container: "Цитрат натрію 3.2%", snomed: "119361006", storage: "2-8°C до 4 год" },
+          { code: "URIN", name: "Сеча (ранкова порція)", container: "Стерильний контейнер", snomed: "122575003", storage: "2-8°C до 4 год" }
+        ],
+
+        tubesList: [
+          { code: 'TUBE-CITRATE', name: 'Цитрат натрію 3.2%', colorName: 'Блакитна', colorHex: '#0284c7', volume: '3.0 мл', orderOfDraw: 1, inversions: '3-4 рази' },
+          { code: 'TUBE-SERUM-GEL', name: 'Активатор згортання / Гель', colorName: 'Жовта', colorHex: '#ca8a04', volume: '5.0 мл', orderOfDraw: 2, inversions: '5-6 разів' },
+          { code: 'TUBE-EDTA', name: 'K2 / K3 ЕДТА', colorName: 'Фіолетова', colorHex: '#9333ea', volume: '2.6 мл', orderOfDraw: 3, inversions: '8-10 разів' }
+        ],
+
+        analyzerModelsList: [
+          { code: 'SYSMEX-XN1000', vendor: 'Sysmex Corporation', model: 'XN-1000', discipline: 'Гематологія 5-diff', protocol: 'ASTM E1381/E1394', interfaceType: 'TCP/IP Client/Server' },
+          { code: 'ROCHE-COBAS-E411', vendor: 'Roche Diagnostics', model: 'Cobas e411', discipline: 'Імунохімія', protocol: 'ASTM E1394', interfaceType: 'RS-232 / TCP' },
+          { code: 'MINDRAY-BS240', vendor: 'Mindray Medical', model: 'BS-240', discipline: 'Біохімія', protocol: 'HL7 v2.3.1 MLLP', interfaceType: 'TCP/IP MLLP' }
+        ],
+
+        parametersList: [
+          { code: 'WBC', name: 'Лейкоцити (White Blood Cells)', category: 'Гематологія', loinc: '6690-2', unit: '10*9/л', sampleType: 'EDTA кров' },
+          { code: 'HGB', name: 'Гемоглобін (Hemoglobin)', category: 'Гематологія', loinc: '718-7', unit: 'г/л', sampleType: 'EDTA кров' },
+          { code: 'GLU', name: 'Глюкоза сироватки', category: 'Біохімія', loinc: '2345-7', unit: 'ммоль/л', sampleType: 'Сироватка' },
+          { code: 'ALT', name: 'Аланінамінотрансфераза (АЛТ)', category: 'Біохімія', loinc: '1742-6', unit: 'U/L', sampleType: 'Сироватка' }
+        ],
+
+        // Table Columns
+        worklistColumns: [
+          { name: 'barcode', label: 'Штрихкод', field: 'barcode', align: 'left', sortable: true },
+          { name: 'patientName', label: 'Пацієнт', field: 'patientName', align: 'left', sortable: true },
+          { name: 'analyzer', label: 'Аналізатор', field: 'analyzer', align: 'left' },
+          { name: 'testName', label: 'Тест', field: 'testName', align: 'left' },
+          { name: 'value', label: 'Результат', field: 'value', align: 'right', sortable: true },
+          { name: 'norm', label: 'Норма', align: 'center' },
+          { name: 'flag', label: 'Флаг', field: 'flag', align: 'center' },
+          { name: 'deltaPercent', label: 'Delta %', field: 'deltaPercent', align: 'right' },
+          { name: 'status', label: 'Статус', field: 'status', align: 'center' },
+          { name: 'actions', label: 'Дії', align: 'center' }
+        ],
+
+        orderColumns: [
+          { name: 'orderNumber', label: '№ Замовлення', field: 'orderNumber', align: 'left', sortable: true },
+          { name: 'createdAt', label: 'Дата / Час', field: 'createdAt', align: 'left' },
+          { name: 'patientName', label: 'Пацієнт', field: 'patientName', align: 'left', sortable: true },
+          { name: 'department', label: 'Відділення', field: 'department', align: 'left' },
+          { name: 'priority', label: 'Пріоритет', field: 'priority', align: 'center' },
+          { name: 'ehealthReferralCode', label: 'Код е-Направлення', field: 'ehealthReferralCode', align: 'left' },
+          { name: 'status', label: 'Статус', field: 'status', align: 'center' },
+          { name: 'actions', label: 'Дії', align: 'center' }
+        ],
+
+        validationColumns: [
+          { name: 'patientName', label: 'Пацієнт', field: 'patientName', align: 'left' },
+          { name: 'testName', label: 'Показник', field: 'testName', align: 'left' },
+          { name: 'value', label: 'Результат', field: 'value', align: 'right' },
+          { name: 'flag', label: 'Флаг', field: 'flag', align: 'center' },
+          { name: 'comment', label: 'Клінічний коментар', field: 'comment', align: 'left' },
+          { name: 'actions', label: 'Дії лікаря', align: 'center' }
+        ],
+
+        qcColumns: [
+          { name: 'day', label: 'День місяця', field: 'day', align: 'center' },
+          { name: 'val', label: 'Значення', field: 'val', align: 'right' },
+          { name: 'status', label: 'Вестгард', field: 'status', align: 'center' }
+        ],
+
+        mbColumns: [
+          { name: 'name', label: 'Антибіотик', field: 'name', align: 'left' },
+          { name: 'mic', label: 'МІК (мкг/мл)', field: 'mic', align: 'center' },
+          { name: 'zone', label: 'Зона (мм)', field: 'zone', align: 'center' },
+          { name: 'eucast', label: 'EUCAST', field: 'eucast', align: 'center' },
+          { name: 'interpretation', label: 'Клінічна інтерпретація', field: 'interpretation', align: 'left' }
+        ],
+
+        reagentColumns: [
+          { name: 'analyzer', label: 'Аналізатор', field: 'analyzer', align: 'left' },
+          { name: 'name', label: 'Реактив / Касета', field: 'name', align: 'left' },
+          { name: 'lotNumber', label: 'Номер лоту', field: 'lotNumber', align: 'left' },
+          { name: 'testsRemaining', label: 'Залишок тестів', field: 'testsRemaining', align: 'center' },
+          { name: 'expiresAt', label: 'Придатний до', field: 'expiresAt', align: 'center' },
+          { name: 'status', label: 'Статус', field: 'status', align: 'center' }
+        ],
+
+        analyzerColumns: [
+          { name: 'name', label: 'Модель', field: 'name', align: 'left' },
+          { name: 'type', label: 'Тип', field: 'type', align: 'left' },
+          { name: 'protocol', label: 'Протокол', field: 'protocol', align: 'center' },
+          { name: 'connection', label: 'З’єднання', field: 'connection', align: 'left' },
+          { name: 'status', label: 'Статус', field: 'status', align: 'center' },
+          { name: 'actions', label: 'Дії', align: 'center' }
+        ],
+
+        normsColumns: [
+          { name: 'param', label: 'Показник', field: 'param', align: 'left' },
+          { name: 'gender', label: 'Стать', field: 'gender', align: 'center' },
+          { name: 'ageGroup', label: 'Вік', field: 'ageGroup', align: 'left' },
+          { name: 'method', label: 'Методика', field: 'method', align: 'left' },
+          { name: 'unit', label: 'Одиниця', field: 'unit', align: 'center' },
+          { name: 'normMin', label: 'Норма Min', field: 'normMin', align: 'right' },
+          { name: 'normMax', label: 'Норма Max', field: 'normMax', align: 'right' },
+          { name: 'panicRange', label: 'Панічний поріг (L/H)', align: 'center' }
+        ],
+
+        dictBioColumns: [
+          { name: 'code', label: 'Код', field: 'code', align: 'left' },
+          { name: 'name', label: 'Назва', field: 'name', align: 'left' },
+          { name: 'container', label: 'Контейнер', field: 'container', align: 'left' },
+          { name: 'snomed', label: 'SNOMED CT', field: 'snomed', align: 'center' },
+          { name: 'storage', label: 'Умови зберігання', field: 'storage', align: 'left' }
+        ],
+
+        dictTubeColumns: [
+          { name: 'code', label: 'Код', field: 'code', align: 'left' },
+          { name: 'name', label: 'Наповнювач', field: 'name', align: 'left' },
+          { name: 'color', label: 'Колір кришки', align: 'center' },
+          { name: 'volume', label: 'Об’єм', field: 'volume', align: 'center' },
+          { name: 'orderOfDraw', label: 'Order of Draw', field: 'orderOfDraw', align: 'center' },
+          { name: 'inversions', label: 'Перевертання', field: 'inversions', align: 'left' }
+        ],
+
+        dictAnColumns: [
+          { name: 'code', label: 'Код', field: 'code', align: 'left' },
+          { name: 'vendor', label: 'Виробник', field: 'vendor', align: 'left' },
+          { name: 'model', label: 'Модель', field: 'model', align: 'left' },
+          { name: 'discipline', label: 'Дисципліна', field: 'discipline', align: 'left' },
+          { name: 'protocol', label: 'Протокол', field: 'protocol', align: 'center' },
+          { name: 'interfaceType', label: 'Інтерфейс', field: 'interfaceType', align: 'left' }
+        ],
+
+        dictParamColumns: [
+          { name: 'code', label: 'Код', field: 'code', align: 'left' },
+          { name: 'name', label: 'Назва', field: 'name', align: 'left' },
+          { name: 'category', label: 'Категорія', field: 'category', align: 'left' },
+          { name: 'loinc', label: 'LOINC', field: 'loinc', align: 'center' },
+          { name: 'unit', label: 'Одиниця', field: 'unit', align: 'center' },
+          { name: 'sampleType', label: 'Рекомендований зразок', field: 'sampleType', align: 'left' }
+        ]
+      },
+
+      computed: {
+
+    ljPoints() {
+      // 20 data points mapped to SVG coordinates (width 60 to 870, y 20 to 260)
+      // Mean = 7.20 (y=140), SD = 0.30 (40px per SD)
+      const values = [
+        7.15, 7.22, 7.18, 7.25, 7.12, 7.30, 7.19, 7.21, 7.28, 7.14,
+        7.26, 7.20, 7.35, 7.84, 7.40, 7.32, 7.45, 8.28, 7.25, 7.22
+      ];
+      const startX = 80;
+      const stepX = (850 - startX) / 19;
+      return values.map((val, i) => {
+        const z = (val - 7.20) / 0.30;
+        const y = 140 - (z * 40);
+        let status = 'OK';
+        let ruleLabel = 'В межах норми (OK)';
+        if (z > 3.0 || z < -3.0) {
+          status = 'VIOLATION_1_3S';
+          ruleLabel = 'ПОРУШЕНО 1-3s (LOCK)';
+        } else if (z > 2.0 || z < -2.0) {
+          status = 'WARN_1_2S';
+          ruleLabel = 'ПОПЕРЕДЖЕННЯ 1-2s';
+        }
+        return {
+          day: i + 1,
+          date: '2026-09-' + String(17 + i > 30 ? i - 13 : 17 + i).padStart(2, '0'),
+          time: '08:15',
+          val: val.toFixed(2),
+          zScore: z.toFixed(2),
+          status: status,
+          ruleLabel: ruleLabel,
+          operator: i % 2 === 0 ? 'Мельник В.С.' : 'Коваленко О.В.',
+          x: Math.round(startX + (i * stepX)),
+          y: Math.round(y)
+        };
+      });
+    },
+    ljPolylinePoints() {
+      return this.ljPoints.map(p => `${p.x},${p.y}`).join(' ');
+    },
+    cryoCells() {
+      const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+      const cells = [];
+      for (let r = 0; r < 8; r++) {
+        for (let c = 1; c <= 12; c++) {
+          const coord = `${rows[r]}-${String(c).padStart(2, '0')}`;
+          let type = 'empty';
+          let barcode = '';
+          let patient = '';
+          let biomaterial = '';
+          if (r === 2 && c === 5) {
+            type = 'selected';
+            barcode = '1026004812';
+            patient = 'Мельник Юрій Володимирович';
+            biomaterial = 'Сироватка венозної крові (Аліквота №1)';
+          } else if ((r * 12 + c) % 5 === 0) {
+            type = 'warning';
+            barcode = '102600' + (4800 + r * 12 + c);
+            patient = 'Пацієнт ' + (r * 12 + c);
+            biomaterial = 'Сироватка крові (Термін спливає)';
+          } else if ((r + c) % 3 === 0) {
+            type = 'serum';
+            barcode = '102600' + (4800 + r * 12 + c);
+            patient = 'Пацієнт ' + (r * 12 + c);
+            biomaterial = 'Сироватка венозної крові';
+          } else if ((r * c) % 4 === 0) {
+            type = 'plasma';
+            barcode = '102600' + (4800 + r * 12 + c);
+            patient = 'Пацієнт ' + (r * 12 + c);
+            biomaterial = 'Плазма (Li-гепарин)';
+          } else if ((r + c) % 2 === 0) {
+            type = 'edta';
+            barcode = '102600' + (4800 + r * 12 + c);
+            patient = 'Пацієнт ' + (r * 12 + c);
+            biomaterial = 'Цільна кров (K2 EDTA)';
+          }
+          cells.push({ coord, type, barcode, patient, biomaterial });
+        }
+      }
+      return cells;
+    },
+
+
+      currentGuide() {
+        return this.guides[this.currentView] || this.guides['workstation'];
+      },
+
+        filteredWorklist() {
+          return this.worklist.filter(r => {
+            const matchesQuery = !this.worklistSearch ||
+              r.testName.toLowerCase().includes(this.worklistSearch.toLowerCase()) ||
+              r.barcode.includes(this.worklistSearch) ||
+              r.patientName.toLowerCase().includes(this.worklistSearch.toLowerCase());
+            const matchesAnalyzer = this.worklistAnalyzerFilter === 'Всі прилади' || r.analyzer.includes(this.worklistAnalyzerFilter);
+            const matchesFlag = this.worklistFlagFilter === 'Всі результати' ||
+              (this.worklistFlagFilter.includes('паніка') && r.flag !== 'NORMAL') ||
+              (this.worklistFlagFilter === 'Нормальні' && r.flag === 'NORMAL');
+            return matchesQuery && matchesAnalyzer && matchesFlag;
+          });
+        },
+        pendingValidationList() {
+          return this.worklist.filter(r => r.status === 'PENDING_VERIFY');
+        },
+        activeOrderSamples() {
+          if (!this.activeOrder) return [];
+          return this.samplesList.filter(s => s.orderId === this.activeOrder.id);
+        }
+      },
+
+      methods: {
+
+      fetchPipelineState() {
+        fetch('/api/laboratory/pipeline/state')
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              this.apiPipelineStep = data.currentStep || 1;
+              if (data.orderSample) {
+                this.pipelineDbState.barcode = data.orderSample.barcode;
+                this.pipelineDbState.status = data.orderSample.order_status || data.orderSample.sample_status;
+              }
+              if (data.referral && data.referral.patient_name) {
+                this.pipelineDbState.patient = data.referral.patient_name;
+              }
+            }
+          })
+          .catch(e => console.log('API state fetch fallback:', e));
+      },
+      advancePipelineStep() {
+        const nextStep = this.apiPipelineStep >= 7 ? 1 : this.apiPipelineStep + 1;
+        fetch('/api/laboratory/pipeline/advance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetStep: nextStep })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              this.apiPipelineStep = nextStep;
+              this.pipelineDbState.lastEndpoint = 'POST /api/laboratory/pipeline/advance';
+              this.$q.notify({
+                type: 'positive',
+                message: data.message,
+                position: 'top',
+                timeout: 3500
+              });
+              this.goToPipelineStep(nextStep);
+              this.fetchWorklistFromApi();
+            }
+          })
+          .catch(e => {
+            this.apiPipelineStep = nextStep;
+            this.goToPipelineStep(nextStep);
+          });
+      },
+      resetPipeline() {
+        fetch('/api/laboratory/pipeline/reset', { method: 'POST' })
+          .then(res => res.json())
+          .then(data => {
+            this.apiPipelineStep = 1;
+            this.pipelineDbState.status = 'NEW';
+            this.pipelineDbState.lastEndpoint = 'POST /api/laboratory/pipeline/reset';
+            this.$q.notify({
+              type: 'info',
+              message: data.message,
+              position: 'top',
+              timeout: 3000
+            });
+            this.goToPipelineStep(1);
+          })
+          .catch(e => {
+            this.apiPipelineStep = 1;
+            this.goToPipelineStep(1);
+          });
+      },
+      goToPipelineStep(step) {
+        this.apiPipelineStep = step;
+        if (step === 1) {
+          this.setView('phlebotomy', 'Вхідні е-направлення (incomingReferral)');
+        } else if (step === 2) {
+          this.setView('phlebotomy', 'Пункт забору біоматеріалу (Забір & Друк)');
+          if (this.phlebotomyQueue && this.phlebotomyQueue[0]) {
+            this.openSampleBarcode(this.phlebotomyQueue[0]);
+          }
+        } else if (step === 3 || step === 4) {
+          this.setView('logistics', 'Логістика & Кур’єри (+4°C)');
+        } else if (step === 5) {
+          this.setView('workstation', 'Робочий стіл лаборанта (Прийом ASTM)');
+        } else if (step === 6) {
+          this.setView('validation', 'Валідація результатів & КЕП');
+        } else if (step === 7) {
+          this.setView('patient', 'Кабінет пацієнта (Результати & PDF)');
+          this.openPdfReport(null);
+        }
+      },
+      fetchWorklistFromApi() {
+        fetch('/api/laboratory/worklist')
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.data && data.data.length > 0) {
+              this.worklist = data.data;
+            }
+          })
+          .catch(e => console.log('Worklist fallback:', e));
+      },
+      getPipelineStatusColor(status) {
+        if (!status) return 'grey';
+        if (status.includes('COMPLETED') || status.includes('VERIFIED')) return 'positive';
+        if (status.includes('ANALYZING') || status.includes('TRANSIT')) return 'primary';
+        if (status.includes('COLLECTED') || status.includes('RECEIVED')) return 'teal';
+        return 'warning';
+      },
+
+
+      openSampleBarcode(row) {
+        if (row) {
+          this.activeSample.patientName = row.patient || row.name || this.activeSample.patientName;
+          this.activeSample.barcode = row.barcode || '102600' + Math.floor(1000 + Math.random() * 9000);
+          this.activeSample.patientId = row.patientId || 'PT-' + Math.floor(10000 + Math.random() * 90000);
+          this.activeSample.tubeType = row.tubeType || 'K2 EDTA (Фіолетова)';
+          this.activeSample.testsList = row.tests || 'ЗАК + Лейкоформула';
+        }
+        this.barcodeDialog = true;
+      },
+      confirmPrintBarcode() {
+        this.barcodeDialog = false;
+        this.notify('Штрихкод ' + this.activeSample.barcode + ' успішно відправлено на термопринтер Zebra!');
+        // Update status of first sample in phlebotomy if available
+        if (this.phlebotomyQueue && this.phlebotomyQueue.length > 0) {
+          this.phlebotomyQueue[0].status = 'Забір виконано';
+        }
+      },
+      openPdfReport(row) {
+        if (row && row.patient) {
+          this.activeReport.patientName = row.patient;
+          this.activeReport.orderNumber = row.orderNumber || this.activeReport.orderNumber;
+        }
+        this.pdfDialog = true;
+      },
+      windowPrint() {
+        window.print();
+      },
+      openPanicModal(row) {
+        if (row) {
+          this.panicRecord.patient = row.patient || this.panicRecord.patient;
+          this.panicRecord.test = row.test || this.panicRecord.test;
+          this.panicRecord.value = row.value || this.panicRecord.value;
+          this.panicRecord.unit = row.unit || this.panicRecord.unit;
+          this.panicRecord.norm = row.norm || this.panicRecord.norm;
+        }
+        this.panicDialog = true;
+      },
+      submitPanicLog() {
+        this.panicDialog = false;
+        this.notify('Сповіщення лікаря стаціонару зафіксовано в журналі аудиту ISO 15189!');
+        // Update flag
+        if (this.filteredWorklist && this.filteredWorklist[0]) {
+          this.filteredWorklist[0].status = 'Очікує лікаря (Сповіщено)';
+        }
+      },
+      resolveQcLockout() {
+        this.qcLockoutDialog = false;
+        this.notify('Блокування аналізатора Sysmex XN-1000 знято! Коригувальні дії зафіксовано.');
+      },
+      runProcessDemo() {
+        const v = this.currentView;
+        if (v === 'workstation') {
+          // Add new incoming test result from Sysmex
+          const newId = this.worklist.length + 1;
+          this.worklist.unshift({
+            id: newId,
+            barcode: '1026004835',
+            patient: 'Бондаренко І.В.',
+            analyzer: 'Sysmex XN-1000',
+            test: 'Тромбоцити (PLT)',
+            value: '245',
+            unit: '10^9/л',
+            normMin: 150,
+            normMax: 400,
+            flag: 'NORMAL',
+            deltaPercent: '+4.2%',
+            status: 'NEW'
+          });
+          this.$q.notify({
+            type: 'positive',
+            message: 'Шлюз .NET 8 прийняв пакет ASTM E1394 від Sysmex XN-1000! Додано новий тест: PLT = 245 10^9/л.',
+            position: 'top',
+            timeout: 3000
+          });
+          setTimeout(() => {
+            this.runAutoValidation();
+          }, 1200);
+        } else if (v === 'phlebotomy') {
+          this.openSampleBarcode(this.phlebotomyQueue[0]);
+        } else if (v === 'logistics') {
+          this.$q.notify({
+            type: 'info',
+            message: 'Сформовано кур’єрський маніфест № TR-2026-10-04. Температура термобокса: +4.2°C. Зразки передано в доставку.',
+            position: 'top',
+            timeout: 3500
+          });
+        } else if (v === 'validation') {
+          this.openPanicModal(null);
+        } else if (v === 'qc') {
+          this.qcLockoutDialog = true;
+        } else if (v === 'patient') {
+          this.openPdfReport(null);
+        } else if (v === 'biobank') {
+          this.$q.notify({
+            type: 'positive',
+            message: 'Зразок #1026004819 автоматично розміщено в архівний кріобокс: Секція B / Штатив 02 / Комірка C-05 (-20°C).',
+            position: 'top',
+            timeout: 3500
+          });
+        } else if (v === 'microbiology') {
+          this.$q.notify({
+            type: 'warning',
+            message: 'EUCAST v14.0 розрахунок: E. coli проти Ципрофлоксацину (Зона 18 мм) → РЕЗИСТЕНТНИЙ (R). Рекомендовано змінити терапію на Меропенем.',
+            position: 'top',
+            timeout: 4000
+          });
+        } else {
+          this.notify('Інтерактивний сценарій для ' + this.currentGuide.title + ' успішно виконано!');
+        }
+      },
+
+        setView(viewName, title) {
+          this.currentView = viewName;
+          this.currentViewTitle = title;
+        },
+        notify(msg, color = 'positive') {
+          if (this.$q && this.$q.notify) {
+            this.$q.notify({ message: msg, color: color, position: 'top-right', timeout: 2500 });
+          } else if (window.Quasar && window.Quasar.Notify) {
+            window.Quasar.Notify.create({ message: msg, color: color, position: 'top-right', timeout: 2500 });
+          }
+        },
+        testPing(row) {
+          this.notify(`Зв’язок з ${row.name}: OK (Ping 4ms, ACK отримано)`);
+        },
+        getValueClass(flag) {
+          if (flag === 'PANIC_HIGH' || flag === 'PANIC_LOW') return 'text-negative text-weight-bolder bg-red-1';
+          if (flag === 'DELTA_ALERT') return 'text-deep-orange text-weight-bold';
+          return 'text-dark';
+        },
+        getFlagColor(flag) {
+          switch (flag) {
+            case 'PANIC_HIGH':
+            case 'PANIC_LOW': return 'negative';
+            case 'DELTA_ALERT': return 'deep-orange';
+            case 'NORMAL': return 'positive';
+            default: return 'grey';
+          }
+        },
+        formatFlag(flag) {
+          switch (flag) {
+            case 'PANIC_HIGH': return 'КРИТИЧНО ВИСОКИЙ';
+            case 'PANIC_LOW': return 'КРИТИЧНО НИЗЬКИЙ';
+            case 'DELTA_ALERT': return 'DELTA УВАГА';
+            case 'NORMAL': return 'НОРМА';
+            default: return flag;
+          }
+        },
+        getOrderStatusColor(st) {
+          switch (st) {
+            case 'IN_PROGRESS': return 'blue-7';
+            case 'PANIC_ALERT': return 'negative';
+            case 'VERIFIED': return 'positive';
+            default: return 'grey-6';
+          }
+        },
+        formatOrderStatus(st) {
+          switch (st) {
+            case 'IN_PROGRESS': return 'В роботі';
+            case 'PANIC_ALERT': return 'Паніка!';
+            case 'VERIFIED': return 'Завершено';
+            default: return st;
+          }
+        },
+        runAutoValidation() {
+          let count = 0;
+          this.worklist.forEach(r => {
+            if (r.flag === 'NORMAL' && r.status === 'PENDING_VERIFY') {
+              r.status = 'AUTO_VERIFIED';
+              count++;
+            }
+          });
+          this.notify(`Автоматично валідовано ${count} нормальних результатів за критеріями CLSI.`);
+        },
+        openBarcodeDialog(order) {
+          this.activeOrder = order;
+          this.showBarcodeDialog = true;
+        },
+        openCollectDialog(order) {
+          this.activeOrder = order;
+          this.showCollectDialog = true;
+        },
+        confirmPrintZpl() {
+          this.notify(`Друк етикеток ZPL успішно відправлено на принтер для ${this.activeOrderSamples.length} пробірок.`);
+          this.showBarcodeDialog = false;
+        },
+        confirmCollect() {
+          if (this.activeOrder) this.activeOrder.status = 'IN_PROGRESS';
+          this.notify('Забір біоматеріалу успішно зареєстровано.');
+          this.showCollectDialog = false;
+        },
+        saveCall() {
+          this.notify('Дзвінок зафіксовано в журналі передачі критичних значень.');
+          this.showCallDialog = false;
+        },
+        validateRow(row) {
+          row.status = 'VERIFIED';
+          this.notify(`Результат ${row.testName} валідовано лікарем.`);
+        },
+        openEditResult(row) {
+          this.editingRow = { ...row };
+          this.showEditResultDialog = true;
+        },
+        saveEditedRow() {
+          const idx = this.worklist.findIndex(r => r.id === this.editingRow.id);
+          if (idx !== -1) {
+            this.worklist.splice(idx, 1, this.editingRow);
+          }
+          this.notify('Результат збережено');
+          this.showEditResultDialog = false;
+        },
+        confirmQcUnlock() {
+          this.notify('Аналізатор успішно розблоковано. Коригувальну дію записано.');
+          this.showQcUnlockDialog = false;
+        }
+      }
+    });
+  

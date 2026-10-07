@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2. Структура БД PostgreSQL & Зв'язки | MedLink LIS 3.0</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+  <style>
+    :root {
+      --primary: #4274A7;
+      --secondary: #318F94;
+      --accent: #0178BC;
+      --positive: #23B947;
+      --negative: #d04f45;
+      --warning: #f59e0b;
+      --dark-sidebar: #2d3238;
+      --bg-page: #f8fafc;
+      --border-color: #e2e8f0;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Roboto', -apple-system, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+    }
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--dark-sidebar);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid #1e2227;
+    }
+    .brand-header {
+      padding: 18px 20px;
+      background: #212529;
+      border-bottom: 3px solid var(--accent);
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    .nav-list {
+      padding: 15px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 13.5px;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(1, 120, 188, 0.5) 0%, rgba(49, 143, 148, 0.3) 100%);
+      color: #fff;
+      border-left: 4px solid #5EC58C;
+      font-weight: 500;
+    }
+    .nav-item i { width: 18px; text-align: center; color: #38bdf8; }
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 15px 20px;
+      background: #212529;
+      font-size: 11px;
+      color: #64748b;
+      border-top: 1px solid #334155;
+    }
+    /* Main Content */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .top-header {
+      background: #fff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .brand-gradient-bar {
+      height: 3px;
+      width: 100%;
+      background: linear-gradient(90deg, #0178BC 0%, #318F94 51%, #5EC58C 100%);
+    }
+    .content-area {
+      padding: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    h1, h2, h3, h4, h5 { color: #0f172a; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; }
+    h1 { font-size: 28px; margin-top: 0; color: var(--primary); }
+    h2 { font-size: 22px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: var(--accent); }
+    h3 { font-size: 18px; color: #334155; }
+    p, li { font-size: 14.5px; line-height: 1.6; color: #334155; }
+    .card {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 16px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+    th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+    pre, code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+    }
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0284c7;
+    }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-primary { background: #e0f2fe; color: #0369a1; }
+    .badge-success { background: #dcfce7; color: #15803d; }
+    .badge-danger { background: #fee2e2; color: #b91c1c; }
+    .badge-warning { background: #fef3c7; color: #b45309; }
+    .alert-box {
+      padding: 14px 18px;
+      border-radius: 6px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .alert-info { background: #e0f2fe; border-left: 4px solid var(--accent); color: #0369a1; }
+    .alert-warning { background: #fef3c7; border-left: 4px solid var(--warning); color: #92400e; }
+    .alert-danger { background: #fee2e2; border-left: 4px solid var(--negative); color: #991b1b; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #325d88; }
+    .btn-secondary { background: var(--secondary); }
+    .btn-secondary:hover { background: #246d71; }
+    .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+    .btn-outline:hover { background: #f1f5f9; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    @media (max-width: 900px) {
+      body { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: static; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+  <link rel="stylesheet" href="file_viewer_modal.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand-header">
+      <div class="brand-title">
+        <i class="fas fa-flask" style="color: #38bdf8;"></i> MedLink LIS 3.0
+      </div>
+      <div class="brand-sub">Клініко-діагностична лабораторія</div>
+    </div>
+    <nav class="nav-list">
+      <a href="index.html" class="nav-item "><i class="fas fa-home"></i> Головний портал</a>
+<a href="01_architecture_and_security.html" class="nav-item "><i class="fas fa-shield-alt"></i> 1. Архітектура & RBAC</a>
+<a href="02_database_schema_and_relations.html" class="nav-item active"><i class="fas fa-database"></i> 2. БД PostgreSQL & evomis</a>
+<a href="03_api_endpoints_specification.html" class="nav-item "><i class="fas fa-code"></i> 3. REST API Специфікація</a>
+<a href="04_legacy_migration_delphi_to_net.html" class="nav-item "><i class="fas fa-exchange-alt"></i> 4. Міграція з Delphi/MySQL</a>
+<a href="05_frontend_integration_guide.html" class="nav-item "><i class="fas fa-desktop"></i> 5. Інтеграція в App.View</a>
+<a href="06_analyzer_gateway_and_drivers.html" class="nav-item "><i class="fas fa-network-wired"></i> 6. Драйвери & Шлюз LIS</a>
+
+    </nav>
+    <div class="sidebar-footer">
+      <div>ТОВ "МедЛінк" &copy; 2026</div>
+      <div>Всі права захищено</div>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="main-wrapper">
+    <div class="brand-gradient-bar"></div>
+    <header class="top-header">
+      <div style="font-size: 13px; color: var(--text-muted);">
+        <i class="fas fa-book-reader"></i> Технічна документація архітектора та розробника
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <a href="../medlink_lab_frontend/run_prototype.html" target="_blank" class="btn btn-secondary">
+          <i class="fas fa-play"></i> Запустити SPA Прототип
+        </a>
+      </div>
+    </header>
+    <main class="content-area">
+
+      <h1>2. Структура Бази Даних PostgreSQL та Зв'язки з evomis</h1>
+
+      <div style="background: #e0f2fe; border: 1px solid #7dd3fc; border-radius: 8px; padding: 14px 18px; margin: 20px 0;">
+        <div style="font-weight: 700; color: #0369a1; margin-bottom: 8px; font-size: 14px;">
+          👁 Інтерактивний перегляд DDL-скриптів у скрольованому попап-вікні:
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/00_master_deploy_all.sql')">🚀 00_master_deploy_all.sql (Повний реліз)</button>
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/01_lis_schema_core.sql')">🏛️ 01_lis_schema_core.sql (Базовий DDL 28 таблиць)</button>
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/02_lis_schema_microbiology_eucast.sql')">🧫 02_lis_schema_microbiology_eucast.sql</button>
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/03_evomis_integration_views_and_fk.sql')">🔗 03_evomis_integration_views_and_fk.sql</button>
+          <button type="button" class="doc-file-btn" onclick="openMedlinkFileModal('sql/08_seed_parameters_and_profiles.sql')">📊 08_seed_parameters_and_profiles.sql</button>
+        </div>
+      </div>
+
+      
+      <h2>2.1 Інтеграція з Існуючими Таблицями evomis</h2>
+      <p>
+        Згідно аналізу бази <code>evomis-test</code> (PostgreSQL 14), нові таблиці лабораторії зв'язуються з основними сутностями МІС через зовнішні ключі (UUID):
+      </p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Таблиця evomis</th>
+              <th>Поле зв'язку</th>
+              <th>Призначення у лабораторії</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>public.mis_patient_card</code></td>
+              <td><code>patient_card_id (UUID)</code></td>
+              <td>Медична карта пацієнта (ПІБ, дата народження, стать, пільги, телефон).</td>
+            </tr>
+            <tr>
+              <td><code>public.org_organization</code></td>
+              <td><code>organization_id (UUID)</code></td>
+              <td>Медичний заклад (юридична особа ЛЗ / ЄДРПОУ), що виконує дослідження.</td>
+            </tr>
+            <tr>
+              <td><code>public.org_department</code></td>
+              <td><code>department_id (UUID)</code></td>
+              <td>Підрозділ (лабораторія, поліклініка, маніпуляційний кабінет чи ВРІТ).</td>
+            </tr>
+            <tr>
+              <td><code>public.org_employee</code></td>
+              <td><code>employee_id (UUID)</code></td>
+              <td>Лікар-лаборант, лаборант або медсестра маніпуляційного кабінету.</td>
+            </tr>
+            <tr>
+              <td><code>public.mis_specimen</code></td>
+              <td><code>specimen_id (UUID)</code></td>
+              <td>Сумісність із FHIR Specimen зразком, зареєстрованим у МІС.</td>
+            </tr>
+            <tr>
+              <td><code>public.mis_diagnostic_report</code></td>
+              <td><code>diagnostic_report_id (UUID)</code></td>
+              <td>Діагностичний звіт МІС для автоматичного закриття eHealth е-направлення.</td>
+            </tr>
+            <tr>
+              <td><code>public.ehe_incoming_medical_referral</code></td>
+              <td><code>referral_id (UUID)</code></td>
+              <td>Вхідне електронне направлення з центральної бази eHealth.</td>
+            </tr>
+            <tr>
+              <td><code>public.service_catalog_observation_loinc</code></td>
+              <td><code>loinc_code (TEXT)</code></td>
+              <td>Мапінг лабораторного коду на міжнародну систему кодування LOINC.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>2.2 DDL Специфікація Таблиць Модуля Лабораторії</h2>
+      <div class="card">
+        <h3>DDL: lab_orders (Замовлення) та lab_samples (Пробірки)</h3>
+        <pre><code class="language-sql">-- 1. Таблиця замовлень лабораторії
+CREATE TABLE public.lab_orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    record_state INT NOT NULL DEFAULT 1,
+    order_number VARCHAR(32) NOT NULL UNIQUE,
+    patient_card_id UUID NOT NULL REFERENCES public.mis_patient_card(id),
+    organization_id UUID NOT NULL REFERENCES public.org_organization(id),
+    department_id UUID NOT NULL REFERENCES public.org_department(id),
+    ordering_doctor_id UUID REFERENCES public.org_employee(id),
+    referral_id UUID REFERENCES public.ehe_incoming_medical_referral(id),
+    priority VARCHAR(16) NOT NULL DEFAULT 'ROUTINE', -- ROUTINE, CITO, STAT
+    status VARCHAR(32) NOT NULL DEFAULT 'NEW',       -- NEW, IN_PROGRESS, PANIC_ALERT, VERIFIED, CANCELLED
+    created_on TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    created_by UUID NOT NULL,
+    modified_on TIMESTAMP WITHOUT TIME ZONE,
+    modified_by UUID
+);
+
+-- 2. Таблиця контейнерів і зразків
+CREATE TABLE public.lab_samples (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES public.lab_orders(id) ON DELETE CASCADE,
+    barcode VARCHAR(32) NOT NULL UNIQUE,
+    biomaterial_code VARCHAR(32) NOT NULL,
+    tube_type_code VARCHAR(32) NOT NULL,
+    order_of_draw INT NOT NULL DEFAULT 1,
+    status VARCHAR(32) NOT NULL DEFAULT 'PENDING_DRAW', -- PENDING_DRAW, COLLECTED, IN_TRANSIT, IN_LAB, REJECTED
+    collected_at TIMESTAMP WITHOUT TIME ZONE,
+    collected_by UUID REFERENCES public.org_employee(id),
+    rejection_reason VARCHAR(255),
+    rejection_comment TEXT,
+    created_on TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);</code></pre>
+      </div>
+
+      <div class="card">
+        <h3>DDL: lab_results (Результати досліджень) та lab_panic_call_log</h3>
+        <pre><code class="language-sql">-- 3. Результати аналізів
+CREATE TABLE public.lab_results (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sample_id UUID NOT NULL REFERENCES public.lab_samples(id),
+    parameter_code VARCHAR(32) NOT NULL,
+    analyzer_id VARCHAR(64),
+    measured_value NUMERIC(12, 4),
+    unit VARCHAR(32) NOT NULL,
+    norm_min NUMERIC(12, 4),
+    norm_max NUMERIC(12, 4),
+    panic_low NUMERIC(12, 4),
+    panic_high NUMERIC(12, 4),
+    flag VARCHAR(24) DEFAULT 'NORMAL', -- NORMAL, LOW, HIGH, PANIC_LOW, PANIC_HIGH, DELTA_ALERT
+    delta_percent NUMERIC(6, 2),
+    status VARCHAR(32) NOT NULL DEFAULT 'PENDING_VERIFY', -- PENDING_VERIFY, AUTO_VERIFIED, VERIFIED, RERUN
+    comment TEXT,
+    verified_by UUID REFERENCES public.org_employee(id),
+    verified_at TIMESTAMP WITHOUT TIME ZONE,
+    created_on TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- 4. Журнал дзвінків панічних значень (ВРІТ)
+CREATE TABLE public.lab_panic_call_log (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    result_id UUID NOT NULL REFERENCES public.lab_results(id),
+    doctor_caller_id UUID NOT NULL REFERENCES public.org_employee(id),
+    recipient_name VARCHAR(128) NOT NULL,
+    department_name VARCHAR(128) NOT NULL,
+    phone_number VARCHAR(64) NOT NULL,
+    readback_confirmed BOOLEAN NOT NULL DEFAULT TRUE,
+    called_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);</code></pre>
+      </div>
+    
+    </main>
+  </div>
+  <script src="file_viewer_modal.js"></script>
+</body>
+</html>

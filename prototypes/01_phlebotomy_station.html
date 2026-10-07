@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedLink LIS — Пункт забору біоматеріалу (Phlebotomy Station)</title>
+  <link rel="stylesheet" href="medlink-theme.css">
+</head>
+<body>
+  <header class="medlink-header">
+    <button class="drawer-toggle" onclick="toggleSidebar()" title="Згорнути / розгорнути меню">&#9776;</button>
+    <a href="../README_ЛАБОРАТОРІЯ_MEDLINK.html" class="medlink-brand">
+      <svg id="medlink-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 19.14" style="height:26px;">
+        <defs><style>.cls-1{fill:none;}.cls-2{clip-path:url(#cp);}.cls-3{fill:#4274A7;}.cls-4{fill:#333333;}</style>
+        <clipPath id="cp" transform="translate(-1.5 -1.93)"><rect class="cls-1" x="1.5" y="1.93" width="19.4" height="19.14"/></clipPath></defs>
+        <g class="cls-2"><path class="cls-3" d="M8.72,17.19V14.33A.32.32,0,0,0,8.4,14H4.92V11.69H9a2.41,2.41,0,0,0,2.4-2.4V3.2a.66.66,0,0,0,.49-.62.65.65,0,0,0-1.3,0,.66.66,0,0,0,.49.62V4.87H8.75a.32.32,0,0,0-.32.32V8.67H5.54a.65.65,0,0,0-.62-.48.64.64,0,0,0-.64.64.65.65,0,0,0,.64.65A.66.66,0,0,0,5.54,9H8.4a.32.32,0,0,0,.32-.32V5.19H11V9.26A2.08,2.08,0,0,1,9,11.34H2.77a.67.67,0,0,0-.62-.49.65.65,0,1,0,0,1.3.67.67,0,0,0,.62-.49H4.6V14a.32.32,0,0,0,.32.32H8.4v2.86a.65.65,0,1,0,.81.62A.6.6,0,0,0,8.72,17.19ZM21,11.5a.66.66,0,0,1-.65.65.67.67,0,0,1-.62-.49h-6.3a2.08,2.08,0,0,0-2.08,2.08v4.07h2.32V14.33A.32.32,0,0,1,14,14h2.89a.66.66,0,0,1,.62-.49.65.65,0,0,1,.64.65.64.64,0,0,1-.64.64.65.65,0,0,1-.62-.48H14.06v3.48a.32.32,0,0,1-.32.32H11.42V19.8a.65.65,0,0,1-.16,1.27.65.65,0,0,1-.17-1.27V13.74a2.41,2.41,0,0,1,2.4-2.4h4.07V9H14.09a.33.33,0,0,1-.33-.32V5.81a.65.65,0,0,1-.48-.62.64.64,0,0,1,.64-.64.64.64,0,0,1,.17,1.26V8.67h3.47a.33.33,0,0,1,.33.32v2.32H19.8a.65.65,0,0,1,.62-.48.69.69,0,0,1,.62.67" transform="translate(-1.5 -1.93)"/></g>
+        <path class="cls-4" d="M31.2,14.33V10.69l-1.78,3H28.8L27,10.74V14.3H25.7V8.23h1.16L29.13,12l2.23-3.78h1.16V14.3H31.2Z" transform="translate(-1.5 -1.93)"/>
+        <path class="cls-4" d="M38.73,13.22v1.13H34V8.29h4.58V9.42H35.44v1.32h2.83v1.08H35.44v1.4Z" transform="translate(-1.5 -1.93)"/>
+        <path class="cls-4" d="M46.13,13.19v2.4h-1.3V14.33H40.55v1.26h-1.3v-2.4h.25c.35,0,.62-.27.78-.81a9,9,0,0,0,.27-2.23l.05-1.89h4.69v4.93Zm-4.34-2.91a11.22,11.22,0,0,1-.19,1.84,2.32,2.32,0,0,1-.43,1.07h2.72V9.42H41.81Z" transform="translate(-1.5 -1.93)"/>
+        <path class="cls-4" d="M52.47,8.26v6.07H51.1V9.39H49L49,10.66a13,13,0,0,1-.22,2.1A2.59,2.59,0,0,1,48.21,14a1.31,1.31,0,0,1-1.07.43,2.45,2.45,0,0,1-.7-.1l.08-1.19a.66.66,0,0,0,.24,0,.73.73,0,0,0,.7-.6,8.06,8.06,0,0,0,.27-1.86l.08-2.45Z" transform="translate(-1.5 -1.93)"/>
+        <path class="cls-4" d="M54,8.26h1.41v6.07H54Z" transform="translate(-1.5 -1.93)"/>
+        <path class="cls-4" d="M62.46,8.26v6.07h-1.4V11.85H58.31v2.48h-1.4V8.26h1.4v2.4h2.75V8.26Z" transform="translate(-1.5 -1.93)"/>
+        <path class="cls-4" d="M66.35,11.9h-1v2.45H64V8.29h1.4v2.45h1L68,8.29h1.49l-2,2.94,2,3.12H67.91Z" transform="translate(-1.5 -1.93)"/>
+      </svg>
+      <span class="logo-tag">ЛІС 3.0</span>
+    </a>
+
+    <div style="margin-left: 20px; display: flex; gap: 8px;">
+      <a href="../ТЗ_ЛІС_MedLink_v3_Повне.html" class="q-btn q-btn-outline" style="height:28px; font-size:11px; text-decoration:none;">📄 ТЗ Лабораторія</a>
+      <a href="../README_ЛАБОРАТОРІЯ_MEDLINK.html" class="q-btn q-btn-outline" style="height:28px; font-size:11px; text-decoration:none;">📋 Зведений Гайд</a>
+    </div>
+
+    <div class="medlink-header-right">
+      <div class="header-phone-badge">
+        <span>Служба техпідтримки:</span>
+        <span class="phone-num">+380 (44) 334-55-66</span>
+      </div>
+      <div class="header-ehealth-btn">
+        <span>eHealth</span>
+        <span class="status-dot"></span>
+      </div>
+      <div class="header-user-badge">
+        <span>👤 Коваль О.П. (Лабораторія)</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="medlink-app-layout">
+    <aside class="medlink-drawer" id="sidebarDrawer">
+      <div class="drawer-section-title">Основні модулі МІС</div>
+      <ul class="drawer-nav-list">
+        <li><a href="#" class="drawer-nav-item"><span class="nav-icon">🏠</span><span>Головна</span></a></li>
+        <li><a href="#" class="drawer-nav-item"><span class="nav-icon">📅</span><span>Розклад</span></a></li>
+        <li><a href="#" class="drawer-nav-item"><span class="nav-icon">📋</span><span>Направлення ЕСОЗ</span></a></li>
+      </ul>
+
+      <div class="drawer-divider"></div>
+
+      <div class="drawer-section-title" style="color:#60a5fa;">Лабораторія MedLink (12 Процесів)</div>
+      <ul class="drawer-nav-list">
+        <li>
+          <a href="01_phlebotomy_station.html" class="drawer-nav-item active">
+            <span class="nav-icon">💉</span>
+            <span>01. Пункт забору & Маркування</span>
+          </a>
+        </li>
+        <li>
+          <a href="02_specimen_logistics.html" class="drawer-nav-item">
+            <span class="nav-icon">🚚</span>
+            <span>02. Логістика & Приймальний стіл</span>
+          </a>
+        </li>
+        <li>
+          <a href="03_lab_workstation.html" class="drawer-nav-item">
+            <span class="nav-icon">🔬</span>
+            <span>03. Журнал досліджень лаборанта</span>
+          </a>
+        </li>
+        <li>
+          <a href="04_validation_and_panic.html" class="drawer-nav-item">
+            <span class="nav-icon">👨‍⚕️</span>
+            <span>04. Верифікація & Panic Values</span>
+          </a>
+        </li>
+        <li>
+          <a href="05_quality_control.html" class="drawer-nav-item">
+            <span class="nav-icon">📊</span>
+            <span>05. Контроль якості (QC & Вестгард)</span>
+          </a>
+        </li>
+        <li>
+          <a href="06_patient_portal.html" class="drawer-nav-item">
+            <span class="nav-icon">📱</span>
+            <span>06. Кабінет пацієнта & Трекер</span>
+          </a>
+        </li>
+        <li>
+          <a href="07_biobank_archive.html" class="drawer-nav-item">
+            <span class="nav-icon">🧊</span>
+            <span>07. Біобанк & Архів штативів</span>
+          </a>
+        </li>
+        <li>
+          <a href="08_reagent_inventory.html" class="drawer-nav-item">
+            <span class="nav-icon">🧪</span>
+            <span>08. Склад реагентів (Lot Tracking)</span>
+          </a>
+        </li>
+        <li>
+          <a href="09_microbiology_culture.html" class="drawer-nav-item">
+            <span class="nav-icon">🧫</span>
+            <span>09. Бактеріологія & Антибіотикограма</span>
+          </a>
+        </li>
+        <li>
+          <a href="10_lab_analytics_tat.html" class="drawer-nav-item">
+            <span class="nav-icon">📈</span>
+            <span>10. Дашборд KPI & TAT Менеджмент</span>
+          </a>
+        </li>
+        <li>
+          <a href="11_analyzer_connector_monitor.html" class="drawer-nav-item">
+            <span class="nav-icon">🔌</span>
+            <span>11. Шлюз аналізаторів (Драйвери)</span>
+          </a>
+        </li>
+        <li>
+          <a href="12_norms_and_methodologies.html" class="drawer-nav-item">
+            <span class="nav-icon">📐</span>
+            <span>12. Конструктор норм & Методики</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <main class="medlink-main-container">
+      <!-- MedLink Breadcrumbs -->
+      <nav class="medlink-breadcrumbs">
+        <a href="../README_ЛАБОРАТОРІЯ_MEDLINK.html">ГОЛОВНА</a>
+        <span class="sep">/</span>
+        <a href="../ТЗ_ЛІС_MedLink_v3_Повне.html">ЛАБОРАТОРІЯ</a>
+        <span class="sep">/</span>
+        <span class="current">ПУНКТ ЗАБОРУ ТА МАРКУВАННЯ</span>
+      </nav>
+
+      <!-- MedLink Page Header -->
+      <div class="medlink-page-header">
+        <h1>
+          <span>Пункт забору біоматеріалу (Phlebotomy Station)</span>
+        </h1>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="role-badge">Роль: Медсестра забору (Phlebotomist)</span>
+          <button class="q-btn q-btn-outline" style="height:28px;" onclick="window.history.back()">Назад</button>
+        </div>
+      </div>
+
+      <!-- MedLink Explanatory Guide Card -->
+      <div class="q-card" style="border-left: 4px solid var(--accent); background: #f8fafc; margin-bottom: 16px;">
+        <div class="q-card-header" style="background: transparent; border-bottom: 1px solid #e2e8f0; padding: 10px 16px;">
+          <div class="q-card-title" style="color: var(--primary); font-size: 13.5px;">
+            💡 <strong>Клінічно-технічне роз'яснення процесу:</strong> Пункт забору біоматеріалу (Phlebotomy Station)
+          </div>
+          <span class="q-badge q-badge-info">Стандарти: CLSI H3-A6, ISO 6710, ISO 15189</span>
+        </div>
+        <div class="q-card-body" style="padding: 12px 16px; font-size: 13px; line-height: 1.6;">
+          <p style="margin-bottom: 8px;"><strong>Призначення та мета процесу:</strong> Забезпечення безпомилкової ідентифікації пацієнта, перевірка преаналітичних вимог, авторозподіл тестів за пробірками та формування машинозчитуваного маркування.</p>
+          <div style="margin-bottom: 6px;"><strong>Покроковий регламент виконання:</strong></div>
+          <ol style="padding-left: 20px; color: #374151; margin-bottom: 6px;">
+            <li>Ідентифікація пацієнта за двома критеріями (ПІБ + дата народження) та підтягування е-направлення з ЕСОЗ eHealth.</li><li>Заповнення обов'язкового чек-листа готовності (стан натщесерце, прийом медикаментів).</li><li>Візуальний контроль послідовності взяття крові за CLSI H3-A6 Order of Draw (Цитрат -> Сироватка -> ЕДТА).</li><li>Миттєвий мережевий друк етикеток зі штрихкодами Code128 на термопринтери Zebra без відкриття вікон діалогів.</li>
+          </ol>
+          <div style="font-size: 12px; color: var(--text-muted);">
+            🔐 <strong>Відповідальна роль:</strong> <span style="color:var(--primary); font-weight:700;">Медсестра забору (Phlebotomist)</span> | 
+            🔗 <strong>Інтеграція:</strong> БД MedLink <code>evomis_db</code>, протоколи автоматизації та ЕСОЗ eHealth.
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Main Body Content -->
+
+      <div class="patient-banner">
+        <div class="patient-meta">
+          <div><strong style="color:var(--primary);">Пацієнт:</strong> Коваленко Олександр Сергійович (12.04.1985, 41 рік)</div>
+          <div><strong>Картка ЕМК:</strong> №108291</div>
+          <div><strong>Телефон:</strong> +380 (67) 123-45-67</div>
+          <div><strong>Е-направлення ЕСОЗ:</strong> <span class="q-badge q-badge-info">5491-8821-9012</span></div>
+        </div>
+        <div>
+          <span class="item-colored active">Ідентифіковано</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="q-card">
+          <div class="q-card-header">
+            <div class="q-card-title">🔍 Пошук пацієнта та преаналітичний чек-лист</div>
+            <span class="q-badge q-badge-info">Кабінет забору №1</span>
+          </div>
+          <div class="q-card-body">
+            <div style="display:flex; gap:8px; margin-bottom:14px;">
+              <input type="text" class="q-input" value="Коваленко Олександр Сергійович" style="flex:1;">
+              <button class="q-btn q-btn-primary">Знайти</button>
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:12px; margin-bottom:14px; font-size:13.5px; line-height:1.6;">
+              <div><strong>Призначені лабораторні панелі:</strong></div>
+              <ul style="padding-left:18px; margin-top:4px; list-style-type:disc;">
+                <li>Загальний аналіз крові розгорнутий (Sysmex XN-1000)</li>
+                <li>Біохімічний профіль: Глюкоза, АЛТ, АСТ, Білірубін, Креатинін (Mindray BS-240)</li>
+                <li>Коагулограма: МНВ, АЧТЧ, Фібриноген (Sysmex CA-660)</li>
+              </ul>
+            </div>
+
+            <h4 style="font-size:13.5px; font-weight:700; margin-bottom:8px; color:#374151;">Преаналітичний чек-лист медсестри:</h4>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; font-size:13.5px;">
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" checked style="accent-color:var(--primary);">
+                Пацієнт натщесерце (останній прийом їжі > 8 год тому)
+              </label>
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" checked style="accent-color:var(--primary);">
+                Особу пацієнта перевірено за паспортом / Дією (2 фактори ідентифікації)
+              </label>
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" style="accent-color:var(--primary);">
+                Прийом антикоагулянтів (Варфарин, Ксарелто) за останні 24 год
+              </label>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+              <button class="q-btn q-btn-positive" style="flex:1;" onclick="alert('Біоматеріал зафіксовано як забраний! Друк 3-х штрихкод-етикеток розпочато на принтері Zebra ZD421.')">
+                ✓ Підтвердити забір & Друк усіх етикеток
+              </button>
+              <button class="q-btn q-btn-outline" onclick="alert('Скасовано забір.')">Скасувати</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="q-card">
+          <div class="q-card-header">
+            <div class="q-card-title">🧪 CLSI Order of Draw (Порядок наповнення пробірок)</div>
+            <span class="q-badge q-badge-success">Автоконсолідація: 3 пробірки</span>
+          </div>
+          <div class="q-card-body">
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
+              Система об'єднала 18 тестів у 3 пробірки за стандартом CLSI H3-A6 для запобігання перехресної контамінації:
+            </p>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; align-items:center; gap:12px; padding:10px; border:2px solid #0284c7; border-radius:6px; background:#f0f9ff;">
+                <span style="font-size:20px; font-weight:800; color:#0284c7;">1.</span>
+                <div style="width:26px; height:26px; border-radius:50%; background:#0284c7; border:2px solid #ffffff; box-shadow:0 0 4px rgba(0,0,0,0.2);"></div>
+                <div style="flex:1;">
+                  <div style="font-weight:700; font-size:13.5px; color:#0369a1;">Цитрат натрію 3.2% (Блакитна кришка) · 3.0 мл</div>
+                  <div style="font-size:12px; color:#475569;">Коагулограма (МНВ, АЧТЧ, Фібриноген). Штрихкод: <code>1026004818</code></div>
+                </div>
+                <button class="q-btn q-btn-outline" style="height:26px; font-size:11px;" onclick="alert('ZPL етикетку 1026004818 надруковано!')">Друк</button>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:12px; padding:10px; border:2px solid #ca8a04; border-radius:6px; background:#fefce8;">
+                <span style="font-size:20px; font-weight:800; color:#ca8a04;">2.</span>
+                <div style="width:26px; height:26px; border-radius:50%; background:#ca8a04; border:2px solid #ffffff; box-shadow:0 0 4px rgba(0,0,0,0.2);"></div>
+                <div style="flex:1;">
+                  <div style="font-weight:700; font-size:13.5px; color:#a16207;">Активатор згортання / Гель (Жовта кришка) · 5.0 мл</div>
+                  <div style="font-size:12px; color:#475569;">Біохімія (Глюкоза, АЛТ, АСТ, Білірубін, Креатинін). Штрихкод: <code>1026004819</code></div>
+                </div>
+                <button class="q-btn q-btn-outline" style="height:26px; font-size:11px;" onclick="alert('ZPL етикетку 1026004819 надруковано!')">Друк</button>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:12px; padding:10px; border:2px solid #9333ea; border-radius:6px; background:#faf5ff;">
+                <span style="font-size:20px; font-weight:800; color:#9333ea;">3.</span>
+                <div style="width:26px; height:26px; border-radius:50%; background:#9333ea; border:2px solid #ffffff; box-shadow:0 0 4px rgba(0,0,0,0.2);"></div>
+                <div style="flex:1;">
+                  <div style="font-weight:700; font-size:13.5px; color:#7e22ce;">K2/K3 ЕДТА (Фіолетова кришка) · 2.6 мл</div>
+                  <div style="font-size:12px; color:#475569;">ЗАК + Лейкоцитарна формула + ШОЕ. Штрихкод: <code>1026004820</code></div>
+                </div>
+                <button class="q-btn q-btn-outline" style="height:26px; font-size:11px;" onclick="alert('ZPL етикетку 1026004820 надруковано!')">Друк</button>
+              </div>
+            </div>
+
+            <div style="margin-top:14px; padding:10px; background:#f4f6f8; border-radius:4px; font-size:12px; color:#4b5563;">
+              💡 <em>Підказка для медсестри:</em> Акуратно переверніть пробірку з EDTA 8-10 разів для змішування антикоагулянту без утворення піни.
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+    </main>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      const drawer = document.getElementById('sidebarDrawer');
+      if (drawer.style.display === 'none') {
+        drawer.style.display = 'flex';
+      } else {
+        drawer.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

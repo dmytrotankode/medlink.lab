@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1. Архітектура, Безпека & RBAC | MedLink LIS 3.0</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+  <style>
+    :root {
+      --primary: #4274A7;
+      --secondary: #318F94;
+      --accent: #0178BC;
+      --positive: #23B947;
+      --negative: #d04f45;
+      --warning: #f59e0b;
+      --dark-sidebar: #2d3238;
+      --bg-page: #f8fafc;
+      --border-color: #e2e8f0;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Roboto', -apple-system, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+    }
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--dark-sidebar);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid #1e2227;
+    }
+    .brand-header {
+      padding: 18px 20px;
+      background: #212529;
+      border-bottom: 3px solid var(--accent);
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    .nav-list {
+      padding: 15px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 13.5px;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(1, 120, 188, 0.5) 0%, rgba(49, 143, 148, 0.3) 100%);
+      color: #fff;
+      border-left: 4px solid #5EC58C;
+      font-weight: 500;
+    }
+    .nav-item i { width: 18px; text-align: center; color: #38bdf8; }
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 15px 20px;
+      background: #212529;
+      font-size: 11px;
+      color: #64748b;
+      border-top: 1px solid #334155;
+    }
+    /* Main Content */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .top-header {
+      background: #fff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .brand-gradient-bar {
+      height: 3px;
+      width: 100%;
+      background: linear-gradient(90deg, #0178BC 0%, #318F94 51%, #5EC58C 100%);
+    }
+    .content-area {
+      padding: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    h1, h2, h3, h4, h5 { color: #0f172a; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; }
+    h1 { font-size: 28px; margin-top: 0; color: var(--primary); }
+    h2 { font-size: 22px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: var(--accent); }
+    h3 { font-size: 18px; color: #334155; }
+    p, li { font-size: 14.5px; line-height: 1.6; color: #334155; }
+    .card {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 16px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+    th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+    pre, code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+    }
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0284c7;
+    }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-primary { background: #e0f2fe; color: #0369a1; }
+    .badge-success { background: #dcfce7; color: #15803d; }
+    .badge-danger { background: #fee2e2; color: #b91c1c; }
+    .badge-warning { background: #fef3c7; color: #b45309; }
+    .alert-box {
+      padding: 14px 18px;
+      border-radius: 6px;
+      margin: 16px 0;
+      font-size: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .alert-info { background: #e0f2fe; border-left: 4px solid var(--accent); color: #0369a1; }
+    .alert-warning { background: #fef3c7; border-left: 4px solid var(--warning); color: #92400e; }
+    .alert-danger { background: #fee2e2; border-left: 4px solid var(--negative); color: #991b1b; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #325d88; }
+    .btn-secondary { background: var(--secondary); }
+    .btn-secondary:hover { background: #246d71; }
+    .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+    .btn-outline:hover { background: #f1f5f9; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    @media (max-width: 900px) {
+      body { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: static; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+  <link rel="stylesheet" href="file_viewer_modal.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand-header">
+      <div class="brand-title">
+        <i class="fas fa-flask" style="color: #38bdf8;"></i> MedLink LIS 3.0
+      </div>
+      <div class="brand-sub">Клініко-діагностична лабораторія</div>
+    </div>
+    <nav class="nav-list">
+      <a href="index.html" class="nav-item "><i class="fas fa-home"></i> Головний портал</a>
+<a href="01_architecture_and_security.html" class="nav-item active"><i class="fas fa-shield-alt"></i> 1. Архітектура & RBAC</a>
+<a href="02_database_schema_and_relations.html" class="nav-item "><i class="fas fa-database"></i> 2. БД PostgreSQL & evomis</a>
+<a href="03_api_endpoints_specification.html" class="nav-item "><i class="fas fa-code"></i> 3. REST API Специфікація</a>
+<a href="04_legacy_migration_delphi_to_net.html" class="nav-item "><i class="fas fa-exchange-alt"></i> 4. Міграція з Delphi/MySQL</a>
+<a href="05_frontend_integration_guide.html" class="nav-item "><i class="fas fa-desktop"></i> 5. Інтеграція в App.View</a>
+<a href="06_analyzer_gateway_and_drivers.html" class="nav-item "><i class="fas fa-network-wired"></i> 6. Драйвери & Шлюз LIS</a>
+
+    </nav>
+    <div class="sidebar-footer">
+      <div>ТОВ "МедЛінк" &copy; 2026</div>
+      <div>Всі права захищено</div>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <div class="main-wrapper">
+    <div class="brand-gradient-bar"></div>
+    <header class="top-header">
+      <div style="font-size: 13px; color: var(--text-muted);">
+        <i class="fas fa-book-reader"></i> Технічна документація архітектора та розробника
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <a href="../medlink_lab_frontend/run_prototype.html" target="_blank" class="btn btn-secondary">
+          <i class="fas fa-play"></i> Запустити SPA Прототип
+        </a>
+      </div>
+    </header>
+    <main class="content-area">
+
+      <h1>1. Архітектура Системи, Модель Безпеки та RBAC</h1>
+      
+      <h2>1.1 Загальна Архітектура MedLink LIS 3.0</h2>
+      <p>
+        Система MedLink LIS побудована за модульним принципом із чітким розділенням аналітичного ядра, шлюзу інтеграції приладів та користувацького інтерфейсу:
+      </p>
+      <div class="card">
+        <ul style="margin: 0; padding-left: 20px;">
+          <li><strong>MedLink Core (evomis backend):</strong> .NET 8 Web API, що реалізує доменну логіку лабораторії, валідацію замовлень, розрахунок дельта-чеків, взаємодію з eHealth та збереження даних у PostgreSQL.</li>
+          <li><strong>MedLink.LabConnector:</strong> Автономний сервіс (Windows Service / Linux systemd), що встановлюється на локальному сервері лабораторії або мікрокомп'ютері поруч із аналізаторами. Здійснює безпосередній зв'язок по RS-232 / TCP, чергування запитів (Query mode) та буферизацію в SQLite.</li>
+          <li><strong>MedLink App.View:</strong> SPA на Quasar Framework v1.15.3 (Vue 2), що безшовно вбудовується в існуючий інтерфейс МІС.</li>
+          <li><strong>Patient Portal:</strong> Захищений клієнтський кабінет для відстеження статусу пробірок та завантаження офіційних бланків із QR-кодом та КЕП лікаря.</li>
+        </ul>
+      </div>
+
+      <h2>1.2 Рольова Модель Доступу (RBAC)</h2>
+      <p>
+        Для захисту медичних даних та дотримання наказу МОЗ України і стандарту ISO 15189 впроваджено сувору рольову модель:
+      </p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Код ролі</th>
+              <th>Найменування ролі</th>
+              <th>Дозволені операції та права</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>LAB_ADMIN</code></td>
+              <td>Адміністратор лабораторії</td>
+              <td>Керування аналізаторами, налаштування референсів, користувачів, тарифікація.</td>
+            </tr>
+            <tr>
+              <td><code>LAB_DOCTOR</code></td>
+              <td>Лікар-лаборант</td>
+              <td>Медична валідація результатів, накладання КЕП, реєстрація панічних викликів у ВРІТ.</td>
+            </tr>
+            <tr>
+              <td><code>LAB_TECHNICIAN</code></td>
+              <td>Фельдшер-лаборант</td>
+              <td>Робота зі списком досліджень, ручне введення мікроскопії, повторні вимірювання (rerun), ВКЯ.</td>
+            </tr>
+            <tr>
+              <td><code>PHLEBOTOMIST</code></td>
+              <td>Медсестра пункту забору</td>
+              <td>Ідентифікація пацієнта, забір біоматеріалу, валідація умов, друк ZPL штрихкодів.</td>
+            </tr>
+            <tr>
+              <td><code>LOGISTICS_COURIER</code></td>
+              <td>Кур'єр / Логіст</td>
+              <td>Прийом/передача термоконтейнерів, моніторинг температури термологера, маршрутні листи.</td>
+            </tr>
+            <tr>
+              <td><code>PATIENT</code></td>
+              <td>Пацієнт</td>
+              <td>Перегляд власних результатів за номером замовлення та SMS-паролем, завантаження PDF.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>1.3 Аутентифікація: Mock Режим vs Production OIDC</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3><i class="fas fa-toggle-on text-primary"></i> Прототип (Mock Auth)</h3>
+          <p>У режимі прототипу використовується локальний моковий контекст користувача:</p>
+          <pre><code>// src/services/labApiService.js
+export const USE_MOCK = true;
+// Авторизаційний токен емулюється:
+// Роль: LAB_DOCTOR (Д-р Мельник В.С.)</code></pre>
+          <p class="text-muted" style="font-size: 13px;">Дозволяє запускати фронтенд без необхідності піднятого Keycloak / IdentityServer.</p>
+        </div>
+
+        <div class="card">
+          <h3><i class="fas fa-lock text-positive"></i> Production (IdentityServer / Keycloak)</h3>
+          <p>При перенесенні у реальний <code>evomis</code> перемикається конфігурація:</p>
+          <pre><code>export const USE_MOCK = false;
+
+apiClient.interceptors.request.use(config => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});</code></pre>
+          <p class="text-muted" style="font-size: 13px;">Повна інтеграція з існуючим токеном МІС, включаючи claims організації та відділення.</p>
+        </div>
+      </div>
+    
+    </main>
+  </div>
+  <script src="file_viewer_modal.js"></script>
+</body>
+</html>

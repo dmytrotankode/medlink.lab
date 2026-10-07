@@ -1,0 +1,8 @@
+<ENQ>
+<STX>1H|\^&|||Roche^Cobas-e411^01|||||||P|E1394-97|20261006154500<CR><ETX>B0<CR><LF>
+<STX>2P|1||108291||Коваленко^Олександр^Сергійович||19850412|M<CR><ETX>6E<CR><LF>
+<STX>3O|1|1026004819||^^^TSH\^^^FT4|R||||||A||||||||||||||F<CR><ETX>2A<CR><LF>
+<STX>4R|1|^^^TSH^|1.45|uIU/mL|0.4^4.0|N|N|F||admin||20261006154012|Cobas_e411<CR><ETX>1D<CR><LF>
+<STX>5R|2|^^^FT4^|16.2|pmol/L|10.0^23.2|N|N|F||admin||20261006154230|Cobas_e411<CR><ETX>48<CR><LF>
+<STX>6L|1|N<CR><ETX>09<CR><LF>
+<EOT>
