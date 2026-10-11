@@ -5,6 +5,7 @@
 using System.Reflection;
 using System.Text.Json;
 using MedLink.LIS.Api.Data.Entities;
+using MedLink.LIS.Api.Models;
 using MedLink.LIS.Api.Infrastructure;
 using MedLink.LIS.Api.Services;
 using MedLink.LIS.Core.Barcodes;
@@ -50,6 +51,8 @@ public sealed class SeedService
         await SeedReflexRulesAsync();
         await SeedMicrobiologyAsync();
         await SeedAnalyzersAsync();
+        await SeedPerformersAsync();
+        await SeedBillingAsync();
         await SeedQcMaterialsAsync();
         await SeedCountersAsync();
         _logger.LogInformation("Сід довідників завершено за {Ms} мс", sw.ElapsedMilliseconds);
@@ -60,34 +63,190 @@ public sealed class SeedService
         if (await _db.Settings.AnyAsync()) return;
         var s = ReadResource<JsonElement>("settings.json");
         var settings = JsonSerializer.Deserialize<LabSettings>(s.GetRawText(), Json) ?? new LabSettings();
-        settings.Id = "lab-settings-default";
+        settings.Id = DeterministicGuid.For("lab-settings-default");
         if (s.TryGetProperty("reportTemplates", out var rt)) settings.ReportTemplates = JsonSerializer.Deserialize<Dictionary<string, bool>>(rt.GetRawText(), Json) ?? new();
         _db.Settings.Add(settings);
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Організаційні дані у структурі MedLink: cmn_enum_record (ті самі GUID, що в evomis DbInitializer), org_organization,
+    /// org_department + lab_department_settings, cmn_person + org_employee + lab_employee_settings, cmn_person + mis_patient_card,
+    /// ehe_service_catalog_service + org_organization_service, ehe_incoming_medical_referral. Вхідний org.json — плоский і читабельний.
+    /// </summary>
     private async Task SeedOrgAsync()
     {
         var org = ReadResource<JsonElement>("org.json");
-        if (!await _db.Departments.AnyAsync())
-            _db.Departments.AddRange(JsonSerializer.Deserialize<List<OrgDepartment>>(org.GetProperty("departments").GetRawText(), Json)!);
-        if (!await _db.Employees.AnyAsync())
-            _db.Employees.AddRange(JsonSerializer.Deserialize<List<OrgEmployee>>(org.GetProperty("employees").GetRawText(), Json)!);
-        if (!await _db.Patients.AnyAsync())
+        if (!await _db.EnumRecords.AnyAsync())
         {
-            var patients = JsonSerializer.Deserialize<List<MisPatientCard>>(org.GetProperty("patients").GetRawText(), Json)!;
-            foreach (var p in patients)
-            {
-                p.LastNameLatin = Core.Common.TransliterationKmu2010.ToLatin(p.LastName);
-                p.FirstNameLatin = Core.Common.TransliterationKmu2010.ToLatin(p.FirstName);
-                if (p.BirthDate.HasValue) p.BirthDate = DateTime.SpecifyKind(p.BirthDate.Value, DateTimeKind.Utc);
-            }
-            _db.Patients.AddRange(patients);
+            void E(string id, string type, string code, string caption) => _db.EnumRecords.Add(new CmnEnumRecord { Id = id, EnumType = type, Code = code, Caption = caption });
+            E(MedLinkEnums.GenderMale, "Gender", "M", "Чоловік");
+            E(MedLinkEnums.GenderFemale, "Gender", "F", "Жінка");
+            E(MedLinkEnums.GenderUnknown, "Gender", "U", "Невідомий");
+            E(MedLinkEnums.DeptTypeDiagnostic, "DepartmentType", "02", "Діагностичне");
+            E(MedLinkEnums.DeptTypeTreatment, "DepartmentType", "03", "Лікувальне");
+            E(MedLinkEnums.DeptTypeBranch, "DepartmentType", "05", "Філія");
+            E(MedLinkEnums.DeptTypeUnit, "DepartmentType", "06", "Підрозділ");
+            E(MedLinkEnums.PositionOther, "OrgPositionType", "0001", "Інші");
+            E(MedLinkEnums.PositionDoctors, "OrgPositionType", "0002", "Лікарі");
+            E(MedLinkEnums.PositionLabTechs, "OrgPositionType", "0003", "Лаборанти");
+            E(MedLinkEnums.PositionNurses, "OrgPositionType", "0005", "Середній мед.персонал");
+            E(MedLinkEnums.PrivacyUnknown, "PrivacyRequestType", "Uknown", "Не опитували");
+            E(MedLinkDefaults.PatientCardDocumentTypeId, "MedicalDocumentType", "AmbCard", "Амбулаторна карта");
+            E(MedLinkDefaults.PatientCardTypePersonId, "PatientCardType", "person", "Особа");
+            E(MedLinkEnums.ReferralStatusActive, "MedicalReferralStatus", "active", "Активне");
+            E(MedLinkEnums.ReferralStatusCompleted, "MedicalReferralStatus", "completed", "Погашене");
+            E(MedLinkEnums.ReferralStatusRecalled, "MedicalReferralStatus", "recalled", "Відкликане");
+            E(MedLinkEnums.ProcessingNew, "MedicalReferralProcessingStatusInEhealth", "new", "Нове");
+            E(MedLinkEnums.ProcessingInProgress, "MedicalReferralProcessingStatusInEhealth", "in_progress", "Взято в роботу");
+            E(MedLinkEnums.ProcessingCompleted, "MedicalReferralProcessingStatusInEhealth", "completed", "Виконано");
         }
+        if (!await _db.Organizations.AnyAsync())
+            _db.Organizations.Add(new OrgOrganization { Id = MedLinkDefaults.OrganizationId, Code = "MEDLINK-LAB", Caption = "ТОВ «МедЛінк» — Клініко-діагностична лабораторія", FullName = "Товариство з обмеженою відповідальністю «МедЛінк»" });
+        if (!await _db.Departments.AnyAsync())
+            foreach (var el in org.GetProperty("departments").EnumerateArray())
+            {
+                var kind = el.GetProperty("departmentType").GetString()!;
+                var d = new OrgDepartment
+                {
+                    Id = el.GetProperty("id").GetString()!, Code = Str(el, "code"), Caption = Str(el, "name"), FullName = Str(el, "name"), Location = Str(el, "address"),
+                    OrganizationId = MedLinkDefaults.OrganizationId, DepartmentTypeId = OrgDictionaryService.DepartmentTypeFor(kind)
+                };
+                d.LabSettings = new LabDepartmentSettings { DepartmentId = d.Id, LabKind = kind, Phone = Str(el, "phone") };
+                _db.Departments.Add(d);
+            }
+        if (!await _db.Employees.AnyAsync())
+            foreach (var el in org.GetProperty("employees").EnumerateArray())
+            {
+                var id = el.GetProperty("id").GetString()!;
+                var parts = Str(el, "fullName")!.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var person = new CmnPerson
+                {
+                    Id = DeterministicGuid.For("person:employee:" + id), LastName = parts.ElementAtOrDefault(0), Name = parts.ElementAtOrDefault(1), MiddleName = parts.ElementAtOrDefault(2),
+                    Phone = Str(el, "phone"), Email = Str(el, "email"), NoIpn = true
+                };
+                person.Caption = CmnPerson.BuildCaption(person.LastName, person.Name, person.MiddleName);
+                var role = el.GetProperty("labRole").GetString()!;
+                var e = new OrgEmployee
+                {
+                    Id = id, Person = person, PersonId = person.Id, Caption = person.Caption, OrganizationId = MedLinkDefaults.OrganizationId,
+                    DepartmentId = Str(el, "departmentId"), PositionTypeId = OrgDictionaryService.PositionTypeFor(role), WorkingStartDate = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                };
+                e.LabSettings = new LabEmployeeSettings { EmployeeId = id, LabRole = role, PositionName = Str(el, "positionName"), DigitalSignatureCertId = Str(el, "digitalSignatureCertId") };
+                _db.Employees.Add(e);
+            }
+        if (!await _db.Patients.AnyAsync())
+            foreach (var el in org.GetProperty("patients").EnumerateArray())
+            {
+                var req = JsonSerializer.Deserialize<NewPatientRequest>(el.GetRawText(), Json)!;
+                if (req.BirthDate.HasValue) req.BirthDate = DateTime.SpecifyKind(req.BirthDate.Value, DateTimeKind.Utc);
+                var card = MedLinkPeople.NewPatient(req, MedLinkDefaults.OrganizationId);
+                card.Id = el.GetProperty("id").GetString()!;
+                card.Person!.Id = card.PersonId = DeterministicGuid.For("person:patient:" + card.Id);
+                card.RegNumber = "AMB-" + card.Id[^4..];
+                _db.Patients.Add(card);
+            }
+        if (!await _db.ServiceCatalog.AnyAsync())
+            foreach (var el in org.GetProperty("services").EnumerateArray())
+            {
+                var code = Str(el, "code")!;
+                _db.ServiceCatalog.Add(new EheServiceCatalogService
+                {
+                    Id = DeterministicGuid.For("ehealth-service:" + code), Code = code, Name = Str(el, "name"), Caption = Str(el, "name"),
+                    MedicalReferralCategoryId = MedLinkDefaults.ReferralCategoryLaboratoryId
+                });
+                _db.OrganizationServices.Add(new OrgOrganizationService
+                {
+                    Id = el.GetProperty("id").GetString()!, Caption = Str(el, "name"), Price = el.GetProperty("price").GetDecimal(), OrganizationId = MedLinkDefaults.OrganizationId, Duration = 15
+                });
+            }
+        await _db.SaveChangesAsync();
         if (!await _db.Referrals.AnyAsync())
-            _db.Referrals.AddRange(JsonSerializer.Deserialize<List<EheIncomingMedicalReferral>>(org.GetProperty("referrals").GetRawText(), Json)!);
+        {
+            foreach (var el in org.GetProperty("referrals").EnumerateArray())
+            {
+                var patientId = Str(el, "patientId");
+                var patient = await _db.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.Id == patientId);
+                _db.Referrals.Add(new EheIncomingMedicalReferral
+                {
+                    Id = el.GetProperty("id").GetString()!, RegNumber = Str(el, "referralCode"), Caption = Str(el, "serviceName"), OrganizationId = MedLinkDefaults.OrganizationId,
+                    PatientCardId = patientId, PatientShortName = patient?.Caption, ServiceCatalogServiceId = DeterministicGuid.For("ehealth-service:" + Str(el, "serviceCode")),
+                    MedicalReferralCategoryId = MedLinkDefaults.ReferralCategoryLaboratoryId, StatusId = MedLinkDefaults.ReferralStatusActiveId, PriorityId = MedLinkEnums.EmptyGuid,
+                    ProcessingStatusInEhealthId = MedLinkEnums.ProcessingNew,
+                    ExpirationDate = DateTime.UtcNow.Date.AddDays(30)
+                });
+            }
+            await _db.SaveChangesAsync();
+        }
+    }
+
+    /// <summary>Лабораторії-виконавці: власна, зовнішня партнерська (Сінево, обмін файлом) і TerraLab (довідково — обмін веде MedLink).</summary>
+    private async Task SeedPerformersAsync()
+    {
+        if (await _db.Performers.AnyAsync()) return;
+        var tests = await _db.Tests.AsNoTracking().ToDictionaryAsync(t => t.Code, t => t.Id);
+        foreach (var el in ReadResource<List<JsonElement>>("performers.json"))
+        {
+            var p = JsonSerializer.Deserialize<LabPerformer>(el.GetRawText(), Json)!;
+            p.Tests = new();
+            foreach (var t in el.GetProperty("tests").EnumerateArray())
+            {
+                var code = t.GetProperty("testCode").GetString()!;
+                if (!tests.TryGetValue(code, out var testId)) continue;
+                var pt = JsonSerializer.Deserialize<LabPerformerTest>(t.GetRawText(), Json)!;
+                pt.PerformerId = p.Id; pt.TestId = testId;
+                p.Tests.Add(pt);
+            }
+            _db.Performers.Add(p);
+        }
         await _db.SaveChangesAsync();
     }
+
+    /// <summary>Прайс-листи, пакети, платники (каса, страхові програми, НСЗУ, клініка, внутрішнє), поліси демо-пацієнтів.</summary>
+    private async Task SeedBillingAsync()
+    {
+        if (await _db.Payers.AnyAsync()) return;
+        var b = ReadResource<JsonElement>("billing.json");
+        var profiles = await _db.Profiles.AsNoTracking().ToDictionaryAsync(p => p.Code, p => p.Id);
+        var tests = await _db.Tests.AsNoTracking().ToDictionaryAsync(t => t.Code, t => t.Id);
+        (string? P, string? T) Ref(string code) => profiles.TryGetValue(code, out var p) ? (p, null) : tests.TryGetValue(code, out var t) ? (null, t) : throw new InvalidOperationException($"billing.json: невідомий код {code}");
+        DateTime? D(JsonElement el, string n) => el.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.String ? DateTime.SpecifyKind(DateTime.Parse(v.GetString()!), DateTimeKind.Utc) : null;
+        var lists = new Dictionary<string, string>();
+        foreach (var el in b.GetProperty("priceLists").EnumerateArray())
+        {
+            var code = el.GetProperty("code").GetString()!;
+            var l = new LabPriceList { Id = DeterministicGuid.For("pricelist:" + code), Code = code, Name = el.GetProperty("name").GetString()!, ValidFrom = D(el, "validFrom"), ValidTo = D(el, "validTo"),
+                IsDefault = el.TryGetProperty("isDefault", out var d) && d.GetBoolean() };
+            foreach (var it in el.GetProperty("items").EnumerateObject()) { var (pid, tid) = Ref(it.Name); l.Items.Add(new LabPriceListItem { PriceListId = l.Id, ProfileId = pid, TestId = tid, Price = it.Value.GetDecimal() }); }
+            if (el.TryGetProperty("packages", out var pk))
+                foreach (var pe in pk.EnumerateArray())
+                    l.Packages.Add(new LabPricePackage { PriceListId = l.Id, Code = pe.GetProperty("code").GetString()!, Name = pe.GetProperty("name").GetString()!, Price = pe.GetProperty("price").GetDecimal(),
+                        MemberIds = pe.GetProperty("members").EnumerateArray().Select(m => { var (pid, tid) = Ref(m.GetString()!); return pid ?? tid!; }).ToList() });
+            _db.PriceLists.Add(l);
+            lists[code] = l.Id;
+        }
+        foreach (var el in b.GetProperty("payers").EnumerateArray())
+        {
+            var p = JsonSerializer.Deserialize<LabPayer>(el.GetRawText(), Json)!;
+            p.Id = DeterministicGuid.For("payer:" + p.Code);
+            p.ContractValidTo = D(el, "contractValidTo");
+            if (el.TryGetProperty("priceListCode", out var pl)) p.PriceListId = lists[pl.GetString()!];
+            _db.Payers.Add(p);
+        }
+        foreach (var el in b.GetProperty("policies").EnumerateArray())
+            _db.PatientInsurances.Add(new MisPatientInsurance
+            {
+                PatientCardId = el.GetProperty("patientId").GetString()!, PayerId = DeterministicGuid.For("payer:" + el.GetProperty("payerCode").GetString()),
+                PolicyNumber = el.GetProperty("policyNumber").GetString()!, ValidFrom = D(el, "validFrom"), ValidTo = D(el, "validTo")
+            });
+        // Е-направлення №1 — за програмою медичних гарантій (платник НСЗУ підставляється автоматично)
+        var program = b.GetProperty("nszuProgramId").GetString();
+        var r1 = await _db.Referrals.FirstOrDefaultAsync(r => r.Id == "0c0f0000-0000-0000-0000-000000000001");
+        if (r1 != null) r1.MedicalServiceProgramId = program;
+        await _db.SaveChangesAsync();
+    }
+
+    private static string? Str(JsonElement el, string name) => el.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 
     private async Task SeedDictionariesAsync()
     {
@@ -181,14 +340,13 @@ public sealed class SeedService
                 var code = it.GetProperty("testCode").GetString()!;
                 p.Items.Add(new LabTestProfileItem { ProfileId = p.Id, TestId = tests[code].Id, DisplayOrder = it.GetProperty("displayOrder").GetInt32(), IsRequired = it.GetProperty("isRequired").GetBoolean() });
             }
-            // Послуга МІС (dct_service) ↔ профіль (як dct_service_lab у Simplex)
+            // Послуга прайсу MedLink (org_organization_service) і послуга каталогу eHealth ↔ лабораторний профіль (рішення Q-01)
             var svc = services.FirstOrDefault(s => s.GetProperty("labProfileCode").GetString() == p.Code);
             if (svc.ValueKind == JsonValueKind.Object)
             {
-                var service = new DctService { Id = svc.GetProperty("id").GetString()!, Code = svc.GetProperty("code").GetString()!, Name = svc.GetProperty("name").GetString()!, Price = svc.GetProperty("price").GetDecimal(), LabProfileId = p.Id };
-                if (!await _db.Services.AnyAsync(s => s.Id == service.Id)) _db.Services.Add(service);
-                p.MisServiceId = service.Id;
-                p.Price = service.Price;
+                p.OrganizationServiceId = svc.GetProperty("id").GetString()!;
+                p.EhealthServiceCatalogServiceId = DeterministicGuid.For("ehealth-service:" + svc.GetProperty("code").GetString());
+                p.Price = svc.GetProperty("price").GetDecimal();
             }
             _db.Profiles.Add(p);
         }
@@ -202,6 +360,7 @@ public sealed class SeedService
         foreach (var l in ReadResource<List<LabReferenceLayer>>("reference_layers.json"))
         {
             l.TestId = tests.TryGetValue(l.TestCode, out var id) ? id : null;
+            if (!Guid.TryParse(l.Id, out _)) l.Id = DeterministicGuid.For("layer:" + l.Id);
             _db.ReferenceLayers.Add(l);
         }
         await _db.SaveChangesAsync();

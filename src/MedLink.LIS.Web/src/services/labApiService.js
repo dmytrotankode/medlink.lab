@@ -80,6 +80,7 @@ const labApi = {
   getOrders: params => data(http.get('/orders', { params: clean(params) })),
   getOrder: id => data(http.get(`/orders/${id}`)),
   createOrder: body => data(http.post('/orders', body)),
+  tubePlan: body => data(http.post('/orders/tube-plan', body)),
   updateOrder: (id, body) => data(http.put(`/orders/${id}`, body)),
   deleteOrder: id => data(http.delete(`/orders/${id}`)),
   createOrdersBatch: list => data(http.post('/orders/batch', list)),
@@ -229,6 +230,49 @@ const labApi = {
   importResults: (formData, dryRun) => data(http.post('/import/results', formData, {
     params: { dryRun: !!dryRun }, headers: { 'Content-Type': 'multipart/form-data' }
   })),
+
+  // ---------- Оплата (FR-GAP-060) ----------
+  payers: () => data(http.get('/payers')),
+  savePayer: (id, body) => data(id ? http.put(`/payers/${id}`, body) : http.post('/payers', body)),
+  priceLists: () => data(http.get('/price-lists')),
+  savePriceList: (id, body) => data(id ? http.put(`/price-lists/${id}`, body) : http.post('/price-lists', body)),
+  patientInsurances: patientId => data(http.get(`/patients/${patientId}/insurances`)),
+  addPatientInsurance: (patientId, body) => data(http.post(`/patients/${patientId}/insurances`, body)),
+  billingQuote: body => data(http.post('/billing/quote', body)),
+  orderBilling: id => data(http.get(`/orders/${id}/billing`)),
+  setOrderPayer: (id, body) => data(http.put(`/orders/${id}/payer`, body)),
+  setChargePatientChoice: (id, chargeId, patientPays) => data(http.put(`/orders/${id}/charges/${chargeId}/patient-choice`, null, { params: { patientPays } })),
+  addPayment: (id, body) => data(http.post(`/orders/${id}/payments`, body)),
+  issueInvoice: id => data(http.post(`/orders/${id}/invoice`)),
+  receiptUrl: id => `${API_BASE}/orders/${id}/receipt`,
+  invoicePrintUrl: id => `${API_BASE}/invoices/${id}/print`,
+
+  // ---------- Направлення (FR-REF-001) ----------
+  lookupEhealthReferral: (number, patientId) => data(http.get('/referrals/ehealth/lookup', { params: clean({ number, patientId }) })),
+  referralJournal: params => data(http.get('/referrals/journal', { params: clean(params || {}) })),
+
+  // ---------- Зовнішні лабораторії (send-out) ----------
+  performers: includeInactive => data(http.get('/performers', { params: clean({ includeInactive }) })),
+  savePerformer: (id, body) => data(id ? http.put(`/performers/${id}`, body) : http.post('/performers', body)),
+  setPerformerTests: (id, items) => data(http.put(`/performers/${id}/tests`, items)),
+  routeOrderTest: (orderTestId, performerId, reason) => data(http.put(`/order-tests/${orderTestId}/performer`, { performerId, reason })),
+  sendOutQueue: performerId => data(http.get('/send-out/queue', { params: clean({ performerId }) })),
+  sendOuts: (status, performerId) => data(http.get('/send-out', { params: clean({ status, performerId }) })),
+  sendOut: id => data(http.get(`/send-out/${id}`)),
+  createSendOut: body => data(http.post('/send-out', body)),
+  dispatchSendOut: (id, body) => data(http.post(`/send-out/${id}/dispatch`, body || {})),
+  acceptSendOut: (id, body) => data(http.post(`/send-out/${id}/accept`, body || {})),
+  cancelSendOut: (id, reason) => data(http.post(`/send-out/${id}/cancel`, { reason })),
+  sendOutResult: (itemId, body) => data(http.post(`/send-out/items/${itemId}/result`, body)),
+  sendOutRejectItem: (itemId, reason, returnToQueue) => data(http.post(`/send-out/items/${itemId}/reject`, { reason, returnToQueue })),
+  sendOutImport: (id, formData, dryRun) => data(http.post(`/send-out/${id}/import`, formData, {
+    params: { dryRun: !!dryRun }, headers: { 'Content-Type': 'multipart/form-data' }
+  })),
+  orderAttachments: orderId => data(http.get(`/orders/${orderId}/attachments`)),
+  uploadAttachment: (orderId, formData, sendOutId) => data(http.post(`/orders/${orderId}/attachments`, formData, {
+    params: clean({ sendOutId }), headers: { 'Content-Type': 'multipart/form-data' }
+  })),
+  attachmentUrl: id => `${API_BASE}/attachments/${id}/content`,
 
   // ---------- Кабінет пацієнта ----------
   portalOrders: patientId => data(http.get(`/portal/${patientId}/orders`)),

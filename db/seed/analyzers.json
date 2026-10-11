@@ -1,11 +1,11 @@
 {
   "connectors": [
-    { "id": "con-0000-0000-0000-000000000001", "name": "Лабораторний ПК №1 (КДЛ)", "installKey": "DEMO-INSTALL-KEY-0001", "status": "PENDING" }
+    { "id": "0c0e0000-0000-0000-0000-000000000001", "name": "Лабораторний ПК №1 (КДЛ)", "installKey": "DEMO-INSTALL-KEY-0001", "status": "PENDING" }
   ],
   "analyzers": [
     {
-      "id": "anz-0000-0000-0000-000000000001", "code": "SYSMEX_XN1000", "name": "Sysmex XN-1000 (гематологія)", "analyzerTypeCode": "SYSMEXXN",
-      "connectorId": "con-0000-0000-0000-000000000001", "departmentId": "dept-0000-0000-0000-000000000001",
+      "id": "0a2a0000-0000-0000-0000-000000000001", "code": "SYSMEX_XN1000", "name": "Sysmex XN-1000 (гематологія)", "analyzerTypeCode": "SYSMEXXN",
+      "connectorId": "0c0e0000-0000-0000-0000-000000000001", "departmentId": "0d000000-0000-0000-0000-000000000001",
       "connectionMode": "TCP", "tcpHost": "0.0.0.0", "tcpPort": 5100, "isTcpServer": true, "autoQueryOrders": true,
       "parameterMap": [
         { "analyzerCode": "WBC", "testCode": "WBC" }, { "analyzerCode": "RBC", "testCode": "RBC" }, { "analyzerCode": "HGB", "testCode": "HGB" },
@@ -15,8 +15,8 @@
       ]
     },
     {
-      "id": "anz-0000-0000-0000-000000000002", "code": "MINDRAY_BS240", "name": "Mindray BS-240 (біохімія)", "analyzerTypeCode": "MINDRAY240",
-      "connectorId": "con-0000-0000-0000-000000000001", "departmentId": "dept-0000-0000-0000-000000000001",
+      "id": "0a2a0000-0000-0000-0000-000000000002", "code": "MINDRAY_BS240", "name": "Mindray BS-240 (біохімія)", "analyzerTypeCode": "MINDRAY240",
+      "connectorId": "0c0e0000-0000-0000-0000-000000000001", "departmentId": "0d000000-0000-0000-0000-000000000001",
       "connectionMode": "TCP", "tcpHost": "192.168.1.102", "tcpPort": 5600, "isTcpServer": false, "autoQueryOrders": true,
       "parameterMap": [
         { "analyzerCode": "GLU", "testCode": "GLU" }, { "analyzerCode": "Crea", "testCode": "CREAT" }, { "analyzerCode": "CREAT", "testCode": "CREAT" },

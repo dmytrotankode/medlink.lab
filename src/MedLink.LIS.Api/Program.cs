@@ -15,10 +15,16 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // --- База даних: SQLite (Database:SqlitePath, типово App_Data/medlink_lis.db відносно content root) ---
-var sqlitePath = builder.Configuration["Database:SqlitePath"] ?? "App_Data/medlink_lis.db";
-if (!Path.IsPathRooted(sqlitePath)) sqlitePath = Path.Combine(builder.Environment.ContentRootPath, sqlitePath);
-Directory.CreateDirectory(Path.GetDirectoryName(sqlitePath)!);
-builder.Services.AddDbContext<LisDbContext>(o => o.UseSqlite($"Data Source={sqlitePath}"));
+// Шлях обчислюється ліниво з IConfiguration контейнера, щоб перевизначення (WebApplicationFactory у тестах) застосовувались
+static string ResolveSqlitePath(IConfiguration cfg, IHostEnvironment env)
+{
+    var path = cfg["Database:SqlitePath"] ?? "App_Data/medlink_lis.db";
+    if (!Path.IsPathRooted(path)) path = Path.Combine(env.ContentRootPath, path);
+    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+    return path;
+}
+builder.Services.AddDbContext<LisDbContext>((sp, o) =>
+    o.UseSqlite($"Data Source={ResolveSqlitePath(sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<IHostEnvironment>())}"));
 
 // --- MVC / JSON / ProblemDetails ---
 builder.Services.AddControllers()
@@ -61,6 +67,24 @@ builder.Services.AddScoped<IRolePolicy, RolePolicy>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<INumeratorService, NumeratorService>();
 builder.Services.AddScoped<OrderStateService>();
+builder.Services.AddScoped<TubePlanService>();
+builder.Services.AddScoped<OrgDictionaryService>();
+builder.Services.AddScoped<SendOutService>();
+// --- ЕСОЗ (eHealth): реальні виклики API; у режимі Mock відповідає EhealthMockHandler (автономна робота й тести) ---
+var ehealthOptions = builder.Configuration.GetSection("Ehealth").Get<MedLink.LIS.Api.Services.Ehealth.EhealthOptions>() ?? new();
+builder.Services.AddSingleton(ehealthOptions);
+builder.Services.AddSingleton<MedLink.LIS.Api.Services.Ehealth.EhealthMockState>();
+builder.Services.AddTransient<MedLink.LIS.Api.Services.Ehealth.EhealthMockHandler>();
+var ehealthHttp = builder.Services.AddHttpClient(MedLink.LIS.Api.Services.Ehealth.EhealthClient.HttpClientName, c =>
+{
+    c.BaseAddress = new Uri(ehealthOptions.BaseUrl.EndsWith('/') ? ehealthOptions.BaseUrl : ehealthOptions.BaseUrl + "/");
+    c.Timeout = TimeSpan.FromSeconds(60);
+});
+if (ehealthOptions.IsMock) ehealthHttp.ConfigurePrimaryHttpMessageHandler<MedLink.LIS.Api.Services.Ehealth.EhealthMockHandler>();
+builder.Services.AddScoped<MedLink.LIS.Api.Services.Ehealth.IEhealthClient, MedLink.LIS.Api.Services.Ehealth.EhealthClient>();
+builder.Services.AddScoped<IEhealthReferralGateway, EhealthReferralGateway>();
+builder.Services.AddScoped<ReferralService>();
+builder.Services.AddScoped<BillingService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<SampleService>();
 builder.Services.AddScoped<ResultPipelineService>();
@@ -92,11 +116,26 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<RetentionCleanupSe
 
 var app = builder.Build();
 
+// --- Експорт DDL PostgreSQL для перенесення в MedLink: --export-pg-ddl <файл> (без запуску сервера) ---
+var ddlArg = Array.IndexOf(args, "--export-pg-ddl");
+if (ddlArg >= 0)
+{
+    using var ddlScope = app.Services.CreateScope();
+    var target = ddlArg + 1 < args.Length ? args[ddlArg + 1] : "medlink_lis_schema.sql";
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(target))!);
+    File.WriteAllText(target, PostgresDdlGenerator.Generate(ddlScope.ServiceProvider.GetRequiredService<LisDbContext>()), new System.Text.UTF8Encoding(false));
+    Console.WriteLine($"DDL PostgreSQL збережено: {Path.GetFullPath(target)}");
+    return;
+}
+
 // --- Створення схеми та сід (ідемпотентно, лише порожні таблиці) ---
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<LisDbContext>();
+    var legacyBackup = await SchemaUpgrader.BackupIfIncompatibleAsync(db);
+    if (legacyBackup != null) app.Logger.LogWarning("БД попередньої структури (до вирівнювання з MedLink) збережено як {Backup}; створюється нова БД", legacyBackup);
     await db.Database.EnsureCreatedAsync();
+    foreach (var change in await SchemaUpgrader.UpgradeAsync(db)) app.Logger.LogWarning("Оновлення схеми БД: {Sql}", change);
     await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
     await scope.ServiceProvider.GetRequiredService<SeedService>().SeedAsync();
     if (app.Configuration.GetValue<bool?>("Lab:SeedDemoData") ?? true)
@@ -149,7 +188,7 @@ app.MapFallback(async ctx =>
     else { ctx.Response.StatusCode = 404; await ctx.Response.WriteAsync("Фронтенд не зібрано (wwwroot/index.html відсутній)"); }
 });
 
-app.Logger.LogInformation("MedLink LIS 4.0 API запущено. Swagger: /swagger · БД: {Db}", sqlitePath);
+app.Logger.LogInformation("MedLink LIS 4.0 API запущено. Swagger: /swagger · БД: {Db}", ResolveSqlitePath(app.Configuration, app.Environment));
 app.Run();
 
 /// <summary>Точка входу (для WebApplicationFactory в інтеграційних тестах).</summary>

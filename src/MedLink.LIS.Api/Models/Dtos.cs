@@ -81,6 +81,9 @@ public sealed class OrderTestDto
     public DateTime? ReleasedAt { get; set; }
     public string? LabSectionId { get; set; }
     public string? LabSectionName { get; set; }
+    /// <summary>Зовнішня лабораторія-виконавець (null — власна лабораторія).</summary>
+    public string? PerformerId { get; set; }
+    public string? PerformerName { get; set; }
     public string? JournalNumber { get; set; }
     public ResultDto? Result { get; set; }
     public List<AllowedActionDto> AllowedActions { get; set; } = new();
@@ -97,6 +100,13 @@ public sealed class SampleDto
     public int BiomaterialTypeId { get; set; }
     public string? BiomaterialName { get; set; }
     public int GroupNumb { get; set; }
+    /// <summary>Порядок забору (CLSI) типу тари.</summary>
+    public int OrderOfDrawIndex { get; set; }
+    /// <summary>Сумарний об'єм матеріалу, потрібний тестам пробірки, мл (FR-PRE-004).</summary>
+    public double? PlannedVolumeMl { get; set; }
+    public double? CapacityMl { get; set; }
+    /// <summary>Коди причин окремої пробірки (TubePlanReasons).</summary>
+    public List<string> PlanReasons { get; set; } = new();
     public string? ParentSampleId { get; set; }
     public string DerivationType { get; set; } = "PRIMARY";
     public int DerivationIndex { get; set; }
@@ -131,6 +141,20 @@ public sealed class OrderDto
     public DateTime OrderDatetime { get; set; }
     public string Status { get; set; } = "";
     public bool IsUrgentCito { get; set; }
+    public string ReferralType { get; set; } = "SELF";
+    public string? ReferralTypeName { get; set; }
+    /// <summary>Номер направлення: е-направлення / паперового / клініки-партнера.</summary>
+    public string? ReferralNumber { get; set; }
+    public string? ReferralStatus { get; set; }
+    public string? ReferrerOrganizationName { get; set; }
+    public string? ReferrerDoctorName { get; set; }
+    public string? PayerId { get; set; }
+    public string? PayerName { get; set; }
+    public string? PayerKind { get; set; }
+    public string? InsurancePolicyNumber { get; set; }
+    public decimal PayerAmount { get; set; }
+    public decimal PatientAmount { get; set; }
+    public decimal PaidAmount { get; set; }
     public string? EhealthReferralId { get; set; }
     public string? ClinicalNotes { get; set; }
     public bool IsPregnant { get; set; }
@@ -231,7 +255,20 @@ public sealed class CreateOrderRequest
     public string? DoctorId { get; set; }
     public string? DepartmentId { get; set; }
     public bool IsUrgentCito { get; set; }
+    /// <summary>Тип направлення (FR-REF-001): EHEALTH | PAPER | INTERNAL | EXTERNAL_CLINIC | SELF; порожньо — визначається автоматично.</summary>
+    public string? ReferralType { get; set; }
     public string? EhealthReferralId { get; set; }
+    /// <summary>Номер е-направлення (альтернатива ehealthReferralId).</summary>
+    public string? EhealthReferralNumber { get; set; }
+    public MedLink.LIS.Api.Services.PaperReferralRequest? PaperReferral { get; set; }
+    public string? ReferrerOrganizationName { get; set; }
+    public string? ReferrerOrganizationEdrpou { get; set; }
+    public string? ReferrerDoctorName { get; set; }
+    public string? ReferrerNumber { get; set; }
+    /// <summary>Платник (lab_payer id/код); порожньо — поліс → НСЗУ з е-направлення → пацієнт.</summary>
+    public string? PayerId { get; set; }
+    public string? PatientInsuranceId { get; set; }
+    public string? AuthorizationNumber { get; set; }
     public string? ClinicalNotes { get; set; }
     public bool IsPregnant { get; set; }
     public int? PregnancyWeek { get; set; }
@@ -356,4 +393,54 @@ public sealed class TransitionRequest
 {
     public string Status { get; set; } = "";
     public string? Comment { get; set; }
+}
+
+// ------------------------------------------------------------------ план пробірок (FR-PRE-004)
+public sealed class TubePlanRequest
+{
+    public List<string> ProfileIds { get; set; } = new();
+    public List<string> TestIds { get; set; } = new();
+    /// <summary>Для дозамовлення: план з урахуванням наявних пробірок замовлення.</summary>
+    public string? OrderId { get; set; }
+}
+
+public sealed class TubePlanTestDto
+{
+    public string TestId { get; set; } = "";
+    public string Code { get; set; } = "";
+    public string Name { get; set; } = "";
+    public double? RequiredVolumeMl { get; set; }
+    /// <summary>false — тест уже був у цій пробірці (дозамовлення).</summary>
+    public bool IsNew { get; set; } = true;
+}
+
+public sealed class TubePlanItemDto
+{
+    public int Index { get; set; }
+    public string? ExistingSampleId { get; set; }
+    public string? ExistingBarcode { get; set; }
+    public int TubeTypeId { get; set; }
+    public string? TubeCode { get; set; }
+    public string? TubeName { get; set; }
+    public string? ColorCode { get; set; }
+    public string? Anticoagulant { get; set; }
+    public int InversionsCount { get; set; }
+    public int OrderOfDrawIndex { get; set; }
+    public int BiomaterialTypeId { get; set; }
+    public string? BiomaterialName { get; set; }
+    public string? CompatibilityGroup { get; set; }
+    public bool IsSeparate { get; set; }
+    public double? CapacityMl { get; set; }
+    public double UsedVolumeMl { get; set; }
+    public int? MaxTests { get; set; }
+    public List<string> Reasons { get; set; } = new();
+    public List<string> ReasonTexts { get; set; } = new();
+    public List<TubePlanTestDto> Tests { get; set; } = new();
+}
+
+public sealed class TubePlanDto
+{
+    public List<TubePlanItemDto> Tubes { get; set; } = new();
+    public int NewTubesCount { get; set; }
+    public List<string> Warnings { get; set; } = new();
 }

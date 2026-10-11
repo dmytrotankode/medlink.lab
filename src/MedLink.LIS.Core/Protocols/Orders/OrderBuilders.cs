@@ -479,7 +479,7 @@ public sealed class IntegraOrderBuilder : OrderBuilderBase
             ((char)AstmControl.SOH).ToString(),
             "09 CBINTEGRA 400    10",
             AstmControl.StxChar.ToString(),
-            $"53 {Barcode(order).PadRight(15)} {now:dd/MM/yyyy} SER",
+            $"53 {Barcode(order).PadRight(15)} {now.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)} SER",
             "54 000 00 A",
         };
         foreach (var code in Codes(order)) lines.Add($"55 {code}");

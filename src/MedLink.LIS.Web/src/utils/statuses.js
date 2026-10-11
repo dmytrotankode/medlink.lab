@@ -179,3 +179,12 @@ export function isCritical (flag) {
 export function toOptions (map) {
   return Object.keys(map).map(k => ({ value: k, label: map[k].label }));
 }
+
+// Причини окремої пробірки (FR-PRE-004, коди TubePlanReasons API)
+export const TUBE_PLAN_REASONS = {
+  SEPARATE_REQUIRED: 'Тест потребує окремої пробірки',
+  VOLUME_SPLIT: 'Розділено: перевищено корисний об’єм пробірки',
+  TEST_LIMIT_SPLIT: 'Розділено: перевищено ліміт тестів на пробірку',
+  COMPATIBILITY_GROUP: 'Окрема група сумісності тестів',
+  OVER_CAPACITY: 'Тест потребує більше матеріалу, ніж вміщує тара'
+};

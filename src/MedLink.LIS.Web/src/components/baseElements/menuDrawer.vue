@@ -82,10 +82,12 @@ export default {
           items: [
             { name: 'dashboard', label: 'Дашборд', icon: 'fas fa-tachometer-alt', to: { name: 'lab-dashboard' } },
             { name: 'orders', label: 'Реєстрація направлень', icon: 'fas fa-file-medical', to: { name: 'lab-orders' }, badgeKey: 'cito' },
+            { name: 'referrals', label: 'Журнал направлень', icon: 'fas fa-clipboard-list', to: { name: 'lab-referrals' } },
             { name: 'matrix', label: 'Матриця призначень', icon: 'fas fa-th', to: { name: 'lab-order-matrix' } },
             { name: 'phlebotomy', label: 'Пункт забору', icon: 'fas fa-syringe', to: { name: 'lab-phlebotomy' } },
             { name: 'journal', label: 'Журнал відділення', icon: 'fas fa-book', to: { name: 'lab-section-journal' } },
             { name: 'logistics', label: 'Логістика', icon: 'fas fa-truck', to: { name: 'lab-logistics' } },
+            { name: 'send-out', label: 'Зовнішні лабораторії', icon: 'fas fa-share-square', to: { name: 'lab-send-out' } },
             { name: 'workstation', label: 'Робочий стіл лаборанта', icon: 'fas fa-microscope', to: { name: 'lab-workstation' }, badgeKey: 'pending' },
             { name: 'validation', label: 'Валідація та паніка', icon: 'fas fa-user-check', to: { name: 'lab-validation' }, badgeKey: 'panic' },
             { name: 'qc', label: 'Контроль якості', icon: 'fas fa-chart-line', to: { name: 'lab-qc' }, badgeKey: 'lockout' },
@@ -98,6 +100,7 @@ export default {
         {
           title: 'Довідники',
           items: [
+            { name: 'pricing', label: 'Прайси та платники', icon: 'fas fa-file-invoice-dollar', to: { name: 'lab-pricing' } },
             { name: 'norms', label: 'Послуги та норми', icon: 'fas fa-sliders-h', to: { name: 'lab-norms' } },
             { name: 'sections', label: 'Підрозділи лабораторії', icon: 'fas fa-sitemap', to: { name: 'lab-sections' }, exact: true },
             { name: 'd-tests', label: 'Показники', icon: 'fas fa-list-ol', to: { name: 'lab-dictionary', params: { name: 'tests' } } },

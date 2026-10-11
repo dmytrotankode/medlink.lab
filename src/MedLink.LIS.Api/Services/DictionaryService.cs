@@ -19,8 +19,9 @@ public sealed class DictionaryService
     private readonly LisDbContext _db;
     private readonly IRolePolicy _policy;
     private readonly IAuditService _audit;
+    private readonly OrgDictionaryService _org;
 
-    public DictionaryService(LisDbContext db, IRolePolicy policy, IAuditService audit) { _db = db; _policy = policy; _audit = audit; }
+    public DictionaryService(LisDbContext db, IRolePolicy policy, IAuditService audit, OrgDictionaryService org) { _db = db; _policy = policy; _audit = audit; _org = org; }
 
     private static string Table(string name) => name switch
     {
@@ -37,18 +38,18 @@ public sealed class DictionaryService
         var s = search?.Trim().ToLowerInvariant();
         switch (name)
         {
-            case "biomaterials": return Page(await _db.BiomaterialTypes.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive, paging);
-            case "tube-types": return Page(await _db.TubeTypes.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.OrderOfDrawIndex).ThenBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive, paging);
-            case "method-types": return Page(await _db.MethodTypes.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive, paging);
-            case "analyzer-types": return Page(await _db.AnalyzerTypes.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.Manufacturer} {x.ExchType}", x => x.IsActive, s, isActive, paging);
-            case "tests": return Page(await _db.Tests.AsNoTracking().Include(x => x.BiomaterialType).Include(x => x.TubeType).Include(x => x.Method).Where(x => !x.IsDeleted).OrderBy(x => x.Category).ThenBy(x => x.Code).ToListAsync(), x => $"{x.Code} {x.Name} {x.ShortName} {x.LoincCode} {x.Category}", x => x.IsActive, s, isActive, paging);
-            case "profiles": return Page(await _db.Profiles.AsNoTracking().Include(x => x.Items).ThenInclude(i => i.Test).Where(x => !x.IsDeleted).OrderBy(x => x.Code).ToListAsync(), x => $"{x.Code} {x.Name} {x.Category}", x => x.IsActive, s, isActive, paging);
-            case "reflex-rules": return Page(await _db.ReflexRules.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.TriggerTestCode).ToListAsync(), x => $"{x.TriggerTestCode} {x.ReflexTestCode} {x.Description}", x => x.IsActive, s, isActive, paging);
-            case "organisms": return Page(await _db.Organisms.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.LatinName} {x.CommonName}", x => x.IsActive, s, isActive, paging);
-            case "antibiotics": return Page(await _db.Antibiotics.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.GroupName}", x => x.IsActive, s, isActive, paging);
-            case "eucast-breakpoints": return Page(await _db.EucastBreakpoints.AsNoTracking().Include(x => x.Organism).Include(x => x.Antibiotic).Where(x => !x.IsDeleted).OrderBy(x => x.OrganismId).ThenBy(x => x.AntibioticId).ToListAsync(), x => $"{x.Organism?.Code} {x.Organism?.LatinName} {x.Antibiotic?.Code} {x.Antibiotic?.Name}", x => true, s, isActive, paging);
-            case "departments": return Page(await _db.Departments.AsNoTracking().Where(x => !x.IsDeleted).OrderBy(x => x.Name).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive, paging);
-            case "employees": return Page(await _db.Employees.AsNoTracking().Include(x => x.Department).Where(x => !x.IsDeleted).OrderBy(x => x.FullName).ToListAsync(), x => $"{x.FullName} {x.PositionName} {x.LabRole}", x => x.IsActive, s, isActive, paging);
+            case "biomaterials": return Page(await _db.BiomaterialTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive, paging);
+            case "tube-types": return Page(await _db.TubeTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.OrderOfDrawIndex).ThenBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive, paging);
+            case "method-types": return Page(await _db.MethodTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive, paging);
+            case "analyzer-types": return Page(await _db.AnalyzerTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.Manufacturer} {x.ExchType}", x => x.IsActive, s, isActive, paging);
+            case "tests": return Page(await _db.Tests.AsNoTracking().Include(x => x.BiomaterialType).Include(x => x.TubeType).Include(x => x.Method).Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Category).ThenBy(x => x.Code).ToListAsync(), x => $"{x.Code} {x.Name} {x.ShortName} {x.LoincCode} {x.Category}", x => x.IsActive, s, isActive, paging);
+            case "profiles": return Page(await _db.Profiles.AsNoTracking().Include(x => x.Items).ThenInclude(i => i.Test).Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Code).ToListAsync(), x => $"{x.Code} {x.Name} {x.Category}", x => x.IsActive, s, isActive, paging);
+            case "reflex-rules": return Page(await _db.ReflexRules.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.TriggerTestCode).ToListAsync(), x => $"{x.TriggerTestCode} {x.ReflexTestCode} {x.Description}", x => x.IsActive, s, isActive, paging);
+            case "organisms": return Page(await _db.Organisms.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.LatinName} {x.CommonName}", x => x.IsActive, s, isActive, paging);
+            case "antibiotics": return Page(await _db.Antibiotics.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.GroupName}", x => x.IsActive, s, isActive, paging);
+            case "eucast-breakpoints": return Page(await _db.EucastBreakpoints.AsNoTracking().Include(x => x.Organism).Include(x => x.Antibiotic).Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.OrganismId).ThenBy(x => x.AntibioticId).ToListAsync(), x => $"{x.Organism?.Code} {x.Organism?.LatinName} {x.Antibiotic?.Code} {x.Antibiotic?.Name}", x => true, s, isActive, paging);
+            case "departments": return Page(await _org.DepartmentsAsync(), x => $"{x.Code} {x.Name} {x.Address}", x => x.IsActive, s, isActive, paging);
+            case "employees": return Page(await _org.EmployeesAsync(), x => $"{x.FullName} {x.Position} {x.LabRole} {x.DepartmentName}", x => x.IsActive, s, isActive, paging);
         }
         throw new NotFoundException($"Довідник '{name}' не існує");
     }
@@ -76,8 +77,8 @@ public sealed class DictionaryService
             "organisms" => await _db.Organisms.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
             "antibiotics" => await _db.Antibiotics.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
             "eucast-breakpoints" => await _db.EucastBreakpoints.AsNoTracking().Include(x => x.Organism).Include(x => x.Antibiotic).FirstOrDefaultAsync(x => x.Id == id),
-            "departments" => await _db.Departments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id || x.Code == id),
-            "employees" => await _db.Employees.AsNoTracking().Include(x => x.Department).FirstOrDefaultAsync(x => x.Id == id),
+            "departments" => await _org.DepartmentAsync(id),
+            "employees" => await _org.EmployeeAsync(id),
             _ => null
         };
         return item ?? throw NotFoundException.For($"Запис довідника {name}", id);
@@ -130,16 +131,8 @@ public sealed class DictionaryService
                 e.Organism = null; e.Antibiotic = null;
                 _db.EucastBreakpoints.Add(e); entity = e; break;
             }
-            case "departments": { var e = Deserialize<OrgDepartment>(body); if (string.IsNullOrWhiteSpace(e.Name)) throw new ValidationException("Назва підрозділу обов'язкова"); _db.Departments.Add(e); entity = e; break; }
-            case "employees":
-            {
-                var e = Deserialize<OrgEmployee>(body);
-                if (string.IsNullOrWhiteSpace(e.FullName)) throw new ValidationException("ПІБ співробітника обов'язкове");
-                if (!LabRoles.All.Contains(e.LabRole)) throw ValidationException.Field("labRole", $"Роль має бути однією з: {string.Join(", ", LabRoles.All)}");
-                if (e.DepartmentId != null && !await _db.Departments.AnyAsync(d => d.Id == e.DepartmentId)) throw ValidationException.Field("departmentId", "Підрозділ не знайдено");
-                e.Department = null;
-                _db.Employees.Add(e); entity = e; break;
-            }
+            case "departments": return await _org.SaveDepartmentAsync(null, body);
+            case "employees": return await _org.SaveEmployeeAsync(null, body);
             default: throw new NotFoundException($"Довідник '{name}' не існує");
         }
         var id = IdOf(entity);
@@ -151,6 +144,8 @@ public sealed class DictionaryService
     public async Task<object> UpdateAsync(string name, string id, JsonElement body)
     {
         _policy.Require($"Редагування запису довідника {name}", LabRoles.Admin, LabRoles.Doctor);
+        if (name == "departments") return await _org.SaveDepartmentAsync(id, body);
+        if (name == "employees") return await _org.SaveEmployeeAsync(id, body);
         var table = Table(name);
         var existing = await GetTrackedAsync(name, id);
         var before = JsonSerializer.Serialize(existing, Json);
@@ -169,7 +164,6 @@ public sealed class DictionaryService
             _db.ProfileItems.RemoveRange(profile.Items);
             profile.Items = await BuildProfileItems(profile.Id, body);
         }
-        if (existing is OrgEmployee emp && !LabRoles.All.Contains(emp.LabRole)) throw ValidationException.Field("labRole", $"Роль має бути однією з: {string.Join(", ", LabRoles.All)}");
         _audit.Log("UPDATE", table, id, before, existing);
         await _db.SaveChangesAsync();
         return await GetAsync(name, IdOf(existing));
@@ -178,6 +172,7 @@ public sealed class DictionaryService
     public async Task<object> DeleteAsync(string name, string id)
     {
         _policy.Require($"Видалення запису довідника {name}", LabRoles.Admin);
+        if (name is "departments" or "employees") return await _org.DeleteAsync(name, id);
         var table = Table(name);
         var existing = await GetTrackedAsync(name, id);
         var realId = IdOf(existing);
@@ -212,8 +207,6 @@ public sealed class DictionaryService
             "organisms" => await _db.Organisms.FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
             "antibiotics" => await _db.Antibiotics.FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
             "eucast-breakpoints" => await _db.EucastBreakpoints.FirstOrDefaultAsync(x => x.Id == id),
-            "departments" => await _db.Departments.FirstOrDefaultAsync(x => x.Id == id || x.Code == id),
-            "employees" => await _db.Employees.FirstOrDefaultAsync(x => x.Id == id),
             _ => null
         };
         return item ?? throw NotFoundException.For($"Запис довідника {name}", id);
@@ -230,8 +223,6 @@ public sealed class DictionaryService
         "organisms" => await _db.Isolates.CountAsync(i => i.OrganismId == ((LabMicroOrganism)e).Id) + await _db.EucastBreakpoints.CountAsync(b => b.OrganismId == ((LabMicroOrganism)e).Id),
         "antibiotics" => await _db.Susceptibilities.CountAsync(s => s.AntibioticId == ((LabAntibiotic)e).Id) + await _db.EucastBreakpoints.CountAsync(b => b.AntibioticId == ((LabAntibiotic)e).Id),
         "eucast-breakpoints" => await _db.Susceptibilities.CountAsync(s => s.BreakpointId == ((LabEucastBreakpoint)e).Id),
-        "departments" => await _db.Employees.CountAsync(x => x.DepartmentId == ((OrgDepartment)e).Id) + await _db.Orders.CountAsync(o => o.DepartmentId == ((OrgDepartment)e).Id) + await _db.Analyzers.CountAsync(a => a.DepartmentId == ((OrgDepartment)e).Id),
-        "employees" => await _db.Orders.CountAsync(o => o.DoctorId == ((OrgEmployee)e).Id || o.CreatedById == ((OrgEmployee)e).Id) + await _db.Results.CountAsync(r => r.VerifiedById == ((OrgEmployee)e).Id || r.EnteredById == ((OrgEmployee)e).Id),
         _ => 0
     };
 

@@ -9,20 +9,16 @@ namespace MedLink.LIS.Api.Services;
 
 public static class DtoMapper
 {
-    public static PatientDto ToDto(MisPatientCard p, DateTime? at = null) => new()
-    {
-        Id = p.Id, LastName = p.LastName, FirstName = p.FirstName, SecondName = p.SecondName, FullName = p.FullName, LastNameLatin = p.LastNameLatin, FirstNameLatin = p.FirstNameLatin,
-        BirthDate = p.BirthDate, AgeYears = p.BirthDate.HasValue ? AgeUnits.AgeYears(p.BirthDate.Value, at ?? DateTime.UtcNow) : null,
-        Gender = p.Gender, Phone = p.Phone, Email = p.Email, TaxId = p.TaxId, Address = p.Address
-    };
+    public static PatientDto ToDto(MisPatientCard p, DateTime? at = null) => MedLinkPeople.ToDto(p, at);
 
-    public static string AgeGender(MisPatientCard? p, DateTime at)
+    public static string AgeGender(MisPatientCard? p, DateTime at) => p == null ? "" : AgeGender(p.Birthday, p.Gender, at);
+
+    public static string AgeGender(DateTime? birthday, string? genderCode, DateTime at)
     {
-        if (p == null) return "";
-        var g = p.Gender switch { "M" => "Ч", "F" => "Ж", _ => "—" };
-        if (!p.BirthDate.HasValue) return g;
-        var days = AgeUnits.AgeDays(p.BirthDate.Value, at);
-        string age = days < 60 ? $"{(int)days} дн." : days < 730 ? $"{(int)(days / 30.4375)} міс." : $"{AgeUnits.AgeYears(p.BirthDate.Value, at)} р.";
+        var g = genderCode switch { "M" => "Ч", "F" => "Ж", _ => "—" };
+        if (!birthday.HasValue) return g;
+        var days = AgeUnits.AgeDays(birthday.Value, at);
+        string age = days < 60 ? $"{(int)days} дн." : days < 730 ? $"{(int)(days / 30.4375)} міс." : $"{AgeUnits.AgeYears(birthday.Value, at)} р.";
         return $"{age}, {g}";
     }
 
@@ -51,6 +47,7 @@ public static class DtoMapper
         Status = t.Status, AssignedAnalyzerId = t.AssignedAnalyzerId, AnalyzerName = t.AssignedAnalyzer?.Name ?? t.Result?.Analyzer?.Name,
         IsReflex = t.IsReflex, ReflexFromTestId = t.ReflexFromTestId, ReflexNeedsConfirmation = t.ReflexNeedsConfirmation, RejectReason = t.RejectReason,
         DisplayOrder = t.DisplayOrder, ReleasedAt = t.ReleasedAt, LabSectionId = t.Test?.LabSectionId, LabSectionName = t.Test?.LabSection?.Name,
+        PerformerId = t.PerformerId, PerformerName = t.Performer?.Name,
         Result = t.Result == null ? null : ToDto(t.Result, t.Test?.DecimalPlaces ?? 2),
         AllowedActions = policy.AllowedActions(LisEntities.OrderTest, t.Status)
     };
@@ -63,14 +60,18 @@ public static class DtoMapper
         CollectedAt = s.CollectedAt, CollectedById = s.CollectedById, ReceivedAt = s.ReceivedAt, VolumeMl = s.VolumeMl,
         IsHemolyzed = s.IsHemolyzed, IsLipemic = s.IsLipemic, IsIcteric = s.IsIcteric, IsClotted = s.IsClotted, IsInsufficientVolume = s.IsInsufficientVolume,
         RejectReason = s.RejectReason, TestCodes = tests.Where(t => t.SampleId == s.Id).Select(t => t.TestCode).ToList(),
+        OrderOfDrawIndex = s.TubeType?.OrderOfDrawIndex ?? 99,
+        PlannedVolumeMl = tests.Where(t => t.SampleId == s.Id && t.Test?.RequiredVolumeMl > 0).Sum(t => t.Test!.RequiredVolumeMl) is double v && v > 0 ? Math.Round(v, 3) : null,
+        CapacityMl = s.TubeType == null ? null : TubePlanService.CapacityOf(s.TubeType),
+        PlanReasons = string.IsNullOrEmpty(s.PlanReasons) ? new() : s.PlanReasons.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
         AllowedActions = policy.AllowedActions(LisEntities.Sample, s.Status)
     };
 
     public static OrderDto ToDto(LabOrder o, IRolePolicy policy) => new()
     {
         Id = o.Id, OrderNumber = o.OrderNumber, PatientId = o.PatientId, Patient = o.Patient == null ? null : ToDto(o.Patient, o.OrderDatetime),
-        DoctorId = o.DoctorId, DoctorName = o.Doctor?.FullName, DepartmentId = o.DepartmentId, DepartmentName = o.Department?.Name,
-        OrderDatetime = o.OrderDatetime, Status = o.Status, IsUrgentCito = o.IsUrgentCito, EhealthReferralId = o.EhealthReferralId, ClinicalNotes = o.ClinicalNotes,
+        DoctorId = o.DoctorId, DoctorName = o.Doctor?.Caption, DepartmentId = o.DepartmentId, DepartmentName = o.Department?.Caption,
+        OrderDatetime = o.OrderDatetime, Status = o.Status, IsUrgentCito = o.IsUrgentCito, EhealthReferralId = o.EhealthReferralId, ReferralType = o.ReferralType, PayerId = o.PayerId, PayerName = o.Payer?.Name, PayerKind = o.Payer?.Kind, InsurancePolicyNumber = o.InsurancePolicyNumber, PayerAmount = o.PayerAmount, PatientAmount = o.PatientAmount, PaidAmount = o.PaidAmount, ReferralTypeName = ReferralTypes.Label(o.ReferralType), ReferralNumber = o.Referral?.RegNumber ?? o.PaperReferral?.RegNumber ?? o.ReferrerNumber, ReferralStatus = o.Referral?.Status?.Caption, ReferrerOrganizationName = o.ReferrerOrganizationName, ReferrerDoctorName = o.ReferrerDoctorName ?? (o.ReferralType == ReferralTypes.Internal ? o.Doctor?.Caption : null), ClinicalNotes = o.ClinicalNotes,
         IsPregnant = o.IsPregnant, PregnancyWeek = o.PregnancyWeek, MenstrualPhase = o.MenstrualPhase, Icd10Code = o.Icd10Code, TotalPrice = o.TotalPrice,
         CreatedById = o.CreatedById, CreatedOn = o.CreatedOn, CompletedAt = o.CompletedAt, ReleasedAt = o.ReleasedAt, VerifyToken = o.VerifyToken, CancelReason = o.CancelReason,
         Samples = o.Samples.OrderBy(s => s.GroupNumb).Select(s => ToDto(s, o.Tests, policy)).ToList(),
@@ -85,7 +86,7 @@ public static class DtoMapper
         return new WorklistRowDto
         {
             OrderTestId = t.Id, ResultId = r?.Id, OrderId = t.OrderId, OrderNumber = t.Order?.OrderNumber ?? "", Barcode = t.Sample?.Barcode,
-            PatientId = t.Order?.PatientId ?? "", PatientName = t.Order?.Patient?.FullName ?? "", PatientAgeGender = AgeGender(t.Order?.Patient, t.Order?.OrderDatetime ?? DateTime.UtcNow),
+            PatientId = t.Order?.PatientId ?? "", PatientName = t.Order?.Patient?.Caption ?? "", PatientAgeGender = AgeGender(t.Order?.Patient, t.Order?.OrderDatetime ?? DateTime.UtcNow),
             TestCode = t.TestCode, TestName = t.TestName,
             Value = r == null ? null : FormatValue(r.NumericValue, r.StringValue, decimals), NumericValue = r?.NumericValue, StringValue = r?.StringValue,
             Unit = r?.Unit ?? t.Test?.Unit, NormLow = r?.NormLow, NormHigh = r?.NormHigh, ReferenceDisplay = r?.ReferenceDisplay, Flag = r?.Flag ?? "NONE",

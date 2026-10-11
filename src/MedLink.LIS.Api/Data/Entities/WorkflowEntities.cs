@@ -21,13 +21,35 @@ public static class SampleStatuses
         Processing = "PROCESSING", Stored = "STORED", Disposed = "DISPOSED", Rejected = "REJECTED";
 }
 
+/// <summary>Типи направлень на лабораторне дослідження (FR-REF-001).</summary>
+public static class ReferralTypes
+{
+    /// <summary>Електронне направлення ЕСОЗ (ehe_incoming_medical_referral).</summary>
+    public const string Ehealth = "EHEALTH";
+    /// <summary>Паперове направлення (ehe_paper_medical_referral).</summary>
+    public const string Paper = "PAPER";
+    /// <summary>Внутрішнє — лікар закладу (org_employee).</summary>
+    public const string Internal = "INTERNAL";
+    /// <summary>Клініка-партнер / сторонній заклад.</summary>
+    public const string ExternalClinic = "EXTERNAL_CLINIC";
+    /// <summary>Самозвернення пацієнта.</summary>
+    public const string Self = "SELF";
+    public static readonly string[] All = { Ehealth, Paper, Internal, ExternalClinic, Self };
+    public static string Label(string t) => t switch
+    {
+        Ehealth => "Е-направлення", Paper => "Паперове направлення", Internal => "Внутрішнє", ExternalClinic => "Клініка-партнер", _ => "Самозвернення"
+    };
+}
+
 public static class OrderTestStatuses
 {
     public const string Pending = "PENDING", InAnalysis = "IN_ANALYSIS", Resulted = "RESULTED", NeedsReview = "NEEDS_REVIEW",
-        AutoVerified = "AUTO_VERIFIED", Verified = "VERIFIED", Rejected = "REJECTED", Rerun = "RERUN";
+        AutoVerified = "AUTO_VERIFIED", Verified = "VERIFIED", Rejected = "REJECTED", Rerun = "RERUN",
+        /// <summary>Відправлено на виконання в зовнішню лабораторію, очікується результат.</summary>
+        SentOut = "SENT_OUT";
     public static readonly string[] Final = { AutoVerified, Verified, Rejected };
     public static readonly string[] VerifiedAny = { AutoVerified, Verified };
-    public static readonly string[] AllowsResultEntry = { Pending, InAnalysis, Resulted, NeedsReview, Rerun };
+    public static readonly string[] AllowsResultEntry = { Pending, InAnalysis, Resulted, NeedsReview, Rerun, SentOut };
 }
 
 [Table("lab_order")]
@@ -55,8 +77,39 @@ public class LabOrder : GuidEntity
     [MaxLength(128)] public string? VerifyToken { get; set; }
     [MaxLength(512)] public string? CancelReason { get; set; }
     [MaxLength(64)] public string? RepeatOfOrderId { get; set; }
+    /// <summary>Тип направлення (FR-REF-001): EHEALTH | PAPER | INTERNAL | EXTERNAL_CLINIC | SELF.</summary>
+    [MaxLength(16)] public string ReferralType { get; set; } = ReferralTypes.Self;
+    /// <summary>Паперове направлення MedLink (ehe_paper_medical_referral).</summary>
+    [MaxLength(64)] public string? PaperReferralId { get; set; }
+    /// <summary>Заклад-направник (для EXTERNAL_CLINIC/PAPER без картки контрагента).</summary>
+    [MaxLength(256)] public string? ReferrerOrganizationName { get; set; }
+    [MaxLength(16)] public string? ReferrerOrganizationEdrpou { get; set; }
+    /// <summary>ПІБ лікаря-направника поза закладом.</summary>
+    [MaxLength(256)] public string? ReferrerDoctorName { get; set; }
+    /// <summary>Номер направлення в системі направника (клініки-партнера).</summary>
+    [MaxLength(64)] public string? ReferrerNumber { get; set; }
+    // --- Оплата (FR-GAP-060) ---
+    /// <summary>Основний платник замовлення (lab_payer).</summary>
+    [MaxLength(64)] public string? PayerId { get; set; }
+    /// <summary>Поліс пацієнта, за яким застосовано страхову програму ([MedLink-new] mis_patient_insurance).</summary>
+    [MaxLength(64)] public string? PatientInsuranceId { get; set; }
+    /// <summary>Номер полісу на момент замовлення (знімок для документів).</summary>
+    [MaxLength(64)] public string? InsurancePolicyNumber { get; set; }
+    /// <summary>Номер гарантійного листа / погодження страхової.</summary>
+    [MaxLength(64)] public string? AuthorizationNumber { get; set; }
+    public decimal PayerAmount { get; set; }
+    public decimal PatientAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    /// <summary>Заклад MedLink (org_organization) — для розмежування даних (RLS evomis).</summary>
+    [MaxLength(64)] public string? OrganizationId { get; set; }
+    /// <summary>Медичний висновок MedLink (mis_diagnostic_report), створений при видачі.</summary>
+    [MaxLength(64)] public string? DiagnosticReportId { get; set; }
 
     [ForeignKey(nameof(PatientId))] public MisPatientCard? Patient { get; set; }
+    [ForeignKey(nameof(DiagnosticReportId))] public MisDiagnosticReport? DiagnosticReport { get; set; }
+    [ForeignKey(nameof(PaperReferralId))] public EhePaperMedicalReferral? PaperReferral { get; set; }
+    [ForeignKey(nameof(PayerId))] public LabPayer? Payer { get; set; }
+    public List<LabOrderCharge> Charges { get; set; } = new();
     [ForeignKey(nameof(DoctorId))] public OrgEmployee? Doctor { get; set; }
     [ForeignKey(nameof(DepartmentId))] public OrgDepartment? Department { get; set; }
     [ForeignKey(nameof(EhealthReferralId))] public EheIncomingMedicalReferral? Referral { get; set; }
@@ -73,6 +126,8 @@ public class LabOrderSample : GuidEntity
     public int BiomaterialTypeId { get; set; }
     /// <summary>group_numb Simplex — різні штрихкоди при однаковому tube_type_id</summary>
     public int GroupNumb { get; set; }
+    /// <summary>Пояснення плану пробірок для медсестри: чому пробірка окрема (коди TubePlanReasons через кому).</summary>
+    [MaxLength(128)] public string? PlanReasons { get; set; }
     // --- Преаналітична простежуваність (ISO 15189): батьківська/дочірня проба ---
     [MaxLength(64)] public string? ParentSampleId { get; set; }
     /// <summary>PRIMARY|ALIQUOT|CASSETTE|BLOCK|SLIDE|CULTURE_PLATE|DILUTION</summary>
@@ -122,9 +177,12 @@ public class LabOrderTest : GuidEntity
     public int DisplayOrder { get; set; }
     /// <summary>Прогресивна видача: результат відкрито пацієнту (після верифікації, якщо секція має autoReleaseVerified).</summary>
     public DateTime? ReleasedAt { get; set; }
+    /// <summary>Лабораторія-виконавець (lab_performer); null — власна лабораторія.</summary>
+    [MaxLength(64)] public string? PerformerId { get; set; }
 
     [ForeignKey(nameof(OrderId))] public LabOrder? Order { get; set; }
     [ForeignKey(nameof(SampleId))] public LabOrderSample? Sample { get; set; }
+    [ForeignKey(nameof(PerformerId))] public LabPerformer? Performer { get; set; }
     [ForeignKey(nameof(ProfileId))] public LabTestProfile? Profile { get; set; }
     [ForeignKey(nameof(TestId))] public LabTestDefinition? Test { get; set; }
     [ForeignKey(nameof(AssignedAnalyzerId))] public LabAnalyzer? AssignedAnalyzer { get; set; }
@@ -166,6 +224,10 @@ public class LabTestResult : GuidEntity
     public DateTime EnteredAt { get; set; } = DateTime.UtcNow;
     public DateTime? MeasuredAt { get; set; }
     public int Version { get; set; } = 1;
+    /// <summary>Лабораторія, що виконала дослідження (для результатів зовнішніх лабораторій).</summary>
+    [MaxLength(64)] public string? PerformerId { get; set; }
+    /// <summary>Номер/посилання на бланк зовнішньої лабораторії.</summary>
+    [MaxLength(128)] public string? ExternalReference { get; set; }
 
     [ForeignKey(nameof(OrderTestId))] public LabOrderTest? OrderTest { get; set; }
     [ForeignKey(nameof(AnalyzerId))] public LabAnalyzer? Analyzer { get; set; }

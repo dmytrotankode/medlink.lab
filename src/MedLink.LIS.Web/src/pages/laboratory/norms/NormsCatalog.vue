@@ -30,7 +30,7 @@
                   <q-badge outline color="purple-6" :label="p.category" />
                 </div>
                 <div class="text-subtitle1 text-weight-bold" style="line-height: 1.2">{{ p.name }}</div>
-                <div v-if="p.misServiceId" class="text-caption text-primary"><q-icon name="link" size="12px" /> Джерело: довідник послуг MedLink (ID {{ p.misServiceId }})</div>
+                <div v-if="p.organizationServiceId" class="text-caption text-primary"><q-icon name="link" size="12px" /> Джерело: прайс послуг MedLink (ID {{ p.organizationServiceId }})</div>
                 <div class="text-caption text-grey-7 q-mt-xs">Показників: <b>{{ (p.items || []).length }}</b> · TAT <b>{{ p.turnaroundHours }}</b> год · {{ p.fastingRequired ? 'натще' : 'без підготовки' }}</div>
                 <div class="row items-center justify-between q-mt-sm bg-grey-1 q-pa-xs rounded-borders">
                   <span class="text-caption">Шарів норм:</span>

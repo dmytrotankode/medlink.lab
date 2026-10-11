@@ -59,6 +59,10 @@
                 </div>
               </div>
             </div>
+            <div v-if="orderTubePlan.length > 1" class="q-mt-md" data-testid="orderTubePlan">
+              <div class="text-caption text-grey-7">Усі пробірки замовлення в порядку забору</div>
+              <tube-plan-list :items="orderTubePlan" :active-key="sample.id" />
+            </div>
             <div class="row q-gutter-sm q-mt-md">
               <q-btn color="teal-6" icon="colorize" label="Забір за чек-листом" :disable="sample.status !== 'PENDING'" data-testid="collectBtn" @click="collectOpen = true" />
               <q-btn color="primary" icon="print" label="Друк етикетки" data-testid="printLabelAgent" @click="printSampleLabel(sample.barcode, { patientName, orderNumber: order.orderNumber })" />
@@ -143,13 +147,15 @@ import CollectSampleDialog from '../../components/samples/CollectSampleDialog.vu
 import RejectSampleDialog from '../../components/samples/RejectSampleDialog.vue';
 import SampleEditDialog from '../../components/samples/SampleEditDialog.vue';
 import CreateOrderDialog from './orders/CreateOrderDialog.vue';
+import TubePlanList from '../../components/samples/TubePlanList.vue';
+import { TUBE_PLAN_REASONS } from '../../utils/statuses';
 import labelPrintMixin from '../../mixins/labelPrintMixin';
 import { patientDisplay, genderLabel, ageFromBirthDate, formatDateTime, todayIso, toIsoDate, copyToClipboard } from '../../utils/format';
 
 export default {
   name: 'PhlebotomyStation',
   mixins: [apiMixin, labelPrintMixin],
-  components: { LabelSticker, LabelsDialog, CollectSampleDialog, RejectSampleDialog, SampleEditDialog, CreateOrderDialog },
+  components: { TubePlanList, LabelSticker, LabelsDialog, CollectSampleDialog, RejectSampleDialog, SampleEditDialog, CreateOrderDialog },
   data () {
     return {
       barcode: '',
@@ -193,6 +199,20 @@ export default {
     biomaterialName () {
       const b = this.sample ? this.$store.getters['dictionaries/byId']('biomaterials', this.sample.biomaterialTypeId) : null;
       return (b && b.name) || (this.sample && this.sample.biomaterialName) || '';
+    },
+    orderTubePlan () {
+      if (!this.order) return [];
+      return (this.order.samples || []).filter(s => !s.parentSampleId)
+        .slice().sort((a, b) => a.groupNumb - b.groupNumb)
+        .map((s, i) => {
+          const tube = this.$store.getters['dictionaries/byId']('tube-types', s.tubeTypeId) || {};
+          return {
+            key: s.id, index: i + 1, color: s.tubeColor || tube.colorCode, tubeName: s.tubeTypeName || tube.name, biomaterialName: s.biomaterialName,
+            tests: (s.testCodes || []).map(code => ({ code })), usedVolumeMl: s.plannedVolumeMl, capacityMl: s.capacityMl,
+            reasonTexts: (s.planReasons || []).map(r => TUBE_PLAN_REASONS[r] || r), isSeparate: (s.planReasons || []).includes('SEPARATE_REQUIRED'),
+            inversionsCount: tube.inversionsCount, barcode: s.barcode, status: s.status
+          };
+        });
     },
     sampleTests () { return this.order && this.sample ? (this.order.tests || []).filter(t => t.sampleId === this.sample.id) : []; }
   },

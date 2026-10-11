@@ -49,21 +49,21 @@ public sealed class ConnectorService
     {
         if (string.IsNullOrWhiteSpace(apiKey)) return null;
         var hash = Hash(apiKey);
-        var c = await _db.Connectors.FirstOrDefaultAsync(x => x.ApiKeyHash == hash && !x.IsDeleted);
+        var c = await _db.Connectors.FirstOrDefaultAsync(x => x.ApiKeyHash == hash && x.RecordState != RecordStates.Deleted);
         return c == null || c.Status == LisStateMachine.ConnectorDisabled ? null : c;
     }
 
     // ------------------------------------------------------------------ admin CRUD
     public async Task<List<object>> ListAsync()
     {
-        var items = await _db.Connectors.AsNoTracking().Include(c => c.Analyzers).Where(c => !c.IsDeleted).OrderBy(c => c.Name).ToListAsync();
+        var items = await _db.Connectors.AsNoTracking().Include(c => c.Analyzers).Where(c => c.RecordState != RecordStates.Deleted).OrderBy(c => c.Name).ToListAsync();
         return items.Select(ToDto).ToList<object>();
     }
 
     public async Task<object> GetAsync(string id) => ToDto(await LoadAsync(id));
 
     private async Task<LabConnectorInstallation> LoadAsync(string id) =>
-        await _db.Connectors.Include(c => c.Analyzers).ThenInclude(a => a.AnalyzerType).FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted) ?? throw NotFoundException.For("Коннектор", id);
+        await _db.Connectors.Include(c => c.Analyzers).ThenInclude(a => a.AnalyzerType).FirstOrDefaultAsync(c => c.Id == id && c.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Коннектор", id);
 
     private object ToDto(LabConnectorInstallation c) => new
     {
@@ -218,7 +218,7 @@ $@"MedLink LabConnector — інструкція з встановлення (і
     public async Task<ConnectorRegisterResponse> RegisterAsync(ConnectorRegisterRequest req)
     {
         if (string.IsNullOrWhiteSpace(req.InstallKey)) throw ValidationException.Field("installKey", "Ключ інсталяції обов'язковий");
-        var c = await _db.Connectors.FirstOrDefaultAsync(x => x.InstallKey == req.InstallKey.Trim() && !x.IsDeleted)
+        var c = await _db.Connectors.FirstOrDefaultAsync(x => x.InstallKey == req.InstallKey.Trim() && x.RecordState != RecordStates.Deleted)
                 ?? throw new ForbiddenConnectorException("Невідомий ключ інсталяції");
         if (c.InstallKeyUsed || c.Status != LisStateMachine.ConnectorPending)
             throw new ConflictException($"Ключ інсталяції вже використано (статус {c.Status}). Адміністратор може перевипустити ключ (Enable/Rotate key)");
@@ -237,7 +237,7 @@ $@"MedLink LabConnector — інструкція з встановлення (і
     public async Task<ConnectorConfigDto> ConfigAsync(LabConnectorInstallation c)
     {
         var analyzers = await _db.Analyzers.AsNoTracking().Include(a => a.AnalyzerType).Include(a => a.ParameterMap)
-            .Where(a => a.ConnectorId == c.Id && a.IsActive && !a.IsDeleted).OrderBy(a => a.Code).ToListAsync();
+            .Where(a => a.ConnectorId == c.Id && a.IsActive && a.RecordState != RecordStates.Deleted).OrderBy(a => a.Code).ToListAsync();
         return new ConnectorConfigDto
         {
             ConnectorId = c.Id, ConfigVersion = c.ConfigVersion, PollIntervalSec = c.PollIntervalSec, HeartbeatIntervalSec = c.HeartbeatIntervalSec,
@@ -318,8 +318,8 @@ $@"MedLink LabConnector — інструкція з встановлення (і
             SampleType = SampleTypeCode(sample.BiomaterialType?.Name),
             Patient = new AnalyzerOrderPatientDto
             {
-                Id = order.PatientId, LastName = p?.LastName ?? "", FirstName = p?.FirstName ?? "", BirthDate = p?.BirthDate, Gender = p?.Gender ?? "U",
-                LastNameLatin = p?.LastNameLatin ?? TransliterationKmu2010.ToLatin(p?.LastName ?? ""), FirstNameLatin = p?.FirstNameLatin ?? TransliterationKmu2010.ToLatin(p?.FirstName ?? "")
+                Id = order.PatientId, LastName = p?.Person?.LastName ?? "", FirstName = p?.Person?.Name ?? "", BirthDate = p?.Birthday, Gender = p?.Gender ?? "U",
+                LastNameLatin = p?.LastNameLatin ?? TransliterationKmu2010.ToLatin(p?.Person?.LastName ?? ""), FirstNameLatin = p?.FirstNameLatin ?? TransliterationKmu2010.ToLatin(p?.Person?.Name ?? "")
             },
             Tests = tests.Select(t => new AnalyzerOrderTestDto { TestCode = t.TestCode, AnalyzerCode = map.FirstOrDefault(m => m.TestCode == t.TestCode)?.AnalyzerCode ?? t.TestCode }).ToList()
         };

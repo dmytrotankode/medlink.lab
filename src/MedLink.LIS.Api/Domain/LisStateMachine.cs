@@ -55,7 +55,8 @@ public static class SampleActions
 public static class TestActions
 {
     public const string EnterResult = "ENTER_RESULT", EditResult = "EDIT_RESULT", DeleteResult = "DELETE_RESULT", Verify = "VERIFY",
-        Reject = "REJECT", Rerun = "RERUN", Reopen = "REOPEN", AssignAnalyzer = "ASSIGN_ANALYZER", Remove = "REMOVE", StartAnalysis = "START_ANALYSIS";
+        Reject = "REJECT", Rerun = "RERUN", Reopen = "REOPEN", AssignAnalyzer = "ASSIGN_ANALYZER", Remove = "REMOVE", StartAnalysis = "START_ANALYSIS",
+        SendOut = "SEND_OUT", RecallSendOut = "RECALL_SEND_OUT";
 }
 
 public static class ManifestActions
@@ -128,11 +129,13 @@ public static class LisStateMachine
     {
         new(TestActions.StartAnalysis, new[]{ OrderTestStatuses.Pending, OrderTestStatuses.Rerun }, OrderTestStatuses.InAnalysis, AdminDoctorTech, "Передати на аналізатор"),
         new(TestActions.AssignAnalyzer, new[]{ OrderTestStatuses.Pending, OrderTestStatuses.InAnalysis, OrderTestStatuses.Rerun }, null, AdminDoctorTech, "Призначити аналізатор", true),
-        new(TestActions.EnterResult, new[]{ OrderTestStatuses.Pending, OrderTestStatuses.InAnalysis, OrderTestStatuses.Rerun }, OrderTestStatuses.Resulted, AdminDoctorTech, "Ввести результат"),
+        new(TestActions.EnterResult, new[]{ OrderTestStatuses.Pending, OrderTestStatuses.InAnalysis, OrderTestStatuses.Rerun, OrderTestStatuses.SentOut }, OrderTestStatuses.Resulted, AdminDoctorTech, "Ввести результат"),
+        new(TestActions.SendOut, new[]{ OrderTestStatuses.Pending, OrderTestStatuses.Rerun }, OrderTestStatuses.SentOut, AdminDoctorTech, "Відправити в зовнішню лабораторію"),
+        new(TestActions.RecallSendOut, new[]{ OrderTestStatuses.SentOut }, OrderTestStatuses.Pending, AdminDoctorTech, "Відкликати з зовнішньої лабораторії"),
         new(TestActions.EditResult, new[]{ OrderTestStatuses.Resulted, OrderTestStatuses.NeedsReview }, OrderTestStatuses.Resulted, AdminDoctorTech, "Виправити результат (нова версія)"),
         new(TestActions.DeleteResult, new[]{ OrderTestStatuses.Resulted, OrderTestStatuses.NeedsReview }, OrderTestStatuses.Pending, AdminDoctor, "Видалити результат"),
         new(TestActions.Verify, new[]{ OrderTestStatuses.Resulted, OrderTestStatuses.NeedsReview, OrderTestStatuses.AutoVerified }, OrderTestStatuses.Verified, AdminDoctor, "Верифікувати"),
-        new(TestActions.Reject, new[]{ OrderTestStatuses.Pending, OrderTestStatuses.InAnalysis, OrderTestStatuses.Resulted, OrderTestStatuses.NeedsReview, OrderTestStatuses.Rerun }, OrderTestStatuses.Rejected, AdminDoctorTech, "Відхилити тест"),
+        new(TestActions.Reject, new[]{ OrderTestStatuses.Pending, OrderTestStatuses.InAnalysis, OrderTestStatuses.Resulted, OrderTestStatuses.NeedsReview, OrderTestStatuses.Rerun, OrderTestStatuses.SentOut }, OrderTestStatuses.Rejected, AdminDoctorTech, "Відхилити тест"),
         new(TestActions.Rerun, new[]{ OrderTestStatuses.Resulted, OrderTestStatuses.NeedsReview, OrderTestStatuses.AutoVerified }, OrderTestStatuses.Rerun, AdminDoctorTech, "Повторити дослідження"),
         new(TestActions.Reopen, new[]{ OrderTestStatuses.Verified, OrderTestStatuses.AutoVerified, OrderTestStatuses.Rejected }, OrderTestStatuses.NeedsReview, AdminDoctor, "Відкрити повторно"),
         new(TestActions.Remove, new[]{ OrderTestStatuses.Pending }, null, AdminRegistrarDoctor, "Прибрати тест із замовлення", true),

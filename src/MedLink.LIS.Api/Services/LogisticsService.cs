@@ -46,17 +46,17 @@ public sealed class LogisticsService
 
     public async Task<List<object>> ListAsync(string? status)
     {
-        var items = await Query().AsNoTracking().Where(m => !m.IsDeleted && (status == null || m.Status == status.ToUpper())).OrderByDescending(m => m.CreatedOn).ToListAsync();
+        var items = await Query().AsNoTracking().Where(m => m.RecordState != RecordStates.Deleted && (status == null || m.Status == status.ToUpper())).OrderByDescending(m => m.CreatedOn).ToListAsync();
         return items.Select(ToDto).ToList();
     }
 
     public async Task<object> GetAsync(string id) => ToDto(await LoadAsync(id));
 
-    private async Task<LabSampleLogistics> LoadAsync(string id) => await Query().FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted) ?? throw NotFoundException.For("Маніфест", id);
+    private async Task<LabSampleLogistics> LoadAsync(string id) => await Query().FirstOrDefaultAsync(m => m.Id == id && m.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Маніфест", id);
 
     private object ToDto(LabSampleLogistics m) => new
     {
-        m.Id, m.ManifestNumber, m.OriginDepartmentId, originDepartmentName = m.OriginDepartment?.Name, m.DestinationDepartmentId, destinationDepartmentName = m.DestinationDepartment?.Name,
+        m.Id, m.ManifestNumber, m.OriginDepartmentId, originDepartmentName = m.OriginDepartment?.Caption, m.DestinationDepartmentId, destinationDepartmentName = m.DestinationDepartment?.Caption,
         m.CourierName, m.CourierPhone, m.DispatchedAt, m.DispatchedById, m.TemperatureDispatch, m.ReceivedAt, m.ReceivedById, m.TemperatureReceipt, m.IsColdChainViolated, m.Status, m.Notes, m.CreatedOn,
         items = m.Items.Select(i => new { i.Id, i.SampleId, i.Barcode, i.Status }),
         allowedActions = _policy.AllowedActions(LisEntities.Manifest, m.Status), stateMachine = LisStateMachine.Describe(LisEntities.Manifest)

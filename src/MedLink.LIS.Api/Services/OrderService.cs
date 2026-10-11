@@ -16,10 +16,13 @@ public sealed class OrderService
     private readonly IRolePolicy _policy;
     private readonly ICurrentEmployee _current;
     private readonly OrderStateService _state;
+    private readonly TubePlanService _tubes;
+    private readonly ReferralService _referrals;
+    private readonly BillingService _billing;
 
-    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state)
+    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state, TubePlanService tubes, ReferralService referrals, BillingService billing)
     {
-        _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state;
+        _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state; _tubes = tubes; _referrals = referrals; _billing = billing;
     }
 
     public static readonly string[] CreatorRoles = { LabRoles.Admin, LabRoles.Registrar, LabRoles.Doctor, LabRoles.Phlebotomist, LabRoles.Technician };
@@ -27,12 +30,14 @@ public sealed class OrderService
     // ------------------------------------------------------------------ queries
     public IQueryable<LabOrder> FullQuery() => _db.Orders
         .Include(o => o.Patient).Include(o => o.Doctor).Include(o => o.Department)
+        .Include(o => o.Referral).ThenInclude(r => r!.Status).Include(o => o.PaperReferral).Include(o => o.Payer).Include(o => o.Charges)
         .Include(o => o.Samples).ThenInclude(s => s.TubeType)
         .Include(o => o.Samples).ThenInclude(s => s.BiomaterialType)
         .Include(o => o.Tests).ThenInclude(t => t.Test).ThenInclude(d => d!.LabSection)
         .Include(o => o.Tests).ThenInclude(t => t.Profile)
         .Include(o => o.Tests).ThenInclude(t => t.Sample)
         .Include(o => o.Tests).ThenInclude(t => t.AssignedAnalyzer)
+        .Include(o => o.Tests).ThenInclude(t => t.Performer)
         .Include(o => o.Tests).ThenInclude(t => t.Result).ThenInclude(r => r!.Analyzer);
 
     public async Task<LabOrder> LoadAsync(string id)
@@ -45,7 +50,7 @@ public sealed class OrderService
     public async Task<PagedResult<OrderListItemDto>> ListAsync(string? status, DateTime? from, DateTime? to, bool? cito, string? departmentId,
         string? patientId, string? search, PagingQuery paging)
     {
-        var q = _db.Orders.AsNoTracking().Include(o => o.Patient).Include(o => o.Department).Include(o => o.Doctor).Where(o => !o.IsDeleted);
+        var q = _db.Orders.AsNoTracking().Include(o => o.Patient).Include(o => o.Department).Include(o => o.Doctor).Where(o => o.RecordState != RecordStates.Deleted);
         if (!string.IsNullOrWhiteSpace(status))
         {
             var statuses = status.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(s => s.ToUpperInvariant()).ToArray();
@@ -59,15 +64,15 @@ public sealed class OrderService
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim();
-            q = q.Where(o => o.OrderNumber.Contains(s) || o.Patient!.LastName.Contains(s) || o.Patient.FirstName.Contains(s)
-                             || (o.Patient.Phone != null && o.Patient.Phone.Contains(s)) || (o.Patient.TaxId != null && o.Patient.TaxId.Contains(s))
+            q = q.Where(o => o.OrderNumber.Contains(s) || (o.Patient!.Caption != null && o.Patient.Caption.Contains(s))
+                             || (o.Patient.Person!.Phone != null && o.Patient.Person.Phone.Contains(s)) || (o.Patient.Person.Ipn != null && o.Patient.Person.Ipn.Contains(s))
                              || o.Samples.Any(sm => sm.Barcode == s));
         }
         q = paging.Sort?.ToLowerInvariant() switch
         {
             "ordernumber" => paging.Desc ? q.OrderByDescending(o => o.OrderNumber) : q.OrderBy(o => o.OrderNumber),
             "status" => paging.Desc ? q.OrderByDescending(o => o.Status) : q.OrderBy(o => o.Status),
-            "patient" => paging.Desc ? q.OrderByDescending(o => o.Patient!.LastName) : q.OrderBy(o => o.Patient!.LastName),
+            "patient" => paging.Desc ? q.OrderByDescending(o => o.Patient!.Caption) : q.OrderBy(o => o.Patient!.Caption),
             _ => q.OrderByDescending(o => o.IsUrgentCito).ThenByDescending(o => o.OrderDatetime)
         };
 
@@ -75,8 +80,8 @@ public sealed class OrderService
         var items = await q.Skip((paging.SafePage - 1) * paging.SafePageSize).Take(paging.SafePageSize)
             .Select(o => new
             {
-                o.Id, o.OrderNumber, o.PatientId, PatientName = o.Patient!.LastName + " " + o.Patient.FirstName + " " + (o.Patient.SecondName ?? ""),
-                o.Patient.BirthDate, o.Patient.Gender, o.OrderDatetime, o.Status, o.IsUrgentCito, DepartmentName = o.Department!.Name, DoctorName = o.Doctor!.FullName,
+                o.Id, o.OrderNumber, o.PatientId, PatientName = o.Patient!.Caption ?? "",
+                o.Patient.Birthday, o.Patient.GenderId, o.OrderDatetime, o.Status, o.IsUrgentCito, DepartmentName = o.Department!.Caption, DoctorName = o.Doctor!.Caption,
                 TestsTotal = o.Tests.Count, TestsVerified = o.Tests.Count(t => t.Status == OrderTestStatuses.Verified || t.Status == OrderTestStatuses.AutoVerified),
                 SamplesCount = o.Samples.Count, HasCritical = o.Tests.Any(t => t.Result != null && (t.Result.Flag == "CRIT_HIGH" || t.Result.Flag == "CRIT_LOW")),
                 o.TotalPrice
@@ -88,7 +93,7 @@ public sealed class OrderService
             Items = items.Select(o => new OrderListItemDto
             {
                 Id = o.Id, OrderNumber = o.OrderNumber, PatientId = o.PatientId, PatientName = o.PatientName.Trim(),
-                PatientAgeGender = DtoMapper.AgeGender(new MisPatientCard { BirthDate = o.BirthDate, Gender = o.Gender }, o.OrderDatetime),
+                PatientAgeGender = DtoMapper.AgeGender(o.Birthday, MedLinkEnums.GenderCode(o.GenderId), o.OrderDatetime),
                 OrderDatetime = o.OrderDatetime, Status = o.Status, IsUrgentCito = o.IsUrgentCito, DepartmentName = o.DepartmentName, DoctorName = o.DoctorName,
                 TestsTotal = o.TestsTotal, TestsVerified = o.TestsVerified, SamplesCount = o.SamplesCount, HasCritical = o.HasCritical, TotalPrice = o.TotalPrice,
                 AllowedActions = _policy.AllowedActions(LisEntities.Order, o.Status)
@@ -145,16 +150,10 @@ public sealed class OrderService
         {
             if (string.IsNullOrWhiteSpace(req.NewPatient.LastName) || string.IsNullOrWhiteSpace(req.NewPatient.FirstName))
                 throw ValidationException.Field("newPatient", "Прізвище та ім'я пацієнта обов'язкові");
-            patient = new MisPatientCard
-            {
-                LastName = req.NewPatient.LastName.Trim(), FirstName = req.NewPatient.FirstName.Trim(), SecondName = req.NewPatient.SecondName?.Trim(),
-                BirthDate = req.NewPatient.BirthDate, Gender = NormalizeGender(req.NewPatient.Gender), Phone = req.NewPatient.Phone, Email = req.NewPatient.Email,
-                TaxId = req.NewPatient.TaxId, Address = req.NewPatient.Address
-            };
-            patient.LastNameLatin = Core.Common.TransliterationKmu2010.ToLatin(patient.LastName);
-            patient.FirstNameLatin = Core.Common.TransliterationKmu2010.ToLatin(patient.FirstName);
+            req.NewPatient.Gender = NormalizeGender(req.NewPatient.Gender);
+            patient = MedLinkPeople.NewPatient(req.NewPatient, MedLinkDefaults.OrganizationId);
             _db.Patients.Add(patient);
-            _audit.Log("CREATE", "mis_patient_card", patient.Id, null, patient);
+            _audit.Log("CREATE", "mis_patient_card", patient.Id, null, req.NewPatient);
         }
         else throw ValidationException.Field("patientId", "Вкажіть patientId або newPatient");
 
@@ -171,19 +170,23 @@ public sealed class OrderService
             OrderDatetime = at,
             Status = OrderStatuses.New,
             IsUrgentCito = req.IsUrgentCito,
-            EhealthReferralId = NullIfEmpty(req.EhealthReferralId),
+
             ClinicalNotes = req.ClinicalNotes,
             IsPregnant = req.IsPregnant,
             PregnancyWeek = req.PregnancyWeek,
             MenstrualPhase = NullIfEmpty(req.MenstrualPhase),
             Icd10Code = NullIfEmpty(req.Icd10Code),
             CreatedById = _current.EmployeeId,
-            RepeatOfOrderId = repeatOfOrderId
+            RepeatOfOrderId = repeatOfOrderId,
+            OrganizationId = MedLinkDefaults.OrganizationId
         };
         await ValidateRefsAsync(order);
+        await _referrals.ApplyAsync(order, req, patient);
         _db.Orders.Add(order);
 
         await AddTestsInternalAsync(order, req.ProfileIds, req.TestIds);
+        await _billing.ApplyPayerAsync(order, req.PayerId, req.PatientInsuranceId, req.AuthorizationNumber);
+        await _billing.RecalculateAsync(order);
         _audit.Log("CREATE", "lab_order", order.Id, null, new { order.OrderNumber, order.PatientId, tests = order.Tests.Select(t => t.TestCode), samples = order.Samples.Select(s => s.Barcode) });
         return order;
     }
@@ -192,80 +195,44 @@ public sealed class OrderService
     {
         if (order.DoctorId != null && !await _db.Employees.AnyAsync(e => e.Id == order.DoctorId)) throw ValidationException.Field("doctorId", "Лікаря не знайдено");
         if (order.DepartmentId != null && !await _db.Departments.AnyAsync(d => d.Id == order.DepartmentId)) throw ValidationException.Field("departmentId", "Підрозділ не знайдено");
-        if (order.EhealthReferralId != null && !await _db.Referrals.AnyAsync(r => r.Id == order.EhealthReferralId)) throw ValidationException.Field("ehealthReferralId", "Направлення eHealth не знайдено");
     }
 
-    /// <summary>Додає тести/профілі до замовлення з автопідбором пробірок (одна пробірка на пару біоматеріал+тип пробірки).</summary>
+    /// <summary>Додає тести/профілі до замовлення з плануванням пробірок за правилами тари (FR-PRE-004).</summary>
     private async Task AddTestsInternalAsync(LabOrder order, List<string> profileIds, List<string> testIds)
     {
-        var profiles = new List<LabTestProfile>();
-        foreach (var pid in profileIds.Distinct())
-        {
-            var p = await _db.Profiles.Include(x => x.Items).ThenInclude(i => i.Test).FirstOrDefaultAsync(x => (x.Id == pid || x.Code == pid) && x.IsActive)
-                    ?? throw NotFoundException.For("Профіль", pid);
-            profiles.Add(p);
-        }
-        var singles = new List<LabTestDefinition>();
-        foreach (var tid in testIds.Distinct())
-        {
-            var t = await _db.Tests.FirstOrDefaultAsync(x => (x.Id == tid || x.Code == tid) && x.IsActive) ?? throw NotFoundException.For("Тест", tid);
-            singles.Add(t);
-        }
-
         var existingCodes = new HashSet<string>(order.Tests.Select(t => t.TestCode));
-        var toAdd = new List<(LabTestDefinition test, LabTestProfile? profile, int order)>();
-        foreach (var p in profiles)
-        {
-            foreach (var item in p.Items.OrderBy(i => i.DisplayOrder))
-            {
-                if (item.Test == null || existingCodes.Contains(item.Test.Code)) continue;
-                existingCodes.Add(item.Test.Code);
-                toAdd.Add((item.Test, p, item.DisplayOrder));
-            }
-            order.TotalPrice += p.Price;
-        }
-        foreach (var t in singles)
-        {
-            if (existingCodes.Contains(t.Code)) continue;
-            existingCodes.Add(t.Code);
-            toAdd.Add((t, null, 100));
-            order.TotalPrice += t.Price;
-        }
+        var (toAdd, profiles, singles) = await _tubes.ResolveAsync(profileIds, testIds, existingCodes);
+        foreach (var p in profiles) order.TotalPrice += p.Price;
+        foreach (var t in singles.Where(t => toAdd.Any(a => a.Test.Id == t.Id && a.Profile == null))) order.TotalPrice += t.Price;
         if (toAdd.Count == 0 && order.Tests.Count == 0) throw new ValidationException("Немає нових тестів для додавання");
 
-        var displayOrder = order.Tests.Count == 0 ? 0 : order.Tests.Max(t => t.DisplayOrder);
-        foreach (var (test, profile, _) in toAdd)
+        var plan = await _tubes.BuildAsync(toAdd, order);
+        var sampleByTest = new Dictionary<string, string>();
+        foreach (var tube in plan.Tubes.Where(t => t.NewTests.Count > 0))
         {
-            var tubeId = test.TubeTypeId ?? profile?.DefaultTubeTypeId ?? await DefaultTubeForBiomaterialAsync(test.BiomaterialTypeId);
-            var biomaterialId = test.BiomaterialTypeId;
-            var sample = order.Samples.FirstOrDefault(s => s.TubeTypeId == tubeId && s.BiomaterialTypeId == biomaterialId && s.Status != SampleStatuses.Rejected && s.Status != SampleStatuses.Disposed);
+            var sample = tube.ExistingSampleId == null ? null : order.Samples.First(s => s.Id == tube.ExistingSampleId);
             if (sample == null)
             {
                 sample = new LabOrderSample
                 {
-                    OrderId = order.Id, Barcode = await _numerators.NextTubeBarcodeAsync(), TubeTypeId = tubeId, BiomaterialTypeId = biomaterialId,
-                    GroupNumb = order.Samples.Count + 1, Status = SampleStatuses.Pending
+                    OrderId = order.Id, Barcode = await _numerators.NextTubeBarcodeAsync(), TubeTypeId = tube.TubeTypeId, BiomaterialTypeId = tube.BiomaterialTypeId,
+                    GroupNumb = order.Samples.Count + 1, Status = SampleStatuses.Pending,
+                    PlanReasons = tube.Reasons.Count == 0 ? null : string.Join(",", tube.Reasons)
                 };
                 order.Samples.Add(sample);
             }
+            foreach (var t in tube.NewTests) sampleByTest[t.TestId] = sample.Id;
+        }
+
+        var displayOrder = order.Tests.Count == 0 ? 0 : order.Tests.Max(t => t.DisplayOrder);
+        foreach (var sel in toAdd)
+        {
             order.Tests.Add(new LabOrderTest
             {
-                OrderId = order.Id, SampleId = sample.Id, ProfileId = profile?.Id, TestId = test.Id, TestCode = test.Code, TestName = test.Name,
-                Status = OrderTestStatuses.Pending, DisplayOrder = ++displayOrder
+                OrderId = order.Id, SampleId = sampleByTest[sel.Test.Id], ProfileId = sel.Profile?.Id, TestId = sel.Test.Id, TestCode = sel.Test.Code, TestName = sel.Test.Name,
+                Status = OrderTestStatuses.Pending, DisplayOrder = ++displayOrder, Test = sel.Test, PerformerId = sel.PerformerId
             });
         }
-    }
-
-    private async Task<int> DefaultTubeForBiomaterialAsync(int biomaterialTypeId)
-    {
-        // Евристика за назвою біоматеріалу → тип пробірки; інакше перша активна пробірка
-        var bm = await _db.BiomaterialTypes.AsNoTracking().FirstOrDefaultAsync(b => b.Id == biomaterialTypeId);
-        var name = bm?.Name?.ToLowerInvariant() ?? "";
-        string? code = name.Contains("сеч") ? "URINE_CONTAINER" : name.Contains("кал") ? "STOOL_CONTAINER" : name.Contains("сироват") ? "SERUM_GEL"
-            : name.Contains("плазм") ? "CITRATE" : name.Contains("кров") ? "EDTA_CBC" : null;
-        var tube = code == null ? null : await _db.TubeTypes.AsNoTracking().FirstOrDefaultAsync(t => t.Code == code);
-        tube ??= await _db.TubeTypes.AsNoTracking().OrderBy(t => t.Id).FirstOrDefaultAsync(t => t.IsActive);
-        return tube?.Id ?? throw new ValidationException("Довідник пробірок порожній");
     }
 
     // ------------------------------------------------------------------ edit
@@ -277,7 +244,8 @@ public sealed class OrderService
         if (req.DoctorId != null) order.DoctorId = NullIfEmpty(req.DoctorId);
         if (req.DepartmentId != null) order.DepartmentId = NullIfEmpty(req.DepartmentId);
         if (req.IsUrgentCito.HasValue) order.IsUrgentCito = req.IsUrgentCito.Value;
-        if (req.EhealthReferralId != null) order.EhealthReferralId = NullIfEmpty(req.EhealthReferralId);
+        if (req.EhealthReferralId != null && NullIfEmpty(req.EhealthReferralId) != order.EhealthReferralId)
+            throw new ConflictException("Е-направлення змінюється лише перереєстрацією замовлення (скасуйте замовлення — направлення буде звільнено)");
         if (req.ClinicalNotes != null) order.ClinicalNotes = req.ClinicalNotes;
         if (req.IsPregnant.HasValue) order.IsPregnant = req.IsPregnant.Value;
         if (req.PregnancyWeek.HasValue) order.PregnancyWeek = req.PregnancyWeek;
@@ -295,6 +263,7 @@ public sealed class OrderService
         _policy.Ensure(LisEntities.Order, OrderActions.AddTest, order.Status, $"Замовлення {order.OrderNumber}");
         var beforeCodes = order.Tests.Select(t => t.TestCode).ToList();
         await AddTestsInternalAsync(order, req.ProfileIds, req.TestIds);
+        await _billing.RecalculateAsync(order);
         _state.RecomputeReopen(order);
         _audit.Log("ADD_TESTS", "lab_order", order.Id, beforeCodes, order.Tests.Select(t => t.TestCode));
         await _db.SaveChangesAsync();
@@ -319,6 +288,7 @@ public sealed class OrderService
             _db.Samples.Remove(sample);
         }
         if (order.Tests.Count == 0) throw new ConflictException("Неможливо видалити останній тест замовлення — скасуйте замовлення");
+        await _billing.RecalculateAsync(order);
         _audit.Log("REMOVE_TEST", "lab_order", order.Id, new { test.TestCode }, null);
         await _db.SaveChangesAsync();
         return await GetAsync(orderId);
@@ -356,6 +326,7 @@ public sealed class OrderService
         var before = order.Status;
         order.Status = rule.ToStatus!;
         order.CancelReason = reason;
+        await _referrals.ReleaseAsync(order, reason);
         foreach (var t in order.Tests.Where(t => !OrderTestStatuses.Final.Contains(t.Status))) { t.Status = OrderTestStatuses.Rejected; t.RejectReason = "Замовлення скасовано: " + reason; }
         foreach (var s in order.Samples.Where(s => s.Status == SampleStatuses.Pending || s.Status == SampleStatuses.Collected)) { s.Status = SampleStatuses.Rejected; s.RejectReason = "Замовлення скасовано"; }
         _audit.Log("CANCEL", "lab_order", order.Id, new { status = before }, new { status = order.Status, reason });
@@ -418,15 +389,27 @@ public sealed class OrderService
         order.VerifyToken = _state.VerifyToken(order.Id, now);
 
         var performer = order.Tests.Select(t => t.Result?.VerifiedById).FirstOrDefault(v => v != null) ?? _current.EmployeeId;
-        _db.DiagnosticReports.Add(new MisDiagnosticReport
+        // [MedLink] mis_diagnostic_report: висновок за замовленням (передача в ЕСОЗ — R2). Код послуги — з каталогу eHealth профілю або е-направлення.
+        var critical = order.Tests.Count(t => t.Result != null && Core.Clinical.ResultFlags.IsCritical(t.Result.Flag));
+        var referral = order.EhealthReferralId == null ? null : await _db.Referrals.AsNoTracking().FirstOrDefaultAsync(r => r.Id == order.EhealthReferralId);
+        var ehealthServiceId = order.Tests.Select(t => t.Profile?.EhealthServiceCatalogServiceId).FirstOrDefault(x => x != null)
+                               ?? referral?.ServiceCatalogServiceId ?? MedLinkEnums.EmptyGuid;
+        var performerName = (await _db.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.Id == performer))?.Caption;
+        var report = new MisDiagnosticReport
         {
-            ReportNumber = order.OrderNumber, PatientId = order.PatientId, ReferralId = order.EhealthReferralId, LabOrderId = order.Id,
-            ServiceName = string.Join("; ", order.Tests.Select(t => t.Profile?.Name ?? t.TestName).Distinct()),
-            PerformerDoctorId = performer, Status = "FINAL", EhealthSynced = false, SignedAt = now,
-            Conclusions = $"Лабораторне дослідження №{order.OrderNumber}: {order.Tests.Count} показників, критичних: {order.Tests.Count(t => t.Result != null && Core.Clinical.ResultFlags.IsCritical(t.Result.Flag))}"
-        });
+            RegNumber = order.OrderNumber, RegDate = now, Caption = string.Join("; ", order.Tests.Select(t => t.Profile?.Name ?? t.TestName).Distinct()),
+            Status = 0, PatientCardId = order.PatientId, OrganizationId = order.OrganizationId ?? MedLinkDefaults.OrganizationId,
+            LegalEntityId = order.OrganizationId ?? MedLinkDefaults.OrganizationId, DivisionId = MedLinkEnums.EmptyGuid, DocumentTypeId = MedLinkEnums.EmptyGuid,
+            EhealthServiceCatalogServiceId = ehealthServiceId, EhealthIncomingMedicalReferralId = order.EhealthReferralId,
+            EffectiveDateTimeStart = order.Samples.Min(s => s.CollectedAt) ?? order.OrderDatetime, EffectiveDateTimeEnd = now, IssuedAt = now,
+            PerformerString = performerName, IsPerformerString = true, IsPrimarySource = true,
+            Description = $"Лабораторне дослідження №{order.OrderNumber}: {order.Tests.Count} показників, критичних: {critical}"
+        };
+        _db.DiagnosticReports.Add(report);
+        order.DiagnosticReportId = report.Id;
+        await _referrals.CompleteAsync(order, report, now);
 
-        var channel = !string.IsNullOrWhiteSpace(order.Patient?.Email) ? "EMAIL" : "SMS";
+        var channel = !string.IsNullOrWhiteSpace(order.Patient?.Person?.Email) ? "EMAIL" : "SMS";
         _db.Notifications.Add(new LabPatientNotification
         {
             PatientId = order.PatientId, OrderId = order.Id, Channel = channel, Status = "QUEUED",

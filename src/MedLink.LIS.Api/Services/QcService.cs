@@ -63,7 +63,7 @@ public sealed class QcService
     // ------------------------------------------------------------------ materials
     public async Task<List<LabQcMaterial>> MaterialsAsync(string? analyzerId, bool? isActive) =>
         await _db.QcMaterials.AsNoTracking().Include(m => m.Targets).Include(m => m.Analyzer)
-            .Where(m => !m.IsDeleted && (analyzerId == null || m.AnalyzerId == analyzerId) && (isActive == null || m.IsActive == isActive))
+            .Where(m => m.RecordState != RecordStates.Deleted && (analyzerId == null || m.AnalyzerId == analyzerId) && (isActive == null || m.IsActive == isActive))
             .OrderBy(m => m.Analyzer!.Name).ThenBy(m => m.Level).ToListAsync();
 
     public async Task<LabQcMaterial> MaterialAsync(string id) =>
@@ -115,7 +115,7 @@ public sealed class QcService
     {
         _policy.Require("Видалення контрольного матеріалу", LabRoles.Admin, LabRoles.Doctor);
         var m = await _db.QcMaterials.Include(x => x.Targets).FirstOrDefaultAsync(x => x.Id == id) ?? throw NotFoundException.For("Контрольний матеріал", id);
-        if (await _db.QcResults.AnyAsync(r => r.QcMaterialId == id)) { m.IsActive = false; m.IsDeleted = true; _audit.Log("SOFT_DELETE", "lab_qc_material", id, null, null, "Є результати ВКЯ — деактивовано"); }
+        if (await _db.QcResults.AnyAsync(r => r.QcMaterialId == id)) { m.IsActive = false; m.RecordState = RecordStates.Deleted; _audit.Log("SOFT_DELETE", "lab_qc_material", id, null, null, "Є результати ВКЯ — деактивовано"); }
         else { _db.QcMaterials.Remove(m); _audit.Log("DELETE", "lab_qc_material", id, new { m.Name, m.LotNumber }, null); }
         await _db.SaveChangesAsync();
     }

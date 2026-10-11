@@ -23,13 +23,15 @@ export const DICTIONARIES = {
   },
   'tube-types': {
     title: 'Пробірки', icon: 'fas fa-vial', description: 'Типи пробірок ISO 6710: колір кришки, антикоагулянт, об’єм, порядок забору',
-    columns: ['colorCode', 'code', 'name', 'anticoagulant', 'volumeMl', 'orderOfDrawIndex', 'inversionsCount', 'isActive'],
+    columns: ['colorCode', 'code', 'name', 'anticoagulant', 'volumeMl', 'usableVolumeMl', 'maxTestsPerTube', 'orderOfDrawIndex', 'inversionsCount', 'isActive'],
     fields: [...codeName,
       { name: 'colorCode', label: 'Колір кришки', type: 'color', col: 3 },
       { name: 'anticoagulant', label: 'Антикоагулянт', type: 'select', options: ['—', 'K2-ЕДТА', 'K3-ЕДТА', 'Na-цитрат 3,2%', 'Na-цитрат 3,8%', 'Li-гепарин', 'Na-гепарин', 'NaF / K-оксалат', 'Гель-активатор згортання', 'Без добавок'], col: 3 },
       { name: 'volumeMl', label: 'Об’єм, мл', type: 'decimal', col: 2 },
       { name: 'orderOfDrawIndex', label: 'Порядок забору', type: 'number', col: 2 },
       { name: 'inversionsCount', label: 'Інверсій', type: 'number', col: 2 },
+      { name: 'usableVolumeMl', label: 'Корисний об’єм матеріалу, мл', type: 'decimal', col: 3, hint: 'сироватка/плазма/сеча; порожньо — не контролюється' },
+      { name: 'maxTestsPerTube', label: 'Макс. тестів на пробірку', type: 'number', col: 3, hint: 'порожньо — без обмеження' },
       active]
   },
   'method-types': {
@@ -54,7 +56,7 @@ export const DICTIONARIES = {
   },
   tests: {
     title: 'Показники', icon: 'fas fa-list-ol', description: 'Лабораторні показники: LOINC, одиниці, тип результату, біоматеріал, методика, delta-check',
-    columns: ['code', 'name', 'unit', 'resultType', 'category', 'biomaterialTypeId', 'deltaCheckMaxPct', 'requiresManualVerification', 'isQcTracked', 'isActive'],
+    columns: ['code', 'name', 'unit', 'resultType', 'category', 'biomaterialTypeId', 'tubeTypeId', 'requiredVolumeMl', 'requiresSeparateTube', 'deltaCheckMaxPct', 'requiresManualVerification', 'isQcTracked', 'isActive'],
     fields: [...codeName,
       { name: 'shortName', label: 'Коротка назва', type: 'text', col: 4 },
       { name: 'loincCode', label: 'LOINC', type: 'text', col: 4 },
@@ -67,6 +69,11 @@ export const DICTIONARIES = {
       { name: 'formula', label: 'Формула (CALCULATED)', type: 'text', col: 6, showIf: f => f.resultType === 'CALCULATED' },
       { name: 'biomaterialTypeId', label: 'Біоматеріал', type: 'dict', dict: 'biomaterials', col: 6 },
       { name: 'methodId', label: 'Методика', type: 'dict', dict: 'method-types', col: 6 },
+      { name: 'tubeTypeId', label: 'Тара (пробірка/контейнер)', type: 'dict', dict: 'tube-types', col: 6 },
+      { name: 'requiredVolumeMl', label: 'Потрібний об’єм матеріалу, мл', type: 'decimal', col: 3 },
+      { name: 'maxTestsPerTube', label: 'Макс. тестів у пробірці', type: 'number', col: 3 },
+      { name: 'requiresSeparateTube', label: 'Окрема пробірка', type: 'toggle', col: 3 },
+      { name: 'tubeCompatibilityGroup', label: 'Група сумісності тари', type: 'text', col: 3, hint: 'однакова група — можна в одну пробірку' },
       { name: 'deltaCheckMaxPct', label: 'Delta-check, % (поріг)', type: 'decimal', col: 3 },
       { name: 'deltaCheckHours', label: 'Delta-check, год', type: 'number', col: 3, default: 72 },
       { name: 'requiresManualVerification', label: 'Потребує ручної верифікації', type: 'toggle', col: 3 },
@@ -74,16 +81,16 @@ export const DICTIONARIES = {
       active]
   },
   profiles: {
-    title: 'Послуги (профілі)', icon: 'fas fa-medical-services', description: 'Довідник послуг МІС (dct_service) + лабораторні атрибути: набір показників, TAT, підготовка',
-    sourceHint: 'Джерело: довідник послуг MedLink (dct_service). Код, назва та ціна послуги з misServiceId редагуються в МІС і тут лише для читання.',
-    columns: ['code', 'name', 'category', 'turnaroundHours', 'price', 'itemsCount', 'misServiceId', 'isActive'],
+    title: 'Послуги (профілі)', icon: 'fas fa-medical-services', description: 'Послуга прайсу MedLink (org_organization_service) + лабораторні атрибути: набір показників, TAT, підготовка',
+    sourceHint: 'Джерело: прайс послуг MedLink (org_organization_service). Назва та ціна послуги редагуються в МІС і тут лише для читання; код eHealth — з каталогу ehe_service_catalog_service.',
+    columns: ['code', 'name', 'category', 'turnaroundHours', 'price', 'itemsCount', 'organizationServiceId', 'isActive'],
     fields: [
-      { name: 'misServiceId', label: 'ID послуги МІС (dct_service)', type: 'text', col: 4, readonly: true, hint: 'призначається МІС' },
-      { name: 'code', label: 'Код', type: 'text', required: true, col: 3, readonlyIf: f => !!f.misServiceId },
-      { name: 'name', label: 'Назва', type: 'text', required: true, col: 5, readonlyIf: f => !!f.misServiceId },
+      { name: 'organizationServiceId', label: 'Послуга прайсу MedLink (org_organization_service)', type: 'text', col: 4, readonly: true, hint: 'призначається МІС' },
+      { name: 'code', label: 'Код', type: 'text', required: true, col: 3 },
+      { name: 'name', label: 'Назва', type: 'text', required: true, col: 5, readonlyIf: f => !!f.organizationServiceId },
       { name: 'category', label: 'Категорія', type: 'select', options: ['Гематологія', 'Біохімія', 'Гормони', 'Імунологія', 'Коагулологія', 'Загальноклінічні', 'Мікробіологія', 'ПЛР', 'Інше'], allowCustom: true, col: 4 },
       { name: 'turnaroundHours', label: 'TAT, год', type: 'number', col: 3, default: 24 },
-      { name: 'price', label: 'Ціна, грн (з МІС)', type: 'decimal', col: 3, readonlyIf: f => !!f.misServiceId },
+      { name: 'price', label: 'Ціна, грн (з МІС)', type: 'decimal', col: 3, readonlyIf: f => !!f.organizationServiceId },
       { name: 'fastingRequired', label: 'Натще', type: 'toggle', col: 2 },
       { name: 'items', label: 'Показники профілю', type: 'profileItems', col: 12 },
       active]
@@ -132,15 +139,16 @@ export const DICTIONARIES = {
       active]
   },
   departments: {
-    title: 'Відділення', icon: 'fas fa-hospital', description: 'Відділення МІС (org_department): замовники, пункти забору, лабораторія',
-    columns: ['code', 'name', 'type', 'phone', 'isActive'],
+    title: 'Відділення', icon: 'fas fa-hospital', description: 'Підрозділи MedLink (org_department) + вид підрозділу для ЛІС (lab_department_settings): лабораторія, пункт забору, клінічне, філія',
+    columns: ['code', 'name', 'labKind', 'departmentTypeName', 'address', 'phone', 'isActive'],
     fields: [...codeName,
-      { name: 'type', label: 'Тип', type: 'select', options: ['Лабораторія', 'Пункт забору', 'Стаціонар', 'Поліклініка', 'Інше'], allowCustom: true, col: 6 },
+      { name: 'labKind', label: 'Вид для ЛІС', type: 'select', options: [{ value: 'LABORATORY', label: 'Лабораторія' }, { value: 'COLLECTION_POINT', label: 'Пункт забору' }, { value: 'CLINICAL', label: 'Клінічне відділення' }, { value: 'BRANCH', label: 'Філія' }], required: true, col: 6, default: 'CLINICAL' },
       { name: 'phone', label: 'Телефон', type: 'text', col: 6 },
+      { name: 'address', label: 'Адреса', type: 'text', col: 12 },
       active]
   },
   employees: {
-    title: 'Співробітники', icon: 'fas fa-users', description: 'org_employee: ПІБ, посада, лабораторна роль (довідкова), відділення',
+    title: 'Співробітники', icon: 'fas fa-users', description: 'Співробітники MedLink (org_employee + cmn_person) + роль у ЛІС (lab_employee_settings)',
     columns: ['fullName', 'position', 'labRole', 'departmentId', 'phone', 'isActive'],
     fields: [
       { name: 'fullName', label: 'ПІБ', type: 'text', required: true, col: 6 },
@@ -158,5 +166,5 @@ export const DICTIONARY_LIST = Object.keys(DICTIONARIES).map(k => ({ name: k, ..
 export function columnLabel (dict, col) {
   const f = (dict.fields || []).find(x => x.name === col);
   if (f) return f.label;
-  return { itemsCount: 'Показників', colorCode: 'Колір', biomaterialTypeId: 'Біоматеріал', departmentId: 'Відділення', antibioticId: 'Антибіотик' }[col] || col;
+  return { itemsCount: 'Показників', colorCode: 'Колір', biomaterialTypeId: 'Біоматеріал', departmentId: 'Відділення', antibioticId: 'Антибіотик', departmentTypeName: 'Тип підрозділу MedLink' }[col] || col;
 }

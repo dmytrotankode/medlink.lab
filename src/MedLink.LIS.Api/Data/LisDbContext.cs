@@ -16,14 +16,22 @@ public class LisDbContext : DbContext
 {
     public LisDbContext(DbContextOptions<LisDbContext> options) : base(options) { }
 
-    // --- evomis mirror ---
+    // --- [MedLink] дзеркало таблиць evomis (структура як в evomis) ---
+    public DbSet<CmnEnumRecord> EnumRecords => Set<CmnEnumRecord>();
+    public DbSet<CmnPerson> Persons => Set<CmnPerson>();
+    public DbSet<OrgOrganization> Organizations => Set<OrgOrganization>();
     public DbSet<MisPatientCard> Patients => Set<MisPatientCard>();
-    public DbSet<MisSpecimen> Specimens => Set<MisSpecimen>();
     public DbSet<MisDiagnosticReport> DiagnosticReports => Set<MisDiagnosticReport>();
     public DbSet<OrgEmployee> Employees => Set<OrgEmployee>();
     public DbSet<OrgDepartment> Departments => Set<OrgDepartment>();
     public DbSet<EheIncomingMedicalReferral> Referrals => Set<EheIncomingMedicalReferral>();
-    public DbSet<DctService> Services => Set<DctService>();
+    public DbSet<EhePaperMedicalReferral> PaperReferrals => Set<EhePaperMedicalReferral>();
+    public DbSet<EheServiceCatalogService> ServiceCatalog => Set<EheServiceCatalogService>();
+    public DbSet<OrgOrganizationService> OrganizationServices => Set<OrgOrganizationService>();
+
+    // --- [ЛІС] лабораторні атрибути сутностей MedLink ---
+    public DbSet<LabEmployeeSettings> EmployeeSettings => Set<LabEmployeeSettings>();
+    public DbSet<LabDepartmentSettings> DepartmentSettings => Set<LabDepartmentSettings>();
 
     // --- dictionaries ---
     public DbSet<LabBiomaterialType> BiomaterialTypes => Set<LabBiomaterialType>();
@@ -83,6 +91,24 @@ public class LisDbContext : DbContext
     public DbSet<LabSampleStageEvent> StageEvents => Set<LabSampleStageEvent>();
     public DbSet<LabOrderFavorite> OrderFavorites => Set<LabOrderFavorite>();
 
+    // --- зовнішні лабораторії (send-out) ---
+    public DbSet<LabPerformer> Performers => Set<LabPerformer>();
+    public DbSet<LabPerformerTest> PerformerTests => Set<LabPerformerTest>();
+    public DbSet<LabSendOut> SendOuts => Set<LabSendOut>();
+    public DbSet<LabSendOutItem> SendOutItems => Set<LabSendOutItem>();
+    public DbSet<LabOrderAttachment> Attachments => Set<LabOrderAttachment>();
+    public DbSet<LabEhealthExchangeLog> EhealthExchangeLog => Set<LabEhealthExchangeLog>();
+
+    // --- оплата (FR-GAP-060) ---
+    public DbSet<LabPriceList> PriceLists => Set<LabPriceList>();
+    public DbSet<LabPriceListItem> PriceListItems => Set<LabPriceListItem>();
+    public DbSet<LabPricePackage> PricePackages => Set<LabPricePackage>();
+    public DbSet<LabPayer> Payers => Set<LabPayer>();
+    public DbSet<MisPatientInsurance> PatientInsurances => Set<MisPatientInsurance>();
+    public DbSet<LabOrderCharge> OrderCharges => Set<LabOrderCharge>();
+    public DbSet<LabPayment> Payments => Set<LabPayment>();
+    public DbSet<LabInvoice> Invoices => Set<LabInvoice>();
+
     // --- system ---
     public DbSet<LabAuditLog> AuditLog => Set<LabAuditLog>();
     public DbSet<LabSettings> Settings => Set<LabSettings>();
@@ -126,6 +152,36 @@ public class LisDbContext : DbContext
         mb.Entity<LabOrderFavorite>().HasIndex(f => f.EmployeeId);
         mb.Entity<LabOrderSample>().HasOne(s => s.ParentSample).WithMany().HasForeignKey(s => s.ParentSampleId).OnDelete(DeleteBehavior.Restrict);
         mb.Entity<LabOrderTest>().HasIndex(t => t.ReleasedAt);
+
+        // [MedLink] персона та лабораторні атрибути завантажуються разом із карткою/співробітником/підрозділом
+        mb.Entity<LabEhealthExchangeLog>().HasIndex(l => l.At);
+        mb.Entity<LabPriceList>().HasIndex(p => p.Code).IsUnique();
+        mb.Entity<LabPriceListItem>().HasIndex(i => new { i.PriceListId, i.ProfileId, i.TestId });
+        mb.Entity<LabPayer>().HasIndex(p => p.Code).IsUnique();
+        mb.Entity<MisPatientInsurance>().HasIndex(p => p.PatientCardId);
+        mb.Entity<LabOrderCharge>().HasIndex(c => c.OrderId);
+        mb.Entity<LabPayment>().HasIndex(p => p.OrderId);
+        mb.Entity<LabInvoice>().HasIndex(i => i.Number).IsUnique();
+        mb.Entity<LabOrder>().HasMany(o => o.Charges).WithOne(c => c.Order).HasForeignKey(c => c.OrderId).OnDelete(DeleteBehavior.Cascade);
+        mb.Entity<LabOrder>().HasIndex(o => o.EhealthReferralId);
+        mb.Entity<LabOrder>().HasIndex(o => o.ReferralType);
+        mb.Entity<EheIncomingMedicalReferral>().HasIndex(r => r.RegNumber);
+        mb.Entity<LabPerformer>().HasIndex(p => p.Code).IsUnique();
+        mb.Entity<LabPerformerTest>().HasIndex(p => new { p.PerformerId, p.TestId }).IsUnique();
+        mb.Entity<LabSendOut>().HasIndex(s => s.Number).IsUnique();
+        mb.Entity<LabSendOutItem>().HasIndex(i => i.OrderTestId);
+        mb.Entity<LabOrderAttachment>().HasIndex(a => a.OrderId);
+        mb.Entity<LabOrderTest>().HasIndex(t => t.PerformerId);
+
+        mb.Entity<OrgEmployee>().HasOne(e => e.LabSettings).WithOne(s => s.Employee).HasForeignKey<LabEmployeeSettings>(s => s.EmployeeId);
+        mb.Entity<OrgDepartment>().HasOne(d => d.LabSettings).WithOne(s => s.Department).HasForeignKey<LabDepartmentSettings>(s => s.DepartmentId);
+        mb.Entity<MisPatientCard>().Navigation(p => p.Person).AutoInclude();
+        mb.Entity<OrgEmployee>().Navigation(e => e.Person).AutoInclude();
+        mb.Entity<OrgEmployee>().Navigation(e => e.LabSettings).AutoInclude();
+        mb.Entity<OrgDepartment>().Navigation(d => d.LabSettings).AutoInclude();
+        mb.Entity<CmnPerson>().HasIndex(p => new { p.LastName, p.Name });
+        mb.Entity<MisPatientCard>().HasIndex(p => p.PersonId);
+        mb.Entity<MisPatientCard>().HasIndex(p => p.Caption);
 
         mb.Entity<LabOrderTest>().HasOne(t => t.Result).WithOne(r => r.OrderTest).HasForeignKey<LabTestResult>(r => r.OrderTestId);
         mb.Entity<LabOrder>().HasMany(o => o.Samples).WithOne(s => s.Order).HasForeignKey(s => s.OrderId).OnDelete(DeleteBehavior.Cascade);
@@ -183,6 +239,9 @@ public class LisDbContext : DbContext
     /// <summary>Поточний користувач для службових колонок (виставляється middleware через CurrentEmployee).</summary>
     public string? CurrentUserId { get; set; }
 
+    /// <summary>created_by/modified_by — uuid як в evomis: поточний співробітник або нульовий GUID для системних дій.</summary>
+    private string AuditUserId => Guid.TryParse(CurrentUserId, out _) ? CurrentUserId! : MedLinkEnums.EmptyGuid;
+
     private void StampAudit()
     {
         var now = DateTime.UtcNow;
@@ -191,12 +250,13 @@ public class LisDbContext : DbContext
             if (entry.State == EntityState.Added)
             {
                 if (entry.Entity.CreatedOn == default) entry.Entity.CreatedOn = now;
-                entry.Entity.CreatedBy ??= CurrentUserId;
+                if (string.IsNullOrEmpty(entry.Entity.CreatedBy) || entry.Entity.CreatedBy == MedLinkEnums.EmptyGuid) entry.Entity.CreatedBy = AuditUserId;
+                if (string.IsNullOrEmpty(entry.Entity.ModifiedBy) || entry.Entity.ModifiedBy == MedLinkEnums.EmptyGuid) entry.Entity.ModifiedBy = AuditUserId;
             }
             else if (entry.State == EntityState.Modified)
             {
                 entry.Entity.ModifiedOn = now;
-                entry.Entity.ModifiedBy = CurrentUserId;
+                entry.Entity.ModifiedBy = AuditUserId;
             }
         }
     }

@@ -1,14 +1,14 @@
 [
-  { "id": 1, "code": "CITRATE", "name": "Натрій-цитрат 3.2% (блакитна кришка)", "colorCode": "#0284c7", "anticoagulant": "Цитрат натрію 3.2%", "volumeMl": 3.0, "orderOfDrawIndex": 2, "inversionsCount": 4 },
-  { "id": 2, "code": "K2_EDTA", "name": "К2 ЕДТА (фіолетова кришка, мікро)", "colorCode": "#9333ea", "anticoagulant": "K2 EDTA", "volumeMl": 1.5, "orderOfDrawIndex": 6, "inversionsCount": 8 },
-  { "id": 3, "code": "K3_EDTA", "name": "К3 ЕДТА (фіолетова кришка)", "colorCode": "#7e22ce", "anticoagulant": "K3 EDTA", "volumeMl": 2.6, "orderOfDrawIndex": 6, "inversionsCount": 8 },
-  { "id": 4, "code": "EDTA_CBC", "name": "К3 ЕДТА/К2 ЕДТА — загальний аналіз крові", "colorCode": "#a855f7", "anticoagulant": "K2/K3 EDTA", "volumeMl": 2.6, "orderOfDrawIndex": 6, "inversionsCount": 8 },
-  { "id": 5, "code": "LI_HEPARIN", "name": "Li-гепарин (зелена кришка)", "colorCode": "#16a34a", "anticoagulant": "Літій-гепарин", "volumeMl": 7.0, "orderOfDrawIndex": 5, "inversionsCount": 8 },
-  { "id": 6, "code": "BLOOD_CULTURE", "name": "Кров на стерильність — подвійне середовище", "colorCode": "#facc15", "anticoagulant": "SPS", "volumeMl": 5.0, "orderOfDrawIndex": 1, "inversionsCount": 8 },
-  { "id": 7, "code": "SERUM_GEL", "name": "Сироватка — активатор згортання + гель (жовта/червона кришка)", "colorCode": "#dc2626", "anticoagulant": null, "volumeMl": 2.6, "orderOfDrawIndex": 3, "inversionsCount": 5 },
-  { "id": 8, "code": "SWAB", "name": "Аплікатор пластиковий стрижень (мазок)", "colorCode": "#e5e7eb", "anticoagulant": null, "volumeMl": 0, "orderOfDrawIndex": 99, "inversionsCount": 0 },
-  { "id": 9, "code": "STOOL_CONTAINER", "name": "Ємкість для забору калу стерильна", "colorCode": "#92400e", "anticoagulant": null, "volumeMl": 30.0, "orderOfDrawIndex": 99, "inversionsCount": 0 },
-  { "id": 10, "code": "BLOOD_GAS", "name": "Гази крові — гепаринізований шприц", "colorCode": "#6b7280", "anticoagulant": "Li-гепарин (сухий)", "volumeMl": 2.3, "orderOfDrawIndex": 4, "inversionsCount": 10 },
-  { "id": 11, "code": "SLIDE", "name": "Предметне скло", "colorCode": "#f1f5f9", "anticoagulant": null, "volumeMl": 0, "orderOfDrawIndex": 99, "inversionsCount": 0 },
-  { "id": 12, "code": "URINE_CONTAINER", "name": "Ємкість для забору сечі стерильна", "colorCode": "#eab308", "anticoagulant": null, "volumeMl": 60.0, "orderOfDrawIndex": 99, "inversionsCount": 0 }
+  { "id": 1, "code": "CITRATE", "name": "Натрій-цитрат 3.2% (блакитна кришка)", "colorCode": "#0284c7", "anticoagulant": "Цитрат натрію 3.2%", "volumeMl": 3.0, "orderOfDrawIndex": 2, "inversionsCount": 4, "usableVolumeMl": 1.2, "maxTestsPerTube": null },
+  { "id": 2, "code": "K2_EDTA", "name": "К2 ЕДТА (фіолетова кришка, мікро)", "colorCode": "#9333ea", "anticoagulant": "K2 EDTA", "volumeMl": 1.5, "orderOfDrawIndex": 6, "inversionsCount": 8, "usableVolumeMl": null, "maxTestsPerTube": null },
+  { "id": 3, "code": "K3_EDTA", "name": "К3 ЕДТА (фіолетова кришка)", "colorCode": "#7e22ce", "anticoagulant": "K3 EDTA", "volumeMl": 2.6, "orderOfDrawIndex": 6, "inversionsCount": 8, "usableVolumeMl": null, "maxTestsPerTube": null },
+  { "id": 4, "code": "EDTA_CBC", "name": "К3 ЕДТА/К2 ЕДТА — загальний аналіз крові", "colorCode": "#a855f7", "anticoagulant": "K2/K3 EDTA", "volumeMl": 2.6, "orderOfDrawIndex": 6, "inversionsCount": 8, "usableVolumeMl": null, "maxTestsPerTube": null },
+  { "id": 5, "code": "LI_HEPARIN", "name": "Li-гепарин (зелена кришка)", "colorCode": "#16a34a", "anticoagulant": "Літій-гепарин", "volumeMl": 7.0, "orderOfDrawIndex": 5, "inversionsCount": 8, "usableVolumeMl": 3.0, "maxTestsPerTube": null },
+  { "id": 6, "code": "BLOOD_CULTURE", "name": "Кров на стерильність — подвійне середовище", "colorCode": "#facc15", "anticoagulant": "SPS", "volumeMl": 5.0, "orderOfDrawIndex": 1, "inversionsCount": 8, "usableVolumeMl": null, "maxTestsPerTube": 1 },
+  { "id": 7, "code": "SERUM_GEL", "name": "Сироватка — активатор згортання + гель (жовта/червона кришка)", "colorCode": "#dc2626", "anticoagulant": null, "volumeMl": 2.6, "orderOfDrawIndex": 3, "inversionsCount": 5, "usableVolumeMl": 1.2, "maxTestsPerTube": null },
+  { "id": 8, "code": "SWAB", "name": "Аплікатор пластиковий стрижень (мазок)", "colorCode": "#e5e7eb", "anticoagulant": null, "volumeMl": 0, "orderOfDrawIndex": 99, "inversionsCount": 0, "usableVolumeMl": null, "maxTestsPerTube": null },
+  { "id": 9, "code": "STOOL_CONTAINER", "name": "Ємкість для забору калу стерильна", "colorCode": "#92400e", "anticoagulant": null, "volumeMl": 30.0, "orderOfDrawIndex": 99, "inversionsCount": 0, "usableVolumeMl": null, "maxTestsPerTube": null },
+  { "id": 10, "code": "BLOOD_GAS", "name": "Гази крові — гепаринізований шприц", "colorCode": "#6b7280", "anticoagulant": "Li-гепарин (сухий)", "volumeMl": 2.3, "orderOfDrawIndex": 4, "inversionsCount": 10, "usableVolumeMl": null, "maxTestsPerTube": null },
+  { "id": 11, "code": "SLIDE", "name": "Предметне скло", "colorCode": "#f1f5f9", "anticoagulant": null, "volumeMl": 0, "orderOfDrawIndex": 99, "inversionsCount": 0, "usableVolumeMl": null, "maxTestsPerTube": 1 },
+  { "id": 12, "code": "URINE_CONTAINER", "name": "Ємкість для забору сечі стерильна", "colorCode": "#eab308", "anticoagulant": null, "volumeMl": 60.0, "orderOfDrawIndex": 99, "inversionsCount": 0, "usableVolumeMl": 50.0, "maxTestsPerTube": null }
 ]

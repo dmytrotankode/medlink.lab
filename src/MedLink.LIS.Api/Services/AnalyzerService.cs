@@ -58,7 +58,7 @@ public sealed class AnalyzerService
 
     public async Task<List<object>> ListAsync(bool? isActive)
     {
-        var items = await Query().AsNoTracking().Where(a => !a.IsDeleted && (isActive == null || a.IsActive == isActive)).OrderBy(a => a.Name).ToListAsync();
+        var items = await Query().AsNoTracking().Where(a => a.RecordState != RecordStates.Deleted && (isActive == null || a.IsActive == isActive)).OrderBy(a => a.Name).ToListAsync();
         var lockouts = await _db.Lockouts.AsNoTracking().Where(l => l.ResolvedAt == null).ToListAsync();
         return items.Select(a => ToDto(a, lockouts.Where(l => l.AnalyzerId == a.Id).ToList())).ToList();
     }
@@ -70,12 +70,12 @@ public sealed class AnalyzerService
         return ToDto(a, lockouts);
     }
 
-    public async Task<LabAnalyzer> LoadAsync(string id) => await Query().FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted) ?? throw NotFoundException.For("Аналізатор", id);
+    public async Task<LabAnalyzer> LoadAsync(string id) => await Query().FirstOrDefaultAsync(a => a.Id == id && a.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Аналізатор", id);
 
     private static object ToDto(LabAnalyzer a, List<LabAnalyzerLockout> lockouts) => new
     {
         a.Id, a.Code, a.Name, a.AnalyzerTypeId, analyzerTypeCode = a.AnalyzerType?.Code, analyzerTypeName = a.AnalyzerType?.Name, category = a.AnalyzerType?.Category, protocol = a.AnalyzerType?.ExchType,
-        orderTemplate = a.AnalyzerType?.OrderTemplate, a.ConnectorId, connectorName = a.Connector?.Name, a.DepartmentId, departmentName = a.Department?.Name,
+        orderTemplate = a.AnalyzerType?.OrderTemplate, a.ConnectorId, connectorName = a.Connector?.Name, a.DepartmentId, departmentName = a.Department?.Caption,
         a.ConnectionMode, a.TcpHost, a.TcpPort, a.IsTcpServer, a.ComPort, a.BaudRate, a.Parity, a.DataBits, a.StopBits, a.FlowControl, a.FilePath, a.FilePollSec,
         a.AutoQueryOrders, a.IsActive, a.IsOnline, a.LastMessageAt, a.LastError, a.CreatedOn,
         isLockedOut = lockouts.Count > 0, activeLockouts = lockouts.Select(l => new { l.Id, l.TestCode, l.Reason, l.StartedAt }),
@@ -115,7 +115,7 @@ public sealed class AnalyzerService
         _policy.Require("Видалення аналізатора", LabRoles.Admin);
         var a = await LoadAsync(id);
         var hasData = await _db.Results.AnyAsync(r => r.AnalyzerId == id) || await _db.QcMaterials.AnyAsync(m => m.AnalyzerId == id) || await _db.AnalyzerMessages.AnyAsync(m => m.AnalyzerId == id);
-        if (hasData) { a.IsActive = false; a.IsDeleted = true; _audit.Log("SOFT_DELETE", "lab_analyzer", id, null, null, "Є пов'язані результати/ВКЯ — деактивовано"); }
+        if (hasData) { a.IsActive = false; a.RecordState = RecordStates.Deleted; _audit.Log("SOFT_DELETE", "lab_analyzer", id, null, null, "Є пов'язані результати/ВКЯ — деактивовано"); }
         else { _db.Analyzers.Remove(a); _audit.Log("DELETE", "lab_analyzer", id, new { a.Code }, null); }
         await BumpConnectorConfig(a.ConnectorId);
         await _db.SaveChangesAsync();
@@ -124,7 +124,7 @@ public sealed class AnalyzerService
     private async Task ValidateAsync(AnalyzerRequest req, string? id)
     {
         if (string.IsNullOrWhiteSpace(req.Code) || string.IsNullOrWhiteSpace(req.Name)) throw new ValidationException("Код та назва аналізатора обов'язкові");
-        if (await _db.Analyzers.AnyAsync(a => a.Code == req.Code && a.Id != id && !a.IsDeleted)) throw new ConflictException($"Аналізатор із кодом {req.Code} вже існує");
+        if (await _db.Analyzers.AnyAsync(a => a.Code == req.Code && a.Id != id && a.RecordState != RecordStates.Deleted)) throw new ConflictException($"Аналізатор із кодом {req.Code} вже існує");
         if (!await _db.AnalyzerTypes.AnyAsync(t => t.Id == req.AnalyzerTypeId)) throw ValidationException.Field("analyzerTypeId", "Тип аналізатора не знайдено");
         if (req.ConnectorId != null && !await _db.Connectors.AnyAsync(c => c.Id == req.ConnectorId)) throw ValidationException.Field("connectorId", "Коннектор не знайдено");
         if (req.DepartmentId != null && !await _db.Departments.AnyAsync(d => d.Id == req.DepartmentId)) throw ValidationException.Field("departmentId", "Підрозділ не знайдено");

@@ -54,7 +54,7 @@ public sealed class ImportService
             if (string.IsNullOrWhiteSpace(r.Barcode) || string.IsNullOrWhiteSpace(r.TestCode) || string.IsNullOrWhiteSpace(r.Value)) { r.Status = "ERROR"; r.Message = "Порожні обов'язкові поля"; continue; }
             var sample = await _db.Samples.AsNoTracking().Include(s => s.Order).ThenInclude(o => o!.Patient).FirstOrDefaultAsync(s => s.Barcode == r.Barcode);
             if (sample == null) { r.Status = "ERROR"; r.Message = "Штрихкод не знайдено"; continue; }
-            r.OrderNumber = sample.Order?.OrderNumber; r.PatientName = sample.Order?.Patient?.FullName;
+            r.OrderNumber = sample.Order?.OrderNumber; r.PatientName = sample.Order?.Patient?.Caption;
             var test = await _db.OrderTests.AsNoTracking().Where(t => t.OrderId == sample.OrderId && t.TestCode == r.TestCode.ToUpper() && t.Status != OrderTestStatuses.Rejected)
                 .OrderBy(t => t.SampleId == sample.Id ? 0 : 1).FirstOrDefaultAsync();
             if (test == null) { r.Status = "ERROR"; r.Message = $"У замовленні немає тесту {r.TestCode}"; continue; }
@@ -82,7 +82,7 @@ public sealed class ImportService
         return new { dryRun = false, fileName, total = rows.Count, applied, errors = rows.Count(r => r.Status == "ERROR"), skipped = rows.Count(r => r.Status == "SKIP"), rows };
     }
 
-    private static List<ImportRow> ParseCsv(Stream stream)
+    internal static List<ImportRow> ParseCsv(Stream stream)
     {
         using var reader = new StreamReader(stream, System.Text.Encoding.UTF8, true);
         var lines = new List<string>();
@@ -105,7 +105,7 @@ public sealed class ImportService
         return rows;
     }
 
-    private static List<ImportRow> ParseXlsx(Stream stream)
+    internal static List<ImportRow> ParseXlsx(Stream stream)
     {
         using var wb = new XLWorkbook(stream);
         var ws = wb.Worksheets.First();
@@ -119,7 +119,7 @@ public sealed class ImportService
         return rows;
     }
 
-    private static List<ImportRow> ParseXml(Stream stream)
+    internal static List<ImportRow> ParseXml(Stream stream)
     {
         var doc = XDocument.Load(stream);
         var rows = new List<ImportRow>();

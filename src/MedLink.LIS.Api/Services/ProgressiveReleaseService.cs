@@ -45,7 +45,7 @@ public sealed class ProgressiveReleaseService
         var patient = order.Patient ?? await _db.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.Id == order.PatientId);
         _db.Notifications.Add(new LabPatientNotification
         {
-            PatientId = order.PatientId, OrderId = order.Id, Channel = !string.IsNullOrWhiteSpace(patient?.Email) ? "EMAIL" : "SMS", Status = "QUEUED", CreatedOn = now,
+            PatientId = order.PatientId, OrderId = order.Id, Channel = !string.IsNullOrWhiteSpace(patient?.Person?.Email) ? "EMAIL" : "SMS", Status = "QUEUED", CreatedOn = now,
             Payload = $"Готові нові результати за замовленням №{order.OrderNumber} ({test.TestName}). Перегляд: /portal/{order.PatientId}/orders/{order.Id}"
         });
     }

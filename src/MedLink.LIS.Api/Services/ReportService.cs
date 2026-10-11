@@ -54,13 +54,30 @@ public sealed class ReportService
         _ => "final"
     };
 
+    /// <summary>Позначка «*», «**»… для тестів, виконаних зовнішніми лабораторіями (send-out), — по одній на виконавця.</summary>
+    private static string ExternalMark(LabOrderTest t)
+    {
+        var performers = t.Order?.Tests.Where(x => x.PerformerId != null).Select(x => x.PerformerId).Distinct().OrderBy(x => x).ToList() ?? new();
+        var idx = t.PerformerId == null ? -1 : performers.IndexOf(t.PerformerId);
+        return idx < 0 ? "" : " " + new string('*', idx + 1);
+    }
+
+    private static List<(string Mark, string Text)> ExternalNotes(LabOrder o) =>
+        o.Tests.Where(x => x.PerformerId != null).Select(x => x.PerformerId!).Distinct().OrderBy(x => x)
+            .Select((id, i) =>
+            {
+                var p = o.Tests.First(x => x.PerformerId == id).Performer;
+                var text = !string.IsNullOrWhiteSpace(p?.ReportNote) ? p!.ReportNote! : $"Дослідження виконано зовнішньою лабораторією: {p?.Name ?? id}.";
+                return (new string('*', i + 1), text);
+            }).ToList();
+
     private async Task<ReportModel> BuildModelAsync(string orderId, string? host, string? variant = null)
     {
         var order = await _orders.LoadAsync(orderId);
         if (order.Status is OrderStatuses.New or OrderStatuses.Collected or OrderStatuses.InTransit or OrderStatuses.Received)
             throw new ConflictException($"Бланк недоступний: замовлення {order.OrderNumber} у статусі {order.Status} (немає результатів)");
         var lab = await _db.Settings.AsNoTracking().FirstOrDefaultAsync() ?? new LabSettings();
-        var employees = await _db.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => e.FullName);
+        var employees = await _db.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => e.Caption ?? "");
         var baseUrl = (_config["Lab:PublicBaseUrl"] ?? (host != null ? $"http://{host}" : "http://localhost:5055")).TrimEnd('/');
         var token = order.VerifyToken ?? _state.VerifyToken(order.Id, order.ReleasedAt ?? order.CompletedAt ?? order.OrderDatetime);
         var url = $"{baseUrl}/verify/{token}";
@@ -89,7 +106,7 @@ public sealed class ReportService
         ResultFlags.Low => "↓", ResultFlags.High => "↑", ResultFlags.CritLow => "↓↓ КРИТ", ResultFlags.CritHigh => "↑↑ КРИТ", ResultFlags.Abnormal => "!", _ => ""
     };
 
-    private static string Age(MisPatientCard? p, DateTime at) => p?.BirthDate == null ? "" : $"{AgeUnits.AgeYears(p.BirthDate.Value, at)} р.";
+    private static string Age(MisPatientCard? p, DateTime at) => p?.Birthday == null ? "" : $"{AgeUnits.AgeYears(p.Birthday.Value, at)} р.";
 
     public async Task<string> HtmlAsync(string orderId, string? host, string? variant = null)
     {
@@ -107,8 +124,8 @@ public sealed class ReportService
         if (m.IsPreliminary) sb.Append("<div style=\"text-align:center\"><span class=\"prelim\">ПОПЕРЕДНІЙ БЛАНК — результати не видано</span></div>");
         var p = o.Patient;
         sb.Append("<div class=\"meta\"><table>");
-        sb.Append($"<tr><td><b>Пацієнт:</b></td><td>{H(p?.FullName)}</td></tr><tr><td><b>Дата народження:</b></td><td>{(p?.BirthDate?.ToString("dd.MM.yyyy") ?? "—")} ({Age(p, o.OrderDatetime)}), стать: {(p?.Gender == "M" ? "чоловіча" : p?.Gender == "F" ? "жіноча" : "—")}</td></tr>");
-        sb.Append($"<tr><td><b>Телефон:</b></td><td>{H(p?.Phone)}</td></tr><tr><td><b>Напрямок:</b></td><td>{H(o.Doctor?.FullName ?? "—")} {(o.Department != null ? "· " + H(o.Department.Name) : "")}</td></tr></table>");
+        sb.Append($"<tr><td><b>Пацієнт:</b></td><td>{H(p?.Caption)}</td></tr><tr><td><b>Дата народження:</b></td><td>{(p?.Birthday?.ToString("dd.MM.yyyy") ?? "—")} ({Age(p, o.OrderDatetime)}), стать: {(p?.Gender == "M" ? "чоловіча" : p?.Gender == "F" ? "жіноча" : "—")}</td></tr>");
+        sb.Append($"<tr><td><b>Телефон:</b></td><td>{H(p?.Person?.Phone)}</td></tr><tr><td><b>Напрямок:</b></td><td>{H(o.Doctor?.Caption ?? "—")} {(o.Department != null ? "· " + H(o.Department.Caption) : "")}</td></tr></table>");
         sb.Append("<table>");
         sb.Append($"<tr><td><b>Замовлення:</b></td><td>{o.OrderDatetime.ToLocalTime():dd.MM.yyyy HH:mm}{(o.IsUrgentCito ? " <b style=\"color:#b91c1c\">CITO</b>" : "")}</td></tr>");
         var collected = o.Samples.Where(s => s.CollectedAt != null).Select(s => s.CollectedAt).Min();
@@ -126,10 +143,11 @@ public sealed class ReportService
                 var cls = r?.Flag ?? "";
                 var prev = r?.PreviousValue != null ? $"{r.PreviousValue.Value.ToString("0.##", CultureInfo.InvariantCulture)} ({r.PreviousAt?.ToLocalTime():dd.MM.yy}) {(r.DeltaPercent.HasValue ? $"Δ{r.DeltaPercent:+0.0;-0.0}%" : "")}" : "";
                 var unverified = r != null && !OrderTestStatuses.VerifiedAny.Contains(t.Status) ? " <span class=\"small\">(не верифіковано)</span>" : "";
-                sb.Append($"<tr><td>{H(t.TestName)}{(t.IsReflex ? " <span class=\"small\">(reflex)</span>" : "")}</td><td class=\"{cls}\">{H(val)}{unverified}</td><td>{H(r?.Unit ?? t.Test?.Unit)}</td><td>{H(r?.ReferenceDisplay)}</td><td class=\"{cls}\">{FlagLabel(r?.Flag ?? "")}</td><td class=\"small\">{H(prev)}</td></tr>");
+                sb.Append($"<tr><td>{H(t.TestName)}{ExternalMark(t)}{(t.IsReflex ? " <span class=\"small\">(reflex)</span>" : "")}</td><td class=\"{cls}\">{H(val)}{unverified}</td><td>{H(r?.Unit ?? t.Test?.Unit)}</td><td>{H(r?.ReferenceDisplay)}</td><td class=\"{cls}\">{FlagLabel(r?.Flag ?? "")}</td><td class=\"small\">{H(prev)}</td></tr>");
             }
         }
         sb.Append("</table>");
+        foreach (var note in ExternalNotes(o)) sb.Append($"<p class=\"small\"><b>{H(note.Mark)}</b> {H(note.Text)}</p>");
         var comments = o.Tests.Where(t => !string.IsNullOrWhiteSpace(t.Result?.VerificationComment) || !string.IsNullOrWhiteSpace(t.Result?.OperatorComment)).ToList();
         if (comments.Count > 0)
         {
@@ -204,9 +222,9 @@ public sealed class ReportService
             {
                 r.RelativeItem().Column(cc =>
                 {
-                    cc.Item().Text(t => { t.Span("Пацієнт: ").Bold(); t.Span(p?.FullName ?? ""); });
-                    cc.Item().Text(t => { t.Span("Дата народження: ").Bold(); t.Span($"{p?.BirthDate:dd.MM.yyyy} ({Age(p, o.OrderDatetime)}), стать: {(p?.Gender == "M" ? "чоловіча" : p?.Gender == "F" ? "жіноча" : "—")}"); });
-                    cc.Item().Text(t => { t.Span("Напрямок: ").Bold(); t.Span($"{o.Doctor?.FullName ?? "—"} {(o.Department != null ? "· " + o.Department.Name : "")}"); });
+                    cc.Item().Text(t => { t.Span("Пацієнт: ").Bold(); t.Span(p?.Caption ?? ""); });
+                    cc.Item().Text(t => { t.Span("Дата народження: ").Bold(); t.Span($"{p?.Birthday:dd.MM.yyyy} ({Age(p, o.OrderDatetime)}), стать: {(p?.Gender == "M" ? "чоловіча" : p?.Gender == "F" ? "жіноча" : "—")}"); });
+                    cc.Item().Text(t => { t.Span("Напрямок: ").Bold(); t.Span($"{o.Doctor?.Caption ?? "—"} {(o.Department != null ? "· " + o.Department.Caption : "")}"); });
                 });
                 r.RelativeItem().Column(cc =>
                 {
@@ -238,7 +256,7 @@ public sealed class ReportService
                         var color = isCrit ? "#b91c1c" : isAbn ? "#b45309" : "#212121";
                         var prev = r?.PreviousValue != null ? $"{r.PreviousValue.Value.ToString("0.##", CultureInfo.InvariantCulture)} ({r.PreviousAt?.ToLocalTime():dd.MM.yy}){(r.DeltaPercent.HasValue ? $" Δ{r.DeltaPercent:+0.0;-0.0}%" : "")}" : "";
                         IContainer Cell() => table.Cell().Border(0.5f).BorderColor("#bbb").Padding(3).Background(isCrit ? "#fee2e2" : "#ffffff");
-                        Cell().Text(t.TestName + (t.IsReflex ? " (reflex)" : ""));
+                        Cell().Text(t.TestName + ExternalMark(t) + (t.IsReflex ? " (reflex)" : ""));
                         Cell().Text(val).FontColor(color).Bold();
                         Cell().Text(r?.Unit ?? t.Test?.Unit ?? "");
                         Cell().Text(r?.ReferenceDisplay ?? "");
@@ -248,6 +266,7 @@ public sealed class ReportService
                 }
             });
 
+            foreach (var note in ExternalNotes(o)) col.Item().PaddingTop(4).Text($"{note.Mark} {note.Text}").FontSize(8).FontColor("#555");
             var doctors = o.Tests.Select(t => t.Result?.VerifiedById).Where(v => v != null).Distinct().Select(v => m.Employees.TryGetValue(v!, out var n) ? n : v!).ToList();
             var autoCount = o.Tests.Count(t => t.Result?.IsAutoVerified == true);
             col.Item().PaddingTop(12).Text(t => { t.Span("Лікар-лаборант: ").Bold(); t.Span(doctors.Count > 0 ? string.Join(", ", doctors) : "—"); });

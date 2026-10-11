@@ -44,16 +44,43 @@
           </div>
 
           <!-- Направлення -->
-          <div class="section-title q-mt-md">2. Направлення</div>
+          <div class="section-title q-mt-md row items-center justify-between">
+            <span>2. Направлення</span>
+            <q-btn-toggle v-model="form.referralType" dense no-caps unelevated toggle-color="primary" color="white" text-color="grey-8" :options="referralTypeOptions" data-testid="referralType" />
+          </div>
           <div class="row q-col-gutter-sm">
+            <template v-if="form.referralType === 'EHEALTH'">
+              <div class="col-12 col-md-4">
+                <q-input v-model="ehealthNumber" outlined dense label="Номер е-направлення *" data-testid="ehealthNumber" @keyup.enter="lookupReferral">
+                  <template v-slot:append><q-btn flat dense icon="search" :loading="referralLoading" @click="lookupReferral" /></template>
+                </q-input>
+              </div>
+              <div class="col-12 col-md-8">
+                <q-banner v-if="referralInfo" dense rounded :class="referralInfo.canUse ? 'bg-green-1' : 'bg-red-1'" data-testid="referralInfo">
+                  <b>{{ referralInfo.serviceName }}</b> · {{ referralInfo.patientName }} · дійсне до {{ referralInfo.expirationDate | date }} · {{ referralInfo.statusName }}
+                  <div v-for="(p, i) in referralInfo.problems" :key="i" class="text-negative text-caption">{{ p }}</div>
+                </q-banner>
+                <div v-else class="text-caption text-grey-7 q-pt-sm">Знайдіть направлення ЕСОЗ — пацієнт і послуга підставляться автоматично; при видачі результатів направлення буде погашено висновком.</div>
+              </div>
+            </template>
+            <template v-if="form.referralType === 'PAPER'">
+              <div class="col-6 col-md-3"><q-input v-model="paper.number" outlined dense label="№ паперового направлення *" /></div>
+              <div class="col-6 col-md-3"><q-input v-model="paper.date" outlined dense type="date" stack-label label="Дата" /></div>
+              <div class="col-12 col-md-4"><q-input v-model="paper.requesterLegalEntityName" outlined dense label="Заклад-направник *" /></div>
+              <div class="col-6 col-md-2"><q-input v-model="paper.requesterLegalEntityEdrpou" outlined dense label="ЄДРПОУ" mask="########" /></div>
+              <div class="col-6 col-md-4"><q-input v-model="paper.requesterEmployeeName" outlined dense label="Лікар-направник" /></div>
+            </template>
+            <template v-if="form.referralType === 'EXTERNAL_CLINIC'">
+              <div class="col-12 col-md-4"><q-input v-model="form.referrerOrganizationName" outlined dense label="Клініка-партнер *" /></div>
+              <div class="col-6 col-md-2"><q-input v-model="form.referrerOrganizationEdrpou" outlined dense label="ЄДРПОУ" mask="########" /></div>
+              <div class="col-6 col-md-3"><q-input v-model="form.referrerDoctorName" outlined dense label="Лікар клініки" /></div>
+              <div class="col-12 col-md-3"><q-input v-model="form.referrerNumber" outlined dense label="№ направлення клініки" /></div>
+            </template>
             <div class="col-12 col-md-4">
-              <q-select v-model="form.doctorId" outlined dense clearable label="Лікар-замовник" :options="doctorOptions" emit-value map-options use-input input-debounce="0" @filter="filterDoctors" />
+              <q-select v-model="form.doctorId" outlined dense clearable :label="form.referralType === 'INTERNAL' ? 'Лікар закладу *' : 'Лікар-замовник'" :options="doctorOptions" emit-value map-options use-input input-debounce="0" @filter="filterDoctors" />
             </div>
             <div class="col-12 col-md-4">
               <q-select v-model="form.departmentId" outlined dense clearable label="Відділення" :options="departmentOptions" emit-value map-options />
-            </div>
-            <div class="col-12 col-md-4">
-              <q-input v-model="form.ehealthReferralId" outlined dense label="ID е-направлення (eHealth)" />
             </div>
             <div class="col-12">
               <q-input v-model="form.clinicalNotes" outlined dense autogrow label="Клінічні дані / діагноз (МКХ-10), коментар" />
@@ -108,32 +135,49 @@
             </div>
           </div>
 
-          <!-- План пробірок + ціна -->
-          <div v-show="pickMode === 'lists'" class="row q-col-gutter-md q-mt-xs">
+          <!-- План пробірок (сервер, FR-PRE-004) + ціна -->
+          <div class="row q-col-gutter-md q-mt-xs">
             <div class="col-12 col-md-7">
-              <div class="medlink-card">
-                <div class="medlink-card__title"><span><q-icon name="science" class="q-mr-xs" />Автопідбір пробірок (попередній план)</span><span class="text-grey-6 text-caption">{{ tubePlan.length }} пробірк.</span></div>
-                <q-list v-if="tubePlan.length" dense separator>
-                  <q-item v-for="t in tubePlan" :key="t.key">
-                    <q-item-section avatar>
-                      <div :style="{ background: t.color, width: '18px', height: '28px', borderRadius: '3px 3px 8px 8px', border: '1px solid #999' }" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label>{{ t.tubeName }} <span class="text-grey-7">· {{ t.biomaterialName }}</span></q-item-label>
-                      <q-item-label caption>{{ t.tests.join(', ') }}</q-item-label>
-                    </q-item-section>
-                    <q-item-section side><q-badge color="grey-7" :label="`${t.tests.length} тест.`" /></q-item-section>
-                  </q-item>
-                </q-list>
-                <div v-else class="q-pa-md text-grey-6 text-caption">Оберіть профілі або показники — план пробірок сформується автоматично. Остаточний підбір і штрихкоди генерує сервер.</div>
+              <div class="medlink-card" data-testid="tubePlanCard">
+                <div class="medlink-card__title">
+                  <span><q-icon name="science" class="q-mr-xs" />План пробірок у порядку забору</span>
+                  <span class="text-grey-6 text-caption"><q-spinner v-if="planLoading" size="14px" class="q-mr-xs" />{{ planItems.length }} пробірк.</span>
+                </div>
+                <q-banner v-for="(w, i) in planWarnings" :key="i" dense class="bg-orange-1 text-deep-orange-9 q-ma-sm" rounded>
+                  <template v-slot:avatar><q-icon name="warning" color="deep-orange" /></template>{{ w }}
+                </q-banner>
+                <tube-plan-list v-if="planItems.length" :items="planItems" />
+                <div v-else-if="planError" class="q-pa-md text-negative text-caption">{{ planError }}</div>
+                <div v-else class="q-pa-md text-grey-6 text-caption">Оберіть профілі або показники — сервер сформує план пробірок за правилами тари: окремі пробірки, об’єм, ліміт тестів, сумісність.</div>
               </div>
             </div>
             <div class="col-12 col-md-5">
               <div class="medlink-card q-pa-md">
                 <div class="row items-center justify-between"><span class="text-grey-7">Показників усього</span><b>{{ allTestCodes.length }}</b></div>
                 <div class="row items-center justify-between"><span class="text-grey-7">Профілів</span><b>{{ form.profileIds.length }}</b></div>
+                <div class="row items-center justify-between"><span class="text-grey-7">Пробірок до забору</span><b>{{ planItems.length }}</b></div>
                 <q-separator class="q-my-sm" />
-                <div class="row items-center justify-between text-h6"><span>До сплати</span><span class="text-primary">{{ totalPrice | money }}</span></div>
+                <q-select v-model="payerId" outlined dense emit-value map-options :options="payerOptions" label="Платник" data-testid="payerSelect" class="q-mb-xs" />
+                <div v-if="selectedPayer && selectedPayer.requiresPolicy" class="q-mb-xs">
+                  <q-select v-if="policies.length" v-model="policyId" outlined dense emit-value map-options :options="policyOptions" label="Поліс пацієнта" />
+                  <div v-else class="row q-gutter-xs items-center">
+                    <q-input v-model="newPolicy.number" outlined dense label="№ полісу *" class="col" />
+                    <q-input v-model="newPolicy.validTo" outlined dense type="date" stack-label label="Дійсний до" class="col" />
+                    <q-btn dense unelevated color="primary" icon="add" :disable="!newPolicy.number || !patient" @click="addPolicy"><q-tooltip>Додати поліс пацієнту</q-tooltip></q-btn>
+                  </div>
+                </div>
+                <q-input v-if="selectedPayer && selectedPayer.requiresAuthorization" v-model="authorizationNumber" outlined dense label="№ гарантійного листа *" class="q-mb-xs" />
+                <div v-if="payerId === 'AUTO' && quote" class="text-caption text-grey-7 q-mb-xs">Визначено: <b>{{ quote.payerName }}</b><span v-if="quote.policyNumber"> · поліс {{ quote.policyNumber }}</span></div>
+                <q-banner v-if="quote && quote.warning" dense rounded class="bg-orange-1 text-deep-orange-9 q-mb-xs">{{ quote.warning }}</q-banner>
+                <template v-if="quote">
+                  <div v-for="l in quote.lines" :key="l.code" class="row justify-between text-caption">
+                    <span>{{ l.code }}<span v-if="l.isPackage" class="text-primary"> (пакет)</span><span v-if="l.isNotCovered" class="text-deep-orange-8"> · не покривається</span></span>
+                    <span>{{ l.amount | money }}</span>
+                  </div>
+                  <q-separator class="q-my-xs" />
+                  <div class="row items-center justify-between"><span class="text-grey-7">Сплачує {{ quote.payerKind === 'PATIENT' ? 'пацієнт' : quote.payerName }}</span><b>{{ (quote.payerKind === 'PATIENT' ? quote.patientAmount : quote.payerAmount) | money }}</b></div>
+                </template>
+                <div class="row items-center justify-between text-h6" data-testid="patientToPay"><span>До сплати пацієнтом</span><span class="text-primary">{{ (quote ? quote.patientAmount : 0) | money }}</span></div>
                 <div v-if="form.isUrgentCito" class="text-caption text-deep-orange-7 q-mt-xs"><q-icon name="bolt" /> CITO — пріоритетна черга та окрема позначка на етикетках</div>
               </div>
             </div>
@@ -153,10 +197,17 @@
 <script>
 import PatientSelect from '../../../components/common/PatientSelect.vue';
 import OrderMatrix from '../../../components/orders/OrderMatrix.vue';
+import TubePlanList from '../../../components/samples/TubePlanList.vue';
 import { patientDisplay, genderLabel, ageFromBirthDate } from '../../../utils/format';
 
+const emptyPaper = () => ({ number: '', date: '', requesterLegalEntityName: '', requesterLegalEntityEdrpou: '', requesterEmployeeName: '' });
 const emptyForm = () => ({
   isUrgentCito: false,
+  referralType: 'SELF',
+  referrerOrganizationName: '',
+  referrerOrganizationEdrpou: '',
+  referrerDoctorName: '',
+  referrerNumber: '',
   doctorId: null,
   departmentId: null,
   ehealthReferralId: '',
@@ -167,7 +218,7 @@ const emptyForm = () => ({
 
 export default {
   name: 'CreateOrderDialog',
-  components: { PatientSelect, OrderMatrix },
+  components: { PatientSelect, OrderMatrix, TubePlanList },
   props: { value: Boolean },
   data () {
     return {
@@ -180,7 +231,28 @@ export default {
       submitError: '',
       profileFilter: '',
       testFilter: '',
-      doctorFilter: ''
+      doctorFilter: '',
+      ehealthNumber: '',
+      referralInfo: null,
+      referralLoading: false,
+      paper: emptyPaper(),
+      referralTypeOptions: [
+        { value: 'SELF', label: 'Самозвернення' }, { value: 'INTERNAL', label: 'Внутрішнє' }, { value: 'EHEALTH', label: 'Е-направлення' },
+        { value: 'PAPER', label: 'Паперове' }, { value: 'EXTERNAL_CLINIC', label: 'Клініка-партнер' }
+      ],
+      payers: [],
+      payerId: 'AUTO',
+      policies: [],
+      policyId: null,
+      newPolicy: { number: '', validTo: '' },
+      authorizationNumber: '',
+      quote: null,
+      quoteTimer: null,
+      plan: null,
+      planLoading: false,
+      planError: '',
+      planTimer: null,
+      planSeq: 0
     };
   },
   computed: {
@@ -218,26 +290,20 @@ export default {
       const singles = this.tests.filter(t => this.form.testIds.includes(t.id) && !inProfiles.has(t.id)).reduce((s, t) => s + (Number(t.price) || 0), 0);
       return profiles + singles;
     },
-    tubePlan () {
-      const groups = {};
-      this.selectedTests.forEach(t => {
-        const bio = this.biomaterials.find(b => b.id === t.biomaterialTypeId);
-        const tube = this.tubeTypes.find(tt => bio && (tt.code === bio.defaultContainer || tt.name === bio.defaultContainer || tt.id === bio.defaultTubeTypeId));
-        const key = `${t.biomaterialTypeId || 'x'}-${tube ? tube.id : 'def'}`;
-        if (!groups[key]) {
-          groups[key] = {
-            key,
-            biomaterialName: bio ? bio.name : 'Біоматеріал',
-            tubeName: tube ? tube.name : (bio && bio.defaultContainer) || 'Пробірка за замовчуванням',
-            color: tube ? tube.colorCode : '#bbb',
-            order: tube ? tube.orderOfDrawIndex : 99,
-            tests: []
-          };
-        }
-        groups[key].tests.push(t.code);
-      });
-      return Object.values(groups).sort((a, b) => a.order - b.order);
+    planItems () {
+      return ((this.plan && this.plan.tubes) || []).map(t => ({
+        key: String(t.index), index: t.index, color: t.colorCode, tubeName: t.tubeName, biomaterialName: t.biomaterialName,
+        tests: t.tests, usedVolumeMl: t.usedVolumeMl, capacityMl: t.capacityMl, reasonTexts: t.reasonTexts,
+        isSeparate: t.isSeparate, inversionsCount: t.inversionsCount, barcode: t.existingBarcode, existing: !!t.existingSampleId
+      }));
     },
+    planWarnings () { return (this.plan && this.plan.warnings) || []; },
+    payerOptions () {
+      return [{ value: 'AUTO', label: 'Автоматично (поліс / НСЗУ з е-направлення / каса)' }]
+        .concat(this.payers.filter(p => p.isActive).map(p => ({ value: p.id, label: `${p.name} · ${p.kindName}` })));
+    },
+    selectedPayer () { return this.payers.find(p => p.id === this.payerId || p.code === this.payerId) || null; },
+    policyOptions () { return this.policies.filter(p => !this.selectedPayer || p.payerId === this.selectedPayer.id).map(p => ({ value: p.id, label: `${p.policyNumber} · ${p.payerName}` })); },
     patientName () { return patientDisplay(this.patient); },
     patientAge () { return ageFromBirthDate(this.patient && this.patient.birthDate); },
     canSubmit () {
@@ -246,16 +312,94 @@ export default {
     }
   },
   watch: {
-    value (v) {
-      if (v) {
-        this.reset();
-        this.$store.dispatch('dictionaries/loadMany', ['profiles', 'tests', 'biomaterials', 'tube-types', 'employees', 'departments']);
+    'form.profileIds' () { this.schedulePlan(); },
+    'form.testIds' () { this.schedulePlan(); },
+    payerId () { this.scheduleQuote(); },
+    patient (p) { this.loadPolicies(p); this.scheduleQuote(); },
+    value: {
+      // immediate: діалог може бути відкритий одразу при завантаженні сторінки (?create=1)
+      immediate: true,
+      handler (v) {
+        if (v) {
+          this.reset();
+          this.$store.dispatch('dictionaries/loadMany', ['profiles', 'tests', 'biomaterials', 'tube-types', 'employees', 'departments']);
+        }
       }
     }
   },
   methods: {
     genderLabel,
+    schedulePlan () {
+      clearTimeout(this.planTimer);
+      this.planTimer = setTimeout(this.loadPlan, 300);
+      this.scheduleQuote();
+    },
+    scheduleQuote () {
+      clearTimeout(this.quoteTimer);
+      this.quoteTimer = setTimeout(this.loadQuote, 350);
+    },
+    async loadQuote () {
+      if (!this.form.profileIds.length && !this.form.testIds.length) { this.quote = null; return; }
+      try {
+        this.quote = await this.$api.billingQuote({
+          profileIds: this.form.profileIds, testIds: this.form.testIds, payerId: this.payerId === 'AUTO' ? null : this.payerId,
+          patientId: this.patient && this.patient.id, ehealthReferralNumber: this.form.referralType === 'EHEALTH' ? this.ehealthNumber : null
+        });
+      } catch (e) { this.quote = null; }
+    },
+    async loadPayers () { try { this.payers = await this.$api.payers(); } catch (e) { this.payers = []; } },
+    async loadPolicies (p) {
+      this.policies = []; this.policyId = null;
+      if (!p || !p.id) return;
+      try { this.policies = (await this.$api.patientInsurances(p.id)).filter(x => x.isValid); this.policyId = this.policies.length ? this.policies[0].id : null; } catch (e) { this.policies = []; }
+    },
+    async addPolicy () {
+      try {
+        await this.$api.addPatientInsurance(this.patient.id, { payerId: this.selectedPayer.id, policyNumber: this.newPolicy.number, validTo: this.newPolicy.validTo || null });
+        this.newPolicy = { number: '', validTo: '' };
+        await this.loadPolicies(this.patient);
+        this.scheduleQuote();
+      } catch (e) { this.$q.notify({ type: 'negative', message: e.userMessage || 'Не вдалося додати поліс' }); }
+    },
+    async loadPlan () {
+      const body = { profileIds: this.form.profileIds, testIds: this.form.testIds };
+      if (!body.profileIds.length && !body.testIds.length) { this.plan = null; this.planError = ''; return; }
+      const seq = ++this.planSeq;
+      this.planLoading = true;
+      try {
+        const plan = await this.$api.tubePlan(body);
+        if (seq === this.planSeq) { this.plan = plan; this.planError = ''; }
+      } catch (e) {
+        if (seq === this.planSeq) { this.plan = null; this.planError = e.userMessage || 'Не вдалося побудувати план пробірок'; }
+      } finally {
+        if (seq === this.planSeq) this.planLoading = false;
+      }
+    },
+    async lookupReferral () {
+      if (!this.ehealthNumber) return;
+      this.referralLoading = true;
+      try {
+        const info = await this.$api.lookupEhealthReferral(this.ehealthNumber.trim(), this.patient && this.patient.id);
+        this.referralInfo = info;
+        if (info.canUse && !this.patient && info.patientId) {
+          try { const p = await this.$api.getPatient(info.patientId); this.patient = { ...p, display: p.fullName || [p.lastName, p.firstName, p.secondName].filter(Boolean).join(' ') }; } catch (e) { /* пацієнта оберуть вручну */ }
+        }
+        (info.matchingProfiles || []).forEach(p => { if (!this.form.profileIds.includes(p.id)) this.form.profileIds.push(p.id); });
+      } catch (e) {
+        this.referralInfo = { canUse: false, problems: [e.userMessage || 'Направлення не знайдено'] };
+      } finally {
+        this.referralLoading = false;
+      }
+    },
     reset () {
+      this.payerId = 'AUTO';
+      this.policies = []; this.policyId = null; this.authorizationNumber = ''; this.quote = null;
+      this.loadPayers();
+      this.ehealthNumber = '';
+      this.referralInfo = null;
+      this.paper = emptyPaper();
+      this.plan = null;
+      this.planError = '';
       this.patient = null;
       this.newPatientMode = false;
       this.form = emptyForm();
@@ -282,9 +426,15 @@ export default {
       this.submitError = '';
       const body = {
         ...this.form,
-        ehealthReferralId: this.form.ehealthReferralId || null,
-        clinicalNotes: this.form.clinicalNotes || null
+        ehealthReferralId: null,
+        ehealthReferralNumber: this.form.referralType === 'EHEALTH' ? (this.ehealthNumber || '').trim() : null,
+        paperReferral: this.form.referralType === 'PAPER' ? { ...this.paper, date: this.paper.date || null } : null,
+        clinicalNotes: this.form.clinicalNotes || null,
+        payerId: this.payerId && this.payerId !== 'AUTO' ? this.payerId : null,
+        patientInsuranceId: this.selectedPayer && this.selectedPayer.requiresPolicy ? this.policyId : null,
+        authorizationNumber: this.authorizationNumber || null
       };
+      ['referrerOrganizationName', 'referrerOrganizationEdrpou', 'referrerDoctorName', 'referrerNumber'].forEach(k => { if (this.form.referralType !== 'EXTERNAL_CLINIC' || !body[k]) body[k] = null; });
       if (this.newPatientMode) body.newPatient = { ...this.newPatient };
       else body.patientId = this.patient.id;
       try {

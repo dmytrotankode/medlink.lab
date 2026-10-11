@@ -197,7 +197,7 @@ public sealed class SampleProcessingService
         var sample = await _samples.LoadByBarcodeAsync(barcode);
         var template = await TemplateForSampleAsync(sample);
         var events = await _db.StageEvents.AsNoTracking().Where(e => e.SampleId == sample.Id).OrderBy(e => e.At).ToListAsync();
-        var employees = await _db.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => e.FullName);
+        var employees = await _db.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => e.Caption ?? "");
         return new
         {
             sampleId = sample.Id, sample.Barcode, currentStage = sample.CurrentStage, template = new { template.Code, template.Name, stages = template.Stages },
