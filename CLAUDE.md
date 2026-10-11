@@ -1,4 +1,4 @@
-# MedLink LIS 4.0 — інструкції для Claude Code
+# Medlink-LAB (MedLink LIS 4.0) — інструкції для Claude Code
 
 Лабораторна інформаційна система MedLink (модуль evomis). Стек: .NET 8 Web API + EF Core SQLite (`src/MedLink.LIS.Api`), спільна бібліотека (`src/MedLink.LIS.Core`), коннектор аналізаторів (`src/MedLink.LabConnector`), фронтенд Quasar v1.15.3 + Vue 2 (`src/MedLink.LIS.Web`). Без автентифікації користувачів (її надає evomis).
 

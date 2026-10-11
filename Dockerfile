@@ -1,4 +1,4 @@
-# MedLink LIS 4.0 — API + SPA в одному образі
+# Medlink-LAB — API + SPA в одному образі
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY . .
