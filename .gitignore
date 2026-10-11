@@ -29,7 +29,9 @@ Thumbs.db
 .idea/
 
 # Claude worktrees / local tooling
-.claude/
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
 # Built SPA (copied by build.sh / build.ps1; keep only .gitkeep)
 src/MedLink.LIS.Api/wwwroot/*
 !src/MedLink.LIS.Api/wwwroot/.gitkeep
