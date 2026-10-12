@@ -1,4 +1,4 @@
-# MedLink LIS 4.0 — Лабораторна інформаційна система MedLink
+# Medlink-LAB — Лабораторна інформаційна система MedLink (LIS 4.0)
 
 > ТОВ «МедЛінк» (MedLink LLC) © 2026. Модуль «Лабораторія» для веб-МІС MedLink (evomis) та автономний ЛІС-продукт.
 
@@ -41,6 +41,11 @@ dotnet run --project src/MedLink.LabConnector -- run
 ```
 
 Детальні інструкції: `src/MedLink.LIS.Api/README.md`, `src/MedLink.LIS.Web/README.md`, `installers/labconnector/README_UA.md`.
+
+## Віддалена робота
+
+- **Claude Code (хмара або локально)**: репозиторій містить `CLAUDE.md` і SessionStart-хук `.claude/hooks/session-start.sh`, який ставить .NET 8 та залежності фронтенду; достатньо відкрити сесію на гілці.
+- **Docker**: `docker compose up -d --build` → http://localhost:5055 (дані у томі `lis-data`). Коннектор на ПК лабораторії підключається до цього сервера через `setup --server http://<host>:5055`.
 
 ## Документація
 

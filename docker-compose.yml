@@ -1,0 +1,9 @@
+services:
+  medlink-lab:
+    build: .
+    image: medlink/medlink-lab:4.0
+    ports: ["5055:5055"]
+    volumes: ["lis-data:/data"]
+    restart: unless-stopped
+volumes:
+  lis-data:
