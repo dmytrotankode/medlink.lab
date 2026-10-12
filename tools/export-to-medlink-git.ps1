@@ -1,4 +1,4 @@
-# Експорт проміжних результатів (тільки вихідний код + ТЗ) у git MedLink.
+﻿# Експорт проміжних результатів (тільки вихідний код + ТЗ) у git MedLink.
 # Використання (PowerShell, з кореня робочого репозиторію):
 #   .\tools\export-to-medlink-git.ps1 [-Target C:\__MEDLINK___\LABA_MEDLINK_GIT] [-Remote <url>] [-Message "..."]
 param(
@@ -50,5 +50,5 @@ try {
   git add -A
   git -c core.safecrlf=false commit -q -m $Message 2>$null
   git push -u origin $Branch
-  Write-Host "Готово: $Target -> $Remote ($Branch)"
+  Write-Host ("Done: {0} -> {1} ({2})" -f $Target, $Remote, $Branch)
 } finally { Pop-Location }
