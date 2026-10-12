@@ -49,6 +49,8 @@ try {
   }
   git add -A
   git -c core.safecrlf=false commit -q -m $Message 2>$null
+  git fetch -q origin $Branch 2>$null
+  if ($LASTEXITCODE -eq 0) { git merge -q -X ours --no-edit --allow-unrelated-histories "origin/$Branch" 2>$null }
   git push -u origin $Branch
   Write-Host ("Done: {0} -> {1} ({2})" -f $Target, $Remote, $Branch)
 } finally { Pop-Location }
