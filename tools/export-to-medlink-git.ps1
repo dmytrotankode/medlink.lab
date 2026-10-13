@@ -16,7 +16,7 @@ Get-ChildItem -Path $Target -Force | Where-Object { $_.Name -ne ".git" } | Remov
 
 # 2. Копіювання: тільки вихідний код і документація (ТЗ)
 $include = @("src", "tests", "docs", "MedLink.LIS.sln", "Directory.Build.props", "build.sh", "build.ps1", "run.sh", "run.cmd", ".gitignore", ".gitattributes", "CLAUDE.md", "README.md")
-$excludeDirs = @("bin", "obj", "node_modules", "dist", "wwwroot", "App_Data", "playwright-report", "test-results", ".vite", "data", "analysis")
+$excludeDirs = @("bin", "obj", "node_modules", "dist", "wwwroot", "App_Data", "playwright-report", "test-results", ".vite", "analysis")
 foreach ($item in $include) {
   $from = Join-Path $Src $item
   if (-not (Test-Path $from)) { continue }
@@ -26,6 +26,8 @@ foreach ($item in $include) {
     Copy-Item $from (Join-Path $Target $item) -Force
   }
 }
+# локальні дані коннектора (буфер, кеш конфігу) не експортуємо
+Remove-Item (Join-Path $Target "src\MedLink.LabConnector\data") -Recurse -Force -ErrorAction SilentlyContinue
 # wwwroot потрібен лише як порожня папка (SPA збирається build.ps1)
 New-Item -ItemType Directory -Force -Path (Join-Path $Target "src\MedLink.LIS.Api\wwwroot") | Out-Null
 New-Item -ItemType File -Force -Path (Join-Path $Target "src\MedLink.LIS.Api\wwwroot\.gitkeep") | Out-Null
