@@ -1,8 +1,24 @@
-<!DOCTYPE html><html lang="uk"><head><meta charset="utf-8"><title>ТЗ ЛІС MedLink v4</title><style>body{font-family:Segoe UI,Arial,sans-serif;max-width:1200px;margin:24px auto;padding:0 16px;color:#262626;line-height:1.5}
+<!DOCTYPE html><html lang="uk"><head><meta charset="utf-8"><title>ТЗ ЛІС MedLink v4.3</title><style>body{font-family:Segoe UI,Arial,sans-serif;max-width:1200px;margin:24px auto;padding:0 16px;color:#262626;line-height:1.5}
 table{border-collapse:collapse;width:100%;font-size:13px;margin:12px 0}th,td{border:1px solid #cfd8e3;padding:6px 8px;vertical-align:top;text-align:left}
 th{background:#eef3f9}code{background:#f3f5f8;padding:1px 4px;border-radius:3px;font-size:12px}pre code{display:block;padding:10px;overflow:auto}
 h1,h2,h3{color:#4274A7}h2{border-bottom:2px solid #4274A7;padding-bottom:4px;margin-top:36px}img{max-width:100%;border:1px solid #ccc;border-radius:4px;margin:8px 0}
-blockquote{border-left:4px solid #4274A7;margin:8px 0;padding:4px 12px;background:#f6f9fc}nav.toc{background:#f6f9fc;padding:8px 16px;border-radius:6px}</style></head><body><h1 id="v4-medlink-lis-40">ТЕХНІЧНЕ ЗАВДАННЯ v4 — модуль «Лабораторна інформаційна система» (MedLink LIS 4.0)</h1>
+blockquote{border-left:4px solid #4274A7;margin:8px 0;padding:4px 12px;background:#f6f9fc}nav.toc{background:#f6f9fc;padding:8px 16px;border-radius:6px}
+.chg,mark.chg{background:#fff1a8}
+tr.chg td{background:#fff1a8}
+.chg-block{border-left:5px solid #f0b400;background:#fff8d6;padding:6px 14px;margin:12px 0;border-radius:0 4px 4px 0}
+.chg-sec{border-left:6px solid #f0b400;background:#fffbe9;padding:2px 16px 8px;margin:18px 0;border-radius:0 6px 6px 0}
+.chg-sec table td{background:#fffef6}.chg-sec th{background:#fbefc0}
+.tag-new,.tag-mod,.tag-done{display:inline-block;font-size:11px;font-weight:700;border-radius:3px;padding:1px 6px;margin-right:6px;vertical-align:middle}
+.tag-new{background:#2e9e5b;color:#fff}.tag-mod{background:#e08a00;color:#fff}.tag-done{background:#4274A7;color:#fff}
+.c42{border-left-color:#2E7BD6;background:#F2F8FF}.c42 th{background:#D9E9FB}.c42 table td{background:#FBFDFF}
+mark.chg42,.chg42{background:#CFE4FF}tr.chg42 td{background:#E3EFFF}
+.tag-new42{display:inline-block;font-size:11px;font-weight:700;border-radius:3px;padding:1px 6px;margin-right:6px;vertical-align:middle;background:#2E7BD6;color:#fff}
+.chg-block.b42{border-left-color:#2E7BD6;background:#EAF3FF}
+.c43{border-left-color:#1E8E5A;background:#F1FAF5}.c43 th{background:#D3EEDD}.c43 table td{background:#FBFEFC}
+mark.chg43,.chg43{background:#C9EDD6}tr.chg43 td{background:#E1F5E8}
+.tag-new43{display:inline-block;font-size:11px;font-weight:700;border-radius:3px;padding:1px 6px;margin-right:6px;vertical-align:middle;background:#1E8E5A;color:#fff}
+.chg-block.b43{border-left-color:#1E8E5A;background:#EAF7EF}
+@media print{.chg,mark.chg,tr.chg td,.chg-block,.chg-sec{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><h1 id="v4-medlink-lis-40-41-42-43">ТЕХНІЧНЕ ЗАВДАННЯ v4 — модуль «Лабораторна інформаційна система» (MedLink LIS 4.0) <mark class="chg">— редакція 4.1</mark> <mark class="chg42">→ 4.2</mark> <mark class="chg43">→ 4.3</mark></h1>
 <table>
 <thead>
 <tr>
@@ -21,11 +37,11 @@ blockquote{border-left:4px solid #4274A7;margin:8px 0;padding:4px 12px;backgroun
 </tr>
 <tr>
 <td>Версія документа</td>
-<td>4.0 (детальне ТЗ на реалізацію)</td>
+<td>4.0 (детальне ТЗ на реалізацію) <mark class="chg">→ <strong>4.1</strong>: додано інтеграцію з МІС (внутрішні/зовнішні направлення, словник інтервенцій ЕСОЗ, послуги обладнання, черга аналізатора) та авторизацію в ЕСОЗ, підпис КЕП і відправку DiagnosticReport — розд. 21</mark> <mark class="chg42">→ <strong>4.2</strong>: модуль «Патоморфологія» (патогістологічні дослідження, форма 014/о, CITO, доповнення, архів блоків і скелець, інтеграція з МІС і МДК) — розд. 22</mark> <mark class="chg43">→ <strong>4.3</strong>: відповідність послуг ЕСОЗ і аналізаторів, вибір показників і пакети з МІС, розподіл направлень лаборантом, робота за направленнями (аналізатор / пацієнт / дослідження), звіти лабораторії — розд. 23</mark></td>
 </tr>
 <tr>
 <td>Дата</td>
-<td>07.10.2026</td>
+<td>07.10.2026 <mark class="chg">(ред. 4.1 — 15.10.2026)</mark> <mark class="chg42">(ред. 4.2 — 01.11.2026)</mark> <mark class="chg43">(ред. 4.3 — 01.11.2026)</mark></td>
 </tr>
 <tr>
 <td>Статус</td>
@@ -41,6 +57,21 @@ blockquote{border-left:4px solid #4274A7;margin:8px 0;padding:4px 12px;backgroun
 </tr>
 </tbody>
 </table>
+<div class="chg-block" id="chg-legend">
+<p><strong>Редакція 4.1 від 15.10.2026. Позначення змін.</strong> Усі зміни відносно v4.0 виділено жовтим фоном із лівою смугою. <span class="tag-new">НОВЕ</span> — новий текст або новий розділ; <span class="tag-mod">ЗМІНЕНО</span> — доповнено наявний пункт. Невиділений текст не змінювався.</p>
+<p><strong>Суть змін.</strong> Лабораторія отримує направлення з МІС у двох контурах — <em>зовнішньому</em> (амбулаторія, е-направлення ЕСОЗ) і <em>внутрішньому</em> (стаціонар) — на основі єдиного словника інтервенцій ЕСОЗ. Інтервенції зіставляються з послугами ЛІС і з переліком послуг, які може виконувати кожен аналізатор. Лікар поліклініки або стаціонару, обираючи послугу, обирає й показники, що виконати в ній. На підставі цього ЛІС автоматично визначає прилад і ставить тести в чергу потрібного аналізатора.</p>
+<p><strong>Де змінено:</strong> <a href="#v41-21">розд. 21</a> (повна специфікація, ч. 21.11 — перелік змін для робочого прототипу; ч. 21.13 — авторизація в ЕСОЗ, підпис КЕП і відправка DiagnosticReport); а також пункти 0.1, 1 (межі v4), 2.3 (задачі T-410…T-429), 20.6.2, 4.1 (FR-REG-011…014), 4.4 (FR-WS-013…014), 4.13 (FR-NRM-010), 4.14 (FR-DIC-010…012), 7.3, 8.1, 10.2, 20.6.1, Додаток E.</p>
+</div>
+<div class="chg-block b42" id="chg-legend-42">
+<p><strong>Редакція 4.2 від 01.11.2026. Позначення змін.</strong> Зміни відносно 4.1 виділено <strong>блакитним</strong> фоном із синьою смугою та міткою <span class="tag-new42">НОВЕ 4.2</span>. Жовті позначки — зміни редакції 4.1, вони збережені.</p>
+<p><strong>Суть змін.</strong> Онкологічний заклад запитав функціонал гістології як основного дослідження для морфологічної верифікації. Результат потрібен поліклініці, стаціонару, МДК і лабораторії. Лабораторний процес реалізується в окремому модулі ЛІС «Патоморфологія»: заявка (ф. 014/о) створюється в МІС з автозаповненням із протоколу операції, ЛІС веде справу від прийому до підписаного висновку та доповнень і повертає структурований результат у МІС і МДК. Друк — за формою МОЗ № 014/о.</p>
+<p><strong>Де змінено:</strong> <a href="#v42-22">розд. 22</a> (повна специфікація; 22.14 — перелік для прототипу); пункти 0.1, Зміст, 9.4, Додаток E. Супутні документи: ТЗ МІС «Морфологія» v1.0, ТЗ МДК v2.2 (п. 5.7), прототипи ЛІС, МІС, МДК.</p>
+</div>
+<div class="chg-block b43" id="chg-legend-43">
+<p><strong>Редакція 4.3 від 01.11.2026. Позначення змін.</strong> Зміни відносно 4.2 виділено <strong>зеленим</strong> фоном із зеленою смугою та міткою <span class="tag-new43">НОВЕ 4.3</span>. Жовті (4.1) і блакитні (4.2) позначки збережено.</p>
+<p><strong>Суть змін.</strong> Послуги ЕСОЗ співставлено з аналізаторами в одному довіднику: одна послуга виконується на кількох приладах, на рівні кожного показника видно, які прилади його виконують. Склад послуги ЛІС публікує МІС, і лікар обирає показники окремо. З МІС надходять пакети послуг (післяопераційний тощо). При надходженні внутрішнього або зовнішнього направлення система пропонує прилади, лаборант змінює й підтверджує розподіл, далі працює з направленнями в розрізах «аналізатор», «пацієнт», «дослідження». Додано звіти лабораторії та аналіз наданого прикладу звіту чинної системи.</p>
+<p><strong>Де змінено:</strong> <a href="#v43-23">розд. 23</a> (повна специфікація; 23.7 — аналіз прикладу звіту; 23.10 — зміни прототипу); пункти 0.1, Зміст, 2.3 (T-450…T-461), 9.4, Додаток E.</p>
+</div>
 <hr />
 <h2 id="_1">Зміст</h2>
 <ol start="0">
@@ -64,6 +95,9 @@ blockquote{border-left:4px solid #4274A7;margin:8px 0;padding:4px 12px;backgroun
 <li>Доповнення власника продукту (2): преаналітика, тара, маркування, черга, BI</li>
 <li>Аналіз прогалин: що ще важливо врахувати</li>
 <li>Реалізація R1.1: принципи (автономність, позначки [MedLink]/[ЛІС]) та детальні специфікації процесів</li>
+<li class="chg"><span class="tag-new">НОВЕ</span>Інтеграція з МІС: внутрішні та зовнішні направлення, словник інтервенцій ЕСОЗ, послуги обладнання, черга аналізатора (ред. 4.1)</li>
+<li class="chg42"><span class="tag-new42">НОВЕ 4.2</span>Модуль «Патоморфологія»: патогістологічні дослідження, форма 014/о, інтеграція з МІС і МДК (ред. 4.2)</li>
+<li class="chg43"><span class="tag-new43">НОВЕ 4.3</span>Послуги ЕСОЗ і аналізатори, показники та пакети з МІС, розподіл направлень, робота за направленнями, звіти лабораторії (ред. 4.3)</li>
 <li>Додатки A–F</li>
 </ol>
 <hr />
@@ -102,6 +136,24 @@ blockquote{border-left:4px solid #4274A7;margin:8px 0;padding:4px 12px;backgroun
 <td>07.10.2026</td>
 <td>Детальне ТЗ на реалізацію: реєстр задач власника, FR з ідентифікаторами та критеріями приймання, правила обчислень із формулами, порт матриці норм Simplex, повний коннектор із інсталятором і прив'язкою до сервера, модель даних, API, тестування, релізи</td>
 <td>консолідація всіх матеріалів + <code>docs/API_CONTRACT.md</code></td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span>v4.1</td>
+<td>15.10.2026</td>
+<td>Інтеграція з МІС: внутрішні (стаціонар) та зовнішні (амбулаторія, ЕСОЗ) направлення на основі словника інтервенцій ЕСОЗ; зіставлення інтервенцій із послугами ЛІС та з послугами обладнання; вибір показників лікарем у межах послуги; автоматична маршрутизація тестів у чергу аналізатора. Розд. 21 і точкові зміни в 4.1, 4.4, 4.13, 4.14, 7.3, 8.1, 10.2, 20.6.1, Додатку E</td>
+<td>Доручення власника продукту від 15.10.2026</td>
+</tr>
+<tr class="chg42">
+<td><span class="tag-new42">НОВЕ 4.2</span>v4.2</td>
+<td>01.11.2026</td>
+<td>Модуль «Патоморфологія»: прийом матеріалу за ф. 014/о з МІС (стаціонар, поліклініка, ЕСОЗ, клініки-партнери), справа → об’єкт → блок → скельце, етапи обробки, структурований висновок (МКХ-О, G, pTNM, ІГХ), reflex ІГХ, CITO, підпис КЕП, доповнення з версіями, архів блоків і скелець, друк 014/о обох сторін, події в МІС і МДК. Розд. 22</td>
+<td>Запит онкологічного закладу; SMED-8714</td>
+</tr>
+<tr class="chg43">
+<td><span class="tag-new43">НОВЕ 4.3</span>v4.3</td>
+<td>01.11.2026</td>
+<td>Довідник «Послуга ЕСОЗ × аналізатори» (послуга й показник), публікація складу послуги в МІС, пакети послуг, розподіл направлень лаборантом із підтвердженням, робота за направленнями (аналізатор / пацієнт / дослідження), вісім звітів лабораторії, аналіз прикладу звіту чинної системи. Розд. 23</td>
+<td>Доручення власника продукту від 01.11.2026</td>
 </tr>
 </tbody>
 </table>
@@ -381,9 +433,9 @@ blockquote{border-left:4px solid #4274A7;margin:8px 0;padding:4px 12px;backgroun
 <li>Друк бланка A4 (HTML/PDF) із QR-верифікацією, публічна перевірка <code>/verify/{token}</code>.</li>
 <li>Імпорт результатів CSV/XLSX/XML із попереднім переглядом.</li>
 <li>Сповіщення пацієнта — заглушка з журналом (<code>PatientNotification</code>).</li>
-<li>eHealth/ЕСОЗ — лише інтерфейсні точки та структури даних (поле <code>ehealthReferralId</code>, зв'язок із <code>mis_diagnostic_report</code>); фактична відправка та КЕП — R2.</li>
+<li>eHealth/ЕСОЗ — лише інтерфейсні точки та структури даних (поле <code>ehealthReferralId</code>, зв'язок із <code>mis_diagnostic_report</code>); фактична відправка та КЕП — R2. <mark class="chg"><span class="tag-mod">ЗМІНЕНО</span> У ред. 4.1 відправка DiagnosticReport і підпис КЕП — R1.1 (розд. 21.13).</mark></li>
 </ul>
-<p><strong>Не входить до v4 (R2/R3, див. розд. 13):</strong> автентифікація (надає evomis), фактичний підпис КЕП та відправка в ЕСОЗ, онлайн-оплата та РРО, реальний SMS/Viber-шлюз, EQA/ФСВЯ, розширена QC-статистика (TEA), інтеграція з мікроскопами, генетичний блок, send-out, конструктор звітів/БД, дизайнер бланків, сімейний профіль, чат, Дія.Здоров'я, повноцінний складський модуль (у v4 — лише лоти реагентів).</p>
+<p><strong>Не входить до v4 (R2/R3, див. розд. 13):</strong> автентифікація (надає evomis), <mark class="chg">[у ред. 4.1 підпис КЕП та відправка в ЕСОЗ — R1.1, розд. 21.13]</mark> фактичний підпис КЕП та відправка в ЕСОЗ, онлайн-оплата та РРО, реальний SMS/Viber-шлюз, EQA/ФСВЯ, розширена QC-статистика (TEA), інтеграція з мікроскопами, генетичний блок, send-out, конструктор звітів/БД, дизайнер бланків, сімейний профіль, чат, Дія.Здоров'я, повноцінний складський модуль (у v4 — лише лоти реагентів).</p>
 <h3 id="14">1.4. Контекст інтеграцій (діаграма у тексті)</h3>
 <pre><code>┌──────────────────────┐  HTTPS/JSON   ┌────────────────────────────┐   EF Core    ┌──────────────┐
 │ Браузер (Quasar/Vue2)│──────────────▶│ MedLink.LIS.Api (.NET 8)   │─────────────▶│ SQLite (v4)  │
@@ -1824,8 +1876,302 @@ mis_patient_card, org_employee, org_department, ehe_incoming_medical_referral, m
 <td>R2</td>
 <td>Заплановано</td>
 </tr>
+<tr class="chg">
+<td>T-410</td>
+<td>Інтеграція з МІС: внутрішні (стаціонар) та зовнішні (амбулаторія, ЕСОЗ) направлення</td>
+<td>Доручення від 15.10.2026</td>
+<td>FR-MIS-020…035, розд. 21.6</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-411</td>
+<td>Використовувати словник інтервенцій ЕСОЗ як єдине джерело кодів послуг у направленнях</td>
+<td>Доручення від 15.10.2026</td>
+<td>FR-MIS-001…006, розд. 21.3</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-412</td>
+<td>Співставити інтервенції ЕСОЗ з послугами ЛІС</td>
+<td>Доручення від 15.10.2026</td>
+<td>FR-MIS-010…016, розд. 21.4</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-413</td>
+<td>Внести в перелік послуг обладнання послуги, які воно може виконувати</td>
+<td>Доручення від 15.10.2026</td>
+<td>FR-EQP-001…008, розд. 21.5</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-414</td>
+<td>Лабораторія з направлення одразу знає, на якому обладнанні виконати, і ставить у чергу потрібного аналізатора</td>
+<td>Доручення від 15.10.2026</td>
+<td>FR-RTE-001…012, розд. 21.7</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-415</td>
+<td>Лікар поліклініки/стаціонару при виборі послуги ЕСОЗ обирає показники для виконання</td>
+<td>Доручення від 15.10.2026</td>
+<td>FR-MIS-030…035, розд. 21.8</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-416</td>
+<td>Модель даних і API інтеграції (інтервенції, мапінг, послуги обладнання, пункти направлення, журнал маршрутизації)</td>
+<td>Висновок команди до T-410…415</td>
+<td>розд. 21.9, 21.10</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-417</td>
+<td>Зміни у вебінтерфейсі та демо-даних робочого прототипу</td>
+<td>Висновок команди до T-410…415</td>
+<td>розд. 21.11</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-418</td>
+<td>Автоматичне переназначення тестів при локауті ВКЯ, вимкненні послуги або тривалій відсутності зв’язку приладу</td>
+<td>Висновок команди до T-414</td>
+<td>FR-RTE-008…010</td>
+<td>Should</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-419</td>
+<td>Обмін призначеннями зі стаціонару: статуси «виконано/скасовано» назад у МІС</td>
+<td>Висновок команди до T-410</td>
+<td>FR-MIS-025…027</td>
+<td>Should</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-420</td>
+<td>Планові та повторювані призначення стаціонару (розклад)</td>
+<td>Висновок команди до T-410</td>
+<td>FR-MIS-028</td>
+<td>Could</td>
+<td>R2</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-422</td>
+<td>Авторизація в ЕСОЗ: вхід логін/пароль, далі обов'язково КЕП або 2FA (TOTP); сесія з терміном дії</td>
+<td>Доручення від 15.10.2026 (КЕП)</td>
+<td>FR-SGN-002…004, розд. 21.13</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-423</td>
+<td>Підпис діагностичного звіту КЕП користувача (віджет підпису, перевірки сертифіката)</td>
+<td>Доручення від 15.10.2026 (КЕП)</td>
+<td>FR-SGN-005, 006</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-424</td>
+<td>Відправка DiagnosticReport до ЕСОЗ: пакет → job → complete направлення; статуси та бейдж</td>
+<td>Доручення від 15.10.2026 (КЕП)</td>
+<td>FR-SGN-001, 007</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-425</td>
+<td>Черга повторів і відновлення після закінчення сесії</td>
+<td>Висновок команди до T-424</td>
+<td>FR-SGN-008</td>
+<td>Should</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-426</td>
+<td>Анулювання/виправлення звіту в ЕСОЗ з підписом КЕП</td>
+<td>Висновок команди до T-424</td>
+<td>FR-SGN-009</td>
+<td>Should</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-427</td>
+<td>Модель даних, API, аудит і безпека підпису/відправки</td>
+<td>Висновок команди до T-422…424</td>
+<td>FR-SGN-010…014, розд. 21.9, 21.10</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-428</td>
+<td>Екрани прототипу: вхід в ЕСОЗ, підтвердження особи, підпис, статус відправки</td>
+<td>Висновок команди до T-422…424</td>
+<td>розд. 21.11, п. 15–19</td>
+<td>Must</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-429</td>
+<td>Пакетна відправка кількох звітів одним сеансом підпису</td>
+<td>Висновок команди до T-423</td>
+<td>FR-SGN-005</td>
+<td>Could</td>
+<td>R2</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg">
+<td>T-421</td>
+<td>Звіт покриття: інтервенції без співставлення / без обладнання, навантаження приладів, % ручного перенаправлення</td>
+<td>Висновок команди до T-412…414</td>
+<td>FR-MIS-016, розд. 21.11</td>
+<td>Should</td>
+<td>R1.1</td>
+<td>Заплановано (ред. 4.1)</td>
+</tr>
+<tr class="chg43">
+<td>T-450</td>
+<td>Довідник «Послуга ЕСОЗ × аналізатори»: одна послуга — кілька приладів, прилади на рівні показника</td>
+<td>Доручення від 01.11.2026</td>
+<td>FR-SVA-001…009, розд. 23</td>
+<td>Must</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
+<tr class="chg43">
+<td>T-451</td>
+<td>Публікація складу послуги (показники, обов’язкові, типові) для МІС</td>
+<td>Доручення від 01.11.2026</td>
+<td>FR-SVA-010…015, розд. 23</td>
+<td>Must</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
+<tr class="chg43">
+<td>T-452</td>
+<td>Пакети послуг із МІС (післяопераційний тощо)</td>
+<td>Доручення від 01.11.2026</td>
+<td>FR-PKG-001…010, розд. 23</td>
+<td>Must</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
+<tr class="chg43">
+<td>T-453</td>
+<td>Екран «Вхідні направлення»: розподіл по аналізаторах лаборантом із підтвердженням</td>
+<td>Доручення від 01.11.2026</td>
+<td>FR-DST-001…012, розд. 23</td>
+<td>Must</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
+<tr class="chg43">
+<td>T-454</td>
+<td>Робота за направленнями: розрізи аналізатор / пацієнт / дослідження</td>
+<td>Доручення від 01.11.2026</td>
+<td>FR-WRK-001…010, розд. 23</td>
+<td>Must</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
+<tr class="chg43">
+<td>T-455</td>
+<td>Кумулятивний звіт пацієнта</td>
+<td>Доручення від 01.11.2026</td>
+<td>FR-RPT-001, 015…019, розд. 23</td>
+<td>Must</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
+<tr class="chg43">
+<td>T-456</td>
+<td>Звіти: навантаження аналізаторів, направлення за джерелами, використання показників, TAT</td>
+<td>Доручення від 01.11.2026</td>
+<td>FR-RPT-002…005, розд. 23</td>
+<td>Must</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
+<tr class="chg43">
+<td>T-457</td>
+<td>Звіти: розподіл і перенаправлення, невиконані показники, пакети</td>
+<td>Доручення від 01.11.2026</td>
+<td>FR-RPT-006…008, розд. 23</td>
+<td>Should</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
+<tr class="chg43">
+<td>T-458</td>
+<td>Контроль якості даних при прийомі результату (одиниці, правдоподібність, критичні) за аналізом прикладу звіту</td>
+<td>Доручення від 01.11.2026</td>
+<td>23.7, розд. 23</td>
+<td>Must</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
+<tr class="chg43">
+<td>T-459</td>
+<td>Модель даних і API розподілу та звітів</td>
+<td>Доручення від 01.11.2026</td>
+<td>23.8, 23.9, розд. 23</td>
+<td>Must</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
+<tr class="chg43">
+<td>T-460</td>
+<td>Зміни прототипу: секція «Направлення та аналізатори»</td>
+<td>Доручення від 01.11.2026</td>
+<td>23.10, розд. 23</td>
+<td>Must</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
+<tr class="chg43">
+<td>T-461</td>
+<td>Денні агрегати й журнал формування звітів</td>
+<td>Доручення від 01.11.2026</td>
+<td>FR-RPT-011, 012, розд. 23</td>
+<td>Should</td>
+<td>R1.2</td>
+<td>Заплановано (ред. 4.3)</td>
+</tr>
 </tbody>
 </table>
+<div class="chg-block">
+<p><span class="tag-mod">ЗМІНЕНО</span> До реєстру (135 задач) додано 20 задач T-410…T-429 (ред. 4.1); їхній статус — «Заплановано» до реалізації в прототипі.</p>
+</div>
+<div class="chg-block b43">
+<p><span class="tag-new43">НОВЕ 4.3</span> Додано 12 задач T-450…T-461 (ред. 4.3), статус — «Заплановано».</p>
+</div>
 <hr />
 <h2 id="3">3. Ролі та сценарії</h2>
 <h3 id="31">3.1. Модель без авторизації</h3>
@@ -2076,6 +2422,22 @@ mis_patient_card, org_employee, org_department, ehe_incoming_medical_referral, m
 <td>FR-REG-010</td>
 <td>Пошук за <code>search</code> — за підрядком ПІБ (без урахування регістру), телефоном (цифри), ІПН</td>
 </tr>
+<tr class="chg">
+<td>FR-REG-011</td>
+<td><span class="tag-new">НОВЕ</span>Замовлення створюється з направлення МІС у двох контурах: <strong>зовнішнє</strong> (амбулаторія, е-направлення ЕСОЗ) і <strong>внутрішнє</strong> (стаціонар). Позиція направлення — інтервенція зі словника ЕСОЗ (розд. 21.3), а не довільний профіль</td>
+</tr>
+<tr class="chg">
+<td>FR-REG-012</td>
+<td><span class="tag-new">НОВЕ</span>Кожна позиція замовлення зберігає код інтервенції, послугу ЛІС і <strong>перелік показників, обраних лікарем</strong>; тести створюються лише для обраних показників (розд. 21.8)</td>
+</tr>
+<tr class="chg">
+<td>FR-REG-013</td>
+<td><span class="tag-new">НОВЕ</span>Під час створення замовлення кожен тест отримує прилад і місце в черзі аналізатора (маршрутизація, розд. 21.7); результат показується в картці замовлення</td>
+</tr>
+<tr class="chg">
+<td>FR-REG-014</td>
+<td><span class="tag-new">НОВЕ</span>Якщо показники в направленні не передані (е-направлення іншого закладу), реєстратор або лікар-лаборант обирає їх у діалозі «Показники послуги» до створення замовлення; за замовчуванням позначено типовий набір</td>
+</tr>
 </tbody>
 </table>
 <p><strong>UI.</strong> Сторінка <code>/laboratory/orders</code>: ліворуч черга замовлень (колонки: №, дата/час, пацієнт, вік/стать, підрозділ, пріоритет, е-направлення, статус, дії), фільтри статус/дата/підрозділ/CITO/пошук; праворуч картка. Діалог «Нове замовлення»: пошук пацієнта, вибір профілів чипами, підсумок пробірок із кольорами кришок, вартість, кнопки «Створити», «Створити і друкувати етикетки».</p>
@@ -2251,6 +2613,14 @@ mis_patient_card, org_employee, org_department, ehe_incoming_medical_referral, m
 <tr>
 <td>FR-WS-012</td>
 <td>Коментар оператора (<code>operatorComment</code>) зберігається разом зі значенням; обов'язковий при значенні поза фізіологічним діапазоном</td>
+</tr>
+<tr class="chg">
+<td>FR-WS-013</td>
+<td><span class="tag-new">НОВЕ</span>Фільтр приладу в робочому столі показує <strong>чергу аналізатора</strong>: тести, яким маршрутизація призначила цей прилад. Порядок: CITO, потім плановий час (внутрішні призначення стаціонару), потім час приймання проби. Додаткові колонки: «Джерело» (Амбулаторія/Стаціонар), «Відділення/ліжко», «Як призначено» (авто/вручну)</td>
+</tr>
+<tr class="chg">
+<td>FR-WS-014</td>
+<td><span class="tag-new">НОВЕ</span>Для рядка доступна дія «Перенаправити на інший прилад» (лише приладів, що вміють цей показник — розд. 21.5) з обов'язковою причиною; дія пишеться в журнал маршрутизації та аудит</td>
 </tr>
 </tbody>
 </table>
@@ -2786,6 +3156,10 @@ mis_patient_card, org_employee, org_department, ehe_incoming_medical_referral, m
 <td>FR-NRM-009</td>
 <td>Імпорт довідників <code>POST /dictionaries/import?dryRun=true</code> показує таблицю змін (створити/оновити/пропустити/помилка) перед застосуванням</td>
 </tr>
+<tr class="chg">
+<td>FR-NRM-010</td>
+<td><span class="tag-new">НОВЕ</span>Картка послуги отримує вкладки «Інтервенції ЕСОЗ» (з якими інтервенціями співставлено послугу, режим вибору показників) та «Обладнання» (які прилади виконують послугу й кожен показник, пріоритет, готовність). У вкладці «Показники» додається ознака «обов'язковий при виборі лікарем» (розд. 21.8)</td>
+</tr>
 </tbody>
 </table>
 <p><strong>UI.</strong> Як на скріншотах 13–15: картки каталогу; модальне вікно картки послуги з вкладками; playground з формою ліворуч і результатом праворуч (виграшний шар виділений, trace таблицею з іконками ✔/✖), тост «Референс успішно підібрано!».</p>
@@ -2835,6 +3209,18 @@ mis_patient_card, org_employee, org_department, ehe_incoming_medical_referral, m
 <tr>
 <td>FR-DIC-009</td>
 <td>Усі довідники експортуються у JSON/CSV і імпортуються з попереднім переглядом</td>
+</tr>
+<tr class="chg">
+<td>FR-DIC-010</td>
+<td><span class="tag-new">НОВЕ</span>Довідник «Інтервенції ЕСОЗ» (<code>lab_ehealth_intervention</code>): лише читання, синхронізація з ЕСОЗ/МІС (розд. 21.3)</td>
+</tr>
+<tr class="chg">
+<td>FR-DIC-011</td>
+<td><span class="tag-new">НОВЕ</span>Довідник «Співставлення інтервенцій» (<code>lab_intervention_map</code>) — редагує LAB_ADMIN (розд. 21.4)</td>
+</tr>
+<tr class="chg">
+<td>FR-DIC-012</td>
+<td><span class="tag-new">НОВЕ</span>Довідник «Послуги обладнання» (<code>lab_analyzer_service</code>) — вкладка картки аналізатора й окрема сторінка-матриця «послуга × прилад» (розд. 21.5)</td>
 </tr>
 </tbody>
 </table>
@@ -3932,6 +4318,42 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 <td><code>id, at, user_id, user_role, is_default_employee, action, entity, entity_id, before(json), after(json), ip</code></td>
 <td>→ <code>org_employee</code></td>
 </tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span><code>lab_ehealth_intervention</code></td>
+<td>Дзеркало словника інтервенцій ЕСОЗ</td>
+<td>розд. 21.9</td>
+<td>—</td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span><code>lab_intervention_map</code></td>
+<td>Співставлення інтервенція ↔ послуга ЛІС</td>
+<td>розд. 21.9</td>
+<td>→ <code>ehe_service_catalog_service</code></td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span><code>lab_analyzer_service</code></td>
+<td>Послуги, які виконує обладнання</td>
+<td>розд. 21.9</td>
+<td>—</td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span><code>lab_order_item</code>, <code>lab_order_item_indicator</code></td>
+<td>Позиція направлення та обрані показники</td>
+<td>розд. 21.9</td>
+<td>→ <code>ehe_incoming_medical_referral</code></td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span><code>lab_routing_log</code></td>
+<td>Журнал маршрутизації в чергу приладу</td>
+<td>розд. 21.9</td>
+<td>—</td>
+</tr>
+<tr class="chg">
+<td><span class="tag-mod">ЗМІНЕНО</span><code>lab_orders</code>, <code>lab_order_tests</code>, <code>lab_analyzer_parameters</code></td>
+<td>Нові колонки: контур, відділення/ліжко, позиція, спосіб призначення, час постановки в чергу</td>
+<td>розд. 21.9</td>
+<td>→ <code>mis_hospitalization</code> (стаціонар)</td>
+</tr>
 </tbody>
 </table>
 <p>Індекси (мінімум): <code>lab_orders(status)</code>, <code>lab_orders(order_datetime desc)</code>, <code>lab_orders(patient_id)</code>, <code>lab_order_samples(barcode) unique</code>, <code>lab_order_tests(order_id)</code>, <code>lab_order_tests(status)</code>, <code>lab_test_results(order_test_id)</code>, <code>lab_test_results(flag)</code>, <code>lab_reference_layers(test_id, method_code, priority_order desc)</code>, <code>lab_qc_results(qc_material_id, test_code, run_at desc)</code>, <code>lab_analyzer_messages(analyzer_id, received_at desc)</code>, <code>lab_audit_log(entity, entity_id)</code>, <code>lab_unmatched_results(barcode)</code>.</p>
@@ -4108,6 +4530,10 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 <tr>
 <td>Коннектор (API-ключ)</td>
 <td><code>POST /connector/register</code>, <code>GET /connector/config</code>, <code>POST /connector/heartbeat</code>, <code>GET /connector/orders/by-barcode/{barcode}</code>, <code>GET /connector/orders/pending</code>, <code>POST /connector/results</code>, <code>POST /connector/messages</code>, <code>POST /connector/logs</code></td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span>Інтервенції ЕСОЗ, мапінг, обладнання, направлення МІС, черга</td>
+<td><code>/interventions/*</code>, <code>/intervention-map/*</code>, <code>/analyzers/{id}/services</code>, <code>/analyzer-services/matrix</code>, <code>/mis/referrals/*</code>, <code>/routing/*</code>, <code>/analyzers/{id}/queue</code> — розд. 21.10</td>
 </tr>
 </tbody>
 </table>
@@ -4367,6 +4793,12 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 ├── /validation           Валідація &amp; Паніка
 ├── /quality-control      ВКЯ
 ├── /microbiology         Мікробіологія
+├── /pathology            [4.2] Патоморфологія: журнал справ | прийом | CITO | архів
+│   └── /pathology/cases/:id  Картка справи (направлення, вирізка, блоки, висновок, друк 014/о)
+├── /refs                 [4.3] Вхідні направлення з МІС: розподіл по аналізаторах
+├── /work                 [4.3] Робота за направленнями: аналізатор | пацієнт | дослідження
+├── /service-analyzers    [4.3] Послуги ЕСОЗ × аналізатори | пакети послуг
+├── /reports              [4.3] Звіти лабораторії
 ├── /biobank              Біобанк
 ├── /reagents             Склад реактивів
 ├── /analytics-tat        Аналітика &amp; TAT
@@ -4463,6 +4895,9 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 </table>
 <p>Точки вбудовування у фронтенд evomis: пункт меню «Лабораторія (ЛІС)» у <code>menuDrawer.vue</code>/<code>baseElements.js</code>; кнопка у <code>incomingMedicalReferral</code>; вкладка «Лабораторні дослідження» у <code>patient.vue</code> (використовує <code>/patients/{id}/history</code> і <code>/trend</code>).</p>
 <h3 id="102-ehealth-r2">10.2. eHealth / ЕСОЗ (запланований інтерфейс, R2)</h3>
+<div class="chg-block">
+<p><span class="tag-mod">ЗМІНЕНО</span> У ред. 4.1 з R2 у R1.1 виносяться (розд. 21): словник інтервенцій ЕСОЗ, прийом направлень з МІС, зіставлення з послугами, вибір показників лікарем, маршрутизація на прилади, а також авторизація в ЕСОЗ (логін/пароль + КЕП або 2FA), підпис КЕП і відправка DiagnosticReport. Підпис КЕП і відправка DiagnosticReport також переносяться в R1.1 (розд. 21.13).</p>
+</div>
 <ul>
 <li>Потік: ServiceRequest (е-направлення) → замовлення ЛІС → після <code>release</code> формування FHIR <code>DiagnosticReport</code> + <code>Observation[]</code> (зразок структури — <code>tests/protocol_samples/07_fhir_diagnostic_report_bundle.json</code>: Patient, Specimen, Observation із LOINC та <code>referenceRange</code>, DiagnosticReport) → підпис КЕП лікаря-лаборанта (ДСТУ 4145-2002, через бібліотеку/сервіс підпису evomis) → відправка через інтеграційний шар evomis → статус у колонці черги (ok/error/pending) → черга повторів при недоступності → «Погасити ЕН» з причиною.</li>
 <li>У v4: таблиця <code>mis_diagnostic_report</code> заповнюється; поле <code>ehealthStatus</code> на замовленні (<code>NOT_SENT</code>); UI показує бейдж «ЕСОЗ: не надіслано». Інтерфейс сервісу <code>IEhealthGateway { SubmitDiagnosticReportAsync, CancelReferralAsync }</code> з реалізацією-заглушкою.</li>
@@ -6597,6 +7032,9 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 </tbody>
 </table>
 <p>Якщо тип не вказано, він визначається автоматично: є е-направлення → EHEALTH; є паперове → PAPER; є клініка → EXTERNAL_CLINIC; є лікар закладу → INTERNAL; інакше SELF.</p>
+<div class="chg-block">
+<p><span class="tag-mod">ЗМІНЕНО</span> Додано виміри <code>lab_orders.referral_context</code>: <code>AMBULATORY</code> (зовнішнє: е-направлення ЕСОЗ, тип <code>EHEALTH</code>) та <code>INPATIENT</code> (внутрішнє: призначення стаціонару, тип <code>INTERNAL</code>). Термін «зовнішнє направлення» у розд. 21 означає е-направлення ЕСОЗ амбулаторії і <strong>не</strong> збігається з типом <code>EXTERNAL_CLINIC</code> (клініка-партнер). Див. 21.1, 21.6.</p>
+</div>
 <h4 id="2062-evomis-ehealthincomingmedicalreferralservice">20.6.2. Життєвий цикл е-направлення (як в evomis <code>EhealthIncomingMedicalReferralService</code>)</h4>
 <table>
 <thead>
@@ -6642,6 +7080,9 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 - категорія — «лабораторне дослідження»;
 - не використане в іншому нескасованому замовленні.</p>
 <p>Порушення повертаються як 409 з переліком причин. У пошуку вони показуються реєстратору ще до створення замовлення разом із профілями ЛІС, що відповідають послузі направлення (підставляються автоматично).</p>
+<div class="chg-block">
+<p><span class="tag-mod">ЗМІНЕНО</span> Реалізується в R1.1 (розд. 21.13): авторизація в ЕСОЗ у два кроки (логін/пароль, далі КЕП або 2FA), підпис КЕП користувача та відправка пакета. Поле <code>ehealthStatus</code> отримує розширений перелік статусів.</p>
+</div>
 <p><strong>R2 (КЕП).</strong> Перед <code>complete</code> висновок має бути зареєстрований в ЕСОЗ: <code>POST patients/{patientId}/diagnostic_report_package</code> (signed_data, КЕП) → <code>GET jobs/{id}</code> → ehealth id висновку. Саме його передають у <code>completed_with</code>. Зараз у <code>completed_with</code> іде id <code>mis_diagnostic_report</code> ЛІС (мок це приймає).</p>
 <h4 id="2063">20.6.3. Шар інтеграції з ЕСОЗ: реальні виклики + мок для автономної роботи</h4>
 <ul>
@@ -7005,6 +7446,2423 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 </tbody>
 </table>
 <p>Порт сервера змінюється в <code>Start-MedLinkLIS.ps1</code> (<code>$port</code>; лаунчер перевизначає <code>Kestrel:Endpoints:Http:Url</code>). Для доступу коннекторів з інших ПК сервер слухає <code>0.0.0.0</code> (Windows може запитати дозвіл брандмауера).</p>
+<div class="chg-sec" id="v41-21">
+<h2 id="21-41-15102026"><span class="tag-new">НОВЕ</span>21. Інтеграція з МІС: внутрішні та зовнішні направлення, словник інтервенцій ЕСОЗ, послуги обладнання, черга аналізатора (редакція 4.1, 15.10.2026)</h2>
+<h3 id="210">21.0. Мета, що було і що змінюється</h3>
+<p><strong>Доручення власника продукту (15.10.2026).</strong> Інтегрувати ЛІС з МІС: приймати внутрішні та зовнішні направлення, використовуючи словник інтервенцій ЕСОЗ. Інтервенції зі словника ЕСОЗ співставити з послугами, які може виконувати обладнання, і внести їх у перелік послуг обладнання. При роботі із зовнішніми (ЕСОЗ — амбулаторія) та внутрішніми (стаціонар) направленнями лабораторія вже отримує інформацію, на якому обладнанні це можна виконати, і призначає тест у чергу потрібного аналізатора. При виборі послуги з ЕСОЗ лікар поліклініки чи стаціонару обирає, які саме показники потрібно виконати в цій послузі.</p>
+<table>
+<thead>
+<tr>
+<th>Аспект</th>
+<th>Було (v4.0)</th>
+<th>Стає (ред. 4.1)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Джерело послуг у направленні</td>
+<td>Профіль ЛІС; е-направлення знаходить профіль через <code>lab_test_profile.ehealth_service_catalog_service_id</code> (розд. 20.4, 20.6.2)</td>
+<td>Інтервенція зі словника ЕСОЗ — єдиний код послуги для обох контурів; зіставлення з послугами ЛІС ведеться окремим довідником (21.4)</td>
+</tr>
+<tr>
+<td>Склад показників</td>
+<td>Профіль розгортається повністю; зміна складу — вручну реєстратором</td>
+<td>Показники обирає лікар у МІС; ЛІС отримує готовий перелік (21.8)</td>
+</tr>
+<tr>
+<td>Вибір приладу</td>
+<td>Неявно: <code>lab_order_tests.analyzer_id</code> визначається профілем/методикою або вручну</td>
+<td>Прилад визначається автоматично за переліком послуг обладнання (21.5) і правилами маршрутизації (21.7)</td>
+</tr>
+<tr>
+<td>Стаціонар</td>
+<td>Окремого процесу немає; тип <code>INTERNAL</code> — лише «лікар закладу»</td>
+<td>Внутрішнє направлення (призначення стаціонару) із відділенням, ліжком, плановим часом і поверненням статусу в МІС (21.6)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="211">21.1. Терміни розділу</h3>
+<table>
+<thead>
+<tr>
+<th>Термін</th>
+<th>Значення</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Інтервенція ЕСОЗ</td>
+<td>Запис словника ЕСОЗ (код, система кодування, назва, категорія), який лікар зазначає в направленні. Зберігається в ЛІС як дзеркало <code>lab_ehealth_intervention</code></td>
+</tr>
+<tr>
+<td>Послуга ЛІС</td>
+<td>Профіль <code>lab_test_profile</code> (або окремий тест), що виконується лабораторією</td>
+</tr>
+<tr>
+<td>Показник</td>
+<td>Тест <code>lab_test_definition</code> у складі послуги (напр. HGB у послузі «Загальний аналіз крові»)</td>
+</tr>
+<tr>
+<td>Послуга обладнання</td>
+<td>Запис <code>lab_analyzer_service</code>: аналізатор уміє виконувати послугу ЛІС (та її показники через <code>lab_analyzer_parameters</code>)</td>
+</tr>
+<tr>
+<td>Зовнішнє направлення</td>
+<td>Амбулаторне е-направлення ЕСОЗ (<code>referral_type=EHEALTH</code>, <code>referral_context=AMBULATORY</code>). Не плутати з <code>EXTERNAL_CLINIC</code> (клініка-партнер, розд. 20.6.1)</td>
+</tr>
+<tr>
+<td>Внутрішнє направлення</td>
+<td>Призначення лікаря стаціонару в МІС (<code>referral_type=INTERNAL</code>, <code>referral_context=INPATIENT</code>); е-направлення в ЕСОЗ не створюється</td>
+</tr>
+<tr>
+<td>Маршрутизація</td>
+<td>Автоматичний вибір приладу для кожного тесту та постановка в його чергу</td>
+</tr>
+</tbody>
+</table>
+<h3 id="212">21.2. Наскрізна схема</h3>
+<pre><code>МІС (поліклініка)  лікар обирає інтервенцію ЕСОЗ ──► обирає показники ──► е-направлення в ЕСОЗ (код інтервенції) + набір показників у МІС
+МІС (стаціонар)    лікар відділення обирає послугу (інтервенцію) ──► обирає показники ──► внутрішнє призначення
+                                  │
+                                  ▼
+ЛІС  Інтервенція ЕСОЗ ─► [lab_intervention_map] ─► Послуга ЛІС ─► Показники (обрані лікарем)
+                                                                     │
+                                  [lab_analyzer_service + lab_analyzer_parameters]
+                                                                     ▼
+                         Маршрутизація: прилад для кожного тесту ─► Черга аналізатора ─► Коннектор (замовлення на прилад)
+                                                                     │
+                         Результат ─► валідація ─► mis_diagnostic_report / призначення «Виконано» в МІС
+</code></pre>
+<h3 id="213-fr-mis-001006">21.3. Словник інтервенцій ЕСОЗ у ЛІС (FR-MIS-001…006)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-MIS-001</td>
+<td>ЛІС тримає дзеркало словника інтервенцій ЕСОЗ у <code>lab_ehealth_intervention</code> [MedLink]: <code>code</code>, <code>code_system</code>, <code>name</code>, <code>category</code>, <code>is_active</code>, <code>source_version</code>, <code>synced_on</code>. Записи лише для читання</td>
+</tr>
+<tr>
+<td>FR-MIS-002</td>
+<td>Джерело: у складі МІС — довідники/каталог послуг evomis (<code>ehe_service_catalog_service</code> та словники ЕСОЗ); автономно — мок (режим <code>Ehealth:Mode=Mock</code>) з демонстраційним набором. Демо-коди мають префікс <code>DEMO-</code>, реальні коди завантажуються синхронізацією</td>
+</tr>
+<tr>
+<td>FR-MIS-003</td>
+<td>Синхронізація за розкладом (<code>Lab:Intervention:SyncCron</code>, типово щодоби) і кнопкою «Оновити зі словника». Нові записи — статус «Не співставлено»; записи, яких більше немає в ЕСОЗ, позначаються <code>is_active=false</code>, але лишаються у вже створених замовленнях</td>
+</tr>
+<tr>
+<td>FR-MIS-004</td>
+<td>До ЛІС потрапляють лише інтервенції лабораторної категорії; фільтр категорії налаштовується (<code>Lab:Intervention:Categories</code>)</td>
+</tr>
+<tr>
+<td>FR-MIS-005</td>
+<td>Сторінка «Інтервенції ЕСОЗ»: пошук за кодом/назвою, фільтри «Співставлено / Не співставлено / Немає обладнання / Готово до маршрутизації», лічильники</td>
+</tr>
+<tr>
+<td>FR-MIS-006</td>
+<td>Кожна синхронізація пишеться в <code>lab_ehealth_exchange_log</code> (розд. 20.6.3) і в аудит</td>
+</tr>
+</tbody>
+</table>
+<h3 id="214-fr-mis-010016">21.4. Співставлення інтервенцій із послугами ЛІС (FR-MIS-010…016)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-MIS-010</td>
+<td>Довідник <code>lab_intervention_map</code> [ЛІС]: інтервенція → послуга ЛІС (профіль) або набір показників. Дозволено: 1 інтервенція → 1 профіль; 1 інтервенція → кілька окремих показників; кілька інтервенцій → один профіль. Окремий тип зв'язку, що не конфліктує з <code>EhealthService-TerraLabService</code> (розд. 20.3.2)</td>
+</tr>
+<tr>
+<td>FR-MIS-011</td>
+<td>Режим вибору показників на співставленні (<code>indicator_selection_mode</code>): <code>FIXED</code> — виконуються всі показники послуги, вибір лікарем не пропонується; <code>SELECTABLE</code> — лікар обирає показники, обов'язкові зафіксовані; <code>SELECTABLE_ANY</code> — лікар обирає довільно, мінімум один. Типово — <code>SELECTABLE</code></td>
+</tr>
+<tr>
+<td>FR-MIS-012</td>
+<td>Обов'язкові показники задаються ознакою <code>is_required</code> у складі послуги (<code>lab_test_profile_items</code>) і не можуть бути зняті лікарем (напр. для ЗАК — HGB, RBC, WBC, PLT)</td>
+</tr>
+<tr>
+<td>FR-MIS-013</td>
+<td>Автопідказка співставлення: за збігом LOINC, коду НК 025:2021, подібністю назви; результат — пропозиція, яку підтверджує LAB_ADMIN. Автоматично співставлення не зберігається</td>
+</tr>
+<tr>
+<td>FR-MIS-014</td>
+<td><strong>Готовність до маршрутизації.</strong> Співставлення має індикатор: «Не співставлено» → «Співставлено, немає обладнання» (жоден показник не виконує жоден активний прилад і немає виконавця send-out) → «Частково» (частину показників виконати нікому) → «Готово». Лише «Готово» та «Частково» (з попередженням) показуються лікарю стаціонару у каталозі призначень</td>
+</tr>
+<tr>
+<td>FR-MIS-015</td>
+<td>Перевірка при збереженні мапінгу: послуга активна; усі <code>is_required</code> показники існують; є хоча б одна послуга обладнання (21.5) або маршрут send-out (розд. 20.3.3); інакше — попередження з переліком, збереження дозволено</td>
+</tr>
+<tr>
+<td>FR-MIS-016</td>
+<td>Звіт покриття (T-421): інтервенції без співставлення; співставлені без обладнання; прилади без жодної інтервенції. Експорт CSV</td>
+</tr>
+</tbody>
+</table>
+<h3 id="215-fr-eqp-001008">21.5. Послуги, які виконує обладнання (FR-EQP-001…008)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-EQP-001</td>
+<td>Картка аналізатора отримує вкладку «Послуги обладнання»: список послуг ЛІС, які виконує прилад, і для кожної — показники, що прилад вміє виконувати. Рівень показника — наявна таблиця <code>lab_analyzer_parameters</code> (код показника на приладі, коефіцієнт); рівень послуги — нова <code>lab_analyzer_service</code></td>
+</tr>
+<tr>
+<td>FR-EQP-002</td>
+<td>Поля <code>lab_analyzer_service</code>: <code>analyzer_id</code>, <code>profile_id</code>, <code>is_enabled</code>, <code>priority</code> (1 — основний, 2 — резервний…), <code>avg_tat_minutes</code>, <code>biomaterial_type_id</code> (коли прилад приймає не всі матеріали), <code>note</code></td>
+</tr>
+<tr>
+<td>FR-EQP-003</td>
+<td>Поля показника на приладі: <code>is_enabled</code>, <code>analyzer_test_code</code> (як сьогодні <code>analyzerCode</code>), <code>requires_dilution</code>, <code>priority</code> (може відрізнятись від рівня послуги)</td>
+</tr>
+<tr>
+<td>FR-EQP-004</td>
+<td>Первинне наповнення: кнопка «Заповнити з профілю приладу» пропонує послуги, показники яких вже є в <code>parameterMap</code> цього приладу (розд. 6.3, Додаток A); користувач підтверджує</td>
+</tr>
+<tr>
+<td>FR-EQP-005</td>
+<td>Сторінка-матриця «Послуги × обладнання»: рядки — послуги, стовпці — прилади, у клітинці — активність і пріоритет; масове ввімкнення/вимкнення; фільтр за відділом лабораторії (розд. 16.3)</td>
+</tr>
+<tr>
+<td>FR-EQP-006</td>
+<td>Показник можна ввімкнути на приладі, лише якщо в нього є <code>analyzer_test_code</code>; інакше — помилка 422 «Для показника не задано код на приладі»</td>
+</tr>
+<tr>
+<td>FR-EQP-007</td>
+<td>Вимкнення послуги/показника на приладі або вимкнення самого приладу запускає переназначення тестів у статусі <code>PENDING/RERUN</code> (FR-RTE-009); користувачу показується кількість зачеплених тестів до підтвердження</td>
+</tr>
+<tr>
+<td>FR-EQP-008</td>
+<td>На картці послуги вкладка «Обладнання» — зворотний вигляд: які прилади, у якому порядку пріоритету, з яким навантаженням (тестів у черзі) виконують послугу</td>
+</tr>
+</tbody>
+</table>
+<h3 id="216-fr-mis-020028">21.6. Прийом направлень із МІС (FR-MIS-020…028)</h3>
+<table>
+<thead>
+<tr>
+<th>Властивість</th>
+<th>Зовнішнє (амбулаторія, ЕСОЗ)</th>
+<th>Внутрішнє (стаціонар)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Хто створює</td>
+<td>Лікар поліклініки в МІС (е-направлення ЕСОЗ)</td>
+<td>Лікар відділення в картці стаціонарного пацієнта (призначення)</td>
+</tr>
+<tr>
+<td>Код послуги</td>
+<td>Інтервенція ЕСОЗ у ServiceRequest</td>
+<td>Та сама інтервенція зі словника (без виклику ЕСОЗ)</td>
+</tr>
+<tr>
+<td>Вибір показників</td>
+<td>Вікно «Показники послуги» у МІС після вибору інтервенції</td>
+<td>Те саме вікно в призначенні</td>
+</tr>
+<tr>
+<td>Як потрапляє в ЛІС</td>
+<td>Пошук е-направлення за номером → <code>use</code> в ЕСОЗ (20.6.2); показники — з МІС</td>
+<td><code>POST /mis/referrals</code> (подія МІС) без <code>use</code>/<code>complete</code> в ЕСОЗ</td>
+</tr>
+<tr>
+<td>Прив'язка</td>
+<td><code>ehealth_referral_id</code></td>
+<td><code>mis_hospitalization_id</code>, відділення, палата, ліжко</td>
+</tr>
+<tr>
+<td>Забір</td>
+<td>Пункт забору (розд. 4.2)</td>
+<td>Медсестра відділення: список забору по палатах/ліжках (розд. 16.3)</td>
+</tr>
+<tr>
+<td>Повернення результату</td>
+<td><code>mis_diagnostic_report</code>, <code>complete</code> в ЕСОЗ (розд. 20.6.2, 21.13; підпис КЕП — FR-SGN)</td>
+<td>Статус призначення «Виконано/Скасовано» + <code>mis_diagnostic_report</code> в ЕМК</td>
+</tr>
+<tr>
+<td>Оплата</td>
+<td>За платником замовлення (розд. 20.7)</td>
+<td>Безоплатно (внутрішнє) або за платником госпіталізації</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-MIS-020</td>
+<td><strong>Зовнішнє.</strong> Пошук е-направлення (<code>GET /referrals/ehealth/lookup</code>) додатково повертає: коди інтервенцій, відповідні послуги ЛІС, статус готовності (21.4) і показники, обрані лікарем (якщо передані МІС)</td>
+</tr>
+<tr>
+<td>FR-MIS-021</td>
+<td>Групове е-направлення (кілька <code>ServiceRequest</code>) — одне замовлення, по одній позиції <code>lab_order_item</code> на кожну інтервенцію, облік залишку кількості за розд. 20.9.2</td>
+</tr>
+<tr>
+<td>FR-MIS-022</td>
+<td><strong>Показники не передані</strong> (е-направлення іншого закладу, старий МІС): ЛІС відкриває діалог вибору (FR-REG-014); джерело вибору фіксується як <code>REGISTRAR</code>/<code>LAB_DOCTOR</code> замість <code>REFERRING_DOCTOR</code></td>
+</tr>
+<tr>
+<td>FR-MIS-023</td>
+<td><strong>Інтервенція не співставлена.</strong> Замовлення не блокується: реєстратор обирає послугу вручну, а ЛІС створює задачу для LAB_ADMIN «Співставити інтервенцію» і записує вибір як пропозицію мапінгу</td>
+</tr>
+<tr>
+<td>FR-MIS-024</td>
+<td><strong>Внутрішнє.</strong> <code>POST /mis/referrals</code> приймає призначення: пацієнт, госпіталізація, відділення, палата/ліжко, лікар, пріоритет (<code>ROUTINE/CITO</code>), плановий час забору, діагноз МКХ (для норм), позиції (<code>interventionCode</code>, <code>indicators[]</code>, коментар). Відповідь містить <code>orderId</code> і маршрутизацію по кожній позиції</td>
+</tr>
+<tr>
+<td>FR-MIS-025</td>
+<td>Скасування призначення в МІС (<code>POST /mis/referrals/{id}/cancel</code>) скасовує тести у статусі <code>PENDING</code>; якщо хоча б один тест уже в роботі — відповідь 409 зі списком, рішення приймає лікар-лаборант</td>
+</tr>
+<tr>
+<td>FR-MIS-026</td>
+<td>Зворотні події в МІС: <code>COLLECTED</code>, <code>RECEIVED</code>, <code>RESULT_READY</code> (по позиції), <code>COMPLETED</code>, <code>CANCELLED</code>; доставка з повторами та журналом (<code>lab_ehealth_exchange_log</code> для ЕСОЗ, <code>lab_mis_event_log</code> — для внутрішніх подій)</td>
+</tr>
+<tr>
+<td>FR-MIS-027</td>
+<td>Критичні значення стаціонарних пацієнтів (розд. 19.3, FR-VAL) показуються в черзі відділення та передаються в МІС подією <code>CRITICAL_RESULT</code></td>
+</tr>
+<tr>
+<td>FR-MIS-028</td>
+<td>(Could, R2) Планові та повторювані призначення (щодня о 06:00 протягом N діб): одне призначення з розкладом породжує окремі замовлення на кожну дату</td>
+</tr>
+<tr>
+<td>FR-MIS-029</td>
+<td>Дублювання: ідентична позиція (пацієнт + інтервенція + показники) у нескасованому замовленні за останні 24 год — попередження з посиланням на наявне замовлення</td>
+</tr>
+</tbody>
+</table>
+<h3 id="217-fr-rte-001012">21.7. Маршрутизація в чергу аналізатора (FR-RTE-001…012)</h3>
+<p><strong>Алгоритм (нормативний).</strong> Виконується при створенні замовлення, при зміні складу показників і при переназначенні. Вхід: тест (<code>lab_order_tests</code>), проба (матеріал/пробірка), пріоритет.</p>
+<ol>
+<li>Кандидати: приладів з активною <code>lab_analyzer_service</code> для послуги тесту <strong>і</strong> активним <code>lab_analyzer_parameters</code> для показника, прилад <code>is_active</code>, матеріал/пробірка сумісні.</li>
+<li>Виключити приладів з активним локаутом ВКЯ (<code>lab_analyzer_lockouts</code>) для цього показника.</li>
+<li>Групування за пробою: якщо показники однієї проби може виконати один прилад — призначити всі на нього (не розносити пробу по приладах). Обирається прилад, що покриває найбільше показників проби.</li>
+<li>Вибір із кандидатів за стратегією <code>Lab:Routing:Strategy</code>: <code>PRIORITY</code> (менше число — раніше), <code>LEAST_LOAD</code> (найменше тестів у черзі з урахуванням <code>avg_tat_minutes</code>), <code>PRIORITY_THEN_LOAD</code> (типово: пріоритет, а при рівності — навантаження).</li>
+<li>Статус зв'язку приладу (online/offline) на вибір не впливає одразу: офлайн-прилад лишається кандидатом, поки відсутність не перевищить <code>Lab:Routing:RerouteOnOfflineMinutes</code> (типово 30).</li>
+<li>Записати <code>analyzer_id</code>, <code>routed_by=AUTO</code>, <code>enqueued_on</code>; у <code>lab_routing_log</code> — кандидатів, обраний прилад, правило, причину.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-RTE-001</td>
+<td>Кожен тест після створення замовлення має прилад або явну причину його відсутності (<code>routing_status</code>: <code>ROUTED</code>, <code>NO_EQUIPMENT</code>, <code>SENDOUT</code>, <code>MANUAL</code>)</td>
+</tr>
+<tr>
+<td>FR-RTE-002</td>
+<td><strong>Черга аналізатора</strong> = тести з <code>analyzer_id</code> у статусах <code>PENDING/RERUN</code>. Порядок: CITO, плановий час (стаціонар), час приймання проби. Проба має бути <code>RECEIVED</code>; до цього тест у черзі показується як «очікується» (планове навантаження)</td>
+</tr>
+<tr>
+<td>FR-RTE-003</td>
+<td>Коннектор отримує від ЛІС лише замовлення своїх приладів (<code>GET /connector/orders/pending</code>, <code>/connector/orders/by-barcode/{barcode}</code>) у порядку черги; побудова повідомлення — розд. 6.4–6.6</td>
+</tr>
+<tr>
+<td>FR-RTE-004</td>
+<td>Лабораторія бачить інформацію про обладнання вже в картці замовлення та журналі направлень: «ЗАК → Sysmex XN-1000, позиція 3 у черзі»</td>
+</tr>
+<tr>
+<td>FR-RTE-005</td>
+<td><code>NO_EQUIPMENT</code>: жоден прилад не виконує показник. Тест лишається в окремій черзі «Без обладнання» (ручний ввід), LAB_ADMIN отримує сповіщення; якщо є маршрут send-out (розд. 20.3.3) — <code>SENDOUT</code></td>
+</tr>
+<tr>
+<td>FR-RTE-006</td>
+<td>Ручне перенаправлення (<code>PUT /order-tests/{id}/analyzer</code>): лише на прилад із переліку кандидатів, обов'язкова причина, <code>routed_by=MANUAL</code>; зайняті в аналізі (<code>IN_ANALYSIS</code>) тести не переназначаються</td>
+</tr>
+<tr>
+<td>FR-RTE-007</td>
+<td>Тести однієї проби за можливості в одну чергу (крок 3). Якщо розділення неминуче — попередження «Показники проби розподілено між приладами»</td>
+</tr>
+<tr>
+<td>FR-RTE-008</td>
+<td>Локаут ВКЯ на приладі: тести <code>PENDING</code> для цього показника автоматично переназначаються на наступного кандидата; якщо кандидатів немає — залишаються з позначкою «Локаут» (як FR-WS-006 LOCKOUT)</td>
+</tr>
+<tr>
+<td>FR-RTE-009</td>
+<td>Вимкнення послуги/показника/приладу (FR-EQP-007): автоматичне переназначення всіх <code>PENDING/RERUN</code>; кожне — запис у журналі маршрутизації</td>
+</tr>
+<tr>
+<td>FR-RTE-010</td>
+<td>Тривала відсутність зв'язку (heartbeat коннектора, розд. 6.7) понад <code>Lab:Routing:RerouteOnOfflineMinutes</code>: пропозиція переназначити; автоматично — лише за налаштуванням <code>Lab:Routing:AutoRerouteOffline=true</code> і лише на online-кандидатів</td>
+</tr>
+<tr>
+<td>FR-RTE-011</td>
+<td>Rerun: тест повертається в чергу того самого приладу; зміна приладу — лише ручна (FR-RTE-006)</td>
+</tr>
+<tr>
+<td>FR-RTE-012</td>
+<td>Зміна складу показників після реєстрації (21.8) перераховує маршрутизацію лише для доданих тестів</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Крайні випадки.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Ситуація</th>
+<th>Поведінка</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Прилад виконує послугу, але не всі обрані показники</td>
+<td>Показники, яких немає, маршрутизуються окремо; попередження за FR-RTE-007</td>
+</tr>
+<tr>
+<td>Два прилади з однаковим пріоритетом</td>
+<td>Обирається менше навантаження (стратегія за замовчуванням)</td>
+</tr>
+<tr>
+<td>CITO</td>
+<td>Тест ставиться на початок черги; прилад із меншим <code>avg_tat_minutes</code> має перевагу, пріоритет послуги ігнорується лише при перевантаженні (налаштування)</td>
+</tr>
+<tr>
+<td>Показник розрахунковий (<code>CALCULATED</code>)</td>
+<td>Прилад не призначається; обчислюється після складових (FR-WS-005); складові маршрутизуються як звичайні</td>
+</tr>
+<tr>
+<td>Reflex-тест (розд. 4.13)</td>
+<td>Маршрутизується за тими самими правилами; <code>requiresSameSample</code> — лише прилади, що мають доступ до тієї самої проби</td>
+</tr>
+<tr>
+<td>Мікробіологічна послуга (розд. 4.10)</td>
+<td>Маршрутизація не застосовується; тест у черзі відділу мікробіології</td>
+</tr>
+</tbody>
+</table>
+<h3 id="218-fr-mis-030035">21.8. Вибір показників у послузі (FR-MIS-030…035)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-MIS-030</td>
+<td>Після вибору інтервенції відкривається вікно «Показники послуги»: перелік показників співставленої послуги (код, назва, одиниці, біоматеріал), обов'язкові — зафіксовані й позначені замком, решта — прапорці. «Типовий набір» позначається за замовчуванням</td>
+</tr>
+<tr>
+<td>FR-MIS-031</td>
+<td>Мінімум один показник; для <code>FIXED</code> вікно не показується</td>
+</tr>
+<tr>
+<td>FR-MIS-032</td>
+<td>Залежні показники: розрахункові (напр. MCH) автоматично додають складові (HGB, RBC) із підписом «додано автоматично»; зняття складової блокується, доки обрано розрахунковий</td>
+</tr>
+<tr>
+<td>FR-MIS-033</td>
+<td>Живий підсумок у вікні: кількість показників, пробірки (за планувальником розд. 20.1 лише для обраних), орієнтовна вартість (для платних), підготовка пацієнта (натще)</td>
+</tr>
+<tr>
+<td>FR-MIS-034</td>
+<td>Вартість: якщо обрано всі показники послуги — ціна послуги (<code>lab_test_profile.price</code>); якщо частину — сума цін обраних показників, а за відсутності ціни показника — ціна послуги (див. Q-15). Для безоплатних і НСЗУ-пакетів — за розд. 20.7</td>
+</tr>
+<tr>
+<td>FR-MIS-035</td>
+<td>Зміна складу до приймання проби: додавання — новий тест із маршрутизацією; зняття — тест <code>REJECTED</code> з причиною «знято лікарем». Після <code>IN_ANALYSIS</code> зняття заборонено. Кожна зміна — в аудит. До ЕСОЗ у <code>DiagnosticReport</code> потрапляють лише виконані показники</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Припущення, яке потрібно підтвердити (Q-14).</strong> ЕСОЗ передає в направленні код інтервенції, а перелік показників усередині послуги зберігає МІС. Тому для зовнішніх направлень ЛІС отримує показники з МІС (за номером направлення), а не з ЕСОЗ.</p>
+<h3 id="219">21.9. Модель даних</h3>
+<table>
+<thead>
+<tr>
+<th>Таблиця</th>
+<th>Ключові колонки</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lab_ehealth_intervention</code> [MedLink]</td>
+<td><code>id, code, code_system, name, category, is_active, source_version, synced_on</code>; унікальний <code>(code_system, code)</code></td>
+</tr>
+<tr>
+<td><code>lab_intervention_map</code> [ЛІС]</td>
+<td><code>id, intervention_id, profile_id (null — набір показників), indicator_selection_mode, min_selected, readiness, is_active</code>; <code>lab_intervention_map_test(map_id, test_id, is_default)</code> для набору показників</td>
+</tr>
+<tr>
+<td><code>lab_analyzer_service</code> [ЛІС]</td>
+<td><code>id, analyzer_id, profile_id, is_enabled, priority, avg_tat_minutes, biomaterial_type_id, note</code>; унікальний <code>(analyzer_id, profile_id)</code></td>
+</tr>
+<tr>
+<td><code>lab_analyzer_parameters</code> (змінено)</td>
+<td>+ <code>is_enabled, priority, requires_dilution</code></td>
+</tr>
+<tr>
+<td><code>lab_test_profile_items</code> (змінено)</td>
+<td>+ <code>is_required, is_default_selected</code></td>
+</tr>
+<tr>
+<td><code>lab_order_item</code> [ЛІС]</td>
+<td><code>id, order_id, intervention_id, profile_id, selection_source (REFERRING_DOCTOR/REGISTRAR/LAB_DOCTOR/FIXED), status, ehealth_service_request_id, comment</code></td>
+</tr>
+<tr>
+<td><code>lab_order_item_indicator</code> [ЛІС]</td>
+<td><code>id, item_id, test_id, is_required, selected_by, selected_on, order_test_id</code></td>
+</tr>
+<tr>
+<td><code>lab_routing_log</code> [ЛІС]</td>
+<td><code>id, order_test_id, candidates (json), analyzer_id, rule, routed_by, reason, created_on</code></td>
+</tr>
+<tr>
+<td><code>lab_mis_event_log</code> [ЛІС]</td>
+<td><code>id, order_id, event, payload, status, attempts, last_error, created_on</code></td>
+</tr>
+<tr>
+<td><code>lab_ehealth_session</code> [ЛІС]</td>
+<td><code>id, employee_id, auth_level (L1/L2), auth_method (PASSWORD/KEP/TOTP), token_enc, created_on, expires_at, last_activity_on</code>; пароль не зберігається</td>
+</tr>
+<tr>
+<td><code>lab_ehealth_submission</code> [ЛІС]</td>
+<td><code>id, order_id, diagnostic_report_id, status, package_hash, signed_data_ref, signed_by, signed_on, cert_serial, job_id, ehealth_report_id, attempts, last_error, created_on</code></td>
+</tr>
+<tr>
+<td><code>lab_orders</code> (змінено)</td>
+<td>+ <code>ehealth_status</code> (розширений перелік, 21.13), <code>referral_context (AMBULATORY/INPATIENT), mis_hospitalization_id, ward, room, bed, planned_collection_at</code></td>
+</tr>
+<tr>
+<td><code>lab_order_tests</code> (змінено)</td>
+<td>+ <code>order_item_id, routing_status, routed_by, enqueued_on</code>; <code>analyzer_id</code> заповнюється маршрутизацією</td>
+</tr>
+</tbody>
+</table>
+<p>Службові колонки та угоди іменування — за розд. 7.1. DDL оновлюється в <code>db/postgres/medlink_lis_schema.sql</code> міграцією <code>2026-10-15_intervention_routing.sql</code>.</p>
+<h3 id="2110-api">21.10. API</h3>
+<table>
+<thead>
+<tr>
+<th>Група</th>
+<th>Маршрути</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Інтервенції</td>
+<td><code>GET /interventions?search=&amp;status=</code>, <code>POST /interventions/sync</code></td>
+</tr>
+<tr>
+<td>Співставлення</td>
+<td><code>GET/POST/PUT/DELETE /intervention-map</code>, <code>GET /intervention-map/suggest?interventionId=</code>, <code>GET /intervention-map/coverage</code></td>
+</tr>
+<tr>
+<td>Обладнання</td>
+<td><code>GET/PUT /analyzers/{id}/services</code>, <code>POST /analyzers/{id}/services/prefill</code>, <code>GET /analyzer-services/matrix</code></td>
+</tr>
+<tr>
+<td>Направлення МІС</td>
+<td><code>POST /mis/referrals</code> (внутрішнє), <code>GET /mis/referrals/{id}</code>, <code>POST /mis/referrals/{id}/cancel</code>, <code>PUT /mis/referrals/{id}/items/{itemId}/indicators</code>; <code>GET /referrals/ehealth/lookup</code> (розширено)</td>
+</tr>
+<tr>
+<td>ЕСОЗ: сесія, підпис, відправка</td>
+<td><code>POST /ehealth/session</code> (логін/пароль), <code>POST /ehealth/session/confirm</code> (<code>method=KEP|TOTP</code>), <code>GET /ehealth/session</code>, <code>DELETE /ehealth/session</code>; <code>POST /orders/{id}/ehealth/prepare</code> (повертає пакет для підпису), <code>POST /orders/{id}/ehealth/submit</code> (<code>signedData</code>), <code>GET /orders/{id}/ehealth/status</code>, <code>POST /orders/{id}/ehealth/annul</code>, <code>GET /ehealth/submissions</code></td>
+</tr>
+<tr>
+<td>Маршрутизація та черга</td>
+<td><code>POST /routing/preview</code>, <code>PUT /order-tests/{id}/analyzer</code>, <code>GET /analyzers/{id}/queue</code>, <code>GET /routing/log?orderTestId=</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Приклад.</strong> <code>POST /mis/referrals</code> (внутрішнє направлення):</p>
+<pre><code>{
+  &quot;patientId&quot;: &quot;b1f4…&quot;, &quot;hospitalizationId&quot;: &quot;9a21…&quot;, &quot;department&quot;: &quot;Кардіологія&quot;,
+  &quot;ward&quot;: &quot;12&quot;, &quot;bed&quot;: &quot;3&quot;, &quot;doctorId&quot;: &quot;0f3c…&quot;, &quot;priority&quot;: &quot;ROUTINE&quot;,
+  &quot;plannedCollectionAt&quot;: &quot;2026-10-16T06:30:00Z&quot;, &quot;icd10&quot;: &quot;I21.0&quot;,
+  &quot;items&quot;: [
+    { &quot;interventionCode&quot;: &quot;DEMO-LAB-CBC&quot;, &quot;indicators&quot;: [&quot;HGB&quot;,&quot;RBC&quot;,&quot;WBC&quot;,&quot;PLT&quot;,&quot;HCT&quot;] },
+    { &quot;interventionCode&quot;: &quot;DEMO-LAB-TROP&quot;, &quot;indicators&quot;: [&quot;TROPI&quot;] }
+  ]
+}
+</code></pre>
+<p>Відповідь <code>201</code>:</p>
+<pre><code>{
+  &quot;orderId&quot;: &quot;2610-000731&quot;, &quot;status&quot;: &quot;NEW&quot;,
+  &quot;items&quot;: [
+    { &quot;interventionCode&quot;: &quot;DEMO-LAB-CBC&quot;, &quot;profile&quot;: &quot;ЗАК&quot;,
+      &quot;tests&quot;: [ {&quot;code&quot;:&quot;HGB&quot;,&quot;analyzer&quot;:&quot;Sysmex XN-1000&quot;,&quot;queuePosition&quot;:4,&quot;routedBy&quot;:&quot;AUTO&quot;}, … ] },
+    { &quot;interventionCode&quot;: &quot;DEMO-LAB-TROP&quot;, &quot;profile&quot;: &quot;Тропонін I&quot;,
+      &quot;tests&quot;: [ {&quot;code&quot;:&quot;TROPI&quot;,&quot;analyzer&quot;:&quot;Cobas e411&quot;,&quot;queuePosition&quot;:1,&quot;routedBy&quot;:&quot;AUTO&quot;} ] }
+  ],
+  &quot;warnings&quot;: []
+}
+</code></pre>
+<p>Помилки (ProblemDetails, розд. 8.3): <code>intervention-unmapped</code> (422, для внутрішніх без співставлення), <code>no-indicators-selected</code> (422), <code>required-indicator-missing</code> (422), <code>duplicate-referral</code> (409), <code>referral-in-progress</code> (409, для скасування); ЕСОЗ: <code>ehealth-auth-required</code> (401), <code>ehealth-strong-auth-required</code> (403, немає L2), <code>signer-mismatch</code> (422), <code>certificate-expired</code> (422), <code>report-not-ready</code> (409).</p>
+<h3 id="2111">21.11. Зміни в робочому прототипі (перелік для розробників)</h3>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Екран / компонент</th>
+<th>Що змінити</th>
+<th>Критерій готовності</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Довідники → «Інтервенції ЕСОЗ» (нова сторінка)</td>
+<td>Таблиця зі словником, пошук, фільтри статусу співставлення, кнопка «Оновити зі словника», бейджі «Не співставлено / Немає обладнання / Готово»</td>
+<td>У демо ≥ 20 інтервенцій (<code>DEMO-</code>), статуси різні</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Довідники → «Співставлення»</td>
+<td>Редактор: ліворуч інтервенція, праворуч послуга ЛІС і режим вибору показників; «Підказати»; індикатор готовності</td>
+<td>Зберігається, індикатор перераховується одразу</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Аналізатори → картка → вкладка «Послуги обладнання»</td>
+<td>Список послуг із вкладеним списком показників (код на приладі, пріоритет, вкл/викл); «Заповнити з профілю приладу»</td>
+<td>Вимкнення показує кількість зачеплених тестів</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Нова сторінка «Послуги × обладнання»</td>
+<td>Матриця з переключателями й пріоритетом, масові дії</td>
+<td>Зміна відображається в вкладці картки приладу</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Довідник послуг → картка → вкладки «Інтервенції ЕСОЗ», «Обладнання»; «Показники» з ознакою «обов'язковий»</td>
+<td>Згідно з FR-NRM-010, FR-EQP-008</td>
+<td>Бачу пріоритет приладів і навантаження</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Реєстрація направлень → «Нове направлення»</td>
+<td>Вибір послуги через інтервенції ЕСОЗ; вікно «Показники послуги» (замки, залежні, живий підсумок); перемикач контуру Амбулаторія/Стаціонар; для стаціонару — відділення, палата, ліжко, плановий час</td>
+<td>Для е-направлення показники підставляються з МІС; без них — діалог</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Нова сторінка «Направлення зі стаціонару» (емулятор МІС для демо)</td>
+<td>Форма призначення: пацієнт, відділення, інтервенції, показники → <code>POST /mis/referrals</code>; список зі статусами «Виконано/Скасовано»</td>
+<td>Призначення створює замовлення й тести в чергах</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Картка замовлення</td>
+<td>Блок «Призначення»: контур, позиції, обрані показники, прилад і позиція в черзі по кожному тесту, «Перенаправити», журнал маршрутизації</td>
+<td>Перенаправлення вимагає причину</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Робочий стіл</td>
+<td>Фільтр приладу = черга аналізатора; колонки «Джерело», «Відділення/ліжко», «Як призначено»; окрема вкладка «Без обладнання»</td>
+<td>CITO та плановий час випереджають решту</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Журнал направлень</td>
+<td>Колонки «Контур», «Інтервенція», «Показників», «Прилад(и)»; фільтр контуру</td>
+<td>Підсумки за контуром</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Пункт забору / відділення</td>
+<td>Список забору стаціонару за палатами й ліжками, сортування за плановим часом</td>
+<td>Прив'язка забору до призначення</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Дашборд, аналітика</td>
+<td>Плитки: навантаження приладів (черга), «Без обладнання», % ручного перенаправлення; звіт покриття (FR-MIS-016)</td>
+<td>Експорт CSV</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Демо-дані</td>
+<td>≥ 20 інтервенцій; мапінг для 8 послуг; послуги обладнання для Sysmex XN-1000, Cobas e411, Mindray BS-240 і ≥ 1 резервного приладу; 3 амбулаторні е-направлення (одне без показників) і 3 призначення стаціонару</td>
+<td>Усі сценарії 21.12 відтворюються без налаштування</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Шапка застосунку</td>
+<td>Індикатор сесії ЕСОЗ (не підключено / пароль / підтверджено до HH:MM) і «Вийти з ЕСОЗ»</td>
+<td>Стан змінюється після кожного кроку входу</td>
+</tr>
+<tr>
+<td>16</td>
+<td>Модальне вікно «Вхід в ЕСОЗ» (крок 1)</td>
+<td>Поля «Ел. пошта або логін», «Пароль» (іконка «показати»), «Увійти», «Змінити пароль», «Забули пароль?»</td>
+<td>Невірні дані — помилка; успіх відкриває крок 2</td>
+</tr>
+<tr>
+<td>17</td>
+<td>Модальне вікно «Підтвердження особи» (крок 2)</td>
+<td>Кнопки «Увійти через КЕП» (віджет підпису з тестовим сертифікатом), «Ввести код 2FA», «Увімкнути 2FA (ТОТР)»; пояснювальний текст; «На головну»</td>
+<td>Без кроку 2 відправка недоступна</td>
+</tr>
+<tr>
+<td>18</td>
+<td>Картка замовлення → блок «ЕСОЗ»</td>
+<td>Бейдж статусу (21.13), кнопка «Підписати КЕП і відправити в ЕСОЗ», вікно підпису (вибір ключа, пароль ключа), хід відправки (job), помилки, «Анулювати звіт»</td>
+<td>Статуси проходять NOT_SENT → COMPLETED</td>
+</tr>
+<tr>
+<td>19</td>
+<td>Нова сторінка «Відправка в ЕСОЗ»</td>
+<td>Список підписаних/неспрямованих звітів зі статусами, фільтри, повтор відправки</td>
+<td>Помилкові звіти можна повторити</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Налаштування</td>
+<td><code>Lab:Routing:Strategy</code>, <code>RerouteOnOfflineMinutes</code>, <code>AutoRerouteOffline</code>, <code>Lab:Intervention:SyncCron</code>, <code>Lab:Intervention:Categories</code>, <code>Ehealth:Mode</code>, <code>Ehealth:Session:TtlMinutes</code>, <code>Ehealth:SubmitInpatient</code></td>
+<td>Зміна діє без перезапуску</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Що не змінюється.</strong> Конвеєр результату (розд. 4.0), норми й резолвер, планувальник пробірок (використовує лише обрані показники), send-out, інтеграція TerraLab (розд. 20.3.2), статуси замовлення/проби/тесту.</p>
+<h3 id="2112-given-when-then">21.12. Приймальні сценарії (Given / When / Then)</h3>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Сценарій</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S-21</td>
+<td>Given інтервенція DEMO-LAB-CBC співставлена з профілем ЗАК, показники ЗАК виконує Sysmex When відкриваю «Інтервенції ЕСОЗ» Then статус «Готово», у картці ЗАК вкладка «Обладнання» показує Sysmex</td>
+</tr>
+<tr>
+<td>S-22</td>
+<td>Given амбулаторне е-направлення з інтервенцією ЗАК і показниками HGB, WBC, PLT (від МІС) When реєструю замовлення Then створено 3 тести, всі в черзі Sysmex, виконано <code>use</code> в ЕСОЗ</td>
+</tr>
+<tr>
+<td>S-23</td>
+<td>Given призначення стаціонару з ЗАК і тропоніном When <code>POST /mis/referrals</code> Then створено замовлення з відділенням і ліжком, ЗАК у черзі Sysmex, тропонін — Cobas; виклику ЕСОЗ немає; після видачі призначення має статус «Виконано»</td>
+</tr>
+<tr>
+<td>S-24</td>
+<td>Given два прилади виконують глюкозу з пріоритетами 1 і 2 When на основному активний локаут ВКЯ Then тест <code>PENDING</code> переназначено на резервний, є запис у журналі маршрутизації</td>
+</tr>
+<tr>
+<td>S-25</td>
+<td>Given послуга з обов'язковими HGB, RBC, WBC, PLT When лікар знімає WBC Then 422 <code>required-indicator-missing</code>, у вікні WBC має замок</td>
+</tr>
+<tr>
+<td>S-26</td>
+<td>Given е-направлення іншого закладу без переліку показників When реєстратор відкриває його Then показується діалог із типовим набором, джерело вибору — <code>REGISTRAR</code></td>
+</tr>
+<tr>
+<td>S-27</td>
+<td>Given інтервенція без співставлення When внутрішнє призначення Then 422 <code>intervention-unmapped</code>; для е-направлення — замовлення створюється вручну, LAB_ADMIN отримує задачу</td>
+</tr>
+<tr>
+<td>S-28</td>
+<td>Given показник, якого немає на жодному приладі й немає send-out When створюю замовлення Then <code>routing_status=NO_EQUIPMENT</code>, тест у вкладці «Без обладнання», LAB_ADMIN сповіщено</td>
+</tr>
+<tr>
+<td>S-29</td>
+<td>Given тест у <code>PENDING</code> на приладі A When вимикаю в картці приладу послугу Then показується кількість зачеплених тестів; після підтвердження вони на приладі B або в «Без обладнання»</td>
+</tr>
+<tr>
+<td>S-31</td>
+<td>Given замовлення <code>RELEASED</code>, сесії ЕСОЗ немає When натискаю «Підписати КЕП і відправити в ЕСОЗ» Then відкривається форма входу; після логіна й пароля без кроку 2 відправка недоступна (403 <code>ehealth-strong-auth-required</code>)</td>
+</tr>
+<tr>
+<td>S-32</td>
+<td>Given L1 When обираю «Увійти через КЕП» і підписувач збігається з обліковим записом Then L2, індикатор «підтверджено до…»; при розбіжності ІПН — відмова <code>signer-mismatch</code></td>
+</tr>
+<tr>
+<td>S-33</td>
+<td>Given L1, 2FA вимкнена When відкриваю підтвердження Then показано «Двофакторна автентифікація вимкнена» і кнопку «Увімкнути 2FA (ТОТР)»; автоматично 2FA не вмикається</td>
+</tr>
+<tr>
+<td>S-34</td>
+<td>Given L2 через 2FA When підписую звіт Then потрібен окремий підпис КЕП; після нього статус <code>SIGNED</code> → <code>PROCESSING</code> → <code>REGISTERED</code> → <code>COMPLETED</code>, направлення погашено</td>
+</tr>
+<tr>
+<td>S-35</td>
+<td>Given підписаний пакет і мережева помилка When відправка не пройшла Then статус <code>ERROR</code>, автоматичний повтор; після закінчення сесії — <code>AUTH_REQUIRED</code> і відправка без повторного підпису</td>
+</tr>
+<tr>
+<td>S-36</td>
+<td>Given звіт зареєстровано, виявлено помилку When «Анулювати звіт» Then потрібен підпис КЕП, статус <code>ANNULLED</code>, створюється новий звіт</td>
+</tr>
+<tr>
+<td>S-30</td>
+<td>Given призначення скасовано в МІС, один тест уже <code>IN_ANALYSIS</code> When <code>cancel</code> Then 409 зі списком; тести <code>PENDING</code> не скасовано до рішення лікаря-лаборанта</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2113-diagnosticreport-fr-sgn-001014">21.13. Авторизація в ЕСОЗ, підпис КЕП і відправка DiagnosticReport (FR-SGN-001…014)</h3>
+<p><span class="tag-new">НОВЕ</span> Лікар-лаборант може відправити діагностичний звіт (DiagnosticReport) до ЕСОЗ із підписом КЕП безпосередньо з ЛІС. Відправка з R2 переноситься в R1.1. Для цього користувач проходить авторизацію в ЕСОЗ у два кроки й підписує звіт своїм КЕП. Екрани входу (логін/пароль, вхід через КЕП, двофакторна автентифікація) виконуються за зразками, наданими власником продукту.</p>
+<table>
+<thead>
+<tr>
+<th>Рівень сесії ЕСОЗ</th>
+<th>Як досягається</th>
+<th>Що дозволено</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L0 — немає сесії</td>
+<td>—</td>
+<td>Перегляд статусу «ЕСОЗ: не надіслано» лише у ЛІС</td>
+</tr>
+<tr>
+<td>L1 — пароль</td>
+<td>Логін (e-mail) і пароль ЕСОЗ</td>
+<td>Перегляд статусів відправлень; <strong>відправка заборонена</strong></td>
+</tr>
+<tr>
+<td>L2 — підтверджена особа</td>
+<td>Після L1: «Увійти через КЕП» або код 2FA (TOTP)</td>
+<td>Підготовка пакета, підпис КЕП, відправка, анулювання звіту</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-SGN-001</td>
+<td>У картці замовлення зі статусом <code>RELEASED</code>, створеним <code>mis_diagnostic_report</code> і <code>ehealthStatus ∈ {NOT_SENT, AUTH_REQUIRED, ERROR}</code> показується кнопка «Підписати КЕП і відправити в ЕСОЗ». Доступна за правом <code>lab.ehealth.submit</code> (LAB_DOCTOR); для інших ролей кнопка неактивна з поясненням</td>
+</tr>
+<tr>
+<td>FR-SGN-002</td>
+<td><strong>Крок 1. Вхід в ЕСОЗ.</strong> Форма «Вхід в ЕСОЗ»: поле «Ел. пошта або логін», поле «Пароль» (з іконкою «показати»), кнопка «Увійти», посилання «Змінити пароль» і «Забули пароль?» (відкривають сторінки ЕСОЗ). Пароль не зберігається, не пишеться в журнали й передається лише на шлюз ЕСОЗ. Результат — рівень L1</td>
+</tr>
+<tr>
+<td>FR-SGN-003</td>
+<td><strong>Крок 2. Підтвердження особи (обов'язковий).</strong> Екран «Двофакторна автентифікація (2FA)»: (а) «Увійти через КЕП» — відкриває віджет підпису; перевіряються дані підписувача з контейнера КЕП і збіг ДРФО/ЄДРПОУ з обліковим записом; (б) «Ввести код із додатка» — якщо 2FA (TOTP) увімкнено; (в) якщо 2FA вимкнено — повідомлення «Двофакторна автентифікація вимкнена» і кнопка «Увімкнути 2FA (ТОТР)» (перехід до налаштувань облікового запису). 2FA не вмикається автоматично. Успіх — рівень L2</td>
+</tr>
+<tr>
+<td>FR-SGN-004</td>
+<td>Сесія ЕСОЗ має термін дії (<code>Ehealth:Session:TtlMinutes</code>, типово 30; <code>IdleMinutes</code> — 15). У шапці ЛІС індикатор: «ЕСОЗ: не підключено» / «пароль введено» / «підтверджено до 14:35» і кнопка «Вийти з ЕСОЗ». Токен зберігається на сервері в зашифрованому вигляді, прив'язаний до користувача, іншому користувачу не передається</td>
+</tr>
+<tr>
+<td>FR-SGN-005</td>
+<td><strong>Підпис КЕП.</strong> Окремий крок після L2, навіть якщо вхід був через 2FA. Підписується пакет <code>diagnostic_report_package</code> (JSON) віджетом підпису в браузері; приватний ключ не залишає пристрій користувача, ЛІС отримує лише <code>signed_data</code>. Один підпис — один звіт. Пакетна відправка кількох звітів за одну сесію — Should</td>
+</tr>
+<tr>
+<td>FR-SGN-006</td>
+<td>Перевірки перед підписом: замовлення <code>RELEASED</code>; усі показники валідовані, критичні підтверджені; послуга має код інтервенції ЕСОЗ (21.3); сертифікат чинний, ІПН/ЄДРПОУ збігається з <code>org_employee</code> підписанта; підписант — користувач, що видав замовлення, або має право підпису. Інакше — відмова з причиною</td>
+</tr>
+<tr>
+<td>FR-SGN-007</td>
+<td>Відправка: <code>POST patients/{patientId}/diagnostic_report_package</code> → <code>GET jobs/{id}</code> → id звіту в ЕСОЗ → <code>complete</code> е-направлення з <code>completed_with</code> (розд. 20.6.2). Для внутрішніх призначень — див. FR-SGN-013</td>
+</tr>
+<tr>
+<td>FR-SGN-008</td>
+<td>Черга повторів: підписаний пакет зберігається; при тимчасовій помилці (мережа, 5xx) — автоматичний повтор (до 24 год). Якщо сесія ЕСОЗ закінчилась — статус <code>AUTH_REQUIRED</code>, користувач проходить кроки 1–2 і відправляє збережений підписаний пакет без повторного підпису, поки пакет чинний</td>
+</tr>
+<tr>
+<td>FR-SGN-009</td>
+<td>Виправлення після відправки: анулювання звіту (<code>entered_in_error</code>) підписується КЕП так само; виправлений звіт — новий пакет із новим підписом (розд. 20.6.2)</td>
+</tr>
+<tr>
+<td>FR-SGN-010</td>
+<td>Аудит у <code>lab_ehealth_exchange_log</code>: користувач, час, метод входу (PASSWORD+KEP/TOTP), серійний номер сертифіката, хеш пакета, id завдання, результат. Паролі, ключі й коди TOTP не зберігаються ніколи</td>
+</tr>
+<tr>
+<td>FR-SGN-011</td>
+<td>Підпис особистий: делегування, спільні облікові записи й підпис «від імені» заборонені</td>
+</tr>
+<tr>
+<td>FR-SGN-012</td>
+<td>Режим <code>Ehealth:Mode=Mock</code> (прототип): імітація форми входу, вибору КЕП/2FA, віджета підпису з тестовим сертифікатом і черги завдань. Демо-пароль приймається будь-який, демо-код 2FA — <code>123456</code>; реальні секрети в прототипі не використовуються</td>
+</tr>
+<tr>
+<td>FR-SGN-013</td>
+<td>Для внутрішніх (стаціонар) призначень відправка в ЕСОЗ вимкнена, доки не ввімкнено <code>Ehealth:SubmitInpatient=true</code> і не підтверджено наявність епізоду в ЕСОЗ (Q-20)</td>
+</tr>
+<tr>
+<td>FR-SGN-014</td>
+<td>Безпека: лише TLS, CSP з дозволом для скриптів віджета підпису, захист від clickjacking, блокування форми входу після N невдалих спроб (за правилами ЕСОЗ)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Статуси відправки</strong> (<code>lab_orders.ehealth_status</code>, бейдж у UI):</p>
+<table>
+<thead>
+<tr>
+<th>Статус</th>
+<th>Бейдж</th>
+<th>Перехід</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NOT_SENT</code></td>
+<td>ЕСОЗ: не надіслано</td>
+<td>→ <code>READY_TO_SIGN</code> після входу L2 і підготовки пакета</td>
+</tr>
+<tr>
+<td><code>AUTH_REQUIRED</code></td>
+<td>Потрібен вхід в ЕСОЗ</td>
+<td>→ <code>READY_TO_SIGN</code> після L2</td>
+</tr>
+<tr>
+<td><code>READY_TO_SIGN</code></td>
+<td>Очікує підпис</td>
+<td>→ <code>SIGNED</code> після КЕП</td>
+</tr>
+<tr>
+<td><code>SIGNED</code></td>
+<td>Підписано</td>
+<td>→ <code>PROCESSING</code> після відправки</td>
+</tr>
+<tr>
+<td><code>PROCESSING</code></td>
+<td>Обробляється в ЕСОЗ</td>
+<td>→ <code>REGISTERED</code> / <code>REJECTED</code> / <code>ERROR</code></td>
+</tr>
+<tr>
+<td><code>REGISTERED</code></td>
+<td>Звіт зареєстровано</td>
+<td>→ <code>COMPLETED</code> після <code>complete</code> направлення</td>
+</tr>
+<tr>
+<td><code>COMPLETED</code></td>
+<td>ЕСОЗ: надіслано, направлення погашено</td>
+<td>→ <code>ANNULLED</code> при анулюванні</td>
+</tr>
+<tr>
+<td><code>REJECTED</code>, <code>ERROR</code></td>
+<td>Відхилено / помилка</td>
+<td>Повтор або виправлення; причина відображається користувачу</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2114">21.14. Релізи, ризики та відкриті питання</h3>
+<p><strong>Реліз.</strong> R1.1: 21.3–21.13, T-410…T-419, T-421…T-428 (у тому числі авторизація в ЕСОЗ, підпис КЕП і відправка DiagnosticReport). R2: планові/повторювані призначення (T-420), пакетна відправка (T-429).</p>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Питання / ризик</th>
+<th>Пропозиція команди</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-14</td>
+<td>Де зберігається перелік показників в ЕСОЗ-направленні: ЕСОЗ його не несе, лише код інтервенції. Підтвердити, що МІС віддає показники ЛІС за номером направлення</td>
+<td>Розширити контракт МІС → ЛІС (<code>GET /mis/referrals/by-number/{n}</code>); без цього працює fallback FR-MIS-022</td>
+</tr>
+<tr>
+<td>Q-15</td>
+<td>Ціна послуги при частковому виборі показників</td>
+<td>Сума цін показників, за відсутності — ціна послуги (FR-MIS-034); затвердити</td>
+</tr>
+<tr>
+<td>Q-16</td>
+<td>Точне джерело словника інтервенцій у ЕСОЗ (система кодування та категорія лабораторних послуг) і чи збігається воно з <code>ehe_service_catalog_service</code></td>
+<td>Перевірити на тестовому контурі ЕСОЗ; до того — демо-набір <code>DEMO-</code></td>
+</tr>
+<tr>
+<td>Q-17</td>
+<td>Чи потрібне в стаціонарі зберігати е-направлення в ЕСОЗ для внутрішніх призначень</td>
+<td>Ні (за дорученням — внутрішні направлення без ЕСОЗ); повернутись, якщо цього вимагатиме НСЗУ</td>
+</tr>
+<tr>
+<td>Q-18</td>
+<td>Дефолтна стратегія маршрутизації й порогове навантаження приладу</td>
+<td><code>PRIORITY_THEN_LOAD</code>; поріг не вводити в R1.1</td>
+</tr>
+<tr>
+<td>Q-19</td>
+<td>Як ЛІС автентифікується в ЕСОЗ: власний логін/пароль ЕСОЗ користувача через шлюз чи через сесію МІС evomis (у v4 автентифікацію надає evomis)</td>
+<td>Передбачити обидва варіанти за налаштуванням; підтвердити контракт на тестовому контурі</td>
+</tr>
+<tr>
+<td>Q-20</td>
+<td>Чи відправляти DiagnosticReport зі стаціонару в ЕСОЗ і за яким епізодом</td>
+<td>Типово вимкнено (<code>Ehealth:SubmitInpatient=false</code>)</td>
+</tr>
+<tr>
+<td>Q-21</td>
+<td>Який віджет підпису використовується (ЦСК, формат контейнера, підтримка токенів) і чи потрібна пакетна відправка</td>
+<td>Використати віджет, що вже працює в МІС; пакетний підпис — Should, T-429</td>
+</tr>
+<tr>
+<td>Ризик</td>
+<td>Неповне співставлення на старті блокує лікарів стаціонару</td>
+<td>Каталог призначень показує лише «Готово/Частково»; звіт покриття (T-421) і пакетний імпорт мапінгу CSV</td>
+</tr>
+<tr>
+<td>Ризик</td>
+<td>Розбіжність версій словника ЕСОЗ</td>
+<td>Версіонування <code>source_version</code>, деактивація замість видалення (FR-MIS-003)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="chg-sec c42" id="v42-22">
+<h2 id="4222-014-42-01112026"><span class="tag-new42">НОВЕ 4.2</span>22. Модуль «Патоморфологія»: патогістологічні дослідження, форма 014/о, інтеграція з МІС і МДК (редакція 4.2, 01.11.2026)</h2>
+<h3 id="220">22.0. Мета, що було і що змінюється</h3>
+<p><strong>Запит замовника (онкологічний заклад).</strong> Патогістологічне дослідження (ПГД) — основне дослідження закладу: воно дає морфологічну верифікацію діагнозу. Результат потрібен у всіх розділах: поліклініка, стаціонар, МДК, лабораторія. Потрібні заявка на дослідження, отримання результату, друк за формою МОЗ № 014/о (наказ МОЗ України від 29.05.2013 № 435) і перенесення частини даних з протоколу операції.</p>
+<p><strong>Рішення.</strong> Лабораторний процес ведеться в окремому модулі ЛІС «Патоморфологія», за аналогією з «Мікробіологією» (розд. 4.10). Направлення створюється в МІС (лицьова сторона 014/о, п. 1–9). ЛІС заповнює зворотну сторону (п. 10–18) і повертає результат у МІС подіями. Вимоги до МІС описано в окремому ТЗ МІС «Морфологія» v1.0, до МДК — у ТЗ МДК v2.2, п. 5.7.</p>
+<table>
+<thead>
+<tr>
+<th>Аспект</th>
+<th>Було (v4.1)</th>
+<th>Стає (ред. 4.2)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Гістологія в ЛІС</td>
+<td>Немає. Направлення з МІС на групи послуг 21729/21730 («Гістологія; шкіра», «Гістологія; інше») фільтруються в розклад кабінету «Патологоанатомічне відділення» SimplexMED (SMED-8714)</td>
+<td>Окремий модуль «Патоморфологія»: прийом, вирізка, лабораторна обробка, опис, висновок, підпис, доповнення, архів блоків і скелець</td>
+</tr>
+<tr>
+<td>Одиниця обліку</td>
+<td>Замовлення → проба (пробірка) → тест</td>
+<td>Справа (№ ПГД) → об’єкт (контейнер) → блок (касета) → скельце; кожен рівень має штрихкод</td>
+</tr>
+<tr>
+<td>Результат</td>
+<td>Числові значення з нормами</td>
+<td>Описовий текст + структуровані атрибути: МКХ-10, МКХ-О (топографія/морфологія), G, pT/pN, лімфовузли, край резекції, LVI/PNI, ІГХ-маркери</td>
+</tr>
+<tr>
+<td>Вартість</td>
+<td>Відома при реєстрації</td>
+<td>Перераховується після вирізки (кількість блоків) і після дозамовлення ІГХ</td>
+</tr>
+<tr>
+<td>Аналізатори / маршрутизація</td>
+<td>Розд. 21.7</td>
+<td>Не застосовується (як для мікробіології): черги за етапами відділення</td>
+</tr>
+</tbody>
+</table>
+<h3 id="221">22.1. Терміни розділу</h3>
+<table>
+<thead>
+<tr>
+<th>Термін</th>
+<th>Значення</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Справа ПГД</td>
+<td>Одне дослідження за одним направленням 014/о; номер <code>ПГД-РР-NNNN</code> (нумератор розд. 4.15). Відповідає <code>lab_orders</code> з <code>lab_department=PATHOLOGY</code></td>
+</tr>
+<tr>
+<td>Об’єкт</td>
+<td>Контейнер з матеріалом, маркований у МІС (п. 7 форми). Аналог проби</td>
+</tr>
+<tr>
+<td>Блок (касета)</td>
+<td>Парафіновий блок, сформований на вирізці; ідентифікатор = літера об’єкта + номер (A1, A2, B1…)</td>
+</tr>
+<tr>
+<td>Скельце</td>
+<td>Препарат зі зрізом блока з одним методом забарвлення (Г-Е, гістохімія, ІГХ)</td>
+</tr>
+<tr>
+<td>Вирізка</td>
+<td>Макроскопічне дослідження й відбір шматочків у касети</td>
+</tr>
+<tr>
+<td>Доповнення (addendum)</td>
+<td>Нова підписана версія висновку без перезапису попередньої (результати ІГХ, перегляд, виправлення)</td>
+</tr>
+<tr>
+<td>Термінова (інтраопераційна) біопсія, CITO</td>
+<td>Дослідження під час операції на кріостатних зрізах з повідомленням результату в операційну</td>
+</tr>
+</tbody>
+</table>
+<h3 id="222">22.2. Наскрізна схема</h3>
+<pre><code>МІС стаціонар: розділ «Операції» → блок «Матеріал на ПГД» (контейнери) ─┐
+МІС поліклініка: прийом → «Направлення на ПГД» / «Консультація препаратів» ┼─► 014/о (п. 1–9) ─► POST /mis/referrals (type=PATHOLOGY)
+е-направлення ЕСОЗ (інший заклад) / клініка-партнер (send-in, 20.8) ───────┘                 │
+                                                                                               ▼
+ЛІС «Патоморфологія»: Прийом (скан контейнерів, перевірка, відмова) → № справи
+  → Вирізка (макроопис, блоки, перерахунок вартості) → Проводка → Заливка → Мікротомія → Фарбування
+  → Мікроскопія й опис (шаблони, структурований висновок, reflex ІГХ) → Підпис КЕП → Видача
+  → Доповнення (версії) · Архів блоків/скелець · Видача на консультацію
+                                                                                               │
+події ◄── RECEIVED · REJECTED · STAGE_CHANGED · ADDITIONAL_STUDY_ORDERED · RESULT_PRELIMINARY · CRITICAL_RESULT · RESULT_FINAL · ADDENDUM
+   ▼
+МІС: картка пацієнта → «Морфологія»; протокол операції; 003/о 4.7 витяг-епікриз; МДК (показник «Морфологічні висновки»); ЕСОЗ DiagnosticReport (21.13)
+</code></pre>
+<h3 id="223-fr-pat-001010">22.3. Прийом матеріалу (FR-PAT-001…010)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-PAT-001</td>
+<td>Сторінка «Прийом матеріалу»: черга направлень типу PATHOLOGY з усіх джерел (стаціонар, поліклініка, ЕСОЗ, клініка-партнер). Колонки: створено в МІС, пацієнт, джерело, тип матеріалу, відділення/направник, кількість контейнерів, група послуг</td>
+</tr>
+<tr>
+<td>FR-PAT-002</td>
+<td>Дані лицьової сторони 014/о (п. 1–9) відображаються лише для перегляду. Уточнення — запит направнику (подія <code>QUERY</code>), відповідь потрапляє в події справи</td>
+</tr>
+<tr>
+<td>FR-PAT-003</td>
+<td>Кожен контейнер сканується. Прийом можливий лише коли відскановано всі контейнери, кількість збігається з п. 7, маркування присутнє</td>
+</tr>
+<tr>
+<td>FR-PAT-004</td>
+<td>Контроль фіксації: показ тривалості від <code>fixStart</code> (передає МІС). Попередження: &lt; 6 год або &gt; 72 год (ризик для ІГХ); пороги — <code>Lab:Pathology:FixationMinHours/MaxHours</code></td>
+</tr>
+<tr>
+<td>FR-PAT-005</td>
+<td>Відмова в прийомі з причиною з довідника (22.10) і коментарем. МІС отримує <code>REJECTED</code>. Е-направлення ЕСОЗ не погашається</td>
+</tr>
+<tr>
+<td>FR-PAT-006</td>
+<td>При прийомі: присвоєння № справи, друк етикеток, тип матеріалу (п. 12–14: біопсія діагностична / термінова / операційний матеріал / консультація препаратів), строк виконання за SLA, вартість за прайсом (розд. 20.7), подія <code>RECEIVED</code></td>
+</tr>
+<tr>
+<td>FR-PAT-007</td>
+<td>Е-направлення ЕСОЗ: пошук і <code>use</code> за розд. 20.6.2; інтервенція зіставляється з послугою «Патоморфологія» (розд. 21.4). Маршрутизація на аналізатор не виконується (<code>routing_status=MANUAL</code>, черга відділу)</td>
+</tr>
+<tr>
+<td>FR-PAT-008</td>
+<td>Консультація готових препаратів: прийом зовнішніх скелець і блоків з реквізитами закладу-відправника (№, дата, кількість). Зовнішні блоки й скельця отримують власні штрихкоди з позначкою «зовнішній». Вартість — за кількістю скелець</td>
+</tr>
+<tr>
+<td>FR-PAT-009</td>
+<td>Перехідний період SMED-8714: направлення на групи 21729/21730 потрапляють у ЛІС. Створення візитів у кабінеті «Патологоанатомічне відділення» SimplexMED вмикається налаштуванням <code>Lab:Pathology:MirrorToSimplexCabinet</code> (типово вимкнено після запуску модуля)</td>
+</tr>
+<tr>
+<td>FR-PAT-010</td>
+<td>Автозв’язок з попередніми справами пацієнта (п. 4–5 форми): якщо МІС позначила «вторинна», ЛІС показує посилання на первинну справу. Якщо МІС позначила «первинна», а підписана справа існує, — попередження</td>
+</tr>
+</tbody>
+</table>
+<h3 id="224-fr-pat-020029">22.4. Вирізка та лабораторна обробка (FR-PAT-020…029)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-PAT-020</td>
+<td>Вирізка: макроопис за шаблоном органу (довідник 22.10) з вільним редагуванням, фото макропрепарату (опційно)</td>
+</tr>
+<tr>
+<td>FR-PAT-021</td>
+<td>Формування блоків для кожного об’єкта: ідентифікатор, кількість шматочків. Підсумок «шматочків / блоків» іде в п. 15 форми</td>
+</tr>
+<tr>
+<td>FR-PAT-022</td>
+<td>Завершення вирізки створює для кожного блока скельце Г-Е і перераховує вартість: перший блок + кожен наступний (прайс). Подія <code>STAGE_CHANGED</code>; у платних замовленнях — нарахування за розд. 20.7</td>
+</tr>
+<tr>
+<td>FR-PAT-023</td>
+<td>Етапи Проводка → Заливка → Мікротомія → Фарбування фіксуються скануванням касет або скелець (робоче місце лаборанта-гістолога). Кожна дія — в аудит з виконавцем і часом</td>
+</tr>
+<tr>
+<td>FR-PAT-024</td>
+<td>Черги етапів: окремий лічильник на кожен етап; CITO і прострочені — вгорі</td>
+</tr>
+<tr>
+<td>FR-PAT-025</td>
+<td>Додаткові забарвлення та ІГХ на наявних блоках: вибір блока й методик. Створюються скельця зі статусом «ІГХ в роботі», строк подовжується (типово +3 роб. дні), вартість перераховується, подія <code>ADDITIONAL_STUDY_ORDERED</code></td>
+</tr>
+<tr>
+<td>FR-PAT-026</td>
+<td>Дозамовлення ІГХ може надійти з МДК (ТЗ МДК, FR-7.6) або з МІС. Воно прив’язується до наявної справи без нового прийому</td>
+</tr>
+<tr>
+<td>FR-PAT-027</td>
+<td>Антитіла та реагенти списуються зі складу (розд. 4.9) з лотом і строком придатності</td>
+</tr>
+<tr>
+<td>FR-PAT-028</td>
+<td>(Could, R2) Цифрова патологія: прикріплення зображень скелець (WSI) і посилання на переглядач</td>
+</tr>
+<tr>
+<td>FR-PAT-029</td>
+<td>Направлення блоків у зовнішню лабораторію (молекулярні дослідження, референс): через send-out (розд. 20.3) з поверненням результату в справу як доповнення</td>
+</tr>
+</tbody>
+</table>
+<h3 id="225-fr-pat-040052">22.5. Опис, висновок, підпис, доповнення (FR-PAT-040…052)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-PAT-040</td>
+<td>Мікроопис із шаблоном органу. Структурований висновок: МКХ-10, МКХ-О топографія, МКХ-О морфологія (код/поведінка), G, pT, pN, лімфовузлів досліджено / уражено, край резекції (R, мм), LVI, PNI, таблиця ІГХ (маркер, блок, результат)</td>
+</tr>
+<tr>
+<td>FR-PAT-041</td>
+<td>Текст п. 18 збирається кнопкою зі структурованих полів і редагується. Для підпису обов’язкові топографія та морфологія МКХ-О</td>
+</tr>
+<tr>
+<td>FR-PAT-042</td>
+<td>Reflex-правила ІГХ (розширення розд. 4.13): умова на МКХ-О → пропонована панель. Приклад: C50 + 8500/3 → ER, PR, HER2, Ki-67; C18–C20 + 8140/3 → MLH1, PMS2, MSH2, MSH6. Пропозицію підтверджує лікар</td>
+</tr>
+<tr>
+<td>FR-PAT-043</td>
+<td>Попередній висновок передається в МІС подією <code>RESULT_PRELIMINARY</code> з позначкою «Попередній». Він не є морфологічною верифікацією і не потрапляє у виписку та МДК</td>
+</tr>
+<tr>
+<td>FR-PAT-044</td>
+<td>Підпис КЕП лікарем-патологоанатомом (розд. 21.13, віджет підпису). Справа → <code>RELEASED</code>, подія <code>RESULT_FINAL</code> зі структурованими атрибутами. Для е-направлення — DiagnosticReport в ЕСОЗ. Попередження, якщо є ІГХ без результату</td>
+</tr>
+<tr>
+<td>FR-PAT-045</td>
+<td>Після підпису висновок незмінний. Зміни — лише доповнення: тип (ІГХ/молекулярні, перегляд, виправлення з обґрунтуванням), текст, підпис КЕП, нова версія v2…vN, подія <code>ADDENDUM</code>. Ознака «змінює діагноз / стадію» ініціює сповіщення МДК</td>
+</tr>
+<tr>
+<td>FR-PAT-046</td>
+<td>Подвійний підпис (Should): для визначених типів (наприклад, перша злоякісна знахідка, консультація) — другий патоморфолог перед видачею. Налаштування <code>Lab:Pathology:DoubleSignTypes</code></td>
+</tr>
+<tr>
+<td>FR-PAT-047</td>
+<td>Неочікувана злоякісність у матеріалі без онкологічного клінічного діагнозу — критична знахідка: подія <code>CRITICAL_RESULT</code>, підтвердження ознайомлення направником (розд. 19.3)</td>
+</tr>
+<tr>
+<td>FR-PAT-048</td>
+<td>Видача пацієнту: друк 014/о обох сторін (22.8). Через кабінет пацієнта (розд. 4.7) — лише після підпису й за налаштуванням закладу</td>
+</tr>
+</tbody>
+</table>
+<h3 id="226-fr-pat-060065">22.6. Термінова (інтраопераційна) біопсія (FR-PAT-060…065)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-PAT-060</td>
+<td>Тип CITO приходить із протоколу операції (вид дослідження «Термінове інтраопераційне»). Справа з’являється вгорі всіх черг і на сторінці «Інтраопераційні (CITO)»</td>
+</tr>
+<tr>
+<td>FR-PAT-061</td>
+<td>Таймер від надходження. Цільовий час — 20 хв (<code>Lab:Pathology:CitoTargetMinutes</code>), після нього — червоний індикатор</td>
+</tr>
+<tr>
+<td>FR-PAT-062</td>
+<td>«Повідомити результат в операційну»: текст попереднього висновку, кому повідомлено, спосіб, ознака read-back (обов’язкова). Подія <code>CRITICAL_RESULT</code> у МІС з прив’язкою до протоколу операції</td>
+</tr>
+<tr>
+<td>FR-PAT-063</td>
+<td>Після інтраопераційного висновку матеріал проходить плановий цикл на парафіні в тій самій справі. Розбіжність терміновий/плановий фіксується для контролю якості (22.9)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="227-fr-pat-070074">22.7. Архів блоків і скелець (FR-PAT-070…074)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-PAT-070</td>
+<td>Місце зберігання блоків і скелець (шафа / полиця / комірка) на базі моделі біобанку (розд. 4.8). Строки зберігання — за налаштуванням закладу</td>
+</tr>
+<tr>
+<td>FR-PAT-071</td>
+<td>Видача: отримувач (ПІБ / заклад), документ, мета (консультація, друга думка, молекулярне дослідження), плановий строк повернення, акт видачі. Повернення — сканом</td>
+</tr>
+<tr>
+<td>FR-PAT-072</td>
+<td>Прострочене повернення — задача завідувачу. Видані блоки недоступні для дозамовлення ІГХ (попередження)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="228-014-fr-pat-080084">22.8. Друкована форма 014/о (FR-PAT-080…084)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-PAT-080</td>
+<td>Друк обох сторін форми 014/о (наказ МОЗ № 435 від 29.05.2013), A4, альбомна орієнтація, структура та підписи полів — як у затвердженій формі</td>
+</tr>
+<tr>
+<td>FR-PAT-081</td>
+<td>Сторона 1 (п. 1–9) — дані з МІС без змін. Сторона 2: п. 10 № справи; п. 11 дата й час прийому; п. 12–14 тип матеріалу; п. 15 шматочків / блоків; п. 16 методики забарвлення (унікальні); п. 17 макро- + мікроопис; п. 18 висновок (остання версія + доповнення); дата дослідження; лікар-патологоанатом; лаборант</td>
+</tr>
+<tr>
+<td>FR-PAT-082</td>
+<td>До підпису п. 18 і підписи друкуються порожніми. Довгий текст переноситься на додаткову сторінку «Продовження п. 17/18»</td>
+</tr>
+<tr>
+<td>FR-PAT-083</td>
+<td>Режим «Підсвітити автозаповнення» (для перевірки): поля з даними системи виділяються, при наведенні видно джерело</td>
+</tr>
+</tbody>
+</table>
+<h3 id="229-fr-pat-090094">22.9. Строки, аналітика, якість (FR-PAT-090…094)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-PAT-090</td>
+<td>SLA за типом (робочі дні): біопсія 5, операційний матеріал 7, консультація 5, ІГХ +3; CITO 20 хв. Налаштовується в довіднику типів матеріалу</td>
+</tr>
+<tr>
+<td>FR-PAT-091</td>
+<td>TAT за етапами (розд. 4.11): надходження → вирізка → скельця → висновок → видача; медіана і P90 за типом матеріалу</td>
+</tr>
+<tr>
+<td>FR-PAT-092</td>
+<td>Показники якості: частка відмов у прийомі за причинами; розбіжність терміновий/плановий; частка доповнень, що змінили діагноз; повторні зрізи; контроль якості ІГХ (контрольні скельця)</td>
+</tr>
+<tr>
+<td>FR-PAT-093</td>
+<td>Навантаження: справи, блоки, скельця на лікаря й лаборанта за період</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2210-fr-pat-100106">22.10. Довідники (FR-PAT-100…106)</h3>
+<table>
+<thead>
+<tr>
+<th>Довідник</th>
+<th>Зміст</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Шаблони описів</td>
+<td>Орган · вид матеріалу → шаблон макро- і мікроопису з плейсхолдерами</td>
+</tr>
+<tr>
+<td>МКХ-О</td>
+<td>Топографія (C00–C80) і морфологія (код/поведінка), версія класифікатора</td>
+</tr>
+<tr>
+<td>Методики забарвлення та ІГХ</td>
+<td>Гістохімічні забарвлення, антитіла (зв’язок зі складом реагентів), ціна</td>
+</tr>
+<tr>
+<td>Reflex-правила ІГХ</td>
+<td>Умова (топографія + морфологія) → панель, обґрунтування</td>
+</tr>
+<tr>
+<td>Типи матеріалу та строки</td>
+<td>Біопсія діагностична, термінова, операційний матеріал, консультація; SLA; група послуг (21729, 21730, …)</td>
+</tr>
+<tr>
+<td>Фіксатори</td>
+<td>Назва, мінімальна й максимальна тривалість фіксації</td>
+</tr>
+<tr>
+<td>Причини відмови</td>
+<td>Немає маркування, розбіжність ідентифікації, не той фіксатор, невідповідність кількості, пошкоджена тара, немає клінічного діагнозу</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2211-32">22.11. Ролі (доповнення до розд. 3.2)</h3>
+<table>
+<thead>
+<tr>
+<th>Дія</th>
+<th>Реєстратор прийому</th>
+<th>Лаборант-гістолог</th>
+<th>Лікар-патологоанатом</th>
+<th>Завідувач</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Прийом / відмова</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>Вирізка</td>
+<td>—</td>
+<td>—</td>
+<td>✔</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>Етапи обробки</td>
+<td>—</td>
+<td>✔</td>
+<td>—</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>Опис, висновок, дозамовлення ІГХ</td>
+<td>—</td>
+<td>—</td>
+<td>✔</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>Підпис, доповнення</td>
+<td>—</td>
+<td>—</td>
+<td>✔</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>Видача блоків/скелець</td>
+<td>✔</td>
+<td>✔</td>
+<td>—</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>Довідники</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>✔</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2212">22.12. Модель даних</h3>
+<table>
+<thead>
+<tr>
+<th>Таблиця</th>
+<th>Ключові колонки</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lab_orders</code> (змінено)</td>
+<td>+ <code>lab_department</code> (<code>PATHOLOGY</code>), <code>pathology_kind</code> (BIOPSY/CITO/OPERATIVE/CONSULT), <code>mis_operation_id</code>, <code>case_no</code>, <code>sla_due_at</code></td>
+</tr>
+<tr>
+<td><code>lab_path_referral</code> [ЛІС]</td>
+<td>order_id, знімок п. 1–9 форми (json), biopsy_kind (PRIMARY/SECONDARY), primary_case_id, clinical_data, clinical_dx_icd10, referring_doctor, external_source (заклад, №, дата — для консультацій)</td>
+</tr>
+<tr>
+<td><code>lab_path_object</code> [ЛІС]</td>
+<td>id, order_id, mark, description, localization, fragments, fixative_id, taken_at, fixation_start_at, barcode, accepted, reject_reason</td>
+</tr>
+<tr>
+<td><code>lab_path_block</code> [ЛІС]</td>
+<td>id, object_id, code (A1…), pieces, is_external, barcode, storage_location, status</td>
+</tr>
+<tr>
+<td><code>lab_path_slide</code> [ЛІС]</td>
+<td>id, block_id, code, stain_method_id, is_ihc, antibody_lot, stage, status, barcode, wsi_url</td>
+</tr>
+<tr>
+<td><code>lab_path_stage_log</code> [ЛІС]</td>
+<td>id, order_id, block_id/slide_id, stage, performed_by, performed_at, device</td>
+</tr>
+<tr>
+<td><code>lab_path_report</code> [ЛІС]</td>
+<td>id, order_id, version, kind (MAIN/PRELIMINARY/ADDENDUM/CITO), macro, micro, conclusion_text, icd10, icdo_topo, icdo_morph, grade, pt, pn, ln_total, ln_positive, margin, lvi, pni, changes_diagnosis, signed_by, signed_at, signature_ref</td>
+</tr>
+<tr>
+<td><code>lab_path_ihc_result</code> [ЛІС]</td>
+<td>id, report_id, slide_id, marker, result_text, score, unit</td>
+</tr>
+<tr>
+<td><code>lab_path_cito_notice</code> [ЛІС]</td>
+<td>id, order_id, text, notified_person, method, read_back, minutes_from_receipt, created_at</td>
+</tr>
+<tr>
+<td><code>lab_path_issue</code> [ЛІС]</td>
+<td>id, block_id, recipient, document, purpose, issued_at, due_back, returned_at</td>
+</tr>
+<tr>
+<td>Довідники [ЛІС]</td>
+<td><code>lab_path_template</code>, <code>dct_icdo</code>, <code>lab_stain_method</code>, <code>lab_ihc_reflex_rule</code>, <code>lab_path_material_type</code>, <code>lab_fixative</code>, <code>lab_path_reject_reason</code></td>
+</tr>
+</tbody>
+</table>
+<p>Міграція: <code>2026-11-01_pathology.sql</code>. Службові колонки — за розд. 7.1.</p>
+<h3 id="2213-api">22.13. API та події МІС</h3>
+<table>
+<thead>
+<tr>
+<th>Група</th>
+<th>Маршрути</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Направлення</td>
+<td><code>POST /mis/referrals</code> з <code>type=PATHOLOGY</code> і блоком <code>pathology</code> (form014, objects[], kind, operationId); <code>GET /pathology/incoming</code>; <code>POST /pathology/incoming/{id}/accept</code>; <code>POST /pathology/incoming/{id}/reject</code></td>
+</tr>
+<tr>
+<td>Справа</td>
+<td><code>GET /pathology/cases?stage=&amp;src=&amp;q=</code>, <code>GET /pathology/cases/{id}</code>, <code>PUT /pathology/cases/{id}/gross</code>, <code>POST /pathology/cases/{id}/blocks</code>, <code>POST /pathology/scan</code> (етап за штрихкодом)</td>
+</tr>
+<tr>
+<td>Додаткові дослідження</td>
+<td><code>POST /pathology/cases/{id}/additional</code> (blockId, methods[]; source=LAB/MIS/MDK)</td>
+</tr>
+<tr>
+<td>Висновок</td>
+<td><code>PUT /pathology/cases/{id}/report</code>, <code>POST …/report/preliminary</code>, <code>POST …/report/sign</code>, <code>POST …/report/addendum</code>, <code>POST …/cito-notice</code></td>
+</tr>
+<tr>
+<td>Архів</td>
+<td><code>GET /pathology/archive</code>, <code>POST /pathology/blocks/{id}/issue</code>, <code>POST /pathology/blocks/{id}/return</code></td>
+</tr>
+<tr>
+<td>Друк</td>
+<td><code>GET /pathology/cases/{id}/form014.pdf?sides=1,2</code></td>
+</tr>
+<tr>
+<td>Події в МІС (<code>lab_mis_event_log</code>)</td>
+<td><code>RECEIVED</code>, <code>REJECTED</code>, <code>QUERY</code>, <code>STAGE_CHANGED</code>, <code>ADDITIONAL_STUDY_ORDERED</code>, <code>RESULT_PRELIMINARY</code>, <code>CRITICAL_RESULT</code>, <code>RESULT_FINAL</code>, <code>ADDENDUM</code>. Payload RESULT_FINAL/ADDENDUM: caseNo, version, signedAt, conclusionText, icd10, icdoTopo, icdoMorph, grade, pT, pN, lnTotal, lnPositive, margin, lvi, pni, ihc[], changesDiagnosis</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2214">22.14. Зміни в робочому прототипі (перелік для розробників)</h3>
+<p>Візуальний прототип: <code>Прототип_ЛІС_Патоморфологія.html</code> (сценарій показу з 9 кроків).</p>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Екран / компонент</th>
+<th>Що зробити</th>
+<th>Критерій готовності</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Меню</td>
+<td>Секція «Патоморфологія»: Журнал справ, Прийом матеріалу, Інтраопераційні (CITO), Архів блоків і скелець; у «Довідниках» — «Довідники патоморфології». Бейджі лічильників</td>
+<td>Лічильники відповідають даним</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Журнал справ</td>
+<td>Плитки-фільтри за етапами, пошук за № / ПІБ / штрихкодом, фільтр джерела, колонки: тип матеріалу, джерело, блоки/скельця, етап (міні-прогрес), строк</td>
+<td>CITO і прострочені вгорі</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Прийом матеріалу</td>
+<td>Список направлень, панель з даними 014/о, сканування контейнерів, контроль фіксації, «Прийняти й присвоїти №», «Відмовити»</td>
+<td>Без маркування прийом заблоковано</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Картка справи</td>
+<td>Шапка, прогрес етапів, вкладки: Направлення, Вирізка, Блоки і скельця, Опис і висновок, Друк 014/о, Події</td>
+<td>Етапи відображаються після кожної дії</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Вирізка</td>
+<td>Шаблон макроопису, об’єкти → блоки, кількість шматочків, вартість у реальному часі, «Завершити вирізку»</td>
+<td>Вартість перераховується</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Опис і висновок</td>
+<td>Шаблон мікроопису, структуровані поля, reflex ІГХ, таблиця ІГХ, «Зібрати текст», «Попередній», «Підписати КЕП», «Доповнення», версії</td>
+<td>Без МКХ-О підпис неможливий</td>
+</tr>
+<tr>
+<td>7</td>
+<td>CITO</td>
+<td>Таймер, «Повідомити результат в операційну» з read-back</td>
+<td>Час повідомлення в аудиті</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Архів</td>
+<td>Місце зберігання, видача з актом, повернення</td>
+<td>Статус «Видано» з датою повернення</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Друк 014/о</td>
+<td>Обидві сторони, підсвічування джерел</td>
+<td>Відповідність затвердженій формі</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Демо-дані</td>
+<td>≥ 6 справ різних типів і етапів, 3 вхідні направлення (одне з порушенням маркування)</td>
+<td>Сценарій 22.15 відтворюється без налаштування</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2215-given-when-then">22.15. Приймальні сценарії (Given / When / Then)</h3>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Сценарій</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S-40</td>
+<td><strong>Given</strong> у МІС підписано направлення з протоколу операції з 2 контейнерами <strong>When</strong> реєстратор сканує обидва й приймає <strong>Then</strong> створено справу ПГД з 2 об’єктами, МІС отримала RECEIVED, статус видно в протоколі операції</td>
+</tr>
+<tr>
+<td>S-41</td>
+<td><strong>Given</strong> контейнер без маркування <strong>When</strong> реєстратор намагається прийняти <strong>Then</strong> кнопка заблокована; після «Відмовити» МІС отримала REJECTED з причиною</td>
+</tr>
+<tr>
+<td>S-42</td>
+<td><strong>Given</strong> вирізка з 5 блоками <strong>When</strong> «Завершити вирізку» <strong>Then</strong> створено 5 скелець Г-Е, вартість = перший блок + 4 наступні</td>
+</tr>
+<tr>
+<td>S-43</td>
+<td><strong>Given</strong> висновок C50.4 + 8500/3 <strong>When</strong> відкрито «Опис і висновок» <strong>Then</strong> пропонується панель ER, PR, HER2, Ki-67; після дозамовлення строк +3 дні, МІС отримала ADDITIONAL_STUDY_ORDERED</td>
+</tr>
+<tr>
+<td>S-44</td>
+<td><strong>Given</strong> висновок без МКХ-О <strong>When</strong> «Підписати» <strong>Then</strong> підпис заблоковано з повідомленням</td>
+</tr>
+<tr>
+<td>S-45</td>
+<td><strong>Given</strong> підписаний висновок <strong>When</strong> підписано доповнення з ознакою «змінює діагноз» <strong>Then</strong> створено v2, v1 незмінна, МІС і МДК отримали ADDENDUM</td>
+</tr>
+<tr>
+<td>S-46</td>
+<td><strong>Given</strong> CITO-справа <strong>When</strong> лікар фіксує повідомлення без read-back <strong>Then</strong> дія недоступна; з read-back — CRITICAL_RESULT у МІС, хвилини від надходження в аудиті</td>
+</tr>
+<tr>
+<td>S-47</td>
+<td><strong>Given</strong> підписана справа <strong>When</strong> друк 014/о <strong>Then</strong> обидві сторони заповнені згідно з 22.8; до підпису п. 18 порожній</td>
+</tr>
+<tr>
+<td>S-48</td>
+<td><strong>Given</strong> консультація 6 зовнішніх скелець <strong>When</strong> прийнято <strong>Then</strong> вартість = 6 × ціна скельця, блоки позначено «зовнішній»</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2216">22.16. Релізи, задачі, ризики та відкриті питання</h3>
+<p><strong>Реліз.</strong> R1.2: 22.3–22.8, 22.10–22.13 (T-430…T-441). R2: подвійний підпис (T-442), цифрова патологія (T-443), аналітика якості 22.9 (T-444), видача через кабінет пацієнта (T-445).</p>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Питання / ризик</th>
+<th>Пропозиція команди</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-22</td>
+<td>Чи замінює модуль кабінет SimplexMED (SMED-8714), чи працює паралельно на перехідний період</td>
+<td>Паралельно до приймання R1.2; дзеркалення візитів — налаштуванням (FR-PAT-009)</td>
+</tr>
+<tr>
+<td>Q-23</td>
+<td>Чи приймає відділення матеріал від інших закладів за договором, і чи потрібні окремі прайси</td>
+<td>Використати контур «Клініка-партнер» (розд. 20.8)</td>
+</tr>
+<tr>
+<td>Q-24</td>
+<td>Перелік ІГХ, які виконуються на місці, і ті, що йдуть назовні</td>
+<td>Заповнити довідник методик; зовнішні — send-out</td>
+</tr>
+<tr>
+<td>Q-25</td>
+<td>Чи передавати DiagnosticReport в ЕСОЗ для внутрішніх (стаціонар) досліджень</td>
+<td>Типово ні (як Q-20); для е-направлень — так</td>
+</tr>
+<tr>
+<td>Q-26</td>
+<td>Хто виконує вирізку — лікар чи лаборант під наглядом</td>
+<td>Лікар; роль налаштовувана</td>
+</tr>
+<tr>
+<td>Q-27</td>
+<td>Строки зберігання блоків і скелець</td>
+<td>За нормативами закладу; налаштування в довіднику</td>
+</tr>
+<tr>
+<td>Q-28</td>
+<td>Версія МКХ-О (3.2) і джерело класифікатора</td>
+<td>МКХ-О-3.2, завантаження з CSV, версіонування</td>
+</tr>
+<tr>
+<td>Ризик</td>
+<td>ПІБ прихований у МІС без дозволу ЕСОЗ, а форма 014/о без ПІБ недійсна</td>
+<td>МІС передає локальні дані закладу (ТЗ МІС, FR-MIS-M-05)</td>
+</tr>
+<tr>
+<td>Ризик</td>
+<td>Неструктурований протокол операції (вільний текст «Опис препарату»)</td>
+<td>Новий блок «Матеріал на ПГД» у розділі «Операції» МІС</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="chg-sec c43" id="v43-23">
+<h2 id="4323-43-01112026"><span class="tag-new43">НОВЕ 4.3</span>23. Послуги ЕСОЗ і аналізатори, показники та пакети з МІС, розподіл направлень лаборантом, робота за направленнями, звіти лабораторії (редакція 4.3, 01.11.2026)</h2>
+<h3 id="230">23.0. Доручення власника продукту та що змінюється</h3>
+<p><strong>Доручення (01.11.2026).</strong> Має бути відповідність послуг із довідника ЕСОЗ і аналізаторів, які ці послуги можуть виконувати; одна послуга може виконуватися на кількох аналізаторах. Послуга ЕСОЗ має на стороні МІС перелік показників, які лікар обирає окремо: у межах послуги можуть виконуватися не всі показники. З МІС може надходити пакет послуг (наприклад, післяопераційний). Лаборанту при надходженні внутрішнього або зовнішнього направлення потрібно розподілити, на якому аналізаторі воно виконуватиметься, і далі працювати з направленнями на рівні аналізатора, пацієнта й дослідження. По лабораторії потрібні звіти, окрім журналів.</p>
+<p>Частину цих вимог закладено в розд. 21 (ред. 4.1): словник інтервенцій, співставлення з послугами ЛІС, послуги обладнання, вибір показників лікарем і автоматична маршрутизація. Розділ 23 доповнює їх тим, чого бракувало: пакетами, ручним розподілом із підтвердженням, трьома розрізами роботи за направленнями, звітами та вимогами до якості звіту, виявленими в наданому прикладі (23.7).</p>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Вимога власника</th>
+<th>Що вже є (розд. 21)</th>
+<th>Що додає розд. 23</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>В-1</td>
+<td>Відповідність послуг ЕСОЗ і аналізаторів; одна послуга — кілька аналізаторів</td>
+<td>21.4 співставлення; 21.5 послуги обладнання (пріоритет на рівні послуги)</td>
+<td>23.1: єдиний довідник-матриця з двома рівнями (послуга й показник), частковим покриттям, станом приладу та готовністю</td>
+</tr>
+<tr>
+<td>В-2</td>
+<td>Показники послуги додаються на стороні МІС і обираються лікарем окремо</td>
+<td>21.8 вибір показників; FR-MIS-011 режими</td>
+<td>23.2: ЛІС публікує МІС склад кожної послуги (обов’язкові, типові, режим) — контракт каталогу й синхронізація</td>
+</tr>
+<tr>
+<td>В-3</td>
+<td>Пакет послуг із МІС (післяопераційний)</td>
+<td>—</td>
+<td>23.3: пакети — довідник, приймання, CITO, ЕСОЗ, тарифікація, звітність</td>
+</tr>
+<tr>
+<td>В-4</td>
+<td>Лаборант розподіляє направлення по аналізаторах</td>
+<td>21.7 автоматична маршрутизація, FR-RTE-006 ручне перенаправлення одного тесту</td>
+<td>23.4: екран «Вхідні направлення» з пропозицією системи, зміною приладу на рівні показника чи всієї послуги та підтвердженням</td>
+</tr>
+<tr>
+<td>В-5</td>
+<td>Робота за направленнями на рівні аналізатора, пацієнта, дослідження</td>
+<td>FR-WS-013 фільтр черги приладу в робочому столі</td>
+<td>23.5: екран «Робота за направленнями» з трьома розрізами та спільними фільтрами</td>
+</tr>
+<tr>
+<td>В-6</td>
+<td>Звіти по лабораторії, окрім журналів</td>
+<td>4.11 TAT, 18.4 BI (план R2)</td>
+<td>23.6: вісім звітів (R1.2) і вимоги до формату; 23.7 — аналіз наданого прикладу звіту</td>
+</tr>
+</tbody>
+</table>
+<h3 id="231-fr-sva-001009">23.1. Довідник «Послуга ЕСОЗ × аналізатори» (FR-SVA-001…009)</h3>
+<p>Довідник об’єднує три зв’язки, що в ред. 4.1 були розкладені по різних екранах: інтервенція ЕСОЗ → послуга ЛІС (<code>lab_intervention_map</code>), послуга → прилад (<code>lab_analyzer_service</code>), показник → прилад (<code>lab_analyzer_parameters</code>).</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-SVA-001</td>
+<td>Сторінка «Послуги ЕСОЗ × аналізатори» (Довідники ЛІС): рядки — послуги ЕСОЗ (код, назва, послуга ЛІС, кількість показників, режим вибору); стовпці — аналізатори; у клітинці — пріоритет приладу для послуги (1 — основний, 2 — резервний…) або позначка «½», якщо прилад виконує лише частину показників; стовпець «Готовність» (FR-MIS-014)</td>
+</tr>
+<tr>
+<td>FR-SVA-002</td>
+<td>Одна послуга може мати будь-яку кількість приладів. Пріоритет задається на рівні послуги (<code>lab_analyzer_service.priority</code>) і може перевизначатися на рівні показника (<code>lab_analyzer_parameters.priority</code>)</td>
+</tr>
+<tr>
+<td>FR-SVA-003</td>
+<td>Картка послуги (клік по рядку): таблиця «показник × прилад» з ознакою «виконує», колонки «Обов’язковий» і «Типовий» (FR-MIS-012, FR-MIS-030), дія «Зробити основним», «Додати прилад до послуги»</td>
+</tr>
+<tr>
+<td>FR-SVA-004</td>
+<td>Показник може виконуватися приладом, що не входить у перелік приладів послуги (наприклад, глюкоза — на аналізаторі газів крові, ШОЕ — ручним методом). Такий прилад показується як «окремі показники» і бере участь у розподілі лише для цих показників</td>
+</tr>
+<tr>
+<td>FR-SVA-005</td>
+<td>Стан приладу відображається в довіднику й ураховується при розподілі: «немає зв’язку» (heartbeat коннектора, розд. 6.7), «lockout ВКЯ» для конкретного показника (розд. 4.6), «виведено з експлуатації» (FR-GAP-032)</td>
+</tr>
+<tr>
+<td>FR-SVA-006</td>
+<td>Ручні методи моделюються як «прилад» типу <code>MANUAL</code> (робоче місце з ручною постановкою), щоб показник без аналізатора теж мав виконавця й чергу</td>
+</tr>
+<tr>
+<td>FR-SVA-007</td>
+<td>Редагування — LAB_ADMIN і LAB_DOCTOR; кожна зміна — в аудит (хто, коли, до/після). Зміна застосовується до нових розподілів; для тестів у черзі вимкненого приладу — FR-EQP-007</td>
+</tr>
+<tr>
+<td>FR-SVA-008</td>
+<td>Послуга без жодного приладу має готовність «Немає обладнання»; її показники при надходженні отримують <code>routing_status=NO_EQUIPMENT</code> або маршрут send-out (розд. 20.3)</td>
+</tr>
+<tr>
+<td>FR-SVA-009</td>
+<td>Експорт/імпорт матриці CSV (для первинного наповнення); імпорт — з попереднім переглядом змін</td>
+</tr>
+</tbody>
+</table>
+<h3 id="232-fr-sva-010015">23.2. Склад послуги для МІС: показники, які обирає лікар (FR-SVA-010…015)</h3>
+<p>Лікар у МІС обирає послугу ЕСОЗ, а далі — показники в межах послуги. Щоб МІС показувала правильний набір, ЛІС є джерелом складу послуги й публікує його.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-SVA-010</td>
+<td><code>GET /mis/catalog</code> повертає для кожної активної послуги: код інтервенції ЕСОЗ, назву, режим вибору (<code>FIXED / SELECTABLE / SELECTABLE_ANY</code>), біоматеріал і тару, підготовку пацієнта, перелік показників (код, назва, одиниця, <code>isRequired</code>, <code>isDefault</code>, ознака «виконується в закладі»), готовність</td>
+</tr>
+<tr>
+<td>FR-SVA-011</td>
+<td>Каталог версіонується (<code>catalogVersion</code>, ETag). МІС кешує його; при зміні ЛІС надсилає подію <code>CATALOG_CHANGED</code>, МІС перечитує</td>
+</tr>
+<tr>
+<td>FR-SVA-012</td>
+<td>У МІС: обов’язкові показники позначені замком і не знімаються; для <code>FIXED</code> вибір не показується; розрахункові показники автоматично додають складові (FR-MIS-032)</td>
+</tr>
+<tr>
+<td>FR-SVA-013</td>
+<td>ЛІС повторно перевіряє склад при прийомі: відсутній обов’язковий показник → 422 <code>required-indicator-missing</code>; невідомий код показника → 422 <code>unknown-indicator</code>; показник, який не виконує жоден прилад, приймається зі статусом «Без обладнання» і попередженням у відповіді</td>
+</tr>
+<tr>
+<td>FR-SVA-014</td>
+<td>Показники, не обрані лікарем, не створюються як тести, не ставляться в чергу й не тарифікуються; у картці замовлення їх видно як «не замовлено лікарем»</td>
+</tr>
+<tr>
+<td>FR-SVA-015</td>
+<td>Лаборант або лікар-лаборант може додати показник до вже прийнятої послуги (дозамовлення, FR-GAP-054) з причиною; МІС отримує подію <code>ITEM_INDICATORS_CHANGED</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="233-fr-pkg-001010">23.3. Пакети послуг із МІС (FR-PKG-001…010)</h3>
+<p>Пакет — іменований набір послуг ЕСОЗ з типовими показниками, що призначається одним кліком (наприклад, «Післяопераційний», «Післяопераційний ВРІТ (CITO)», «Передопераційний»).</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-PKG-001</td>
+<td>Довідник пакетів ведеться в МІС (код, назва, контур застосування, перелік послуг з типовими показниками, ознака CITO). ЛІС отримує його дзеркало через <code>GET /mis/catalog/packages</code> (або подію) для звітності та перевірки</td>
+</tr>
+<tr>
+<td>FR-PKG-002</td>
+<td>Лікар може змінити склад пакета під конкретного пацієнта: прибрати послугу, додати послугу, змінити показники в межах правил 23.2. До ЛІС надходить фактичний склад; ознака «змінено лікарем» зберігається</td>
+</tr>
+<tr>
+<td>FR-PKG-003</td>
+<td>Пакет надходить <strong>одним направленням</strong> (<code>POST /mis/referrals</code> з блоком <code>package{code,name,cito}</code>) і створює одне замовлення ЛІС з кількома позиціями <code>lab_order_item</code>. Код пакета зберігається на замовленні</td>
+</tr>
+<tr>
+<td>FR-PKG-004</td>
+<td>CITO-пакет ставить CITO на всі позиції; розподіл віддає перевагу приладам з меншим TAT (FR-RTE, крайні випадки 21.7), у т.ч. приладам експрес-лабораторії ВРІТ</td>
+</tr>
+<tr>
+<td>FR-PKG-005</td>
+<td>Для зовнішнього контуру (е-направлення) пакет передається в ЕСОЗ як групове направлення — окремий ServiceRequest на кожну послугу з одним requisition (FR-REF-003); у ЛІС це одне замовлення</td>
+</tr>
+<tr>
+<td>FR-PKG-006</td>
+<td>Якщо частину пакета виконати неможливо (немає обладнання), ЛІС приймає решту й повертає МІС попередження з переліком; МІС показує його лікарю</td>
+</tr>
+<tr>
+<td>FR-PKG-007</td>
+<td>Тарифікація: якщо в прайсі є ціна пакета (<code>lab_price_package</code>, розд. 20.7) і склад не змінено — ціна пакета; при зміні складу — сума цін позицій (див. Q-32)</td>
+</tr>
+<tr>
+<td>FR-PKG-008</td>
+<td>Повторювані пакети ВРІТ («кожні 12 год») — через планові призначення FR-MIS-028 (R2): кожне виконання — окреме замовлення з тим самим кодом пакета</td>
+</tr>
+<tr>
+<td>FR-PKG-009</td>
+<td>Код пакета показується в черзі приладу, картці замовлення, розрізах 23.5 і є виміром звітів 23.6</td>
+</tr>
+<tr>
+<td>FR-PKG-010</td>
+<td>Результати пакета повертаються в МІС по кожній послузі (подія <code>RESULT_READY</code>), а подія <code>COMPLETED</code> — коли виконано весь пакет</td>
+</tr>
+</tbody>
+</table>
+<h3 id="234-fr-dst-001012">23.4. Розподіл направлення по аналізаторах лаборантом (FR-DST-001…012)</h3>
+<p>Маршрутизація з розд. 21.7 тепер працює як <strong>пропозиція</strong>: при надходженні направлення система пропонує прилад для кожного показника, а лаборант бачить пропозицію, за потреби змінює і підтверджує.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-DST-001</td>
+<td>Сторінка «Вхідні направлення»: внутрішні (стаціонар, поліклініка) і зовнішні (е-направлення ЕСОЗ) направлення, окремі послуги й пакети. Колонки: надійшло, № направлення, пацієнт, джерело, пакет, відділення/ліжко, послуги, кількість показників, стан розподілу. CITO — угорі з червоною смугою</td>
+</tr>
+<tr>
+<td>FR-DST-002</td>
+<td>Стан розподілу: «Потрібен вибір показників» (FR-MIS-022), «Є показники без обладнання», «Запропоновано: N аналізаторів», «Підтверджено»</td>
+</tr>
+<tr>
+<td>FR-DST-003</td>
+<td>Панель розподілу по кожній послузі: показники, обрані лікарем (з позначкою обов’язкових), запропонований прилад, поточна черга й орієнтовний TAT приладу, перелік приладів, що можуть виконати показник, і їх стан. Не обрані лікарем показники показані згорнутим списком</td>
+</tr>
+<tr>
+<td>FR-DST-004</td>
+<td>Зміна приладу на рівні показника (список лише з приладів, що виконують цей показник; недоступні — неактивні з причиною) або для всієї послуги («Усю послугу на…» — лише прилади, що виконують усі обрані показники)</td>
+</tr>
+<tr>
+<td>FR-DST-005</td>
+<td>«Авторозподіл» перераховує пропозицію за правилом: пріоритет приладу → доступність (зв’язок, lockout ВКЯ, статус приладу) → навантаження; для CITO — менший TAT. Ручні зміни скидаються</td>
+</tr>
+<tr>
+<td>FR-DST-006</td>
+<td>Якщо показники однієї послуги розподілено між приладами — попередження «потрібна аліквота або окрема пробірка», план пробірок (розд. 20.1) перераховується</td>
+</tr>
+<tr>
+<td>FR-DST-007</td>
+<td>«Підтвердити й поставити в черги» створює замовлення (якщо ще не створене), тести отримують <code>routing_status=ROUTED</code>, <code>routed_by</code> (AUTO / MANUAL), <code>distributed_by</code>, <code>distributed_at</code>; МІС отримує подію <code>RECEIVED</code></td>
+</tr>
+<tr>
+<td>FR-DST-008</td>
+<td>Налаштування <code>Lab:Routing:RequireConfirmation</code>: <code>true</code> (типово) — планові направлення чекають підтвердження, до нього тести мають <code>routing_status=PROPOSED</code> і в черзі приладу показуються як «очікується»; <code>false</code> — пропозиція застосовується одразу (поведінка 21.7), екран лишається для перегляду й зміни</td>
+</tr>
+<tr>
+<td>FR-DST-009</td>
+<td>CITO не чекає підтвердження: пропозиція застосовується одразу, лаборант може змінити прилад до початку аналізу</td>
+</tr>
+<tr>
+<td>FR-DST-010</td>
+<td>Показник без обладнання: варіанти «send-out» (розд. 20.3), «ручне виконання», «відхилити з причиною»; без вибору підтвердження неможливе для цього показника, решта направлення підтверджується</td>
+</tr>
+<tr>
+<td>FR-DST-011</td>
+<td>Лічильник «очікують розподілу» в меню та на дашборді; час від надходження до підтвердження — показник звіту 23.6 (норматив налаштовується, типово 15 хв)</td>
+</tr>
+<tr>
+<td>FR-DST-012</td>
+<td>Кожна дія розподілу (пропозиція, зміна, підтвердження) — запис у <code>lab_routing_log</code> з типом події та в аудит. Права: LAB_TECHNICIAN, LAB_DOCTOR, LAB_ADMIN</td>
+</tr>
+</tbody>
+</table>
+<h3 id="235-fr-wrk-001010">23.5. Робота за направленнями: аналізатор, пацієнт, дослідження (FR-WRK-001…010)</h3>
+<p>Один екран із трьома розрізами тих самих тестів. Дані не дублюються: розрізи — це різні групування <code>lab_order_tests</code>.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-WRK-001</td>
+<td>Спільні фільтри: джерело (стаціонар / поліклініка / ЕСОЗ / клініка-партнер), лише пакети, відділення-замовник, CITO, статус (в роботі / усі), період, пошук (ПІБ, № замовлення, штрихкод, код показника)</td>
+</tr>
+<tr>
+<td>FR-WRK-002</td>
+<td><strong>За аналізатором.</strong> Плитки приладів: категорія, у черзі, в аналізі, CITO, стан (зв’язок, lockout). Обраний прилад — черга: порядковий номер, штрихкод проби, замовлення, пацієнт, джерело, пакет, відділення/ліжко, дослідження, показники (позначка «вручну» для перенаправлених), статус. Порядок — FR-RTE-002</td>
+</tr>
+<tr>
+<td>FR-WRK-003</td>
+<td>Дії в черзі: «Перенаправити» (лише на прилади, що виконують усі показники групи й доступні; причина обов’язкова, FR-RTE-006), «Робочий лист» (друк, FR-WS-008), «Передати на прилад» (для приладів без запиту замовлень, розд. 6.4)</td>
+</tr>
+<tr>
+<td>FR-WRK-004</td>
+<td><strong>За пацієнтом.</strong> Список пацієнтів з активними замовленнями (готово N з M). Картка: усі замовлення пацієнта (джерело, пакет, CITO, відділення), по кожному — дослідження → показники → прилад → статус; перехід до кумулятивного звіту (23.6)</td>
+</tr>
+<tr>
+<td>FR-WRK-005</td>
+<td><strong>За дослідженням.</strong> Рядок на послугу ЕСОЗ: кількість направлень і показників, розподіл по приладах, прогрес виконання. Деталізація — матриця «замовлення × показник»: напис — прилад, колір — статус, «·» — показник не обраний лікарем</td>
+</tr>
+<tr>
+<td>FR-WRK-006</td>
+<td>Статуси тесту в розрізах: в черзі, в аналізі, результат (очікує верифікації), верифіковано, без обладнання, відхилено</td>
+</tr>
+<tr>
+<td>FR-WRK-007</td>
+<td>Оновлення без перезавантаження (polling 15 с або SignalR, як у FR-WS); зміни, зроблені в іншому розрізі, видно одразу</td>
+</tr>
+<tr>
+<td>FR-WRK-008</td>
+<td>Експорт поточного розрізу з фільтрами в XLSX</td>
+</tr>
+<tr>
+<td>FR-WRK-009</td>
+<td>Обраний розріз і фільтри запам’ятовуються для користувача</td>
+</tr>
+<tr>
+<td>FR-WRK-010</td>
+<td>Робочий стіл лаборанта (розд. 4.4) лишається місцем введення й верифікації результатів; з розрізів «пацієнт» і «дослідження» є перехід до відповідних рядків робочого столу</td>
+</tr>
+</tbody>
+</table>
+<h3 id="236-fr-rpt-001014">23.6. Звіти лабораторії (FR-RPT-001…014)</h3>
+<p>Звіти — аналітика за період, на відміну від журналів (оперативний облік). Сторінка «Звіти лабораторії» має вкладки, спільні параметри (період, підрозділ лабораторії, прилад, джерело, відділення-замовник) і дії «Друк» (A4/PDF) та «Експорт XLSX».</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Звіт</th>
+<th>Зміст і розрізи</th>
+<th>Реліз</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-RPT-001</td>
+<td>Кумулятивний звіт пацієнта</td>
+<td>Усі верифіковані результати пацієнта за період: групування за дослідженням (або «дослідження + аналізатор»); таблиця «показник × дата/час», аналізатор під датою; одиниця, референтний інтервал застосованого шару, прапорці ↑/↓, критичні значення окремо; фільтр «лише відхилення». Відкривається з розрізу «пацієнт», картки замовлення, МІС (ЕМК)</td>
+<td>R1.2</td>
+</tr>
+<tr>
+<td>FR-RPT-002</td>
+<td>Навантаження аналізаторів</td>
+<td>По приладу: тести, CITO, стаціонар / поліклініка / ЕСОЗ, повтори, TAT (медіана), простої (немає зв’язку, lockout, ТО), черга зараз. Рахуються за фактичним виконавцем з урахуванням перенаправлень</td>
+<td>R1.2</td>
+</tr>
+<tr>
+<td>FR-RPT-003</td>
+<td>Направлення за джерелами</td>
+<td>Стаціонар (у т.ч. пакети), поліклініка, е-направлення ЕСОЗ (у т.ч. без переданих показників), клініки-партнери: направлень, послуг, показників замовлено/виконано, частка часткового вибору, показників на послугу; розрізи — відділення-замовник, лікар, платник</td>
+<td>R1.2</td>
+</tr>
+<tr>
+<td>FR-RPT-004</td>
+<td>Використання показників у послугах</td>
+<td>По послузі ЕСОЗ: скільки разів обрано кожен показник, частка, обов’язковий/типовий, прилади. Для налаштування типового набору й закупівлі реагентів</td>
+<td>R1.2</td>
+</tr>
+<tr>
+<td>FR-RPT-005</td>
+<td>TAT за дослідженнями й аналізаторами</td>
+<td>Медіана й P90 (планові, CITO), частка в нормативі; розрізи — прилад, джерело, етап (розд. 4.11)</td>
+<td>R1.2</td>
+</tr>
+<tr>
+<td>FR-RPT-006</td>
+<td>Розподіл і перенаправлення</td>
+<td>Час від надходження до підтвердження розподілу, частка ручних змін, перенаправлення за причинами й приладами</td>
+<td>R1.2</td>
+</tr>
+<tr>
+<td>FR-RPT-007</td>
+<td>Невиконані показники</td>
+<td>Без обладнання, брак проби, скасування, відхилення — за послугами, джерелами, відділеннями</td>
+<td>R1.2</td>
+</tr>
+<tr>
+<td>FR-RPT-008</td>
+<td>Пакети послуг</td>
+<td>Кількість за пакетами, відділеннями, частка змінених лікарем, повнота виконання, вартість</td>
+<td>R1.2</td>
+</tr>
+<tr>
+<td>FR-RPT-009</td>
+<td>Критичні значення</td>
+<td>Кількість, час до повідомлення (FR-VAL), ескалації (FR-GAP-020) за відділеннями</td>
+<td>R2</td>
+</tr>
+<tr>
+<td>FR-RPT-010</td>
+<td>Звіт для керівника (зведений)</td>
+<td>Обсяги, TAT, брак, ВКЯ, виручка за місяць із порівнянням з попереднім (18.4)</td>
+<td>R2</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Загальні правила звітів</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-RPT-011</td>
+<td>Звіти будуються з денних агрегатів <code>lab_stat_daily</code> (оновлення щогодини) і з оперативних даних для поточної доби; кумулятивний звіт пацієнта — з оперативних даних</td>
+</tr>
+<tr>
+<td>FR-RPT-012</td>
+<td>Кожне формування звіту пишеться в <code>lab_report_run</code> (хто, коли, параметри) — для звітів з персональними даними це журнал доступу (FR-GAP-005)</td>
+</tr>
+<tr>
+<td>FR-RPT-013</td>
+<td>Числа — з десятковою комою, дати <code>dd.MM.yyyy</code>; шрифт із кирилицею й символами ↑ ↓ вбудований у PDF; у XLSX — числові клітинки, а не текст</td>
+</tr>
+<tr>
+<td>FR-RPT-014</td>
+<td>(R2) Розсилка звіту за розкладом (e-mail керівнику) та збереження варіантів параметрів</td>
+</tr>
+</tbody>
+</table>
+<h3 id="237">23.7. Аналіз наданого прикладу звіту результатів пацієнта (чинна система)</h3>
+<p>Замовник надав приклад звіту результатів пацієнта з чинної лабораторної системи (PDF, 20 сторінок, результати за 01.10–01.11.2026, понад десять аналізаторів). Персональні дані пацієнта в ТЗ не наводяться. Звіт показує, що потрібно від кумулятивного звіту FR-RPT-001, і містить вади даних, які ЛІС має запобігати на прийомі результату, а не лише виправляти у звіті.</p>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Що в прикладі</th>
+<th>Наслідок</th>
+<th>Вимога ЛІС</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Символ «Ў» стоїть біля більшості значень, включно з нормальними (глюкоза 5,49 при інтервалі 3,33–5,55; натрій 135,9 при 135–145); для частини підвищених — «^»</td>
+<td>Прапорець не несе інформації; ймовірно, зіпсоване кодування стрілки</td>
+<td>FR-RPT-015: прапорець лише поза інтервалом застосованого шару, символи ↑ ↓ (↑↑ ↓↓ — критичні) з вбудованим шрифтом; автотест рендерингу PDF (R-08)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Змішані десяткові роздільники в одному блоці: «6,18» і «6.22»</td>
+<td>Ускладнює читання, ламає експорт у числа</td>
+<td>FR-RPT-016: значення з приладу нормалізуються в <code>decimal</code> при прийомі (FR-WS-002, розд. 6); у звіті — лише кома</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Хибні одиниці: «Загальний білок, µmol/l» (має бути г/л); гемоглобін 7 і 9,3 «г/л» на аналізаторі критичних станів при інтервалі 120–170 (ймовірно, г/дл)</td>
+<td>Ризик клінічної помилки</td>
+<td>FR-RPT-017: одиниця береться з довідника показника; перерахунок через <code>factor/unitOverride</code> мапи приладу (T-099); значення поза фізіологічним діапазоном не автоверифікується (FR-WS-012)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Ймовірна перестановка: 11.10.2026 «гемоглобін 3,2 г/л» і «еритроцити 88 ×10¹²/л»</td>
+<td>Помилковий результат пройшов у звіт</td>
+<td>FR-RPT-018: контроль правдоподібності (фізіологічні межі, співвідношення HGB/RBC/HCT) блокує автоверифікацію</td>
+</tr>
+<tr>
+<td>5</td>
+<td>MCV 24,9 фл (26.10.2026) серед значень ~85 фл</td>
+<td>Ймовірна помилка введення</td>
+<td>Delta-check (розд. 4.0) для гематологічних індексів увімкнено за замовчуванням</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Калій 2,05 і 2,28 ммоль/л, гемоглобін 60 і 62 г/л позначені тим самим «Ў», що й нормальні значення</td>
+<td>Критичні значення не виділені</td>
+<td>FR-RPT-019: критичні значення (FR-VAL-007) позначаються окремо в звіті й мають запис про повідомлення лікаря</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Сумнівні референтні інтервали: pH 7,34–7,36; ШОЕ 0–140 мм/год; частина результатів (20.10.2026) без інтервалу</td>
+<td>Неправильна оцінка відхилень</td>
+<td>Інтервал — з каскаду норм ЛІС (розд. 5), а не з приладу; без інтервалу друкується «не встановлено»; перевірка шарів норм завідувачем КДЛ (Q-34)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Той самий показник у різних блоках з різними інтервалами й мовами одиниць (глюкоза 3,33–5,55 і 3,90–6,40; «mmol/L» і «ммоль/л»); біохімія розбита на два блоки за приладами</td>
+<td>Неможливо побачити динаміку</td>
+<td>FR-RPT-001: групування за дослідженням, один рядок на показник, аналізатор — під датою; уніфіковані назви й одиниці з довідника</td>
+</tr>
+<tr>
+<td>9</td>
+<td>ШОЕ записана в полі «Примітки» («шзе-18 мм/год»)</td>
+<td>Результат не потрапляє в тренд і статистику</td>
+<td>Примітки не містять результатів: для ручних методів — окремий показник (FR-SVA-006)</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Два ЗАК за 26.10.2026 у зворотному порядку часу; помилки в назвах («Нитрати», «Протромбіоновий», «Фібріноген», «Нидиференційовані»)</td>
+<td>Плутанина, непрофесійний вигляд</td>
+<td>Сортування за часом забору; назви — з довідника з перевіркою орфографії при імпорті (розд. 5.6)</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Вертикальний список «назва — значення — інтервал» на 20 сторінок</td>
+<td>Звіт важко читати</td>
+<td>Табличний формат «показник × дата», альбомна A4, фільтр «лише відхилення»</td>
+</tr>
+</tbody>
+</table>
+<h3 id="238">23.8. Модель даних</h3>
+<table>
+<thead>
+<tr>
+<th>Таблиця</th>
+<th>Зміна</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lab_service_package</code> [ЛІС, дзеркало МІС]</td>
+<td><code>id, code, name, context, is_cito, items(json: serviceCode, indicators[]), source_version, synced_on, is_active</code></td>
+</tr>
+<tr>
+<td><code>lab_orders</code> (змінено)</td>
+<td>+ <code>package_code, package_name, package_changed_by_doctor</code></td>
+</tr>
+<tr>
+<td><code>lab_order_item</code> (змінено)</td>
+<td>+ <code>package_item_no</code></td>
+</tr>
+<tr>
+<td><code>lab_order_tests</code> (змінено)</td>
+<td><code>routing_status</code> + значення <code>PROPOSED</code>; + <code>distributed_by, distributed_at</code></td>
+</tr>
+<tr>
+<td><code>lab_routing_log</code> (змінено)</td>
+<td>+ <code>event</code> (<code>PROPOSE / CHANGE / CONFIRM / REROUTE</code>), <code>from_analyzer_id</code></td>
+</tr>
+<tr>
+<td><code>lab_analyzers</code> (змінено)</td>
+<td>+ <code>kind</code> (<code>ANALYZER / MANUAL</code>), <code>service_status</code> (<code>ACTIVE / MAINTENANCE / RETIRED</code>)</td>
+</tr>
+<tr>
+<td><code>lab_stat_daily</code> [ЛІС]</td>
+<td><code>day, analyzer_id, profile_id, test_id, source, package_code, department_id, is_cito, tests, reruns, rejected, tat_p50, tat_p90</code></td>
+</tr>
+<tr>
+<td><code>lab_report_run</code> [ЛІС]</td>
+<td><code>id, report_type, params(json), patient_id, run_by, run_at, format</code></td>
+</tr>
+</tbody>
+</table>
+<p>Міграція: <code>2026-11-01_distribution_reports.sql</code>. Службові колонки — розд. 7.1.</p>
+<h3 id="239-api">23.9. API</h3>
+<table>
+<thead>
+<tr>
+<th>Група</th>
+<th>Маршрути</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Каталог для МІС</td>
+<td><code>GET /mis/catalog</code>, <code>GET /mis/catalog/packages</code>, подія <code>CATALOG_CHANGED</code></td>
+</tr>
+<tr>
+<td>Довідник</td>
+<td><code>GET /analyzer-services/matrix</code> (розширено показниками й станом), <code>PUT /analyzer-services/{profileId}</code>, <code>GET/POST /analyzer-services/import?dryRun=</code></td>
+</tr>
+<tr>
+<td>Направлення</td>
+<td><code>POST /mis/referrals</code> з блоком <code>package</code>; подія <code>ITEM_INDICATORS_CHANGED</code></td>
+</tr>
+<tr>
+<td>Розподіл</td>
+<td><code>GET /distribution/inbox</code>, <code>GET /distribution/{referralId}</code> (пропозиція), <code>PUT /distribution/{referralId}</code> (<code>[{itemId, testCode, analyzerId}]</code>), <code>POST /distribution/{referralId}/auto</code>, <code>POST /distribution/{referralId}/confirm</code></td>
+</tr>
+<tr>
+<td>Робота за направленнями</td>
+<td><code>GET /work/by-analyzer/{analyzerId}</code>, <code>GET /work/by-patient/{patientId}</code>, <code>GET /work/by-service/{serviceCode}</code>, <code>GET /work/summary</code> — спільні параметри фільтрів 23.5</td>
+</tr>
+<tr>
+<td>Звіти</td>
+<td><code>GET /reports</code> (перелік), <code>GET /reports/{type}?from&amp;to&amp;…&amp;format=json|xlsx|pdf</code>, <code>GET /reports/cumulative/{patientId}?from&amp;to&amp;group=service|analyzer&amp;abnormalOnly=</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Приклад.</strong> Пакет із МІС:</p>
+<pre><code>POST /mis/referrals
+{
+  &quot;context&quot;: &quot;INPATIENT&quot;, &quot;patientId&quot;: &quot;…&quot;, &quot;hospitalizationId&quot;: &quot;…&quot;,
+  &quot;department&quot;: &quot;ВРІТ&quot;, &quot;ward&quot;: &quot;1&quot;, &quot;bed&quot;: &quot;3&quot;, &quot;doctorId&quot;: &quot;…&quot;, &quot;priority&quot;: &quot;CITO&quot;,
+  &quot;package&quot;: { &quot;code&quot;: &quot;PKG-POSTOP-ICU&quot;, &quot;name&quot;: &quot;Післяопераційний ВРІТ (CITO)&quot;, &quot;changedByDoctor&quot;: false },
+  &quot;items&quot;: [
+    { &quot;interventionCode&quot;: &quot;DEMO-LAB-CBC&quot;, &quot;indicators&quot;: [&quot;WBC&quot;,&quot;RBC&quot;,&quot;HGB&quot;,&quot;HCT&quot;,&quot;PLT&quot;] },
+    { &quot;interventionCode&quot;: &quot;DEMO-LAB-ABG&quot;, &quot;indicators&quot;: [&quot;PH&quot;,&quot;PCO2&quot;,&quot;PO2&quot;,&quot;HCO3&quot;,&quot;BE&quot;,&quot;SO2&quot;,&quot;LAC&quot;] },
+    { &quot;interventionCode&quot;: &quot;DEMO-LAB-ELEC&quot;, &quot;indicators&quot;: [&quot;K&quot;,&quot;NA&quot;,&quot;ICA&quot;] }
+  ]
+}
+</code></pre>
+<p>Відповідь <code>201</code>: <code>orderId</code>, стан розподілу (<code>PROPOSED</code> або <code>ROUTED</code> для CITO), по кожному показнику — запропонований прилад і позиція в черзі, <code>warnings[]</code> (показники без обладнання).</p>
+<h3 id="2310">23.10. Зміни в робочому прототипі</h3>
+<p>Прототип <code>Прототип_ЛІС_Патоморфологія.html</code> доповнено секцією меню «Направлення та аналізатори» і другим сценарієм показу (8 кроків, перемикач сценаріїв у панелі «Сценарій показу»). Ролі прототипу доповнено: «Лаборант КДЛ», «Лікар-лаборант».</p>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Екран</th>
+<th>Що показує</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Вхідні направлення</td>
+<td>5 демо-направлень: пакет ВРІТ CITO, післяопераційний пакет, е-направлення з частковим вибором і онкомаркером без обладнання, внутрішнє поліклініки, е-направлення іншого закладу без показників. Панель розподілу з пропозицією, зміною приладу на рівні показника й послуги, попередженням про розділення проби, «Авторозподіл», «Підтвердити»</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Емулятор МІС</td>
+<td>Лікар обирає контур, пацієнта, пакет або окремі послуги ЕСОЗ; показники — прапорцями, обов’язкові заблоковані, «усі» / «типові»; надсилання створює вхідне направлення</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Робота за направленнями</td>
+<td>Три розрізи: плитки 11 приладів із чергою, CITO, станом (немає зв’язку, lockout ВКЯ) і чергою обраного приладу з перенаправленням; пацієнт; дослідження з матрицею «замовлення × показник»</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Послуги ЕСОЗ × аналізатори</td>
+<td>Матриця 9 послуг × 11 приладів, картка послуги з показниками й приладами (редагування для лікаря-лаборанта й завідувача), вкладка «Пакети послуг»</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Звіти лабораторії</td>
+<td>Кумулятивний звіт пацієнта (за дослідженням або дослідженням і приладом, лише відхилення, критичні значення), навантаження аналізаторів, направлення за джерелами, використання показників, TAT</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2311-given-when-then">23.11. Приймальні сценарії (Given / When / Then)</h3>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Сценарій</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S-50</td>
+<td><strong>Given</strong> ЗАК виконують BC-780 (пріоритет 1) і BC-20S (2), ШОЕ — BC-780 і ручний метод <strong>When</strong> відкриваю «Послуги ЕСОЗ × аналізатори» <strong>Then</strong> у рядку ЗАК — «1½» для BC-780, «2½» для BC-20S; у картці ШОЕ позначено для BC-780 і ручної постановки</td>
+</tr>
+<tr>
+<td>S-51</td>
+<td><strong>Given</strong> лікар у МІС обрав ЗАК і зняв NEU, MON <strong>When</strong> направлення надійшло <strong>Then</strong> NEU, MON показані як «не замовлено лікарем», тестів для них немає й вони не тарифікуються</td>
+</tr>
+<tr>
+<td>S-52</td>
+<td><strong>Given</strong> пакет «Післяопераційний ВРІТ (CITO)» <strong>When</strong> надійшло направлення <strong>Then</strong> одне замовлення з шістьма позиціями й кодом пакета; ЗАК запропоновано на BC-20S, гази й електроліти — на EasyStat; тести одразу в чергах</td>
+</tr>
+<tr>
+<td>S-53</td>
+<td><strong>Given</strong> планове направлення, <code>RequireConfirmation=true</code> <strong>When</strong> лаборант змінює прилад для WBC і підтверджує <strong>Then</strong> тест WBC має <code>routed_by=MANUAL</code>, показано попередження про розділення проби, у журналі маршрутизації — події PROPOSE, CHANGE, CONFIRM</td>
+</tr>
+<tr>
+<td>S-54</td>
+<td><strong>Given</strong> Respons 940 без зв’язку і lockout FIB на CX6010 <strong>When</strong> «Авторозподіл» <strong>Then</strong> біохімія — на MS-380P, фібриноген — на Zonci; недоступні прилади неактивні в списку з причиною</td>
+</tr>
+<tr>
+<td>S-55</td>
+<td><strong>Given</strong> онкомаркер без обладнання <strong>When</strong> підтверджую <strong>Then</strong> показник у стані «Без обладнання» з вибором send-out / ручне / відхилити; решта направлення в чергах</td>
+</tr>
+<tr>
+<td>S-56</td>
+<td><strong>Given</strong> тест у черзі BC-780 <strong>When</strong> «Перенаправити» на BC-20S з причиною <strong>Then</strong> тест у черзі BC-20S з позначкою «вручну»; у звіті навантаження він рахується за BC-20S</td>
+</tr>
+<tr>
+<td>S-57</td>
+<td><strong>Given</strong> пацієнт має два замовлення (пакет і окреме) <strong>When</strong> розріз «За пацієнтом» <strong>Then</strong> видно обидва з дослідженнями, показниками, приладами й статусами та перехід до кумулятивного звіту</td>
+</tr>
+<tr>
+<td>S-58</td>
+<td><strong>Given</strong> ЗАК у п’яти замовленнях з різним набором показників <strong>When</strong> розріз «За дослідженням» <strong>Then</strong> матриця показує «·» для не обраних показників і прилад для обраних</td>
+</tr>
+<tr>
+<td>S-59</td>
+<td><strong>Given</strong> результати пацієнта з BC-780 і BC-20S за тиждень <strong>When</strong> кумулятивний звіт <strong>Then</strong> гемоглобін одним рядком, прилад під датою; 62 г/л позначено як критичне; кома як десятковий роздільник; прапорців біля нормальних значень немає</td>
+</tr>
+<tr>
+<td>S-60</td>
+<td><strong>Given</strong> результат «HGB 3,2 г/л, RBC 88 ×10¹²/л» <strong>When</strong> надходить з приладу <strong>Then</strong> автоверифікацію заблоковано з причиною «неправдоподібне значення», результат у <code>NEEDS_REVIEW</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="2312">23.12. Релізи, задачі, відкриті питання</h3>
+<p><strong>Реліз.</strong> R1.2: 23.1–23.7 (FR-RPT-001…008, 011–013), T-450…T-461. R2: FR-RPT-009, 010, 014; повторювані пакети (FR-PKG-008).</p>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Питання</th>
+<th>Пропозиція команди</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q-29</td>
+<td>Хто веде довідник пакетів — МІС чи ЛІС?</td>
+<td>МІС (пакет — інструмент призначення лікаря); ЛІС — дзеркало для перевірки й звітів</td>
+</tr>
+<tr>
+<td>Q-30</td>
+<td>Чи обов’язкове підтвердження розподілу лаборантом для всіх планових направлень?</td>
+<td>Так за замовчуванням (<code>RequireConfirmation=true</code>); CITO — автоматично</td>
+</tr>
+<tr>
+<td>Q-31</td>
+<td>Як передавати пакет в ЕСОЗ для зовнішнього контуру?</td>
+<td>Групове направлення (окремий ServiceRequest на послугу); підтвердити на тестовому контурі ЕСОЗ</td>
+</tr>
+<tr>
+<td>Q-32</td>
+<td>Ціна пакета, якщо лікар змінив склад або частину не виконано</td>
+<td>Ціна пакета лише за незмінного складу; інакше — сума позицій</td>
+</tr>
+<tr>
+<td>Q-33</td>
+<td>Чи показувати кумулятивний звіт пацієнту в кабінеті?</td>
+<td>Лише лікарям у R1.2; пацієнту — R2 після рішення закладу</td>
+</tr>
+<tr>
+<td>Q-34</td>
+<td>Референтні інтервали й одиниці чинної системи (23.7, п. 3, 7) — хто перевіряє перед перенесенням?</td>
+<td>Завідувач КДЛ разом з командою на етапі наповнення норм; перелік розбіжностей — з аналізу прикладу</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr />
 <h2 id="15_1">15. Додатки</h2>
 <h3 id="a-ac_analyzer_type-simplex-labanalyzertype">Додаток A. Каталог профілів аналізаторів (<code>ac_analyzer_type</code> Simplex → <code>LabAnalyzerType</code>)</h3>
 <p>Усього 64 записів (id 1–65, id 35 відсутній у вихідному дампі). Виробник наведено орієнтовно (за назвою моделі), для уточнення у довіднику. <code>bop/eop</code> — base64 байтів початку/кінця пакета (порожньо = ENQ/EOT для ASTM). Шаблон замовлення — ключ <code>IAnalyzerOrderBuilder</code>; «лише прийом» — прилад не приймає замовлень.</p>
@@ -8820,6 +11678,76 @@ MSA|AA|MSG009841|Message accepted successfully
 <td>FR-ADM-004..005</td>
 <td><code>GET /audit</code>, <code>GET /results/{id}/history</code></td>
 <td>I-AUDIT-every-mutation, I-HIST-versions</td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span>Словник інтервенцій ЕСОЗ</td>
+<td>T-411</td>
+<td>FR-MIS-001…006</td>
+<td><code>/interventions/*</code></td>
+<td>I-INT-sync, I-INT-readonly</td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span>Співставлення інтервенцій</td>
+<td>T-412, T-421</td>
+<td>FR-MIS-010…016</td>
+<td><code>/intervention-map/*</code></td>
+<td>I-MAP-crud, I-MAP-readiness, E-S21</td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span>Послуги обладнання</td>
+<td>T-413</td>
+<td>FR-EQP-001…008</td>
+<td><code>/analyzers/{id}/services</code>, <code>/analyzer-services/matrix</code></td>
+<td>I-EQP-crud, I-EQP-validate</td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span>Направлення МІС (зовн./внутр.)</td>
+<td>T-410, T-415, T-419</td>
+<td>FR-MIS-020…035</td>
+<td><code>/mis/referrals/*</code></td>
+<td>I-MIS-ambulatory, I-MIS-inpatient, I-MIS-indicators, E-S22, E-S23</td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span>Авторизація в ЕСОЗ, підпис КЕП, відправка звіту</td>
+<td>T-422…T-428</td>
+<td>FR-SGN-001…014</td>
+<td><code>/ehealth/session*</code>, <code>/orders/{id}/ehealth/*</code></td>
+<td>I-SGN-auth2step, I-SGN-submit, I-SGN-retry, E-S31…S36</td>
+</tr>
+<tr class="chg43">
+<td><span class="tag-new43">НОВЕ 4.3</span>Послуги ЕСОЗ × аналізатори, каталог для МІС</td>
+<td>T-450, T-451</td>
+<td>FR-SVA-001…015</td>
+<td><code>/analyzer-services/*</code>, <code>/mis/catalog*</code></td>
+<td>I-SVA-matrix, I-SVA-catalog, E-S50, E-S51</td>
+</tr>
+<tr class="chg43">
+<td><span class="tag-new43">НОВЕ 4.3</span>Пакети, розподіл, робота за направленнями</td>
+<td>T-452…T-454</td>
+<td>FR-PKG, FR-DST, FR-WRK</td>
+<td><code>/mis/referrals</code>, <code>/distribution/*</code>, <code>/work/*</code></td>
+<td>U-Distribution-*, I-DST-confirm, E-S52…S58</td>
+</tr>
+<tr class="chg43">
+<td><span class="tag-new43">НОВЕ 4.3</span>Звіти лабораторії</td>
+<td>T-455…T-458, T-461</td>
+<td>FR-RPT-001…019</td>
+<td><code>/reports/*</code></td>
+<td>I-RPT-cumulative, I-RPT-load, E-S59, E-S60</td>
+</tr>
+<tr class="chg42">
+<td><span class="tag-new42">НОВЕ 4.2</span>Патоморфологія</td>
+<td>T-430…T-445</td>
+<td>FR-PAT-001…106</td>
+<td><code>/pathology/*</code>, <code>/mis/referrals</code> (type=PATHOLOGY)</td>
+<td>I-PAT-accept, I-PAT-gross, I-PAT-sign, I-PAT-addendum, E-S40…S48</td>
+</tr>
+<tr class="chg">
+<td><span class="tag-new">НОВЕ</span>Маршрутизація в чергу</td>
+<td>T-414, T-418</td>
+<td>FR-RTE-001…012</td>
+<td><code>/routing/*</code>, <code>/analyzers/{id}/queue</code></td>
+<td>U-Router-*, I-RTE-queue, I-RTE-reroute, E-S24</td>
 </tr>
 </tbody>
 </table>
