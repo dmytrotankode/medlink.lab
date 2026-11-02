@@ -103,6 +103,15 @@ export default {
           ]
         },
         {
+          title: 'Патоморфологія',
+          items: [
+            { name: 'path-cases', label: 'Журнал справ', icon: 'fas fa-folder-open', to: { name: 'lab-path-cases' }, exact: true, badgeKey: 'pathOverdue' },
+            { name: 'path-intake', label: 'Прийом матеріалу', icon: 'fas fa-box-open', to: { name: 'lab-path-intake' }, badgeKey: 'pathIncoming' },
+            { name: 'path-cito', label: 'Інтраопераційні (CITO)', icon: 'fas fa-stopwatch', to: { name: 'lab-path-cito' }, badgeKey: 'pathCito' },
+            { name: 'path-archive', label: 'Архів блоків і скелець', icon: 'fas fa-archive', to: { name: 'lab-path-archive' } }
+          ]
+        },
+        {
           title: 'Довідники',
           items: [
             { name: 'pricing', label: 'Прайси та платники', icon: 'fas fa-file-invoice-dollar', to: { name: 'lab-pricing' } },
@@ -114,6 +123,7 @@ export default {
             { name: 'd-methods', label: 'Методики', icon: 'fas fa-flask', to: { name: 'lab-dictionary', params: { name: 'method-types' } } },
             { name: 'd-atypes', label: 'Моделі аналізаторів', icon: 'fas fa-server', to: { name: 'lab-dictionary', params: { name: 'analyzer-types' } } },
             { name: 'd-reflex', label: 'Reflex-правила', icon: 'fas fa-random', to: { name: 'lab-dictionary', params: { name: 'reflex-rules' } } },
+            { name: 'path-dict', label: 'Довідники патоморфології', icon: 'fas fa-book-medical', to: { name: 'lab-path-dictionaries' } },
             { name: 'd-micro', label: 'Мікроорганізми / антибіотики', icon: 'fas fa-disease', to: { name: 'lab-dictionary', params: { name: 'organisms' } } }
           ]
         },
@@ -151,6 +161,14 @@ export default {
         case 'distribution': {
           const n = Number(this.summary && this.summary.distributionPending) || 0;
           return n > 0 ? { label: String(n), color: 'orange-7' } : null;
+        }
+        case 'pathIncoming':
+        case 'pathCito':
+        case 'pathOverdue': {
+          const key = { pathIncoming: 'pathologyIncoming', pathCito: 'pathologyCito', pathOverdue: 'pathologyOverdue' }[item.badgeKey];
+          const n = Number(this.summary && this.summary[key]) || 0;
+          const color = { pathIncoming: 'orange-7', pathCito: 'negative', pathOverdue: 'red-5' }[item.badgeKey];
+          return n > 0 ? { label: String(n), color } : null;
         }
         case 'lockout':
           return this.lockoutCount > 0 ? { label: 'Lock', color: 'purple-6' } : null;

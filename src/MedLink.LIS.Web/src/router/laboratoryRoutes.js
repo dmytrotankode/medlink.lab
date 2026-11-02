@@ -42,6 +42,13 @@ export default [
       lab('reagents', 'lab-reagents', 'Склад реагентів', () => import('pages/laboratory/ReagentInventory.vue')),
       lab('microbiology', 'lab-microbiology', 'Мікробіологія', () => import('pages/laboratory/microbiology/MicrobiologyCultures.vue')),
       lab('microbiology/:id', 'lab-culture-card', 'Картка посіву', () => import('pages/laboratory/microbiology/CultureCard.vue'), { props: true }),
+      // ----- Патоморфологія (ТЗ розд. 22) -----
+      lab('pathology', 'lab-path-cases', 'Журнал справ ПГД', () => import('pages/laboratory/pathology/PathologyCasesPage.vue')),
+      lab('pathology/intake', 'lab-path-intake', 'Прийом матеріалу', () => import('pages/laboratory/pathology/PathologyIntakePage.vue')),
+      lab('pathology/cito', 'lab-path-cito', 'Інтраопераційні (CITO)', () => import('pages/laboratory/pathology/PathologyCasesPage.vue'), { meta: { cito: true } }),
+      lab('pathology/archive', 'lab-path-archive', 'Архів блоків і скелець', () => import('pages/laboratory/pathology/PathologyArchivePage.vue')),
+      lab('pathology/dictionaries', 'lab-path-dictionaries', 'Довідники патоморфології', () => import('pages/laboratory/pathology/PathologyDictionariesPage.vue')),
+      lab('pathology/cases/:id', 'lab-path-case', 'Справа ПГД', () => import('pages/laboratory/pathology/PathologyCasePage.vue'), { props: true }),
       lab('analytics-tat', 'lab-analytics-tat', 'Аналітика TAT', () => import('pages/laboratory/LabAnalyticsTat.vue')),
 
       // ----- Довідники -----

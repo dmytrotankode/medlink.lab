@@ -143,7 +143,12 @@ public sealed class WorklistService
         // ТЗ 23.4: направлення МІС, що чекають розподілу лаборантом (бейдж «Вхідні направлення»)
         var distributionPending = await _db.Orders.AsNoTracking().CountAsync(o => o.Status != OrderStatuses.Cancelled && (o.DistributionStatus == "PROPOSED" || o.DistributionStatus == "NEEDS_SELECTION"));
         var noEquipment = await active.CountAsync(t => t.RoutingStatus == RoutingStatuses.NoEquipment && t.Status == OrderTestStatuses.Pending);
-        return new { pending, resulted, needsReview, panic, cito, autoVerifiedToday, verifiedToday, ordersToday, activeLockouts = lockouts, unmatched, distributionPending, noEquipment };
+        // Патоморфологія (ТЗ 22.14 п. 1): бейджі меню
+        var pathActive = _db.PathReferrals.AsNoTracking().Where(r => r.IntakeStatus == PathIntake.Accepted && r.Stage != PathStages.Signed);
+        var pathologyIncoming = await _db.PathReferrals.CountAsync(r => r.IntakeStatus == PathIntake.Incoming && r.Order!.Status != OrderStatuses.Cancelled);
+        var pathologyCito = await pathActive.CountAsync(r => r.Order!.IsUrgentCito);
+        var pathologyOverdue = await pathActive.CountAsync(r => r.Order!.SlaDueAt < DateTime.UtcNow);
+        return new { pending, resulted, needsReview, panic, cito, autoVerifiedToday, verifiedToday, ordersToday, activeLockouts = lockouts, unmatched, distributionPending, noEquipment, pathologyIncoming, pathologyCito, pathologyOverdue };
     }
 
     // ------------------------------------------------------------------ panic calls

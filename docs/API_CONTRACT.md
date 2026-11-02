@@ -228,6 +228,41 @@
 
 **Модель даних (нові таблиці [ЛІС])**: `lab_ehealth_intervention`, `lab_intervention_map`, `lab_intervention_map_test`, `lab_analyzer_service`, `lab_order_item`, `lab_order_item_indicator`, `lab_routing_log`, `lab_mis_event_log`, `lab_service_package`, `lab_ehealth_session`, `lab_ehealth_submission`, `lab_stat_daily`, `lab_report_run`; нові колонки `lab_order`, `lab_order_test`, `lab_analyzer`, `lab_analyzer_parameter_map`, `lab_test_profile_item`, `lab_settings` — міграція `db/migrations/R1.1/006_ch21_23_mis_routing_distribution_ehealth_sign.sql`.
 
+### 2.12. Патоморфологія (ТЗ розд. 22; R1.1)
+Справа ПГД — замовлення `lab_order` з `lab_department = PATHOLOGY`, `pathology_kind` (BIOPSY | CITO | OPERATIVE | CONSULT), `case_no` (ПГД-РР-NNNN), `sla_due_at`.
+Етапи: `RCV → GROSS → PROC → EMB → SECT → STAIN → MICRO → SIGNED`; етап касети — останній виконаний, етап справи — наступний після найменш просунутої касети.
+Коди проблем: `container-unlabeled` 422, `containers-not-scanned` 422, `icdo-required` 422, `read-back-required` 422, `report-signed` 409, `block-issued` 409, `duplicate-referral` 409, `signer-mismatch` 422.
+Ролі (22.11): прийом/відмова/видача — REGISTRAR, LAB_TECHNICIAN, LAB_ADMIN; вирізка, висновок, ІГХ, підпис, CITO — LAB_DOCTOR, LAB_ADMIN; етапи обробки — LAB_TECHNICIAN, LAB_ADMIN.
+
+| Метод | Шлях | Опис |
+|---|---|---|
+| POST | `/mis/referrals` з `type=PATHOLOGY` | блок `pathology {kind, operationId?, source, department, doctorName, biopsyKind PRIMARY\|SECONDARY, primaryCaseNo?, clinicalData, clinicalDiagnosis, operationText, markingText, templateName?, form014{…}, objects[{mark, description, localization?, fragments, fixative, takenAt?, fixationStartAt?, labeled}], external?{institution, number, date, slides, blocks}}`; спільні поля (patientId, misReferralId GUID, referralNumber, department, doctorName, icd10, ehealthReferralNumber, partnerName) беруться з направлення; `priority=CITO` → kind CITO. 201 — справа в черзі прийому |
+| POST | `/pathology/referrals` | те саме без обгортки МІС |
+| GET | `/pathology/incoming` | черга прийому: пацієнт, джерело, тип матеріалу, направник, контейнери (`labeled`, `fixationHours`, `fixationWarning`), знімок п. 1–9 форми |
+| POST | `/pathology/incoming/{id}/accept` | `{scannedBarcodes[]}` (штрихкоди або маркування всіх контейнерів) → № справи, SLA (робочі дні; CITO — `PathologyCitoTargetMinutes`), вартість (консультація — скельця × 210, зовнішні блоки/скельця зі штрихкодами), подія `RECEIVED` |
+| POST | `/pathology/incoming/{id}/reject` | `{reason (код або назва з довідника), comment}` → `REJECTED`; е-направлення не погашається |
+| POST | `/pathology/incoming/{id}/query` | `{text}` → подія `QUERY` направнику |
+| GET | `/pathology/cases?stage=RCV\|…\|SIGNED\|work\|lab\|cito\|overdue&src=&q=` | журнал: `tiles{stage: n}`, `total, inWork, overdue, cito, lab, incoming`, `items[]` (CITO і прострочені вгорі) |
+| GET | `/pathology/summary` | бейджі меню; також `pathologyIncoming, pathologyCito, pathologyOverdue` у `/worklist/summary` |
+| GET | `/pathology/cases/{id}` | id — id замовлення, № справи або `misReferralId`: шапка, `stages[]`, `citoTimer`, направлення, об'єкти → блоки → скельця, `totals`, чернетка висновку, `composedText`, `reflex[]`, `versions[]`, `preliminary`, `citoNotices[]`, `stageLog[]`, `events[]` |
+| PUT | `/pathology/cases/{id}/gross` (= POST `…/blocks`) | `{macro, templateName, objects[{objectId, blocks[{pieces}]}], finish}`; finish → скельця Г-Е, вартість 420 + 140 × (блоків − 1) (+900 CITO), етап PROC, `STAGE_CHANGED` |
+| POST | `/pathology/scan` | `{barcode, stage?, device?}` — етап касети/скельця; `/pathology/cases/{id}/advance {stage}` — етап для всіх касет |
+| POST | `/pathology/cases/{id}/additional` | `{blockId, methods[] (коди/назви з lab_stain_method), source LAB\|MIS\|MDK}` → скельця «ІГХ в роботі», ціна, SLA +3 роб. дні, `ADDITIONAL_STUDY_ORDERED`; виданий блок — 409 |
+| POST | `/pathology/slides/{id}/ready` | ІГХ-скельце готове |
+| PUT | `/pathology/cases/{id}/report` | `{macro, micro, conclusionText, icd10, icdoTopo, icdoMorph, grade, pt, pn, lnTotal, lnPositive, margin, lvi, pni, ihc[{marker, slideId, resultText, score, unit}]}`; після підпису — 409 |
+| POST | `…/report/preliminary` | `{text}` → `RESULT_PRELIMINARY` |
+| POST | `…/report/sign` | `{signer{drfo, name, certSerial, validTo}}` (тестовий сертифікат — `GET /ehealth/session`.testCertificate) → `RELEASED`, блоки в архів, `RESULT_FINAL`; неочікувана злоякісність (морфологія /3, /6 при клінічному діагнозі не C/D0) → `CRITICAL_RESULT`; `warnings[]` — ІГХ без результату |
+| POST | `…/report/addendum` | `{type IHC\|REVIEW\|CORRECTION, text, reason (обов'язково для CORRECTION), changesDiagnosis, icd10?, icdoTopo?, icdoMorph?, ihc[], signer}` → нова версія vN, `ADDENDUM {payload, notifyMdk}` |
+| POST | `/pathology/cases/{id}/cito-notice` | `{text, notifiedPerson, method PHONE\|INTERCOM\|IN_PERSON, readBack}`; без read-back — 422; `CRITICAL_RESULT {operationId, minutesFromReceipt}` і аудит |
+| GET | `/pathology/archive?status=ARCHIVED\|ISSUED\|overdue&q=` | блоки підписаних справ, місце зберігання, видача |
+| POST | `/pathology/blocks/{id}/issue`, `/pathology/blocks/{id}/return` | `{recipient, document, purpose, dueBack}`; повернення |
+| GET | `/pathology/dictionaries` | шаблони, МКХ-О (топографія/морфологія), методики та ІГХ з цінами, reflex-правила, типи матеріалу (SLA, група послуг), фіксатори, причини відмови, тарифи |
+| GET | `/pathology/cases/{id}/form014`, `/pathology/cases/{id}/form014.pdf?sides=1,2` | поля обох сторін форми 014/о; до підпису п. 18 і підписи порожні; PDF A4 альбомна |
+
+Payload `RESULT_FINAL` / `ADDENDUM.payload`: `caseNo, version, kind, addendumType, signedAt, signedBy, conclusionText, icd10, icdoTopo, icdoMorph, grade, pT, pN, lnTotal, lnPositive, margin, lvi, pni, ihc[], changesDiagnosis, reason`.
+
+**Модель даних (нові таблиці [ЛІС])**: `lab_path_referral`, `lab_path_object`, `lab_path_block`, `lab_path_slide`, `lab_path_stage_log`, `lab_path_report`, `lab_path_ihc_result`, `lab_path_cito_notice`, `lab_path_issue`; довідники `lab_path_template`, `dct_icdo`, `lab_stain_method`, `lab_ihc_reflex_rule`, `lab_path_material_type`, `lab_fixative`, `lab_path_reject_reason` (сід `db/seed/pathology.json`) — міграція `db/migrations/R1.1/007_ch22_pathology.sql`.
+
 ## 3. API коннектора `/api/v1/lab/connector/*` (авторизація `X-MedLink-ApiKey`)
 
 | Метод | Шлях | Тіло | Відповідь |
