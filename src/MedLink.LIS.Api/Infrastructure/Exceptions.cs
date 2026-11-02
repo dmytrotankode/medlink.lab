@@ -6,6 +6,8 @@ public class LisException : Exception
     public int StatusCode { get; }
     public string Title { get; }
     public IDictionary<string, string[]>? Errors { get; }
+    /// <summary>Машинний код проблеми (розд. 8.3, 21.10): intervention-unmapped, required-indicator-missing, ehealth-auth-required…</summary>
+    public string? Code { get; init; }
 
     public LisException(int statusCode, string title, string detail, IDictionary<string, string[]>? errors = null) : base(detail)
     {
@@ -41,4 +43,10 @@ public sealed class ForbiddenException : LisException
 public sealed class ForbiddenConnectorException : LisException
 {
     public ForbiddenConnectorException(string detail) : base(401, "Коннектор не авторизований", detail) { }
+}
+
+/// <summary>Доменна проблема з машинним кодом (ProblemDetails.type = …/problems/{code}).</summary>
+public sealed class DomainProblemException : LisException
+{
+    public DomainProblemException(int statusCode, string code, string title, string detail, IDictionary<string, string[]>? errors = null) : base(statusCode, title, detail, errors) => Code = code;
 }

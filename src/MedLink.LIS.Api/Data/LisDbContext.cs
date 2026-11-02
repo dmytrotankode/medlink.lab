@@ -99,6 +99,21 @@ public class LisDbContext : DbContext
     public DbSet<LabOrderAttachment> Attachments => Set<LabOrderAttachment>();
     public DbSet<LabEhealthExchangeLog> EhealthExchangeLog => Set<LabEhealthExchangeLog>();
 
+    // --- Інтеграція з МІС, маршрутизація, ЕСОЗ, звіти (ТЗ розд. 21, 23) ---
+    public DbSet<LabEhealthIntervention> Interventions => Set<LabEhealthIntervention>();
+    public DbSet<LabInterventionMap> InterventionMaps => Set<LabInterventionMap>();
+    public DbSet<LabInterventionMapTest> InterventionMapTests => Set<LabInterventionMapTest>();
+    public DbSet<LabAnalyzerService> AnalyzerServices => Set<LabAnalyzerService>();
+    public DbSet<LabOrderItem> OrderItems => Set<LabOrderItem>();
+    public DbSet<LabOrderItemIndicator> OrderItemIndicators => Set<LabOrderItemIndicator>();
+    public DbSet<LabRoutingLog> RoutingLog => Set<LabRoutingLog>();
+    public DbSet<LabMisEventLog> MisEvents => Set<LabMisEventLog>();
+    public DbSet<LabServicePackage> ServicePackages => Set<LabServicePackage>();
+    public DbSet<LabEhealthSession> EhealthSessions => Set<LabEhealthSession>();
+    public DbSet<LabEhealthSubmission> EhealthSubmissions => Set<LabEhealthSubmission>();
+    public DbSet<LabStatDaily> StatDaily => Set<LabStatDaily>();
+    public DbSet<LabReportRun> ReportRuns => Set<LabReportRun>();
+
     // --- оплата (FR-GAP-060) ---
     public DbSet<LabPriceList> PriceLists => Set<LabPriceList>();
     public DbSet<LabPriceListItem> PriceListItems => Set<LabPriceListItem>();
@@ -172,6 +187,26 @@ public class LisDbContext : DbContext
         mb.Entity<LabSendOutItem>().HasIndex(i => i.OrderTestId);
         mb.Entity<LabOrderAttachment>().HasIndex(a => a.OrderId);
         mb.Entity<LabOrderTest>().HasIndex(t => t.PerformerId);
+        mb.Entity<LabEhealthIntervention>().HasIndex(i => i.Code).IsUnique();
+        mb.Entity<LabInterventionMap>().HasIndex(m => m.InterventionId);
+        mb.Entity<LabInterventionMapTest>().HasIndex(m => new { m.MapId, m.TestId }).IsUnique();
+        mb.Entity<LabInterventionMap>().HasMany(m => m.Tests).WithOne(t => t.Map).HasForeignKey(t => t.MapId).OnDelete(DeleteBehavior.Cascade);
+        mb.Entity<LabAnalyzerService>().HasIndex(s => new { s.AnalyzerId, s.ProfileId }).IsUnique();
+        mb.Entity<LabOrder>().HasMany(o => o.Items).WithOne(i => i.Order).HasForeignKey(i => i.OrderId).OnDelete(DeleteBehavior.Cascade);
+        mb.Entity<LabOrderItem>().HasMany(i => i.Indicators).WithOne(x => x.Item).HasForeignKey(x => x.ItemId).OnDelete(DeleteBehavior.Cascade);
+        mb.Entity<LabOrderItem>().HasIndex(i => i.OrderId);
+        mb.Entity<LabOrderItemIndicator>().HasIndex(i => i.ItemId);
+        mb.Entity<LabOrder>().HasIndex(o => o.MisReferralId);
+        mb.Entity<LabOrder>().HasIndex(o => o.LabDepartment);
+        mb.Entity<LabOrderTest>().HasIndex(t => new { t.AssignedAnalyzerId, t.Status });
+        mb.Entity<LabRoutingLog>().HasIndex(l => l.OrderTestId);
+        mb.Entity<LabRoutingLog>().HasIndex(l => l.At);
+        mb.Entity<LabMisEventLog>().HasIndex(l => new { l.OrderId, l.At });
+        mb.Entity<LabServicePackage>().HasIndex(p => p.Code).IsUnique();
+        mb.Entity<LabEhealthSession>().HasIndex(s => new { s.EmployeeId, s.ClosedAt });
+        mb.Entity<LabEhealthSubmission>().HasIndex(s => new { s.OrderId, s.Status });
+        mb.Entity<LabStatDaily>().HasIndex(s => s.Day);
+        mb.Entity<LabReportRun>().HasIndex(r => r.RunAt);
 
         mb.Entity<OrgEmployee>().HasOne(e => e.LabSettings).WithOne(s => s.Employee).HasForeignKey<LabEmployeeSettings>(s => s.EmployeeId);
         mb.Entity<OrgDepartment>().HasOne(d => d.LabSettings).WithOne(s => s.Department).HasForeignKey<LabDepartmentSettings>(s => s.DepartmentId);

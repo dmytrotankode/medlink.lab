@@ -44,6 +44,27 @@ public class LabSettings : GuidEntity
     [MaxLength(128)] public string? LabelPrinterName { get; set; }
     /// <summary>Прапорці шаблонів бланка (JSON): {"final":true,"preliminary":true,"cito":true,"showPreviousValues":true,"showQr":true}</summary>
     public string ReportTemplatesJson { get; set; } = "{\"final\":true,\"preliminary\":true,\"cito\":true,\"showPreviousValues\":true,\"showQr\":true}";
+    // --- Маршрутизація й розподіл (ТЗ 21.7, 23.4; зміна діє без перезапуску) ---
+    /// <summary>PRIORITY | LEAST_LOAD | PRIORITY_THEN_LOAD</summary>
+    [MaxLength(24)] public string RoutingStrategy { get; set; } = "PRIORITY_THEN_LOAD";
+    public int RerouteOnOfflineMinutes { get; set; } = 30;
+    public bool AutoRerouteOffline { get; set; }
+    /// <summary>Планові направлення чекають підтвердження розподілу лаборантом (FR-DST-008).</summary>
+    public bool RequireDistributionConfirmation { get; set; } = true;
+    /// <summary>Норматив «надходження → підтвердження розподілу», хв (FR-DST-011).</summary>
+    public int DistributionTargetMinutes { get; set; } = 15;
+    /// <summary>Категорії інтервенцій ЕСОЗ, що потрапляють у ЛІС (FR-MIS-004), через кому.</summary>
+    [MaxLength(256)] public string InterventionCategories { get; set; } = "laboratory_procedure";
+    [MaxLength(64)] public string InterventionSyncCron { get; set; } = "0 3 * * *";
+    // --- Сесія ЕСОЗ і відправка звітів (ТЗ 21.13) ---
+    public int EhealthSessionTtlMinutes { get; set; } = 30;
+    public int EhealthSessionIdleMinutes { get; set; } = 15;
+    public bool EhealthSubmitInpatient { get; set; }
+    // --- Патоморфологія (ТЗ 22) ---
+    public int PathologyCitoTargetMinutes { get; set; } = 20;
+    public int PathologyFixationMinHours { get; set; } = 6;
+    public int PathologyFixationMaxHours { get; set; } = 72;
+    public bool PathologyMirrorToSimplexCabinet { get; set; }
 
     [NotMapped]
     public Dictionary<string, bool> ReportTemplates

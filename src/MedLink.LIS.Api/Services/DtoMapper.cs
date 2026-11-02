@@ -47,7 +47,7 @@ public static class DtoMapper
         Status = t.Status, AssignedAnalyzerId = t.AssignedAnalyzerId, AnalyzerName = t.AssignedAnalyzer?.Name ?? t.Result?.Analyzer?.Name,
         IsReflex = t.IsReflex, ReflexFromTestId = t.ReflexFromTestId, ReflexNeedsConfirmation = t.ReflexNeedsConfirmation, RejectReason = t.RejectReason,
         DisplayOrder = t.DisplayOrder, ReleasedAt = t.ReleasedAt, LabSectionId = t.Test?.LabSectionId, LabSectionName = t.Test?.LabSection?.Name,
-        PerformerId = t.PerformerId, PerformerName = t.Performer?.Name,
+        PerformerId = t.PerformerId, PerformerName = t.Performer?.Name, OrderItemId = t.OrderItemId, RoutingStatus = t.RoutingStatus, RoutedBy = t.RoutedBy,
         Result = t.Result == null ? null : ToDto(t.Result, t.Test?.DecimalPlaces ?? 2),
         AllowedActions = policy.AllowedActions(LisEntities.OrderTest, t.Status)
     };
@@ -74,6 +74,16 @@ public static class DtoMapper
         OrderDatetime = o.OrderDatetime, Status = o.Status, IsUrgentCito = o.IsUrgentCito, EhealthReferralId = o.EhealthReferralId, ReferralType = o.ReferralType, PayerId = o.PayerId, PayerName = o.Payer?.Name, PayerKind = o.Payer?.Kind, InsurancePolicyNumber = o.InsurancePolicyNumber, PayerAmount = o.PayerAmount, PatientAmount = o.PatientAmount, PaidAmount = o.PaidAmount, ReferralTypeName = ReferralTypes.Label(o.ReferralType), ReferralNumber = o.Referral?.RegNumber ?? o.PaperReferral?.RegNumber ?? o.ReferrerNumber, ReferralStatus = o.Referral?.Status?.Caption, ReferrerOrganizationName = o.ReferrerOrganizationName, ReferrerDoctorName = o.ReferrerDoctorName ?? (o.ReferralType == ReferralTypes.Internal ? o.Doctor?.Caption : null), ClinicalNotes = o.ClinicalNotes,
         IsPregnant = o.IsPregnant, PregnancyWeek = o.PregnancyWeek, MenstrualPhase = o.MenstrualPhase, Icd10Code = o.Icd10Code, TotalPrice = o.TotalPrice,
         CreatedById = o.CreatedById, CreatedOn = o.CreatedOn, CompletedAt = o.CompletedAt, ReleasedAt = o.ReleasedAt, VerifyToken = o.VerifyToken, CancelReason = o.CancelReason,
+        ReferralContext = o.ReferralContext, ReferralSource = ReferralSources.Of(o), MisReferralId = o.MisReferralId, MisReferralNumber = o.MisReferralNumber,
+        RequestingDepartmentName = o.RequestingDepartmentName, Ward = o.Ward, Room = o.Room, Bed = o.Bed, PlannedCollectionAt = o.PlannedCollectionAt,
+        PackageCode = o.PackageCode, PackageName = o.PackageName, PackageChangedByDoctor = o.PackageChangedByDoctor, DistributionStatus = o.DistributionStatus,
+        EhealthStatus = o.EhealthStatus, EhealthStatusLabel = EhealthSubmitStatuses.Label(o.EhealthStatus), LabDepartment = o.LabDepartment, CaseNo = o.CaseNo,
+        Items = o.Items.OrderBy(i => i.DisplayOrder).Select(i => new OrderItemDto
+        {
+            Id = i.Id, InterventionCode = i.InterventionCode, InterventionName = i.InterventionName, ProfileId = i.ProfileId, Status = i.Status, SelectionSource = i.SelectionSource,
+            SelectionMode = i.SelectionMode, PackageItemNo = i.PackageItemNo, Selected = i.Indicators.Where(x => x.IsSelected).Select(x => x.TestCode).ToList(),
+            NotOrdered = i.Indicators.Where(x => !x.IsSelected).Select(x => x.TestCode).ToList(), AutoAdded = i.Indicators.Where(x => x.IsAutoAdded).Select(x => x.TestCode).ToList()
+        }).ToList(),
         Samples = o.Samples.OrderBy(s => s.GroupNumb).Select(s => ToDto(s, o.Tests, policy)).ToList(),
         Tests = o.Tests.OrderBy(t => t.DisplayOrder).ThenBy(t => t.CreatedOn).Select(t => ToDto(t, policy)).ToList(),
         AllowedActions = policy.AllowedActions(LisEntities.Order, o.Status)
@@ -95,6 +105,8 @@ public static class DtoMapper
             LabSectionId = t.Test?.LabSectionId, LabSectionName = t.Test?.LabSection?.Name, JournalNumber = journalNumber, ReleasedAt = t.ReleasedAt,
             IsCito = t.Order?.IsUrgentCito ?? false, IsAutoVerified = r?.IsAutoVerified ?? false, IsLockedOut = isLockedOut, IsReflex = t.IsReflex,
             AutoVerifyBlockReason = r?.AutoVerifyBlockReason, EnteredAt = r?.EnteredAt, VerifiedAt = r?.VerifiedAt, OrderDatetime = t.Order?.OrderDatetime ?? DateTime.UtcNow,
+            RoutingStatus = t.RoutingStatus, RoutedBy = t.RoutedBy, Source = t.Order == null ? null : ReferralSources.Of(t.Order), RequestingDepartment = t.Order?.RequestingDepartmentName,
+            Bed = t.Order == null ? null : RoutingService.Bed(t.Order), PackageCode = t.Order?.PackageCode,
             AllowedActions = policy.AllowedActions(LisEntities.OrderTest, t.Status)
         };
     }

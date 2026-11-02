@@ -23,6 +23,7 @@ public sealed class DemoDataSeeder
     private readonly ReagentService _reagents;
     private readonly MicrobiologyService _micro;
     private readonly WorklistService _worklist;
+    private readonly MisReferralService _mis;
     private readonly ICurrentEmployee _current;
     private readonly ILogger<DemoDataSeeder> _logger;
 
@@ -33,18 +34,24 @@ public sealed class DemoDataSeeder
     private static string Pat(int n) => $"0b000000-0000-0000-0000-00000000000{n}";
 
     public DemoDataSeeder(LisDbContext db, OrderService orders, SampleService samples, ResultPipelineService pipeline, QcService qc, LogisticsService logistics,
-        BiobankService biobank, ReagentService reagents, MicrobiologyService micro, WorklistService worklist, ICurrentEmployee current, ILogger<DemoDataSeeder> logger)
+        BiobankService biobank, ReagentService reagents, MicrobiologyService micro, WorklistService worklist, MisReferralService mis, ICurrentEmployee current, ILogger<DemoDataSeeder> logger)
     {
-        _db = db; _orders = orders; _samples = samples; _pipeline = pipeline; _qc = qc; _logistics = logistics; _biobank = biobank; _reagents = reagents; _micro = micro; _worklist = worklist; _current = current; _logger = logger;
+        _db = db; _orders = orders; _samples = samples; _pipeline = pipeline; _qc = qc; _logistics = logistics; _biobank = biobank; _reagents = reagents; _micro = micro; _worklist = worklist; _mis = mis; _current = current; _logger = logger;
     }
 
     public async Task SeedAsync()
     {
-        if (await _db.Orders.AnyAsync()) return;
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var hasOrders = await _db.Orders.AnyAsync();
         var admin = await _db.Employees.AsNoTracking().FirstAsync(e => e.Id == Admin);
         _current.Set(admin, Admin, "seed");
         _db.CurrentUserId = Admin;
+        if (hasOrders)
+        {
+            // Наявна БД: дооновлення демо-сценарію розд. 23 (направлення МІС), якщо його ще немає
+            await SeedMisDemoAsync();
+            return;
+        }
+        var sw = System.Diagnostics.Stopwatch.StartNew();
 
         // 1. CITO біохімія + електроліти: критичний калій, верифіковано, видано
         var o1 = await _orders.CreateAsync(new CreateOrderRequest { PatientId = Pat(1), DoctorId = Doctor, DepartmentId = Dept, IsUrgentCito = true, ClinicalNotes = "Хронічна хвороба нирок, контроль електролітів", Icd10Code = "N18.3", ProfileIds = { "PROF_BIOCHEM_BASE" }, TestIds = { "K", "NA" } });
@@ -141,7 +148,95 @@ public sealed class DemoDataSeeder
         await _reagents.CreateAsync(new ReagentLotRequest { AnalyzerId = Sysmex, TestCode = null, ReagentName = "CELLPACK DCL", LotNumber = "CP-24091A", Manufacturer = "Sysmex", TestsInitial = 2000, TestsRemaining = 1420, MinimumTests = 300, ExpiryDate = DateTime.UtcNow.AddDays(10), OpenedAt = DateTime.UtcNow.AddDays(-20) });
         await _reagents.CreateAsync(new ReagentLotRequest { AnalyzerId = Sysmex, TestCode = null, ReagentName = "SULFOLYSER", LotNumber = "SL-24110", Manufacturer = "Sysmex", TestsInitial = 1500, TestsRemaining = 1500, MinimumTests = 200, ExpiryDate = DateTime.UtcNow.AddMonths(14) });
 
+        await SeedMisDemoAsync();
         _logger.LogInformation("Демо-дані створено за {Ms} мс", sw.ElapsedMilliseconds);
+    }
+
+    /// <summary>Демо розд. 21–23: вхідні направлення МІС (пакети, е-направлення, «потрібен вибір»), робота за направленнями, кумулятивний звіт.</summary>
+    private async Task SeedMisDemoAsync()
+    {
+        if (await _db.Orders.AnyAsync(o => o.MisReferralId != null) || !await _db.Interventions.AnyAsync()) return;
+        // Е-направлення ЕСОЗ для амбулаторного контуру
+        async Task<string> EReferral(string number, string patientId, string caption)
+        {
+            _db.Referrals.Add(new EheIncomingMedicalReferral
+            {
+                RegNumber = number, Caption = caption, OrganizationId = MedLinkDefaults.OrganizationId, PatientCardId = patientId,
+                ServiceCatalogServiceId = await _db.ServiceCatalog.Where(x => x.Code == "LAB-CBC").Select(x => x.Id).FirstOrDefaultAsync() ?? await _db.ServiceCatalog.Select(x => x.Id).FirstAsync(),
+                MedicalReferralCategoryId = MedLinkDefaults.ReferralCategoryLaboratoryId, StatusId = MedLinkEnums.ReferralStatusActive,
+                ProcessingStatusInEhealthId = MedLinkEnums.ProcessingNew, PriorityId = MedLinkEnums.EmptyGuid, ExpirationDate = DateTime.UtcNow.AddDays(30)
+            });
+            await _db.SaveChangesAsync();
+            return number;
+        }
+        static MisReferralItemRequest It(string code, params string[] ind) => new() { InterventionCode = code, Indicators = ind.ToList() };
+
+        // Кумулятивний звіт (S-59): ЗАК пацієнта за тиждень з BC-780 і BC-20S, гемоглобін 62 г/л — критичне
+        const string Bc780 = "0a2a0000-0000-0000-0000-000000000003", Bc20s = "0a2a0000-0000-0000-0000-000000000004", Ms380 = "0a2a0000-0000-0000-0000-000000000005";
+        foreach (var (days, analyzer, hgb, rbc, wbc) in new[] { (6.0, Bc780, 94.0, 3.38, 16.8), (4.0, Bc20s, 62.0, 2.11, 12.1), (2.0, Bc780, 99.0, 3.26, 25.0) })
+        {
+            var o = await _orders.CreateAsync(new CreateOrderRequest { PatientId = Pat(1), DoctorId = Doctor, DepartmentId = Dept, ClinicalNotes = "Післяопераційний контроль ЗАК", ProfileIds = { "PROF_CBC" } });
+            await CollectReceive(o);
+            await Enter(o, new()
+            {
+                ["WBC"] = wbc, ["RBC"] = rbc, ["HGB"] = hgb, ["HCT"] = Math.Round(hgb * 0.3, 1), ["PLT"] = 240, ["MCV"] = Math.Round(hgb * 3 / rbc, 1),
+                ["MCH"] = Math.Round(hgb / rbc, 1), ["MCHC"] = 333, ["NEUT_PCT"] = 82, ["LYMPH_PCT"] = 11, ["ESR"] = 38
+            }, analyzer);
+            await VerifyAll(o, "Критичний гемоглобін — повідомлено лікаря ВРІТ телефоном");
+            await _orders.ReleaseAsync(o.Id);
+            await Backdate(o.Id, hoursAgo: 24 * days);
+        }
+
+        // Пакет ВРІТ CITO: пропозиція розподілу застосовується одразу (FR-DST-009)
+        await _mis.CreateAsync(new MisReferralRequest
+        {
+            MisReferralId = "0c1a0000-0000-0000-0000-000000000107", ReferralNumber = "НП-2611-0107", Context = ReferralContexts.Inpatient, PatientId = Pat(1), DoctorId = Doctor, HospitalizationId = "0c1b0000-0000-0000-0000-000000000412",
+            Department = "ВРІТ", Ward = "1", Bed = "3", DoctorName = "Шевченко О. А. (анестезіолог)", Priority = "CITO",
+            Package = new MisPackageRef { Code = "PKG-POSTOP-ICU", Name = "Післяопераційний ВРІТ (CITO)", Cito = true },
+            Items = { It("DEMO-LAB-CBC", "WBC", "RBC", "HGB", "HCT", "PLT"), It("DEMO-LAB-ABG", "PH", "PCO2", "PO2", "HCO3", "BE", "SO2", "LACTATE"), It("DEMO-LAB-ELEC", "K", "NA", "ICA"),
+                      It("DEMO-LAB-COAG", "PT", "INR", "APTT"), It("DEMO-LAB-PCT"), It("DEMO-LAB-BIO", "GLU", "CREAT", "UREA") }
+        });
+        // Післяопераційний пакет, планове взяття — чекає підтвердження розподілу у «Вхідних направленнях»
+        await _mis.CreateAsync(new MisReferralRequest
+        {
+            MisReferralId = "0c1a0000-0000-0000-0000-000000000108", ReferralNumber = "НП-2611-0108", Context = ReferralContexts.Inpatient, PatientId = Pat(2), DoctorId = Doctor, HospitalizationId = "0c1b0000-0000-0000-0000-000000000415",
+            Department = "Онкохірургія (мамологія)", Ward = "6", Bed = "1", DoctorName = "Ткаченко В. Ю.", PlannedCollectionAt = DateTime.UtcNow.Date.AddDays(1).AddHours(4).AddMinutes(30),
+            Package = new MisPackageRef { Code = "PKG-POSTOP-1", Name = "Післяопераційний (стандартний)" },
+            Items = { It("DEMO-LAB-CBC", "WBC", "NEUT_ABS", "LYMPH_ABS", "RBC", "HGB", "HCT", "PLT"), It("DEMO-LAB-BIO", "PROT_TOT", "ALB", "UREA", "CREAT", "GLU", "BIL_TOT", "CRP"),
+                      It("DEMO-LAB-COAG", "PT", "INR", "APTT", "FIBRINOGEN"), It("DEMO-LAB-ELEC", "K", "NA", "CL") }
+        });
+        // Е-направлення: частковий вибір показників і онкомаркер без обладнання
+        await _mis.CreateAsync(new MisReferralRequest
+        {
+            MisReferralId = "0c1a0000-0000-0000-0000-000000000202", ReferralNumber = "0002-2026-K4P9", Context = ReferralContexts.Ambulatory, Source = ReferralSources.Ehealth, PatientId = Pat(3),
+            EhealthReferralNumber = await EReferral("0002-2026-K4P9", Pat(3), "Лабораторні дослідження (онкогінеколог)"), Department = "Поліклініка · онкогінеколог", DoctorName = "Іваненко Л. П.",
+            Items = { It("DEMO-LAB-CBC", "WBC", "RBC", "HGB", "HCT", "PLT", "ESR"), It("DEMO-LAB-BIO", "GLU", "CREAT", "ALT", "AST"), It("DEMO-LAB-TM", "CA125") }
+        });
+        // Внутрішнє направлення поліклініки
+        await _mis.CreateAsync(new MisReferralRequest
+        {
+            MisReferralId = "0c1a0000-0000-0000-0000-000000000111", ReferralNumber = "НП-2611-0111", Context = ReferralContexts.Ambulatory, Source = ReferralSources.Polyclinic, PatientId = Pat(5), DoctorId = Doctor,
+            Department = "Поліклініка · онкоуролог", DoctorName = "Кушнаренко М. В.", Items = { It("DEMO-LAB-URINE"), It("DEMO-LAB-BIO", "CREAT", "UREA") }
+        });
+        // Е-направлення іншого закладу без переданих показників — «Потрібен вибір показників» (FR-MIS-022)
+        await _mis.CreateAsync(new MisReferralRequest
+        {
+            MisReferralId = "0c1a0000-0000-0000-0000-000000000203", ReferralNumber = "0003-2026-D2X7", Context = ReferralContexts.Ambulatory, Source = ReferralSources.Ehealth, PatientId = Pat(4),
+            EhealthReferralNumber = await EReferral("0003-2026-D2X7", Pat(4), "Лабораторні дослідження (АЗПСМ)"), Department = "АЗПСМ (інший заклад)", DoctorName = "Мартинюк С. Р.",
+            Items = { It("DEMO-LAB-CBC"), It("DEMO-LAB-COAG") }
+        });
+        // Стаціонар: розподіл підтверджено, проби прийнято, частина результатів — для розрізів «аналізатор / пацієнт / дослідження»
+        await _mis.CreateAsync(new MisReferralRequest
+        {
+            MisReferralId = "0c1a0000-0000-0000-0000-000000000099", ReferralNumber = "НП-2611-0099", Context = ReferralContexts.Inpatient, PatientId = Pat(6), DoctorId = Doctor, Department = "Онкохірургія (колопроктологія)",
+            Ward = "2", Bed = "4", DoctorName = "Осокін А. Е.", Items = { It("DEMO-LAB-BIO", "PROT_TOT", "ALB", "CREAT", "UREA", "GLU", "CRP"), It("DEMO-LAB-COAG", "PT", "INR", "APTT", "FIBRINOGEN") }
+        });
+        var confirmedId = await _db.Orders.Where(o => o.MisReferralId == "0c1a0000-0000-0000-0000-000000000099").Select(o => o.Id).FirstAsync();
+        await _mis.ConfirmAsync(confirmedId, new DistributionConfirmRequest());
+        var confirmed = await _orders.GetAsync(confirmedId);
+        await CollectReceive(confirmed);
+        await Enter(confirmed, new() { ["PROT_TOT"] = 64, ["ALB"] = 36, ["CREAT"] = 88 }, Ms380);
+        _logger.LogInformation("Демо розд. 21–23: направлення МІС створено");
     }
 
     private async Task CollectReceive(OrderDto o)

@@ -141,7 +141,10 @@ public class LabTestProfileItem : GuidEntity
     [MaxLength(64)] public string ProfileId { get; set; } = "";
     [MaxLength(64)] public string TestId { get; set; } = "";
     public int DisplayOrder { get; set; }
+    /// <summary>Обов'язковий при виборі лікарем — не знімається (FR-MIS-012).</summary>
     public bool IsRequired { get; set; } = true;
+    /// <summary>Входить у «типовий набір» (FR-MIS-030); при замовленні профілю без вибору створюються лише типові.</summary>
+    public bool IsDefaultSelected { get; set; } = true;
 
     [ForeignKey(nameof(ProfileId))] public LabTestProfile? Profile { get; set; }
     [ForeignKey(nameof(TestId))] public LabTestDefinition? Test { get; set; }

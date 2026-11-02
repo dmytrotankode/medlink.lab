@@ -21,6 +21,10 @@ public sealed class WorklistFilter
     public string? LabSectionId { get; set; }
     public DateTime? From { get; set; }
     public DateTime? To { get; set; }
+    /// <summary>Вкладка «Без обладнання» (FR-RTE-005): тести з routing_status=NO_EQUIPMENT без приладу.</summary>
+    public bool? NoEquipment { get; set; }
+    /// <summary>Джерело направлення: INPATIENT | POLYCLINIC | EHEALTH | PARTNER.</summary>
+    public string? Source { get; set; }
 }
 
 public sealed class PanicCallRequest
@@ -68,6 +72,16 @@ public sealed class WorklistService
             q = q.Where(t => statuses.Contains(t.Status));
         }
         if (!string.IsNullOrWhiteSpace(f.AnalyzerId)) q = q.Where(t => t.AssignedAnalyzerId == f.AnalyzerId || (t.Result != null && t.Result.AnalyzerId == f.AnalyzerId));
+        if (f.NoEquipment == true) q = q.Where(t => t.RoutingStatus == RoutingStatuses.NoEquipment && t.AssignedAnalyzerId == null);
+        if (!string.IsNullOrWhiteSpace(f.Source))
+            q = f.Source.ToUpperInvariant() switch
+            {
+                ReferralSources.Inpatient => q.Where(t => t.Order!.ReferralContext == ReferralContexts.Inpatient && t.Order.ReferralType == ReferralTypes.Internal),
+                ReferralSources.Ehealth => q.Where(t => t.Order!.ReferralType == ReferralTypes.Ehealth),
+                ReferralSources.Partner => q.Where(t => t.Order!.ReferralType == ReferralTypes.ExternalClinic),
+                ReferralSources.Polyclinic => q.Where(t => t.Order!.ReferralType == ReferralTypes.Internal && t.Order.ReferralContext != ReferralContexts.Inpatient),
+                _ => q.Where(t => t.Order!.ReferralType == ReferralTypes.Self || t.Order.ReferralType == ReferralTypes.Paper)
+            };
         if (!string.IsNullOrWhiteSpace(f.Flag))
         {
             var flags = f.Flag.ToUpperInvariant().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

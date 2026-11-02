@@ -104,12 +104,46 @@ public class LabOrder : GuidEntity
     [MaxLength(64)] public string? OrganizationId { get; set; }
     /// <summary>Медичний висновок MedLink (mis_diagnostic_report), створений при видачі.</summary>
     [MaxLength(64)] public string? DiagnosticReportId { get; set; }
+    // --- Інтеграція з МІС (ТЗ розд. 21, 23) ---
+    /// <summary>Контур: AMBULATORY (зовнішнє — е-направлення ЕСОЗ) | INPATIENT (внутрішнє — призначення стаціонару); null — інше.</summary>
+    [MaxLength(16)] public string? ReferralContext { get; set; }
+    /// <summary>Ідентифікатор і номер направлення/призначення в МІС (POST /mis/referrals).</summary>
+    [MaxLength(64)] public string? MisReferralId { get; set; }
+    [MaxLength(64)] public string? MisReferralNumber { get; set; }
+    /// <summary>Госпіталізація МІС (mis_hospitalization) для стаціонару.</summary>
+    [MaxLength(64)] public string? MisHospitalizationId { get; set; }
+    /// <summary>Відділення-замовник у МІС (текстом — знімок на момент направлення).</summary>
+    [MaxLength(256)] public string? RequestingDepartmentName { get; set; }
+    [MaxLength(32)] public string? Ward { get; set; }
+    [MaxLength(32)] public string? Room { get; set; }
+    [MaxLength(32)] public string? Bed { get; set; }
+    public DateTime? PlannedCollectionAt { get; set; }
+    /// <summary>Пакет послуг МІС (FR-PKG-003).</summary>
+    [MaxLength(64)] public string? PackageCode { get; set; }
+    [MaxLength(256)] public string? PackageName { get; set; }
+    public bool PackageChangedByDoctor { get; set; }
+    /// <summary>Розподіл по аналізаторах (FR-DST): NONE | PROPOSED | CONFIRMED.</summary>
+    [MaxLength(16)] public string DistributionStatus { get; set; } = "NONE";
+    [MaxLength(64)] public string? DistributedById { get; set; }
+    public DateTime? DistributedAt { get; set; }
+    /// <summary>Статус відправки DiagnosticReport в ЕСОЗ (розд. 21.13).</summary>
+    [MaxLength(32)] public string EhealthStatus { get; set; } = EhealthSubmitStatuses.NotSent;
+    // --- Патоморфологія (ТЗ розд. 22) ---
+    /// <summary>Відділення-виконавець: null — КДЛ; PATHOLOGY — модуль «Патоморфологія».</summary>
+    [MaxLength(16)] public string? LabDepartment { get; set; }
+    /// <summary>BIOPSY | CITO | OPERATIVE | CONSULT</summary>
+    [MaxLength(16)] public string? PathologyKind { get; set; }
+    [MaxLength(64)] public string? MisOperationId { get; set; }
+    /// <summary>№ справи ПГД-РР-NNNN.</summary>
+    [MaxLength(32)] public string? CaseNo { get; set; }
+    public DateTime? SlaDueAt { get; set; }
 
     [ForeignKey(nameof(PatientId))] public MisPatientCard? Patient { get; set; }
     [ForeignKey(nameof(DiagnosticReportId))] public MisDiagnosticReport? DiagnosticReport { get; set; }
     [ForeignKey(nameof(PaperReferralId))] public EhePaperMedicalReferral? PaperReferral { get; set; }
     [ForeignKey(nameof(PayerId))] public LabPayer? Payer { get; set; }
     public List<LabOrderCharge> Charges { get; set; } = new();
+    public List<LabOrderItem> Items { get; set; } = new();
     [ForeignKey(nameof(DoctorId))] public OrgEmployee? Doctor { get; set; }
     [ForeignKey(nameof(DepartmentId))] public OrgDepartment? Department { get; set; }
     [ForeignKey(nameof(EhealthReferralId))] public EheIncomingMedicalReferral? Referral { get; set; }
@@ -179,6 +213,16 @@ public class LabOrderTest : GuidEntity
     public DateTime? ReleasedAt { get; set; }
     /// <summary>Лабораторія-виконавець (lab_performer); null — власна лабораторія.</summary>
     [MaxLength(64)] public string? PerformerId { get; set; }
+    // --- Маршрутизація в чергу приладу (ТЗ 21.7, 23.4) ---
+    /// <summary>Позиція направлення МІС (lab_order_item).</summary>
+    [MaxLength(64)] public string? OrderItemId { get; set; }
+    /// <summary>PROPOSED | ROUTED | NO_EQUIPMENT | SENDOUT | MANUAL; null — маршрутизація не застосовувалась.</summary>
+    [MaxLength(16)] public string? RoutingStatus { get; set; }
+    /// <summary>AUTO | MANUAL</summary>
+    [MaxLength(8)] public string? RoutedBy { get; set; }
+    public DateTime? EnqueuedOn { get; set; }
+    [MaxLength(64)] public string? DistributedById { get; set; }
+    public DateTime? DistributedAt { get; set; }
 
     [ForeignKey(nameof(OrderId))] public LabOrder? Order { get; set; }
     [ForeignKey(nameof(SampleId))] public LabOrderSample? Sample { get; set; }

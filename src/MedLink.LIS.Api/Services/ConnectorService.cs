@@ -272,6 +272,7 @@ $@"MedLink LabConnector — інструкція з встановлення (і
         {
             var a = analyzers.FirstOrDefault(x => x.Id == hb.AnalyzerId);
             if (a == null) continue;
+            if (a.IsOnline && !hb.IsConnected) a.OfflineSince = DateTime.UtcNow; else if (hb.IsConnected) a.OfflineSince = null; // FR-RTE-010
             a.IsOnline = hb.IsConnected; a.LastError = hb.LastError;
             if (hb.LastMessageAt.HasValue) a.LastMessageAt = hb.LastMessageAt;
         }
@@ -341,7 +342,7 @@ $@"MedLink LabConnector — інструкція з встановлення (і
         var analyzer = await _db.Analyzers.Include(a => a.ParameterMap).FirstOrDefaultAsync(a => a.Id == batch.AnalyzerId)
                        ?? throw new ValidationException($"Аналізатор {batch.AnalyzerId} не знайдено");
         if (analyzer.ConnectorId != null && analyzer.ConnectorId != c.Id) throw new ForbiddenConnectorException("Аналізатор належить іншій інсталяції коннектора");
-        analyzer.LastMessageAt = DateTime.UtcNow; analyzer.IsOnline = true;
+        analyzer.LastMessageAt = DateTime.UtcNow; analyzer.IsOnline = true; analyzer.OfflineSince = null;
         var response = new AnalyzerResultsAcceptedDto { Accepted = batch.Results.Count };
 
         if (batch.IsQc)

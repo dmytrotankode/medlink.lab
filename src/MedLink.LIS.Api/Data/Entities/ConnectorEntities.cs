@@ -58,6 +58,16 @@ public class LabAnalyzer : GuidEntity
     public bool IsOnline { get; set; }
     public DateTime? LastMessageAt { get; set; }
     [MaxLength(1024)] public string? LastError { get; set; }
+    /// <summary>ANALYZER | MANUAL — ручне робоче місце моделюється як прилад (FR-SVA-006).</summary>
+    [MaxLength(16)] public string Kind { get; set; } = AnalyzerKinds.Analyzer;
+    /// <summary>ACTIVE | MAINTENANCE | RETIRED (FR-SVA-005, FR-GAP-032).</summary>
+    [MaxLength(16)] public string ServiceStatus { get; set; } = AnalyzerServiceStatuses.Active;
+    /// <summary>Місце розташування (відділ КДЛ, експрес-лабораторія ВРІТ…).</summary>
+    [MaxLength(256)] public string? Location { get; set; }
+    /// <summary>Типовий TAT приладу, хв (для CITO-розподілу й прогнозу черги).</summary>
+    public int AvgTatMinutes { get; set; } = 30;
+    /// <summary>Час, з якого прилад без зв'язку (для FR-RTE-010).</summary>
+    public DateTime? OfflineSince { get; set; }
 
     [ForeignKey(nameof(AnalyzerTypeId))] public LabAnalyzerType? AnalyzerType { get; set; }
     [ForeignKey(nameof(ConnectorId))] public LabConnectorInstallation? Connector { get; set; }
@@ -74,6 +84,11 @@ public class LabAnalyzerParameterMap : GuidEntity
     public double Factor { get; set; } = 1.0;
     public double Offset { get; set; }
     [MaxLength(64)] public string? UnitOverride { get; set; }
+    /// <summary>Показник увімкнено на приладі (FR-EQP-003).</summary>
+    public bool IsEnabled { get; set; } = true;
+    /// <summary>Пріоритет показника на приладі; null — пріоритет послуги (FR-SVA-002).</summary>
+    public int? Priority { get; set; }
+    public bool RequiresDilution { get; set; }
 
     [ForeignKey(nameof(AnalyzerId))] public LabAnalyzer? Analyzer { get; set; }
 }

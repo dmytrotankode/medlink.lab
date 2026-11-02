@@ -54,10 +54,11 @@ public sealed class QcService
     private readonly IRolePolicy _policy;
     private readonly IAuditService _audit;
     private readonly ICurrentEmployee _current;
+    private readonly RoutingService _routing;
 
-    public QcService(LisDbContext db, IRolePolicy policy, IAuditService audit, ICurrentEmployee current)
+    public QcService(LisDbContext db, IRolePolicy policy, IAuditService audit, ICurrentEmployee current, RoutingService routing)
     {
-        _db = db; _policy = policy; _audit = audit; _current = current;
+        _db = db; _policy = policy; _audit = audit; _current = current; _routing = routing;
     }
 
     // ------------------------------------------------------------------ materials
@@ -176,6 +177,12 @@ public sealed class QcService
         _db.QcResults.Add(result);
         _audit.Log("CREATE", "lab_qc_result", result.Id, null, new { result.TestCode, result.MeasuredValue, result.ZScore, result.ViolatedRules, result.LockoutEnforced });
         await _db.SaveChangesAsync();
+        if (result.LockoutEnforced)
+        {
+            // FR-RTE-008: тести PENDING цього показника — на наступного кандидата
+            await _routing.RerouteFromAsync(material.AnalyzerId, req.TestCode, "Lockout ВКЯ на приладі");
+            await _db.SaveChangesAsync();
+        }
         return result;
     }
 
@@ -249,6 +256,8 @@ public sealed class QcService
         var l = new LabAnalyzerLockout { AnalyzerId = analyzerId, TestCode = testCode, Reason = reason };
         _db.Lockouts.Add(l);
         _audit.Log("LOCKOUT_MANUAL", "lab_analyzer_lockout", l.Id, null, new { analyzerId, testCode, reason });
+        await _db.SaveChangesAsync();
+        await _routing.RerouteFromAsync(analyzerId, testCode, "Lockout ВКЯ: " + reason); // FR-RTE-008
         await _db.SaveChangesAsync();
         return l;
     }

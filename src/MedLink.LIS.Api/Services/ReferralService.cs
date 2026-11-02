@@ -180,7 +180,8 @@ public sealed class ReferralService
                 break;
             }
             case ReferralTypes.Internal:
-                if (string.IsNullOrWhiteSpace(req.DoctorId)) throw ValidationException.Field("doctorId", "Для внутрішнього направлення вкажіть лікаря закладу");
+                // лікар закладу: співробітник ЛІС або ПІБ лікаря з направлення МІС
+                if (string.IsNullOrWhiteSpace(req.DoctorId) && string.IsNullOrWhiteSpace(req.ReferrerDoctorName)) throw ValidationException.Field("doctorId", "Для внутрішнього направлення вкажіть лікаря закладу");
                 break;
             case ReferralTypes.ExternalClinic:
                 if (string.IsNullOrWhiteSpace(order.ReferrerOrganizationName)) throw ValidationException.Field("referrerOrganizationName", "Вкажіть клініку-направника");

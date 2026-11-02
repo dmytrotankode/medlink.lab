@@ -176,6 +176,58 @@
 - `/portal/{patientId}/orders`, `/portal/{patientId}/orders/{id}`, `/portal/{patientId}/orders/{id}/report.pdf`, `/portal/{patientId}/trend/{testCode}`, `/portal/{patientId}/notifications`.
 - `/import/results` `multipart csv|xlsx|xml` + `?dryRun=true` → попередній перегляд, потім застосування.
 
+### 2.11. Інтеграція з МІС, маршрутизація, розподіл, підпис ЕСОЗ, звіти (ТЗ розд. 21, 23; R1.1)
+Помилки предметної області — ProblemDetails з машинним кодом: `type = https://medlink.ua/problems/{code}`, розширення `code`
+(напр. `required-indicator-missing`, `unknown-indicator`, `intervention-unmapped`, `duplicate-referral`, `referral-in-progress`,
+`analyzer-code-missing`, `ehealth-auth-required` 401, `ehealth-strong-auth-required` 403, `ehealth-totp-disabled` 409, `ehealth-invalid-code` 422,
+`signer-mismatch` 422, `certificate-expired` 422, `report-not-ready` 409). Ідентифікатори МІС (`misReferralId`, `hospitalizationId`) — GUID; людський номер — `referralNumber`.
+
+**Словник інтервенцій ЕСОЗ і співставлення (FR-MIS-001…016)**
+| Метод | Шлях | Опис |
+|---|---|---|
+| GET | `/interventions?search=&status=UNMAPPED\|NO_EQUIPMENT\|PARTIAL\|READY` | словник зі статусом готовності |
+| POST | `/interventions/sync` | синхронізація словника (LAB_ADMIN; мок — демо-набір `DEMO-`) |
+| GET/POST/PUT/DELETE | `/intervention-map`, `/intervention-map/{id}` | співставлення `{interventionId, profileId?, testIds[], indicatorSelectionMode FIXED\|SELECTABLE\|SELECTABLE_ANY, minSelected, isPathology}` |
+| GET | `/intervention-map/suggest?interventionId=`, `/intervention-map/coverage` | підказка профілю; звіт покриття (T-421) |
+
+**Послуги обладнання і довідник «Послуга ЕСОЗ × аналізатори» (FR-EQP-001…008, FR-SVA-001…009)**
+| Метод | Шлях | Опис |
+|---|---|---|
+| GET/PUT | `/analyzers/{id}/services?dryRun=` | послуги приладу `[{profileId, isEnabled, priority, avgTatMinutes}]`; `dryRun=true` → `{affected}` до підтвердження |
+| POST | `/analyzers/{id}/services/prefill` | заповнення з показників приладу |
+| GET | `/analyzer-services/matrix` | `{analyzers[{id, name, kind, location, isOnline, longOffline, lockouts[], queue}], rows[{serviceCode, profileCode, mode, readiness, cells{analyzerId: {priority, enabled, separate, partial, covered, total, unavailable[]}}}]}` |
+| GET/PUT | `/analyzer-services/{key}` | картка послуги (ключ — код інтервенції / id чи код профілю / id співставлення); PUT `{analyzers[], indicators[{testCode, isRequired, isDefault}], params[{analyzerId, testCode, isEnabled, analyzerCode, priority}], mode, dryRun}`; новий показник без коду приладу → 422 `analyzer-code-missing` |
+| GET / POST | `/analyzer-services/export` (CSV) / `/analyzer-services/import?dryRun=` | пакетне редагування |
+
+**Каталог і направлення МІС (FR-SVA-010…015, FR-MIS-020…035, FR-PKG-001…010)**
+| Метод | Шлях | Опис |
+|---|---|---|
+| GET | `/mis/catalog` | послуги для МІС: склад, режим вибору, обов'язкові/типові показники, `catalogVersion`; `ETag`, `If-None-Match` → 304 |
+| GET | `/mis/catalog/packages` | пакети (дзеркало довідника МІС) |
+| POST | `/mis/referrals` | `{misReferralId, referralNumber, context INPATIENT\|AMBULATORY, source?, patientId, hospitalizationId?, department, ward, room, bed, doctorId?, doctorName, priority ROUTINE\|CITO, plannedCollectionAt?, icd10?, ehealthReferralNumber?, partnerName?, package?{code, name, cito, changedByDoctor}, items[{interventionCode, indicators[], comment?}]}` → 201 з позиціями, тестами, приладом і позицією в черзі, `warnings[]` |
+| GET | `/mis/referrals`, `/mis/referrals/{id}` | id — id замовлення, `misReferralId`, номер замовлення або `referralNumber`; `events[]` (RECEIVED, RESULT_READY, COMPLETED, CANCELLED) |
+| POST | `/mis/referrals/{id}/cancel` | `{reason}`; 409 `referral-in-progress`, якщо робота почалась |
+| PUT | `/mis/referrals/{id}/items/{itemId}/indicators` | `{indicators[], selectedBy, reason}` — вибір/дозамовлення показників (FR-MIS-022, FR-SVA-015) |
+
+**Розподіл направлень (FR-DST-001…012)**: `GET /distribution/inbox?state=pending|all&source=`; `GET /distribution/{orderId}` (пропозиція: кандидати з доступністю, чергою, TAT, ознака розщеплення послуги); `PUT /distribution/{orderId}` `[{orderTestId|itemId+testCode, analyzerId, reason}]`; `POST /distribution/{orderId}/auto`; `POST /distribution/{orderId}/confirm {noEquipment[{orderTestId, action SENDOUT|MANUAL|REJECT, performerId?, reason?}]}`. Планові направлення МІС (`RequireDistributionConfirmation=true`) приходять як `PROPOSED`, CITO — одразу `CONFIRMED`; без переданих показників — `NEEDS_SELECTION`.
+
+**Маршрутизація (FR-RTE-001…012)**: `POST /routing/preview {profileId?, testCodes[], cito}`; `GET /routing/log?orderId=&orderTestId=`; `GET /analyzers/{id}/queue` (CITO → планований час → час прийому); `PUT /order-tests/{id}/analyzer {analyzerId, reason}` (лише на доступного кандидата); `POST /analyzers/{id}/reroute {reason}` (прилад без зв'язку → online-кандидати). Правило: кандидати — прилади з увімкненим показником; вимкнена послуга приладу виключає його; без послуги — «окремий показник» (пріоритет 10); недоступні — ТО, lockout ВКЯ, без зв'язку довше `RerouteOnOfflineMinutes`; група показників однієї послуги в пробі — спершу прилад, що виконує всі; стратегія `PRIORITY | LEAST_LOAD | PRIORITY_THEN_LOAD`; CITO — мінімальний TAT. Lockout ВКЯ і вимкнення послуги переназначають тести в черзі.
+
+**ЕСОЗ: сесія, підпис КЕП, відправка (FR-SGN-001…014)**
+| Метод | Шлях | Опис |
+|---|---|---|
+| GET/POST/DELETE | `/ehealth/session` | стан `{level L0\|L1\|L2, label, expiresAt, totpEnabled, testCertificate, demoTotpCode}`; POST `{login, password}` → L1 (пароль не зберігається) |
+| POST | `/ehealth/session/confirm` | `{method KEP\|TOTP, code?, signer?{drfo, name, certSerial, validTo}}` → L2 |
+| POST | `/ehealth/session/totp` | увімкнення 2FA (мок: код `123456`) |
+| POST | `/orders/{id}/ehealth/prepare` | пакет DiagnosticReport → `READY_TO_SIGN` (hash) |
+| POST | `/orders/{id}/ehealth/submit` | `{signedData, signer, simulateNetworkError?}` → SIGNED → PROCESSING → REGISTERED → COMPLETED (е-направлення) / ERROR (повтор) / AUTH_REQUIRED |
+| POST | `/orders/{id}/ehealth/retry`, `/orders/{id}/ehealth/annul {signedData, signer, reason}` | повтор без повторного підпису; анулювання з КЕП |
+| GET | `/orders/{id}/ehealth/status`, `/ehealth/submissions?status=` | статус, журнал відправок |
+
+**Робота за направленнями і звіти (FR-WRK-001…010, FR-RPT-001…014)**: `GET /work/summary|/work/by-analyzer/{id}|/work/by-patient[/{id}]|/work/by-service[/{code}]` з фільтрами `source, packagesOnly, department, cito, status=active|all, from, to, q`; `GET /work/export?view=&key=` (XLSX). `GET /reports` — перелік; `GET /reports/{type}?format=json|xlsx|pdf` для `load, sources, indicators, tat, distribution, unperformed, packages`; `GET /reports/cumulative/{patientId}?from=&to=&group=service|analyzer&abnormalOnly=&format=` (стрілки ↑ ↓ ↑↑ ↓↓, критичні, журнал `lab_report_run` + аудит `REPORT_ACCESS`); `POST /reports/stat-daily/rebuild?from=&to=` (агрегати `lab_stat_daily`).
+
+**Модель даних (нові таблиці [ЛІС])**: `lab_ehealth_intervention`, `lab_intervention_map`, `lab_intervention_map_test`, `lab_analyzer_service`, `lab_order_item`, `lab_order_item_indicator`, `lab_routing_log`, `lab_mis_event_log`, `lab_service_package`, `lab_ehealth_session`, `lab_ehealth_submission`, `lab_stat_daily`, `lab_report_run`; нові колонки `lab_order`, `lab_order_test`, `lab_analyzer`, `lab_analyzer_parameter_map`, `lab_test_profile_item`, `lab_settings` — міграція `db/migrations/R1.1/006_ch21_23_mis_routing_distribution_ehealth_sign.sql`.
+
 ## 3. API коннектора `/api/v1/lab/connector/*` (авторизація `X-MedLink-ApiKey`)
 
 | Метод | Шлях | Тіло | Відповідь |

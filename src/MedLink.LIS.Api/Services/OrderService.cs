@@ -19,10 +19,23 @@ public sealed class OrderService
     private readonly TubePlanService _tubes;
     private readonly ReferralService _referrals;
     private readonly BillingService _billing;
+    private readonly RoutingService _routing;
 
-    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state, TubePlanService tubes, ReferralService referrals, BillingService billing)
+    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state, TubePlanService tubes, ReferralService referrals, BillingService billing, RoutingService routing)
     {
-        _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state; _tubes = tubes; _referrals = referrals; _billing = billing;
+        _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state; _tubes = tubes; _referrals = referrals; _billing = billing; _routing = routing;
+    }
+
+    /// <summary>Параметри побудови замовлення з направлення МІС (розд. 21.6, 23.3): обрані лікарем показники, позиції, пропозиція розподілу.</summary>
+    internal sealed record BuildOptions
+    {
+        public List<SelectedTest>? Preselected { get; init; }
+        /// <summary>Позиція направлення (lab_order_item.id) для обраного показника.</summary>
+        public Func<SelectedTest, string?>? ItemOf { get; init; }
+        /// <summary>Заповнення полів МІС до маршрутизації (контур, відділення, пакет…).</summary>
+        public Action<LabOrder>? Configure { get; init; }
+        /// <summary>Маршрутизація як пропозиція (PROPOSED) — чекає підтвердження розподілу (FR-DST-008).</summary>
+        public bool Propose { get; init; }
     }
 
     public static readonly string[] CreatorRoles = { LabRoles.Admin, LabRoles.Registrar, LabRoles.Doctor, LabRoles.Phlebotomist, LabRoles.Technician };
@@ -31,6 +44,7 @@ public sealed class OrderService
     public IQueryable<LabOrder> FullQuery() => _db.Orders
         .Include(o => o.Patient).Include(o => o.Doctor).Include(o => o.Department)
         .Include(o => o.Referral).ThenInclude(r => r!.Status).Include(o => o.PaperReferral).Include(o => o.Payer).Include(o => o.Charges)
+        .Include(o => o.Items).ThenInclude(i => i.Indicators)
         .Include(o => o.Samples).ThenInclude(s => s.TubeType)
         .Include(o => o.Samples).ThenInclude(s => s.BiomaterialType)
         .Include(o => o.Tests).ThenInclude(t => t.Test).ThenInclude(d => d!.LabSection)
@@ -140,7 +154,7 @@ public sealed class OrderService
         return result;
     }
 
-    internal async Task<LabOrder> BuildOrderAsync(CreateOrderRequest req, string? repeatOfOrderId = null)
+    internal async Task<LabOrder> BuildOrderAsync(CreateOrderRequest req, string? repeatOfOrderId = null, BuildOptions? options = null)
     {
         // Пацієнт
         MisPatientCard patient;
@@ -157,7 +171,7 @@ public sealed class OrderService
         }
         else throw ValidationException.Field("patientId", "Вкажіть patientId або newPatient");
 
-        if (req.ProfileIds.Count == 0 && req.TestIds.Count == 0)
+        if (options?.Preselected == null && req.ProfileIds.Count == 0 && req.TestIds.Count == 0)
             throw ValidationException.Field("testIds", "Замовлення має містити хоча б один тест або профіль");
 
         var at = req.OrderDatetime ?? DateTime.UtcNow;
@@ -182,9 +196,14 @@ public sealed class OrderService
         };
         await ValidateRefsAsync(order);
         await _referrals.ApplyAsync(order, req, patient);
+        options?.Configure?.Invoke(order);
         _db.Orders.Add(order);
 
-        await AddTestsInternalAsync(order, req.ProfileIds, req.TestIds);
+        var added = options?.Preselected != null
+            ? await AddSelectedAsync(order, options.Preselected, options.ItemOf)
+            : await AddTestsInternalAsync(order, req.ProfileIds, req.TestIds);
+        // Маршрутизація в черги приладів (FR-RTE-001); для направлень МІС — пропозиція до підтвердження (FR-DST-008)
+        await _routing.RouteAsync(order, added, options?.Propose ?? false);
         await _billing.ApplyPayerAsync(order, req.PayerId, req.PatientInsuranceId, req.AuthorizationNumber);
         await _billing.RecalculateAsync(order);
         _audit.Log("CREATE", "lab_order", order.Id, null, new { order.OrderNumber, order.PatientId, tests = order.Tests.Select(t => t.TestCode), samples = order.Samples.Select(s => s.Barcode) });
@@ -198,14 +217,21 @@ public sealed class OrderService
     }
 
     /// <summary>Додає тести/профілі до замовлення з плануванням пробірок за правилами тари (FR-PRE-004).</summary>
-    private async Task AddTestsInternalAsync(LabOrder order, List<string> profileIds, List<string> testIds)
+    private async Task<List<LabOrderTest>> AddTestsInternalAsync(LabOrder order, List<string> profileIds, List<string> testIds)
     {
         var existingCodes = new HashSet<string>(order.Tests.Select(t => t.TestCode));
         var (toAdd, profiles, singles) = await _tubes.ResolveAsync(profileIds, testIds, existingCodes);
         foreach (var p in profiles) order.TotalPrice += p.Price;
         foreach (var t in singles.Where(t => toAdd.Any(a => a.Test.Id == t.Id && a.Profile == null))) order.TotalPrice += t.Price;
         if (toAdd.Count == 0 && order.Tests.Count == 0) throw new ValidationException("Немає нових тестів для додавання");
+        return await AddSelectedAsync(order, toAdd, null);
+    }
 
+    /// <summary>Створює тести для вже визначених показників (з тарою й маршрутом send-out) і планує пробірки; повертає створені тести.</summary>
+    internal async Task<List<LabOrderTest>> AddSelectedAsync(LabOrder order, List<SelectedTest> toAdd, Func<SelectedTest, string?>? itemOf)
+    {
+        var created = new List<LabOrderTest>();
+        if (toAdd.Count == 0) return created;
         var plan = await _tubes.BuildAsync(toAdd, order);
         var sampleByTest = new Dictionary<string, string>();
         foreach (var tube in plan.Tubes.Where(t => t.NewTests.Count > 0))
@@ -227,12 +253,28 @@ public sealed class OrderService
         var displayOrder = order.Tests.Count == 0 ? 0 : order.Tests.Max(t => t.DisplayOrder);
         foreach (var sel in toAdd)
         {
-            order.Tests.Add(new LabOrderTest
+            // показник із AsNoTracking-запиту (направлення МІС) — беремо відстежуваний екземпляр, щоб не конфліктувати з уже завантаженим
+            var test = _db.Entry(sel.Test).State == EntityState.Detached ? await _db.Tests.FindAsync(sel.Test.Id) ?? sel.Test : sel.Test;
+            var t = new LabOrderTest
             {
                 OrderId = order.Id, SampleId = sampleByTest[sel.Test.Id], ProfileId = sel.Profile?.Id, TestId = sel.Test.Id, TestCode = sel.Test.Code, TestName = sel.Test.Name,
-                Status = OrderTestStatuses.Pending, DisplayOrder = ++displayOrder, Test = sel.Test, PerformerId = sel.PerformerId
-            });
+                Status = OrderTestStatuses.Pending, DisplayOrder = ++displayOrder, Test = test, PerformerId = sel.PerformerId, OrderItemId = itemOf?.Invoke(sel)
+            };
+            order.Tests.Add(t);
+            created.Add(t);
         }
+        return created;
+    }
+
+    /// <summary>Дозамовлення обраних показників позиції МІС (FR-MIS-035, FR-SVA-015): тести, маршрутизація доданих, перерахунок вартості.</summary>
+    internal async Task<List<LabOrderTest>> AddPreselectedAsync(LabOrder order, List<(LabTestDefinition Test, LabTestProfile? Profile)> pairs, Func<SelectedTest, string?> itemOf, bool propose)
+    {
+        var selected = await _tubes.SelectAsync(pairs, new HashSet<string>(order.Tests.Where(t => t.Status != OrderTestStatuses.Rejected).Select(t => t.TestCode)));
+        var added = await AddSelectedAsync(order, selected, itemOf);
+        await _routing.RouteAsync(order, added, propose);
+        await _billing.RecalculateAsync(order);
+        if (added.Count > 0) _state.RecomputeReopen(order);
+        return added;
     }
 
     // ------------------------------------------------------------------ edit
@@ -262,7 +304,8 @@ public sealed class OrderService
         var order = await LoadAsync(id);
         _policy.Ensure(LisEntities.Order, OrderActions.AddTest, order.Status, $"Замовлення {order.OrderNumber}");
         var beforeCodes = order.Tests.Select(t => t.TestCode).ToList();
-        await AddTestsInternalAsync(order, req.ProfileIds, req.TestIds);
+        var added = await AddTestsInternalAsync(order, req.ProfileIds, req.TestIds);
+        await _routing.RouteAsync(order, added, false); // FR-RTE-012: лише додані тести
         await _billing.RecalculateAsync(order);
         _state.RecomputeReopen(order);
         _audit.Log("ADD_TESTS", "lab_order", order.Id, beforeCodes, order.Tests.Select(t => t.TestCode));
@@ -414,6 +457,9 @@ public sealed class OrderService
         _db.DiagnosticReports.Add(report);
         order.DiagnosticReportId = report.Id;
         await _referrals.CompleteAsync(order, report, now);
+        // Зворотні події МІС (FR-MIS-026, FR-PKG-010): результат по кожній позиції і завершення направлення
+        foreach (var item in order.Items.Where(i => i.Status == "ACTIVE")) { item.Status = "DONE"; MisReferralService.EmitFor(_db, order, MisEvents.ResultReady, new { item.InterventionCode, diagnosticReportId = report.Id }); }
+        MisReferralService.EmitFor(_db, order, MisEvents.Completed, new { order.OrderNumber, diagnosticReportId = report.Id });
 
         var channel = !string.IsNullOrWhiteSpace(order.Patient?.Person?.Email) ? "EMAIL" : "SMS";
         _db.Notifications.Add(new LabPatientNotification

@@ -85,8 +85,28 @@ public sealed class OrderTestDto
     public string? PerformerId { get; set; }
     public string? PerformerName { get; set; }
     public string? JournalNumber { get; set; }
+    /// <summary>Позиція направлення МІС і маршрутизація (розд. 21.7, 23.4).</summary>
+    public string? OrderItemId { get; set; }
+    public string? RoutingStatus { get; set; }
+    public string? RoutedBy { get; set; }
     public ResultDto? Result { get; set; }
     public List<AllowedActionDto> AllowedActions { get; set; } = new();
+}
+
+/// <summary>Позиція направлення МІС: інтервенція ЕСОЗ, послуга, обрані й не обрані лікарем показники.</summary>
+public sealed class OrderItemDto
+{
+    public string Id { get; set; } = "";
+    public string? InterventionCode { get; set; }
+    public string? InterventionName { get; set; }
+    public string? ProfileId { get; set; }
+    public string Status { get; set; } = "";
+    public string SelectionSource { get; set; } = "";
+    public string SelectionMode { get; set; } = "";
+    public int? PackageItemNo { get; set; }
+    public List<string> Selected { get; set; } = new();
+    public List<string> NotOrdered { get; set; } = new();
+    public List<string> AutoAdded { get; set; } = new();
 }
 
 public sealed class SampleDto
@@ -168,6 +188,25 @@ public sealed class OrderDto
     public DateTime? ReleasedAt { get; set; }
     public string? VerifyToken { get; set; }
     public string? CancelReason { get; set; }
+    // --- МІС, розподіл, ЕСОЗ (розд. 21, 23) ---
+    public string? ReferralContext { get; set; }
+    public string ReferralSource { get; set; } = "OTHER";
+    public string? MisReferralId { get; set; }
+    public string? MisReferralNumber { get; set; }
+    public string? RequestingDepartmentName { get; set; }
+    public string? Ward { get; set; }
+    public string? Room { get; set; }
+    public string? Bed { get; set; }
+    public DateTime? PlannedCollectionAt { get; set; }
+    public string? PackageCode { get; set; }
+    public string? PackageName { get; set; }
+    public bool PackageChangedByDoctor { get; set; }
+    public string DistributionStatus { get; set; } = "NONE";
+    public string EhealthStatus { get; set; } = "NOT_SENT";
+    public string? EhealthStatusLabel { get; set; }
+    public string? LabDepartment { get; set; }
+    public string? CaseNo { get; set; }
+    public List<OrderItemDto> Items { get; set; } = new();
     public List<SampleDto> Samples { get; set; } = new();
     public List<OrderTestDto> Tests { get; set; } = new();
     public List<AllowedActionDto> AllowedActions { get; set; } = new();
@@ -231,6 +270,13 @@ public sealed class WorklistRowDto
     public DateTime? EnteredAt { get; set; }
     public DateTime? VerifiedAt { get; set; }
     public DateTime OrderDatetime { get; set; }
+    // --- МІС і маршрутизація (21.11 п. 9) ---
+    public string? RoutingStatus { get; set; }
+    public string? RoutedBy { get; set; }
+    public string? Source { get; set; }
+    public string? RequestingDepartment { get; set; }
+    public string? Bed { get; set; }
+    public string? PackageCode { get; set; }
     public List<AllowedActionDto> AllowedActions { get; set; } = new();
 }
 

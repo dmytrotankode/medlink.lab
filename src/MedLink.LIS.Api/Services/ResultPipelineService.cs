@@ -141,11 +141,22 @@ public sealed class ResultPipelineService
         var analyzerId = entry.AnalyzerId ?? test.AssignedAnalyzerId;
         var locked = await IsLockedOutAsync(analyzerId, def.Code);
 
+        // Правдоподібність (FR-RPT-018): фізіологічні межі й співвідношення з іншими результатами замовлення
+        string? implausible = null;
+        if (numeric.HasValue)
+        {
+            var siblings = await _db.Results.AsNoTracking().Where(r => r.OrderTest!.OrderId == order.Id && r.OrderTestId != test.Id && r.NumericValue != null && r.OrderTest.Status != OrderTestStatuses.Rejected)
+                .Select(r => new { r.OrderTest!.TestCode, r.NumericValue }).ToListAsync();
+            var check = PlausibilityChecker.Check(def.Code, numeric.Value, siblings.GroupBy(x => x.TestCode).ToDictionary(g => g.Key, g => g.First().NumericValue!.Value));
+            if (!check.IsPlausible) implausible = check.Summary;
+        }
+
         // Автоверифікація
         var decision = AutoVerificationEngine.Evaluate(new AutoVerificationInput
         {
             Flag = flag, AnalyzerFlags = entry.AnalyzerFlags, DeltaAlert = delta.IsAlert,
-            RequiresManualVerification = def.RequiresManualVerification || (entry.PerformerId ?? test.PerformerId) != null, HasActiveLockout = locked, HasValue = numeric.HasValue || !string.IsNullOrEmpty(text)
+            RequiresManualVerification = def.RequiresManualVerification || (entry.PerformerId ?? test.PerformerId) != null, HasActiveLockout = locked, HasValue = numeric.HasValue || !string.IsNullOrEmpty(text),
+            ImplausibleReason = implausible
         });
 
         // Результат (одна версія на тест, попередні — в історії)
@@ -202,7 +213,7 @@ public sealed class ResultPipelineService
         else
         {
             test.ReleasedAt = null;
-            test.Status = ResultFlags.IsCritical(flag) || delta.IsAlert ? OrderTestStatuses.NeedsReview : OrderTestStatuses.Resulted;
+            test.Status = ResultFlags.IsCritical(flag) || delta.IsAlert || implausible != null ? OrderTestStatuses.NeedsReview : OrderTestStatuses.Resulted;
         }
         test.RejectReason = null;
         if (analyzerId != null) test.AssignedAnalyzerId = analyzerId;

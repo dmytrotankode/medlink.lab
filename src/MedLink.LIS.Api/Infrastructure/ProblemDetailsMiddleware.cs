@@ -25,7 +25,7 @@ public sealed class ProblemDetailsMiddleware
         }
         catch (LisException ex)
         {
-            await WriteAsync(context, ex.StatusCode, ex.Title, ex.Message, ex.Errors);
+            await WriteAsync(context, ex.StatusCode, ex.Title, ex.Message, ex.Errors, ex.Code);
         }
         catch (DbUpdateException ex)
         {
@@ -39,7 +39,7 @@ public sealed class ProblemDetailsMiddleware
         }
     }
 
-    private static async Task WriteAsync(HttpContext ctx, int status, string title, string detail, IDictionary<string, string[]>? errors)
+    private static async Task WriteAsync(HttpContext ctx, int status, string title, string detail, IDictionary<string, string[]>? errors, string? code = null)
     {
         if (ctx.Response.HasStarted) return;
         ctx.Response.Clear();
@@ -47,13 +47,14 @@ public sealed class ProblemDetailsMiddleware
         ctx.Response.ContentType = "application/problem+json; charset=utf-8";
         var pd = new ProblemDetails
         {
-            Type = $"https://httpstatuses.com/{status}",
+            Type = code == null ? $"https://httpstatuses.com/{status}" : $"https://medlink.ua/problems/{code}",
             Title = title,
             Status = status,
             Detail = detail,
             Instance = ctx.Request.Path
         };
         if (errors != null) pd.Extensions["errors"] = errors;
+        if (code != null) pd.Extensions["code"] = code;
         pd.Extensions["traceId"] = ctx.TraceIdentifier;
         await ctx.Response.WriteAsync(JsonSerializer.Serialize(pd, JsonOptions));
     }

@@ -11,6 +11,8 @@ public sealed class AutoVerificationInput
     public bool RequiresManualVerification { get; init; }
     public bool HasActiveLockout { get; init; }
     public bool HasValue { get; init; } = true;
+    /// <summary>Причина неправдоподібності (PlausibilityChecker); null — значення правдоподібне.</summary>
+    public string? ImplausibleReason { get; init; }
 }
 
 public sealed class AutoVerificationDecision
@@ -37,6 +39,7 @@ public static class AutoVerificationEngine
         if (input.DeltaAlert) reasons.Add("Спрацював delta-check");
         if (input.RequiresManualVerification) reasons.Add("Тест вимагає ручної верифікації");
         if (input.HasActiveLockout) reasons.Add("Активний lockout аналізатора (ВКЯ)");
+        if (!string.IsNullOrEmpty(input.ImplausibleReason)) reasons.Add(input.ImplausibleReason);
         return new AutoVerificationDecision { Approved = reasons.Count == 0, BlockReasons = reasons };
     }
 

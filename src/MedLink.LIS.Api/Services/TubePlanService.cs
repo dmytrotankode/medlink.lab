@@ -52,26 +52,30 @@ public sealed class TubePlanService
             singles.Add(t);
         }
 
+        // Профіль без явного вибору — лише показники «типового набору» (FR-MIS-030)
+        var pairs = profiles.SelectMany(p => p.Items.Where(i => i.Test != null && i.IsDefaultSelected).OrderBy(i => i.DisplayOrder).Select(i => (i.Test!, (LabTestProfile?)p)))
+            .Concat(singles.Select(t => (t, (LabTestProfile?)null)));
+        return (await SelectAsync(pairs, existingCodes), profiles, singles);
+    }
+
+    /// <summary>Перелік обраних показників (з профілем-джерелом) → тести з тарою та маршрутом send-out; дублікати й наявні коди пропускаються.</summary>
+    public async Task<List<SelectedTest>> SelectAsync(IEnumerable<(LabTestDefinition Test, LabTestProfile? Profile)> pairs, ISet<string> existingCodes)
+    {
+        var list = pairs.ToList();
         var codes = new HashSet<string>(existingCodes);
         var result = new List<SelectedTest>();
-        var candidateIds = profiles.SelectMany(p => p.Items).Where(i => i.Test != null).Select(i => i.Test!.Id).Concat(singles.Select(t => t.Id)).Distinct().ToList();
+        var candidateIds = list.Select(x => x.Test.Id).Distinct().ToList();
         // Маршрути send-out за замовчуванням (lab_performer_test.is_default_route)
         var routes = await _db.PerformerTests.AsNoTracking().Include(x => x.Performer)
             .Where(x => candidateIds.Contains(x.TestId) && x.IsDefaultRoute && x.IsActive && x.Performer!.IsActive && x.Performer.Kind == PerformerKinds.External && x.Performer.RecordState != RecordStates.Deleted)
             .ToDictionaryAsync(x => x.TestId, x => (x.PerformerId, x.Performer!.Code));
         SelectedTest Routed(SelectedTest s) => routes.TryGetValue(s.Test.Id, out var r) ? s with { PerformerId = r.PerformerId, PerformerCode = r.Code } : s;
-        foreach (var p in profiles)
-            foreach (var item in p.Items.OrderBy(i => i.DisplayOrder))
-            {
-                if (item.Test == null || !codes.Add(item.Test.Code)) continue;
-                result.Add(Routed(new SelectedTest(item.Test, p, item.Test.TubeTypeId ?? p.DefaultTubeTypeId ?? await DefaultTubeForBiomaterialAsync(item.Test.BiomaterialTypeId))));
-            }
-        foreach (var t in singles)
+        foreach (var (test, profile) in list)
         {
-            if (!codes.Add(t.Code)) continue;
-            result.Add(Routed(new SelectedTest(t, null, t.TubeTypeId ?? await DefaultTubeForBiomaterialAsync(t.BiomaterialTypeId))));
+            if (!codes.Add(test.Code)) continue;
+            result.Add(Routed(new SelectedTest(test, profile, test.TubeTypeId ?? profile?.DefaultTubeTypeId ?? await DefaultTubeForBiomaterialAsync(test.BiomaterialTypeId))));
         }
-        return (result, profiles, singles);
+        return result;
     }
 
     /// <summary>Будує план з урахуванням наявних первинних пробірок замовлення (для дозамовлення).</summary>

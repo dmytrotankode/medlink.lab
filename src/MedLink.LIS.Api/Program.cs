@@ -86,7 +86,12 @@ builder.Services.AddScoped<IEhealthReferralGateway, EhealthReferralGateway>();
 builder.Services.AddScoped<ReferralService>();
 builder.Services.AddScoped<BillingService>();
 builder.Services.AddScoped<ClientService>();
+builder.Services.AddScoped<RoutingService>();
 builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<MisCatalogService>();
+builder.Services.AddScoped<MisReferralService>();
+builder.Services.AddScoped<WorkReportsService>();
+builder.Services.AddScoped<MedLink.LIS.Api.Services.Ehealth.EhealthSignService>();
 builder.Services.AddScoped<SampleService>();
 builder.Services.AddScoped<ResultPipelineService>();
 builder.Services.AddScoped<WorklistService>();
@@ -109,6 +114,7 @@ builder.Services.AddScoped<ProgressiveReleaseService>();
 builder.Services.AddScoped<SampleProcessingService>();
 builder.Services.AddScoped<OrderMatrixService>();
 builder.Services.AddScoped<SeedService>();
+builder.Services.AddScoped<MisCatalogSeeder>();
 builder.Services.AddScoped<DemoDataSeeder>();
 // Парсер повідомлень аналізаторів: локальна реалізація; замінюється на MedLink.LIS.Core.Protocols однією реєстрацією
 builder.Services.AddSingleton<IAnalyzerMessageParser, AnalyzerMessageParserFallback>();
@@ -139,6 +145,8 @@ using (var scope = app.Services.CreateScope())
     foreach (var change in await SchemaUpgrader.UpgradeAsync(db)) app.Logger.LogWarning("Оновлення схеми БД: {Sql}", change);
     await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
     await scope.ServiceProvider.GetRequiredService<SeedService>().SeedAsync();
+    await scope.ServiceProvider.GetRequiredService<MisCatalogSeeder>().SeedAsync();
+    await scope.ServiceProvider.GetRequiredService<MisCatalogService>().RecomputeReadinessAsync();
     if (app.Configuration.GetValue<bool?>("Lab:SeedDemoData") ?? true)
     {
         try { await scope.ServiceProvider.GetRequiredService<DemoDataSeeder>().SeedAsync(); }

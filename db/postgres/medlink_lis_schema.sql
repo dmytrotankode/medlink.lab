@@ -1,6 +1,6 @@
 -- =============================================================================
 -- MedLink LIS — схема модуля «Лабораторія» для PostgreSQL (evomis). Згенеровано з EF-моделі ЛІС.
--- Дата генерації: 2026-10-07. Не редагувати вручну — перегенерувати: --export-pg-ddl.
+-- Дата генерації: 2026-11-02. Не редагувати вручну — перегенерувати: --export-pg-ddl.
 -- [MedLink]  — таблиця evomis, не створюється (наведено колонки, які використовує ЛІС).
 -- [MedLink+] — колонки, які ЛІС додає до таблиці evomis.
 -- [ЛІС]      — таблиця модуля, створюється цим скриптом.
@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS lab_analyzer (
     id uuid NOT NULL,
     analyzer_type_id integer NOT NULL,
     auto_query_orders boolean NOT NULL,
+    avg_tat_minutes integer NOT NULL,
     baud_rate integer NOT NULL,
     code varchar(64) NOT NULL,
     com_port varchar(32),
@@ -43,13 +44,17 @@ CREATE TABLE IF NOT EXISTS lab_analyzer (
     is_active boolean NOT NULL,
     is_online boolean NOT NULL,
     is_tcp_server boolean NOT NULL,
+    kind varchar(16) NOT NULL,
     last_error varchar(1024),
     last_message_at timestamp without time zone,
+    location varchar(256),
     modified_by uuid NOT NULL,
     modified_on timestamp without time zone,
     name varchar(256) NOT NULL,
+    offline_since timestamp without time zone,
     parity varchar(8) NOT NULL,
     record_state integer NOT NULL DEFAULT 2,
+    service_status varchar(16) NOT NULL,
     stop_bits varchar(16) NOT NULL,
     tcp_host varchar(128),
     tcp_port integer,
@@ -111,15 +116,38 @@ CREATE TABLE IF NOT EXISTS lab_analyzer_parameter_map (
     created_by uuid NOT NULL,
     created_on timestamp without time zone NOT NULL,
     factor double precision NOT NULL,
+    is_enabled boolean NOT NULL,
     modified_by uuid NOT NULL,
     modified_on timestamp without time zone,
     offset double precision NOT NULL,
+    priority integer,
     record_state integer NOT NULL DEFAULT 2,
+    requires_dilution boolean NOT NULL,
     test_code varchar(64) NOT NULL,
     unit_override varchar(64),
     CONSTRAINT pk_lab_analyzer_parameter_map PRIMARY KEY (id)
 );
 CREATE INDEX IF NOT EXISTS ix_lab_analyzer_parameter_map_analyzer_id ON lab_analyzer_parameter_map (analyzer_id);
+
+-- [ЛІС] lab_analyzer_service (LabAnalyzerService)
+CREATE TABLE IF NOT EXISTS lab_analyzer_service (
+    id uuid NOT NULL,
+    analyzer_id uuid NOT NULL,
+    avg_tat_minutes integer NOT NULL,
+    biomaterial_type_id integer,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    is_enabled boolean NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    note varchar(512),
+    priority integer NOT NULL,
+    profile_id uuid NOT NULL,
+    record_state integer NOT NULL DEFAULT 2,
+    CONSTRAINT pk_lab_analyzer_service PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_analyzer_service_profile_id ON lab_analyzer_service (profile_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_analyzer_service_analyzer_id_profile_id ON lab_analyzer_service (analyzer_id, profile_id);
 
 -- [ЛІС] lab_analyzer_type (LabAnalyzerType)
 CREATE TABLE IF NOT EXISTS lab_analyzer_type (
@@ -368,6 +396,79 @@ CREATE TABLE IF NOT EXISTS lab_ehealth_exchange_log (
 );
 CREATE INDEX IF NOT EXISTS ix_lab_ehealth_exchange_log_at ON lab_ehealth_exchange_log (at);
 
+-- [ЛІС] lab_ehealth_intervention (LabEhealthIntervention)
+CREATE TABLE IF NOT EXISTS lab_ehealth_intervention (
+    id uuid NOT NULL,
+    category varchar(64) NOT NULL,
+    code varchar(64) NOT NULL,
+    code_system varchar(128) NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    is_active boolean NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    name varchar(512) NOT NULL,
+    record_state integer NOT NULL DEFAULT 2,
+    service_group varchar(32),
+    source_version varchar(32),
+    synced_on timestamp without time zone,
+    CONSTRAINT pk_lab_ehealth_intervention PRIMARY KEY (id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_ehealth_intervention_code ON lab_ehealth_intervention (code);
+
+-- [ЛІС] lab_ehealth_session (LabEhealthSession)
+CREATE TABLE IF NOT EXISTS lab_ehealth_session (
+    id uuid NOT NULL,
+    auth_level varchar(4) NOT NULL,
+    auth_method varchar(32) NOT NULL,
+    cert_serial varchar(64),
+    closed_at timestamp without time zone,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    employee_id uuid NOT NULL,
+    expires_at timestamp without time zone NOT NULL,
+    last_activity_on timestamp without time zone NOT NULL,
+    login varchar(128) NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    record_state integer NOT NULL DEFAULT 2,
+    signer_drfo varchar(16),
+    signer_name varchar(256),
+    token_enc text,
+    totp_enabled boolean NOT NULL,
+    CONSTRAINT pk_lab_ehealth_session PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_ehealth_session_employee_id_closed_at ON lab_ehealth_session (employee_id, closed_at);
+
+-- [ЛІС] lab_ehealth_submission (LabEhealthSubmission)
+CREATE TABLE IF NOT EXISTS lab_ehealth_submission (
+    id uuid NOT NULL,
+    attempts integer NOT NULL,
+    cert_serial varchar(64),
+    completed_at timestamp without time zone,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    diagnostic_report_id uuid,
+    ehealth_report_id uuid,
+    job_id uuid,
+    kind varchar(16) NOT NULL,
+    last_error varchar(1024),
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    next_attempt_at timestamp without time zone,
+    order_id uuid NOT NULL,
+    package_hash varchar(128),
+    package_json text,
+    record_state integer NOT NULL DEFAULT 2,
+    signed_by varchar(64),
+    signed_by_name varchar(256),
+    signed_data text,
+    signed_on timestamp without time zone,
+    status varchar(32) NOT NULL,
+    CONSTRAINT pk_lab_ehealth_submission PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_ehealth_submission_order_id_status ON lab_ehealth_submission (order_id, status);
+
 -- [ЛІС] lab_employee_settings (LabEmployeeSettings)
 CREATE TABLE IF NOT EXISTS lab_employee_settings (
     employee_id uuid NOT NULL,
@@ -404,6 +505,45 @@ CREATE TABLE IF NOT EXISTS lab_eucast_breakpoint (
 );
 CREATE INDEX IF NOT EXISTS ix_lab_eucast_breakpoint_antibiotic_id ON lab_eucast_breakpoint (antibiotic_id);
 CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_eucast_breakpoint_organism_id_antibiotic_id_eucast_version ON lab_eucast_breakpoint (organism_id, antibiotic_id, eucast_version);
+
+-- [ЛІС] lab_intervention_map (LabInterventionMap)
+CREATE TABLE IF NOT EXISTS lab_intervention_map (
+    id uuid NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    indicator_selection_mode varchar(16) NOT NULL,
+    intervention_id uuid NOT NULL,
+    is_active boolean NOT NULL,
+    is_pathology boolean NOT NULL,
+    min_selected integer NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    note varchar(512),
+    profile_id uuid,
+    readiness varchar(16) NOT NULL,
+    record_state integer NOT NULL DEFAULT 2,
+    CONSTRAINT pk_lab_intervention_map PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_intervention_map_intervention_id ON lab_intervention_map (intervention_id);
+CREATE INDEX IF NOT EXISTS ix_lab_intervention_map_profile_id ON lab_intervention_map (profile_id);
+
+-- [ЛІС] lab_intervention_map_test (LabInterventionMapTest)
+CREATE TABLE IF NOT EXISTS lab_intervention_map_test (
+    id uuid NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    display_order integer NOT NULL,
+    is_default boolean NOT NULL,
+    is_required boolean NOT NULL,
+    map_id uuid NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    record_state integer NOT NULL DEFAULT 2,
+    test_id uuid NOT NULL,
+    CONSTRAINT pk_lab_intervention_map_test PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_intervention_map_test_test_id ON lab_intervention_map_test (test_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_intervention_map_test_map_id_test_id ON lab_intervention_map_test (map_id, test_id);
 
 -- [ЛІС] lab_invoice (LabInvoice)
 CREATE TABLE IF NOT EXISTS lab_invoice (
@@ -483,6 +623,26 @@ CREATE TABLE IF NOT EXISTS lab_micro_organism (
     CONSTRAINT pk_lab_micro_organism PRIMARY KEY (id)
 );
 
+-- [ЛІС] lab_mis_event_log (LabMisEventLog)
+CREATE TABLE IF NOT EXISTS lab_mis_event_log (
+    id uuid NOT NULL,
+    at timestamp without time zone NOT NULL,
+    attempts integer NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    event varchar(64) NOT NULL,
+    last_error varchar(1024),
+    mis_referral_id uuid,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    order_id uuid,
+    payload text,
+    record_state integer NOT NULL DEFAULT 2,
+    status varchar(16) NOT NULL,
+    CONSTRAINT pk_lab_mis_event_log PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_mis_event_log_order_id_at ON lab_mis_event_log (order_id, at);
+
 -- [ЛІС] lab_numerator (LabNumerator)
 CREATE TABLE IF NOT EXISTS lab_numerator (
     code uuid NOT NULL,
@@ -499,7 +659,9 @@ CREATE TABLE IF NOT EXISTS lab_numerator (
 CREATE TABLE IF NOT EXISTS lab_order (
     id uuid NOT NULL,
     authorization_number varchar(64),
+    bed varchar(32),
     cancel_reason varchar(512),
+    case_no varchar(32),
     clinical_notes text,
     completed_at timestamp without time zone,
     created_by uuid NOT NULL,
@@ -507,27 +669,42 @@ CREATE TABLE IF NOT EXISTS lab_order (
     created_on timestamp without time zone NOT NULL,
     department_id uuid,
     diagnostic_report_id uuid,
+    distributed_at timestamp without time zone,
+    distributed_by_id uuid,
+    distribution_status varchar(16) NOT NULL,
     doctor_id uuid,
     ehealth_referral_id uuid,
+    ehealth_status varchar(32) NOT NULL,
     icd10_code varchar(16),
     insurance_policy_number varchar(64),
     is_pregnant boolean NOT NULL,
     is_urgent_cito boolean NOT NULL,
+    lab_department varchar(16),
     menstrual_phase varchar(32),
+    mis_hospitalization_id uuid,
+    mis_operation_id uuid,
+    mis_referral_id uuid,
+    mis_referral_number varchar(64),
     modified_by uuid NOT NULL,
     modified_on timestamp without time zone,
     order_datetime timestamp without time zone NOT NULL,
     order_number varchar(32) NOT NULL,
     organization_id uuid,
+    package_changed_by_doctor boolean NOT NULL,
+    package_code varchar(64),
+    package_name varchar(256),
     paid_amount numeric(18,2) NOT NULL,
     paper_referral_id uuid,
+    pathology_kind varchar(16),
     patient_amount numeric(18,2) NOT NULL,
     patient_id uuid NOT NULL,
     patient_insurance_id uuid,
     payer_amount numeric(18,2) NOT NULL,
     payer_id uuid,
+    planned_collection_at timestamp without time zone,
     pregnancy_week integer,
     record_state integer NOT NULL DEFAULT 2,
+    referral_context varchar(16),
     referral_type varchar(16) NOT NULL,
     referrer_doctor_name varchar(256),
     referrer_number varchar(64),
@@ -536,15 +713,21 @@ CREATE TABLE IF NOT EXISTS lab_order (
     released_at timestamp without time zone,
     released_by_id uuid,
     repeat_of_order_id uuid,
+    requesting_department_name varchar(256),
+    room varchar(32),
+    sla_due_at timestamp without time zone,
     status varchar(32) NOT NULL,
     total_price numeric(18,2) NOT NULL,
     verify_token varchar(128),
+    ward varchar(32),
     CONSTRAINT pk_lab_order PRIMARY KEY (id)
 );
 CREATE INDEX IF NOT EXISTS ix_lab_order_department_id ON lab_order (department_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_diagnostic_report_id ON lab_order (diagnostic_report_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_doctor_id ON lab_order (doctor_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_ehealth_referral_id ON lab_order (ehealth_referral_id);
+CREATE INDEX IF NOT EXISTS ix_lab_order_lab_department ON lab_order (lab_department);
+CREATE INDEX IF NOT EXISTS ix_lab_order_mis_referral_id ON lab_order (mis_referral_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_order_datetime ON lab_order (order_datetime);
 CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_order_order_number ON lab_order (order_number);
 CREATE INDEX IF NOT EXISTS ix_lab_order_paper_referral_id ON lab_order (paper_referral_id);
@@ -620,6 +803,54 @@ CREATE TABLE IF NOT EXISTS lab_order_favorite (
 );
 CREATE INDEX IF NOT EXISTS ix_lab_order_favorite_employee_id ON lab_order_favorite (employee_id);
 
+-- [ЛІС] lab_order_item (LabOrderItem)
+CREATE TABLE IF NOT EXISTS lab_order_item (
+    id uuid NOT NULL,
+    comment varchar(1024),
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    display_order integer NOT NULL,
+    ehealth_service_request_id uuid,
+    intervention_code varchar(64),
+    intervention_id uuid,
+    intervention_name varchar(512),
+    is_cito boolean NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    order_id uuid NOT NULL,
+    package_item_no integer,
+    profile_id uuid,
+    record_state integer NOT NULL DEFAULT 2,
+    selection_mode varchar(16) NOT NULL,
+    selection_source varchar(32) NOT NULL,
+    status varchar(16) NOT NULL,
+    CONSTRAINT pk_lab_order_item PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_order_item_intervention_id ON lab_order_item (intervention_id);
+CREATE INDEX IF NOT EXISTS ix_lab_order_item_order_id ON lab_order_item (order_id);
+CREATE INDEX IF NOT EXISTS ix_lab_order_item_profile_id ON lab_order_item (profile_id);
+
+-- [ЛІС] lab_order_item_indicator (LabOrderItemIndicator)
+CREATE TABLE IF NOT EXISTS lab_order_item_indicator (
+    id uuid NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    is_auto_added boolean NOT NULL,
+    is_required boolean NOT NULL,
+    is_selected boolean NOT NULL,
+    item_id uuid NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    order_test_id uuid,
+    record_state integer NOT NULL DEFAULT 2,
+    selected_by varchar(32),
+    selected_on timestamp without time zone,
+    test_code varchar(64) NOT NULL,
+    test_id uuid NOT NULL,
+    CONSTRAINT pk_lab_order_item_indicator PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_order_item_indicator_item_id ON lab_order_item_indicator (item_id);
+
 -- [ЛІС] lab_order_sample (LabOrderSample)
 CREATE TABLE IF NOT EXISTS lab_order_sample (
     id uuid NOT NULL,
@@ -669,10 +900,14 @@ CREATE TABLE IF NOT EXISTS lab_order_test (
     created_by uuid NOT NULL,
     created_on timestamp without time zone NOT NULL,
     display_order integer NOT NULL,
+    distributed_at timestamp without time zone,
+    distributed_by_id uuid,
+    enqueued_on timestamp without time zone,
     is_reflex boolean NOT NULL,
     modified_by uuid NOT NULL,
     modified_on timestamp without time zone,
     order_id uuid NOT NULL,
+    order_item_id uuid,
     performer_id uuid,
     profile_id uuid,
     record_state integer NOT NULL DEFAULT 2,
@@ -680,6 +915,8 @@ CREATE TABLE IF NOT EXISTS lab_order_test (
     reflex_needs_confirmation boolean NOT NULL,
     reject_reason varchar(512),
     released_at timestamp without time zone,
+    routed_by varchar(8),
+    routing_status varchar(16),
     sample_id uuid,
     status varchar(32) NOT NULL,
     test_code varchar(64) NOT NULL,
@@ -687,7 +924,6 @@ CREATE TABLE IF NOT EXISTS lab_order_test (
     test_name varchar(256) NOT NULL,
     CONSTRAINT pk_lab_order_test PRIMARY KEY (id)
 );
-CREATE INDEX IF NOT EXISTS ix_lab_order_test_assigned_analyzer_id ON lab_order_test (assigned_analyzer_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_test_order_id ON lab_order_test (order_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_test_performer_id ON lab_order_test (performer_id);
 CREATE INDEX IF NOT EXISTS ix_lab_order_test_profile_id ON lab_order_test (profile_id);
@@ -696,6 +932,7 @@ CREATE INDEX IF NOT EXISTS ix_lab_order_test_sample_id ON lab_order_test (sample
 CREATE INDEX IF NOT EXISTS ix_lab_order_test_status ON lab_order_test (status);
 CREATE INDEX IF NOT EXISTS ix_lab_order_test_test_code ON lab_order_test (test_code);
 CREATE INDEX IF NOT EXISTS ix_lab_order_test_test_id ON lab_order_test (test_id);
+CREATE INDEX IF NOT EXISTS ix_lab_order_test_assigned_analyzer_id_status ON lab_order_test (assigned_analyzer_id, status);
 
 -- [ЛІС] lab_panic_call (LabPanicCall)
 CREATE TABLE IF NOT EXISTS lab_panic_call (
@@ -1043,6 +1280,25 @@ CREATE TABLE IF NOT EXISTS lab_reflex_rule (
     CONSTRAINT pk_lab_reflex_rule PRIMARY KEY (id)
 );
 
+-- [ЛІС] lab_report_run (LabReportRun)
+CREATE TABLE IF NOT EXISTS lab_report_run (
+    id uuid NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    format varchar(8) NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    params_json text,
+    patient_id uuid,
+    record_state integer NOT NULL DEFAULT 2,
+    report_type varchar(32) NOT NULL,
+    rows integer NOT NULL,
+    run_at timestamp without time zone NOT NULL,
+    run_by varchar(64),
+    CONSTRAINT pk_lab_report_run PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_report_run_run_at ON lab_report_run (run_at);
+
 -- [ЛІС] lab_result_history (LabResultHistory)
 CREATE TABLE IF NOT EXISTS lab_result_history (
     id uuid NOT NULL,
@@ -1064,6 +1320,31 @@ CREATE TABLE IF NOT EXISTS lab_result_history (
     version integer NOT NULL,
     CONSTRAINT pk_lab_result_history PRIMARY KEY (id)
 );
+
+-- [ЛІС] lab_routing_log (LabRoutingLog)
+CREATE TABLE IF NOT EXISTS lab_routing_log (
+    id uuid NOT NULL,
+    actor_id varchar(64),
+    analyzer_id uuid,
+    at timestamp without time zone NOT NULL,
+    candidates_json text,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    event varchar(16) NOT NULL,
+    from_analyzer_id uuid,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    order_id uuid,
+    order_test_id uuid NOT NULL,
+    reason varchar(512),
+    record_state integer NOT NULL DEFAULT 2,
+    routed_by varchar(16) NOT NULL,
+    rule varchar(64),
+    test_code varchar(64),
+    CONSTRAINT pk_lab_routing_log PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_routing_log_at ON lab_routing_log (at);
+CREATE INDEX IF NOT EXISTS ix_lab_routing_log_order_test_id ON lab_routing_log (order_test_id);
 
 -- [ЛІС] lab_sample_logistics (LabSampleLogistics)
 CREATE TABLE IF NOT EXISTS lab_sample_logistics (
@@ -1225,18 +1506,46 @@ CREATE INDEX IF NOT EXISTS ix_lab_send_out_item_order_test_id ON lab_send_out_it
 CREATE INDEX IF NOT EXISTS ix_lab_send_out_item_sample_id ON lab_send_out_item (sample_id);
 CREATE INDEX IF NOT EXISTS ix_lab_send_out_item_send_out_id ON lab_send_out_item (send_out_id);
 
+-- [ЛІС] lab_service_package (LabServicePackage)
+CREATE TABLE IF NOT EXISTS lab_service_package (
+    id uuid NOT NULL,
+    code varchar(64) NOT NULL,
+    context varchar(16) NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    is_active boolean NOT NULL,
+    is_cito boolean NOT NULL,
+    items_json text NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    name varchar(256) NOT NULL,
+    purpose varchar(256),
+    record_state integer NOT NULL DEFAULT 2,
+    source_version varchar(32),
+    synced_on timestamp without time zone,
+    CONSTRAINT pk_lab_service_package PRIMARY KEY (id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_service_package_code ON lab_service_package (code);
+
 -- [ЛІС] lab_settings (LabSettings)
 CREATE TABLE IF NOT EXISTS lab_settings (
     id uuid NOT NULL,
     address varchar(512),
+    auto_reroute_offline boolean NOT NULL,
     barcode_prefix varchar(16),
     cold_chain_max_c double precision NOT NULL,
     cold_chain_min_c double precision NOT NULL,
     created_by uuid NOT NULL,
     created_on timestamp without time zone NOT NULL,
     director_name varchar(256),
+    distribution_target_minutes integer NOT NULL,
     edrpou varchar(16),
+    ehealth_session_idle_minutes integer NOT NULL,
+    ehealth_session_ttl_minutes integer NOT NULL,
+    ehealth_submit_inpatient boolean NOT NULL,
     email varchar(128),
+    intervention_categories varchar(256) NOT NULL,
+    intervention_sync_cron varchar(64) NOT NULL,
     label_printer_host varchar(128),
     label_printer_name varchar(128),
     label_printer_port integer NOT NULL,
@@ -1247,13 +1556,45 @@ CREATE TABLE IF NOT EXISTS lab_settings (
     name varchar(256) NOT NULL,
     order_number_mask varchar(64) NOT NULL,
     panic_phone varchar(32),
+    pathology_cito_target_minutes integer NOT NULL,
+    pathology_fixation_max_hours integer NOT NULL,
+    pathology_fixation_min_hours integer NOT NULL,
+    pathology_mirror_to_simplex_cabinet boolean NOT NULL,
     phone varchar(32),
     record_state integer NOT NULL DEFAULT 2,
     report_footer text,
     report_templates_json text NOT NULL,
+    require_distribution_confirmation boolean NOT NULL,
+    reroute_on_offline_minutes integer NOT NULL,
+    routing_strategy varchar(24) NOT NULL,
     working_hours varchar(128),
     CONSTRAINT pk_lab_settings PRIMARY KEY (id)
 );
+
+-- [ЛІС] lab_stat_daily (LabStatDaily)
+CREATE TABLE IF NOT EXISTS lab_stat_daily (
+    id uuid NOT NULL,
+    analyzer_id uuid,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    day timestamp without time zone NOT NULL,
+    department_id uuid,
+    is_cito boolean NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    package_code varchar(64),
+    profile_id uuid,
+    record_state integer NOT NULL DEFAULT 2,
+    rejected integer NOT NULL,
+    reruns integer NOT NULL,
+    source varchar(16) NOT NULL,
+    tat_p50 double precision,
+    tat_p90 double precision,
+    test_code varchar(64),
+    tests integer NOT NULL,
+    CONSTRAINT pk_lab_stat_daily PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_stat_daily_day ON lab_stat_daily (day);
 
 -- [ЛІС] lab_susceptibility_result (LabSusceptibilityResult)
 CREATE TABLE IF NOT EXISTS lab_susceptibility_result (
@@ -1350,6 +1691,7 @@ CREATE TABLE IF NOT EXISTS lab_test_profile_item (
     created_by uuid NOT NULL,
     created_on timestamp without time zone NOT NULL,
     display_order integer NOT NULL,
+    is_default_selected boolean NOT NULL,
     is_required boolean NOT NULL,
     modified_by uuid NOT NULL,
     modified_on timestamp without time zone,
@@ -1509,14 +1851,21 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_a
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_analyzer_lockout_analyzer_id') THEN ALTER TABLE lab_analyzer_lockout ADD CONSTRAINT fk_lab_analyzer_lockout_analyzer_id FOREIGN KEY (analyzer_id) REFERENCES lab_analyzer (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_analyzer_message_analyzer_id') THEN ALTER TABLE lab_analyzer_message ADD CONSTRAINT fk_lab_analyzer_message_analyzer_id FOREIGN KEY (analyzer_id) REFERENCES lab_analyzer (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_analyzer_parameter_map_analyzer_id') THEN ALTER TABLE lab_analyzer_parameter_map ADD CONSTRAINT fk_lab_analyzer_parameter_map_analyzer_id FOREIGN KEY (analyzer_id) REFERENCES lab_analyzer (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_analyzer_service_analyzer_id') THEN ALTER TABLE lab_analyzer_service ADD CONSTRAINT fk_lab_analyzer_service_analyzer_id FOREIGN KEY (analyzer_id) REFERENCES lab_analyzer (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_analyzer_service_profile_id') THEN ALTER TABLE lab_analyzer_service ADD CONSTRAINT fk_lab_analyzer_service_profile_id FOREIGN KEY (profile_id) REFERENCES lab_test_profile (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_archive_cell_rack_id') THEN ALTER TABLE lab_archive_cell ADD CONSTRAINT fk_lab_archive_cell_rack_id FOREIGN KEY (rack_id) REFERENCES lab_archive_rack (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_archive_cell_sample_id') THEN ALTER TABLE lab_archive_cell ADD CONSTRAINT fk_lab_archive_cell_sample_id FOREIGN KEY (sample_id) REFERENCES lab_order_sample (id); END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_culture_order_order_id') THEN ALTER TABLE lab_culture_order ADD CONSTRAINT fk_lab_culture_order_order_id FOREIGN KEY (order_id) REFERENCES lab_order (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_culture_order_order_test_id') THEN ALTER TABLE lab_culture_order ADD CONSTRAINT fk_lab_culture_order_order_test_id FOREIGN KEY (order_test_id) REFERENCES lab_order_test (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_department_settings_department_id') THEN ALTER TABLE lab_department_settings ADD CONSTRAINT fk_lab_department_settings_department_id FOREIGN KEY (department_id) REFERENCES org_department (id) ON DELETE CASCADE; END IF; END $$; -- → [MedLink]
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_ehealth_submission_order_id') THEN ALTER TABLE lab_ehealth_submission ADD CONSTRAINT fk_lab_ehealth_submission_order_id FOREIGN KEY (order_id) REFERENCES lab_order (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_employee_settings_employee_id') THEN ALTER TABLE lab_employee_settings ADD CONSTRAINT fk_lab_employee_settings_employee_id FOREIGN KEY (employee_id) REFERENCES org_employee (id) ON DELETE CASCADE; END IF; END $$; -- → [MedLink]
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_eucast_breakpoint_antibiotic_id') THEN ALTER TABLE lab_eucast_breakpoint ADD CONSTRAINT fk_lab_eucast_breakpoint_antibiotic_id FOREIGN KEY (antibiotic_id) REFERENCES lab_antibiotic (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_eucast_breakpoint_organism_id') THEN ALTER TABLE lab_eucast_breakpoint ADD CONSTRAINT fk_lab_eucast_breakpoint_organism_id FOREIGN KEY (organism_id) REFERENCES lab_micro_organism (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_intervention_map_intervention_id') THEN ALTER TABLE lab_intervention_map ADD CONSTRAINT fk_lab_intervention_map_intervention_id FOREIGN KEY (intervention_id) REFERENCES lab_ehealth_intervention (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_intervention_map_profile_id') THEN ALTER TABLE lab_intervention_map ADD CONSTRAINT fk_lab_intervention_map_profile_id FOREIGN KEY (profile_id) REFERENCES lab_test_profile (id); END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_intervention_map_test_map_id') THEN ALTER TABLE lab_intervention_map_test ADD CONSTRAINT fk_lab_intervention_map_test_map_id FOREIGN KEY (map_id) REFERENCES lab_intervention_map (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_intervention_map_test_test_id') THEN ALTER TABLE lab_intervention_map_test ADD CONSTRAINT fk_lab_intervention_map_test_test_id FOREIGN KEY (test_id) REFERENCES lab_test_definition (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_invoice_payer_id') THEN ALTER TABLE lab_invoice ADD CONSTRAINT fk_lab_invoice_payer_id FOREIGN KEY (payer_id) REFERENCES lab_payer (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_isolate_culture_order_id') THEN ALTER TABLE lab_isolate ADD CONSTRAINT fk_lab_isolate_culture_order_id FOREIGN KEY (culture_order_id) REFERENCES lab_culture_order (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_isolate_organism_id') THEN ALTER TABLE lab_isolate ADD CONSTRAINT fk_lab_isolate_organism_id FOREIGN KEY (organism_id) REFERENCES lab_micro_organism (id) ON DELETE CASCADE; END IF; END $$;
@@ -1530,6 +1879,10 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_o
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_attachment_order_id') THEN ALTER TABLE lab_order_attachment ADD CONSTRAINT fk_lab_order_attachment_order_id FOREIGN KEY (order_id) REFERENCES lab_order (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_charge_order_id') THEN ALTER TABLE lab_order_charge ADD CONSTRAINT fk_lab_order_charge_order_id FOREIGN KEY (order_id) REFERENCES lab_order (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_charge_payer_id') THEN ALTER TABLE lab_order_charge ADD CONSTRAINT fk_lab_order_charge_payer_id FOREIGN KEY (payer_id) REFERENCES lab_payer (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_item_intervention_id') THEN ALTER TABLE lab_order_item ADD CONSTRAINT fk_lab_order_item_intervention_id FOREIGN KEY (intervention_id) REFERENCES lab_ehealth_intervention (id); END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_item_order_id') THEN ALTER TABLE lab_order_item ADD CONSTRAINT fk_lab_order_item_order_id FOREIGN KEY (order_id) REFERENCES lab_order (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_item_profile_id') THEN ALTER TABLE lab_order_item ADD CONSTRAINT fk_lab_order_item_profile_id FOREIGN KEY (profile_id) REFERENCES lab_test_profile (id); END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_item_indicator_item_id') THEN ALTER TABLE lab_order_item_indicator ADD CONSTRAINT fk_lab_order_item_indicator_item_id FOREIGN KEY (item_id) REFERENCES lab_order_item (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_sample_biomaterial_type_id') THEN ALTER TABLE lab_order_sample ADD CONSTRAINT fk_lab_order_sample_biomaterial_type_id FOREIGN KEY (biomaterial_type_id) REFERENCES lab_biomaterial_type (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_sample_lab_section_id') THEN ALTER TABLE lab_order_sample ADD CONSTRAINT fk_lab_order_sample_lab_section_id FOREIGN KEY (lab_section_id) REFERENCES lab_section (id); END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_order_sample_order_id') THEN ALTER TABLE lab_order_sample ADD CONSTRAINT fk_lab_order_sample_order_id FOREIGN KEY (order_id) REFERENCES lab_order (id) ON DELETE CASCADE; END IF; END $$;
