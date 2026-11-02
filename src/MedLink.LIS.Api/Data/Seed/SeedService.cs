@@ -55,6 +55,7 @@ public sealed class SeedService
         await SeedBillingAsync();
         await SeedQcMaterialsAsync();
         await SeedCountersAsync();
+        await SeedPathologyAsync();
         _logger.LogInformation("Сід довідників завершено за {Ms} мс", sw.ElapsedMilliseconds);
     }
 
@@ -393,6 +394,22 @@ public sealed class SeedService
             }
             await _db.SaveChangesAsync();
         }
+    }
+
+    /// <summary>Довідники патоморфології (ТЗ 22.10): шаблони, МКХ-О, методики, reflex ІГХ, типи матеріалу, фіксатори, причини відмови.</summary>
+    private async Task SeedPathologyAsync()
+    {
+        if (await _db.PathMaterialTypes.AnyAsync()) return;
+        var m = ReadResource<JsonElement>("pathology.json");
+        List<T> Read<T>(string name) => JsonSerializer.Deserialize<List<T>>(m.GetProperty(name).GetRawText(), Json)!;
+        foreach (var t in Read<LabPathTemplate>("templates")) { t.Id = DeterministicGuid.For("path-tpl:" + t.Name); _db.PathTemplates.Add(t); }
+        foreach (var i in Read<LabIcdo>("icdo")) { i.Id = DeterministicGuid.For($"icdo:{i.Axis}:{i.Code}"); _db.Icdo.Add(i); }
+        foreach (var x in Read<LabStainMethod>("stains")) { x.Id = DeterministicGuid.For("stain:" + x.Code); _db.StainMethods.Add(x); }
+        foreach (var r in Read<LabIhcReflexRule>("reflexRules")) { r.Id = DeterministicGuid.For($"ihc-reflex:{r.TopoFrom}:{r.MorphCodes}"); _db.IhcReflexRules.Add(r); }
+        foreach (var t in Read<LabPathMaterialType>("materialTypes")) { t.Id = DeterministicGuid.For("path-kind:" + t.Code); _db.PathMaterialTypes.Add(t); }
+        foreach (var f in Read<LabFixative>("fixatives")) { f.Id = DeterministicGuid.For("fixative:" + f.Name); _db.Fixatives.Add(f); }
+        foreach (var r in Read<LabPathRejectReason>("rejectReasons")) { r.Id = DeterministicGuid.For("path-reject:" + r.Code); _db.PathRejectReasons.Add(r); }
+        await _db.SaveChangesAsync();
     }
 
     private async Task SeedAnalyzersAsync()

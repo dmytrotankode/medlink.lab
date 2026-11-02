@@ -29,6 +29,9 @@ public sealed class MisPackageRef
 
 public sealed class MisReferralRequest
 {
+    /// <summary>LAB (типово) | PATHOLOGY — направлення ПГД за формою 014/о, обробляє модуль «Патоморфологія» (розд. 22.13).</summary>
+    public string? Type { get; set; }
+    public PathologyReferralRequest? Pathology { get; set; }
     /// <summary>Ідентифікатор направлення/призначення в МІС (ідемпотентність).</summary>
     public string? MisReferralId { get; set; }
     public string? ReferralNumber { get; set; }

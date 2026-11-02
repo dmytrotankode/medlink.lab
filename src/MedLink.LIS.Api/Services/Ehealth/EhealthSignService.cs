@@ -183,7 +183,7 @@ public sealed class EhealthSignService
         await _db.SaveChangesAsync();
     }
 
-    private async Task<SignerInfo> CheckSignerAsync(SignerInfo? signer)
+    public async Task<SignerInfo> CheckSignerAsync(SignerInfo? signer)
     {
         if (signer == null || string.IsNullOrWhiteSpace(signer.Drfo)) throw ValidationException.Field("signer", "Дані підписувача з контейнера КЕП не передано");
         if (signer.ValidTo.HasValue && signer.ValidTo.Value < DateTime.UtcNow) throw Problem(422, "certificate-expired", "Сертифікат КЕП недійсний", "Строк дії сертифіката КЕП минув");

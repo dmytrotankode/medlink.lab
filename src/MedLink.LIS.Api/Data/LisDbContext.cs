@@ -114,6 +114,24 @@ public class LisDbContext : DbContext
     public DbSet<LabStatDaily> StatDaily => Set<LabStatDaily>();
     public DbSet<LabReportRun> ReportRuns => Set<LabReportRun>();
 
+    // --- Патоморфологія (ТЗ розд. 22) ---
+    public DbSet<LabPathReferral> PathReferrals => Set<LabPathReferral>();
+    public DbSet<LabPathObject> PathObjects => Set<LabPathObject>();
+    public DbSet<LabPathBlock> PathBlocks => Set<LabPathBlock>();
+    public DbSet<LabPathSlide> PathSlides => Set<LabPathSlide>();
+    public DbSet<LabPathStageLog> PathStageLog => Set<LabPathStageLog>();
+    public DbSet<LabPathReport> PathReports => Set<LabPathReport>();
+    public DbSet<LabPathIhcResult> PathIhcResults => Set<LabPathIhcResult>();
+    public DbSet<LabPathCitoNotice> PathCitoNotices => Set<LabPathCitoNotice>();
+    public DbSet<LabPathIssue> PathIssues => Set<LabPathIssue>();
+    public DbSet<LabPathTemplate> PathTemplates => Set<LabPathTemplate>();
+    public DbSet<LabIcdo> Icdo => Set<LabIcdo>();
+    public DbSet<LabStainMethod> StainMethods => Set<LabStainMethod>();
+    public DbSet<LabIhcReflexRule> IhcReflexRules => Set<LabIhcReflexRule>();
+    public DbSet<LabPathMaterialType> PathMaterialTypes => Set<LabPathMaterialType>();
+    public DbSet<LabFixative> Fixatives => Set<LabFixative>();
+    public DbSet<LabPathRejectReason> PathRejectReasons => Set<LabPathRejectReason>();
+
     // --- оплата (FR-GAP-060) ---
     public DbSet<LabPriceList> PriceLists => Set<LabPriceList>();
     public DbSet<LabPriceListItem> PriceListItems => Set<LabPriceListItem>();
@@ -207,6 +225,25 @@ public class LisDbContext : DbContext
         mb.Entity<LabEhealthSubmission>().HasIndex(s => new { s.OrderId, s.Status });
         mb.Entity<LabStatDaily>().HasIndex(s => s.Day);
         mb.Entity<LabReportRun>().HasIndex(r => r.RunAt);
+        mb.Entity<LabPathReferral>().HasIndex(r => r.OrderId).IsUnique();
+        mb.Entity<LabPathReferral>().HasOne(r => r.Order).WithMany().HasForeignKey(r => r.OrderId).OnDelete(DeleteBehavior.Cascade);
+        mb.Entity<LabPathReferral>().HasIndex(r => r.IntakeStatus);
+        mb.Entity<LabPathObject>().HasIndex(o => o.OrderId);
+        mb.Entity<LabPathObject>().HasIndex(o => o.Barcode);
+        mb.Entity<LabPathObject>().HasMany(o => o.Blocks).WithOne().HasForeignKey(b => b.ObjectId).OnDelete(DeleteBehavior.Cascade);
+        mb.Entity<LabPathBlock>().HasIndex(b => b.OrderId);
+        mb.Entity<LabPathBlock>().HasIndex(b => b.Barcode);
+        mb.Entity<LabPathBlock>().HasMany(b => b.Slides).WithOne().HasForeignKey(s => s.BlockId).OnDelete(DeleteBehavior.Cascade);
+        mb.Entity<LabPathSlide>().HasIndex(s => s.OrderId);
+        mb.Entity<LabPathSlide>().HasIndex(s => s.Barcode);
+        mb.Entity<LabPathStageLog>().HasIndex(l => new { l.OrderId, l.PerformedAt });
+        mb.Entity<LabPathReport>().HasIndex(r => new { r.OrderId, r.Version });
+        mb.Entity<LabPathReport>().HasMany(r => r.Ihc).WithOne().HasForeignKey(i => i.ReportId).OnDelete(DeleteBehavior.Cascade);
+        mb.Entity<LabPathCitoNotice>().HasIndex(n => n.OrderId);
+        mb.Entity<LabPathIssue>().HasIndex(i => new { i.BlockId, i.ReturnedAt });
+        mb.Entity<LabIcdo>().HasIndex(i => new { i.Axis, i.Code }).IsUnique();
+        mb.Entity<LabStainMethod>().HasIndex(m => m.Code).IsUnique();
+        mb.Entity<LabPathMaterialType>().HasIndex(m => m.Code).IsUnique();
 
         mb.Entity<OrgEmployee>().HasOne(e => e.LabSettings).WithOne(s => s.Employee).HasForeignKey<LabEmployeeSettings>(s => s.EmployeeId);
         mb.Entity<OrgDepartment>().HasOne(d => d.LabSettings).WithOne(s => s.Department).HasForeignKey<LabDepartmentSettings>(s => s.DepartmentId);

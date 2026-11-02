@@ -91,6 +91,7 @@ builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<MisCatalogService>();
 builder.Services.AddScoped<MisReferralService>();
 builder.Services.AddScoped<WorkReportsService>();
+builder.Services.AddScoped<PathologyService>();
 builder.Services.AddScoped<MedLink.LIS.Api.Services.Ehealth.EhealthSignService>();
 builder.Services.AddScoped<SampleService>();
 builder.Services.AddScoped<ResultPipelineService>();
@@ -116,6 +117,7 @@ builder.Services.AddScoped<OrderMatrixService>();
 builder.Services.AddScoped<SeedService>();
 builder.Services.AddScoped<MisCatalogSeeder>();
 builder.Services.AddScoped<DemoDataSeeder>();
+builder.Services.AddScoped<PathologyDemoSeeder>();
 // Парсер повідомлень аналізаторів: локальна реалізація; замінюється на MedLink.LIS.Core.Protocols однією реєстрацією
 builder.Services.AddSingleton<IAnalyzerMessageParser, AnalyzerMessageParserFallback>();
 builder.Services.AddSingleton<RetentionCleanupService>();
@@ -151,6 +153,9 @@ using (var scope = app.Services.CreateScope())
     {
         try { await scope.ServiceProvider.GetRequiredService<DemoDataSeeder>().SeedAsync(); }
         catch (Exception ex) { app.Logger.LogError(ex, "Помилка створення демо-даних"); }
+        using var pathScope = app.Services.CreateScope();
+        try { await pathScope.ServiceProvider.GetRequiredService<PathologyDemoSeeder>().SeedAsync(); }
+        catch (Exception ex) { app.Logger.LogError(ex, "Помилка створення демо-даних патоморфології"); }
     }
 }
 

@@ -63,7 +63,21 @@ public sealed class MisController : LisControllerBase
     [HttpGet("mis/catalog/packages")] public async Task<IActionResult> Packages() => Ok(await _catalog.PackagesAsync());
 
     /// <summary>Направлення/призначення МІС (FR-MIS-024, FR-PKG-003): позиції з обраними показниками, пакет; відповідь — маршрутизація по кожній позиції.</summary>
-    [HttpPost("mis/referrals")] public async Task<IActionResult> Create([FromBody] MisReferralRequest req) => StatusCode(201, await _referrals.CreateAsync(req));
+    [HttpPost("mis/referrals")]
+    public async Task<IActionResult> Create([FromBody] MisReferralRequest req, [FromServices] PathologyService pathology)
+    {
+        if (!string.Equals(req.Type, "PATHOLOGY", StringComparison.OrdinalIgnoreCase)) return StatusCode(201, await _referrals.CreateAsync(req));
+        // ТЗ 22.13: type=PATHOLOGY — блок pathology (form014, objects[], kind, operationId); спільні поля беруться з направлення
+        var p = req.Pathology ?? throw Infrastructure.ValidationException.Field("pathology", "Для type=PATHOLOGY потрібен блок pathology");
+        if (string.IsNullOrWhiteSpace(p.PatientId)) p.PatientId = req.PatientId;
+        p.MisReferralId ??= req.MisReferralId; p.ReferralNumber ??= req.ReferralNumber; p.HospitalizationId ??= req.HospitalizationId;
+        p.Department ??= req.Department; p.Ward ??= req.Ward; p.DoctorId ??= req.DoctorId; p.DoctorName ??= req.DoctorName; p.ClinicalData ??= req.ClinicalNotes;
+        p.ClinicalDiagnosis ??= req.Icd10; p.EhealthReferralNumber ??= req.EhealthReferralNumber; p.PartnerName ??= req.PartnerName; p.CreatedAt ??= req.ReceivedAt;
+        if (req.Source != null && p.Source == ReferralSourcesDefault) p.Source = req.Source;
+        if (req.Priority.Equals("CITO", StringComparison.OrdinalIgnoreCase)) p.Kind = "CITO";
+        return StatusCode(201, await pathology.CreateReferralAsync(p));
+    }
+    private const string ReferralSourcesDefault = Data.Entities.ReferralSources.Inpatient;
     [HttpGet("mis/referrals")] public async Task<IActionResult> List([FromQuery] int take = 100) => Ok(await _referrals.ListAsync(take));
     [HttpGet("mis/referrals/{id}")] public async Task<IActionResult> Get(string id) => Ok(await _referrals.GetAsync(id));
     [HttpPost("mis/referrals/{id}/cancel")] public async Task<IActionResult> Cancel(string id, [FromBody] ReasonBody? body) => Ok(await _referrals.CancelAsync(id, body?.Reason));
