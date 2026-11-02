@@ -77,8 +77,14 @@
         </q-list>
       </div>
 
+      <!-- Призначення МІС (ТЗ 21, 23) -->
+      <order-items-panel v-if="order.items && order.items.length" :order="order" />
+
       <!-- Оплата (FR-GAP-060) -->
       <order-billing :order-id="order.id" />
+
+      <!-- ЕСОЗ: підпис і відправка звіту (ТЗ 21.13) -->
+      <ehealth-submit-panel v-if="order.status === 'RELEASED' || (order.ehealthStatus && order.ehealthStatus !== 'NOT_SENT')" :key="`eh-${order.id}-${order.status}`" :order-id="order.id" />
 
       <!-- Процес + дії -->
       <div class="medlink-card q-mb-md">
@@ -245,6 +251,8 @@
 
 <script>
 import OrderBilling from '../../../components/orders/OrderBilling.vue';
+import OrderItemsPanel from '../../../components/orders/OrderItemsPanel.vue';
+import EhealthSubmitPanel from '../../../components/orders/EhealthSubmitPanel.vue';
 import apiMixin from '../../../mixins/apiMixin';
 import LabelsDialog from '../../../components/common/LabelsDialog.vue';
 import HtmlPreviewDialog from '../../../components/common/HtmlPreviewDialog.vue';
@@ -266,7 +274,7 @@ import { formatDateTime, formatNumber, patientDisplay, genderLabel, ageFromBirth
 export default {
   name: 'OrderCard',
   mixins: [apiMixin, labelPrintMixin],
-  components: { LabelsDialog, HtmlPreviewDialog, OrderStepper, OrderActionsBar, AuditTimeline, CollectSampleDialog, ReceiveSampleDialog, RejectSampleDialog, SampleEditDialog, ResultEditorDialog, VerifyResultDialog, EditOrderDialog, OrderBilling },
+  components: { LabelsDialog, HtmlPreviewDialog, OrderStepper, OrderActionsBar, AuditTimeline, CollectSampleDialog, ReceiveSampleDialog, RejectSampleDialog, SampleEditDialog, ResultEditorDialog, VerifyResultDialog, EditOrderDialog, OrderBilling, OrderItemsPanel, EhealthSubmitPanel },
   props: { id: { type: String, required: true } },
   data () {
     return {

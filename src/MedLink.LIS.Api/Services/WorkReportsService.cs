@@ -461,7 +461,7 @@ public sealed class WorkReportsService
         var groups = tests.GroupBy(t => (Service: ServiceName(t), Analyzer: byAnalyzer ? t.Result!.Analyzer?.Name : null)).OrderBy(g => g.Key.Service).Select(g =>
         {
             var points = g.Select(t => (At: t.Sample?.CollectedAt ?? t.Order!.OrderDatetime, Analyzer: t.Result!.Analyzer?.Name ?? "—")).Distinct().OrderBy(p => p.At).ToList();
-            var rows = g.GroupBy(t => t.TestCode).Select(r =>
+            var rows = g.GroupBy(t => t.TestCode).OrderBy(r => r.Min(t => t.DisplayOrder)).Select(r =>
             {
                 var first = r.First();
                 var values = points.Select(p => r.FirstOrDefault(t => (t.Sample?.CollectedAt ?? t.Order!.OrderDatetime) == p.At && (t.Result!.Analyzer?.Name ?? "—") == p.Analyzer)).ToList();

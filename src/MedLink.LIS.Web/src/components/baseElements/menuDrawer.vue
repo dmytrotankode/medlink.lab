@@ -83,6 +83,8 @@ export default {
             { name: 'dashboard', label: 'Дашборд', icon: 'fas fa-tachometer-alt', to: { name: 'lab-dashboard' } },
             { name: 'orders', label: 'Реєстрація направлень', icon: 'fas fa-file-medical', to: { name: 'lab-orders' }, badgeKey: 'cito' },
             { name: 'referrals', label: 'Журнал направлень', icon: 'fas fa-clipboard-list', to: { name: 'lab-referrals' } },
+            { name: 'refs', label: 'Вхідні направлення', icon: 'fas fa-inbox', to: { name: 'lab-incoming-referrals' }, badgeKey: 'distribution' },
+            { name: 'work', label: 'Робота за направленнями', icon: 'fas fa-tasks', to: { name: 'lab-work' } },
             { name: 'matrix', label: 'Матриця призначень', icon: 'fas fa-th', to: { name: 'lab-order-matrix' } },
             { name: 'phlebotomy', label: 'Пункт забору', icon: 'fas fa-syringe', to: { name: 'lab-phlebotomy' } },
             { name: 'journal', label: 'Журнал відділення', icon: 'fas fa-book', to: { name: 'lab-section-journal' } },
@@ -95,7 +97,9 @@ export default {
             { name: 'biobank', label: 'Біобанк', icon: 'fas fa-snowflake', to: { name: 'lab-biobank' } },
             { name: 'reagents', label: 'Реагенти', icon: 'fas fa-boxes', to: { name: 'lab-reagents' } },
             { name: 'microbiology', label: 'Мікробіологія', icon: 'fas fa-bacterium', to: { name: 'lab-microbiology' } },
-            { name: 'tat', label: 'Аналітика TAT', icon: 'fas fa-chart-pie', to: { name: 'lab-analytics-tat' } }
+            { name: 'tat', label: 'Аналітика TAT', icon: 'fas fa-chart-pie', to: { name: 'lab-analytics-tat' } },
+            { name: 'reports', label: 'Звіти лабораторії', icon: 'fas fa-file-alt', to: { name: 'lab-reports' } },
+            { name: 'ehealth', label: 'Відправка в ЕСОЗ', icon: 'fas fa-cloud-upload-alt', to: { name: 'lab-ehealth' } }
           ]
         },
         {
@@ -117,6 +121,7 @@ export default {
           title: 'Інтеграції',
           items: [
             { name: 'analyzers', label: 'Аналізатори та коннектори', icon: 'fas fa-network-wired', to: { name: 'lab-analyzers' }, exact: true },
+            { name: 'analyzer-services', label: 'Послуги ЕСОЗ × аналізатори', icon: 'fas fa-project-diagram', to: { name: 'lab-analyzer-services' } },
             { name: 'messages', label: 'Журнал обміну', icon: 'fas fa-exchange-alt', to: { name: 'lab-analyzer-messages' } },
             { name: 'import', label: 'Імпорт результатів', icon: 'fas fa-file-import', to: { name: 'lab-import' } }
           ]
@@ -142,6 +147,10 @@ export default {
         case 'pending': {
           const n = Number(this.summary && this.summary.pending) || 0;
           return n > 0 ? { label: String(n), color: 'teal-6' } : null;
+        }
+        case 'distribution': {
+          const n = Number(this.summary && this.summary.distributionPending) || 0;
+          return n > 0 ? { label: String(n), color: 'orange-7' } : null;
         }
         case 'lockout':
           return this.lockoutCount > 0 ? { label: 'Lock', color: 'purple-6' } : null;

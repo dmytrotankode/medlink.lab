@@ -41,6 +41,9 @@
           <q-tooltip>Коннектори онлайн {{ gatewayOnline }} з {{ gatewayTotal }}; аналізаторів онлайн {{ analyzersOnline }}</q-tooltip>
         </router-link>
 
+        <!-- Сесія ЕСОЗ (ТЗ 21.13) -->
+        <ehealth-session-chip class="gt-sm q-mr-sm" />
+
         <!-- Паніка -->
         <router-link :to="{ name: 'lab-validation', query: { tab: 'panic' } }" class="header-chip gt-xs q-mr-sm" :class="panicCount > 0 ? 'header-chip--bad' : 'header-chip--muted'" style="text-decoration: none">
           <q-icon name="priority_high" size="15px" />
@@ -107,11 +110,12 @@
 <script>
 import { mapState, mapGetters } from 'vuex';
 import MenuDrawer from '../../components/baseElements/menuDrawer.vue';
+import EhealthSessionChip from '../../components/common/EhealthSessionChip.vue';
 import { ROLE } from '../../utils/statuses';
 
 export default {
   name: 'BaseLayout',
-  components: { MenuDrawer },
+  components: { MenuDrawer, EhealthSessionChip },
   data () {
     return {
       drawerOpen: this.$q.screen.gt.sm,

@@ -22,6 +22,10 @@ export default [
       lab('dashboard', 'lab-dashboard', 'Дашборд лабораторії', () => import('pages/laboratory/LabDashboard.vue')),
       lab('orders', 'lab-orders', 'Реєстрація направлень', () => import('pages/laboratory/orders/OrdersQueue.vue')),
       lab('referrals', 'lab-referrals', 'Журнал направлень', () => import('pages/laboratory/orders/ReferralJournal.vue')),
+      lab('refs', 'lab-incoming-referrals', 'Вхідні направлення', () => import('pages/laboratory/mis/IncomingReferralsPage.vue')),
+      lab('work', 'lab-work', 'Робота за направленнями', () => import('pages/laboratory/mis/WorkByReferralsPage.vue')),
+      lab('reports', 'lab-reports', 'Звіти лабораторії', () => import('pages/laboratory/mis/LabReportsPage.vue')),
+      lab('ehealth', 'lab-ehealth', 'Відправка в ЕСОЗ', () => import('pages/laboratory/mis/EhealthSubmissionsPage.vue')),
       lab('orders/:id', 'lab-order-card', 'Картка замовлення', () => import('pages/laboratory/orders/OrderCard.vue'), { props: true }),
       lab('order-matrix', 'lab-order-matrix', 'Матриця призначень', () => import('pages/laboratory/orders/OrderMatrixPage.vue')),
       lab('phlebotomy', 'lab-phlebotomy', 'Пункт забору біоматеріалу', () => import('pages/laboratory/PhlebotomyStation.vue')),
@@ -48,6 +52,7 @@ export default [
 
       // ----- Інтеграції -----
       lab('analyzers', 'lab-analyzers', 'Аналізатори та коннектори', () => import('pages/laboratory/analyzers/AnalyzersPage.vue')),
+      lab('analyzer-services', 'lab-analyzer-services', 'Послуги ЕСОЗ × аналізатори', () => import('pages/laboratory/mis/AnalyzerServicesPage.vue')),
       lab('analyzers/messages', 'lab-analyzer-messages', 'Журнал обміну з аналізаторами', () => import('pages/laboratory/analyzers/AnalyzerMessages.vue')),
       lab('import', 'lab-import', 'Імпорт результатів', () => import('pages/laboratory/ImportResults.vue')),
 

@@ -229,7 +229,9 @@ export default {
         { key: 'panic', label: 'Паніка', value: s.panic || 0, hint: 'критичних без дзвінка', cls: 'kpi-tile--negative', to: { name: 'lab-validation', query: { tab: 'panic' } } },
         { key: 'cito', label: 'CITO', value: s.cito || 0, hint: 'термінових замовлень', cls: 'kpi-tile--negative', to: { name: 'lab-orders', query: { cito: 'true' } } },
         { key: 'auto', label: 'Автоверифіковано', value: s.autoVerifiedToday || 0, hint: 'сьогодні', cls: 'kpi-tile--positive', to: { name: 'lab-workstation', query: { status: 'AUTO_VERIFIED' } } },
-        { key: 'lock', label: 'Lockout ВКЯ', value: this.lockouts.length, hint: 'активних блокувань', cls: 'kpi-tile--warning', to: { name: 'lab-qc', query: { tab: 'lockouts' } } }
+        { key: 'lock', label: 'Lockout ВКЯ', value: this.lockouts.length, hint: 'активних блокувань', cls: 'kpi-tile--warning', to: { name: 'lab-qc', query: { tab: 'lockouts' } } },
+        { key: 'dist', label: 'Розподіл', value: s.distributionPending || 0, hint: 'направлень МІС чекають', cls: 'kpi-tile--warning', to: { name: 'lab-incoming-referrals' } },
+        { key: 'noeq', label: 'Без обладнання', value: s.noEquipment || 0, hint: 'показників без приладу', cls: 'kpi-tile--negative', to: { name: 'lab-work' } }
       ];
     }
   },

@@ -140,7 +140,10 @@ public sealed class WorklistService
         var ordersToday = await _db.Orders.AsNoTracking().CountAsync(o => o.OrderDatetime >= today);
         var lockouts = await _db.Lockouts.AsNoTracking().CountAsync(l => l.ResolvedAt == null);
         var unmatched = await _db.UnmatchedResults.AsNoTracking().CountAsync(u => !u.IsLinked);
-        return new { pending, resulted, needsReview, panic, cito, autoVerifiedToday, verifiedToday, ordersToday, activeLockouts = lockouts, unmatched };
+        // ТЗ 23.4: направлення МІС, що чекають розподілу лаборантом (бейдж «Вхідні направлення»)
+        var distributionPending = await _db.Orders.AsNoTracking().CountAsync(o => o.Status != OrderStatuses.Cancelled && (o.DistributionStatus == "PROPOSED" || o.DistributionStatus == "NEEDS_SELECTION"));
+        var noEquipment = await active.CountAsync(t => t.RoutingStatus == RoutingStatuses.NoEquipment && t.Status == OrderTestStatuses.Pending);
+        return new { pending, resulted, needsReview, panic, cito, autoVerifiedToday, verifiedToday, ordersToday, activeLockouts = lockouts, unmatched, distributionPending, noEquipment };
     }
 
     // ------------------------------------------------------------------ panic calls
