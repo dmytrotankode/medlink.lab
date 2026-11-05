@@ -14,7 +14,7 @@ conn_params = {
     'port': 5432,
     'dbname': 'evomis-test',
     'user': 'd.tanko',
-    'password': r'u37[kDm4f=.*{49j=S\!.O',
+    'password': input('Password: '),
     'connect_timeout': 10
 }
 
