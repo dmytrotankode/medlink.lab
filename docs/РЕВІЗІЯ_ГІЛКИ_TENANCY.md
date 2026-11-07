@@ -121,6 +121,11 @@ dotnet run --project src/MedLink.LIS.Api --urls http://0.0.0.0:5055
     - користувача у двох тенантах;
     - старт під `lab_app` без GUC.
 
+- [x] **Розгортання на чистій БД (перевірено на стенді /lab-v2, 07.11).** Потрібні дві правки, обидві в гілці `claude/tenancy-stand`:
+  - API впав на старті під `lab_app`. Виправлено читанням у `RunAsTenantEnumerationAsync`.
+  - Сід падав з `23502: null value in column "created_by" of relation "tn_tenant"`. Міграція 0005 додала NOT NULL-колонки аудиту (`created_by`/`modified_by` у `tn_tenant`, `tn_settings`, `tn_requisites`, `id_membership`, `id_membership_division`), яких немає в EF-моделі. Тести це приховують, бо `TestDatabase.cs` додає DEFAULT. Окрім того, `id_membership_division.id` має константний DEFAULT, тому можливий лише один рядок. Виправлення: додати поля в сутності або DEFAULT у міграцію, а `id` генерувати через `gen_random_uuid()`.
+  - Після обох правок сід і демо-дані створюються, вхід через reference-токен Redis працює (https://med-one.avowiz.com/lab-v2/).
+
 ### 8.2. PostgreSQL: регресії (розд. 4)
 | Пріор. | Дефект | Де | Виправлення |
 |---|---|---|---|
