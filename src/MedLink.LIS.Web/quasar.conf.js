@@ -45,8 +45,10 @@ module.exports = function (ctx) {
     build: {
       vueRouterMode: 'history',
       distDir: 'dist/spa',
+      // Розгортання в підпапці (напр. /lab/): LIS_PUBLIC_PATH=/lab/ — шляхи ресурсів, база роутера та API
+      publicPath: process.env.LIS_PUBLIC_PATH || '/',
       env: {
-        API_BASE: JSON.stringify(process.env.API_BASE || '/api/v1/lab')
+        API_BASE: JSON.stringify(process.env.API_BASE || ((process.env.LIS_PUBLIC_PATH || '/').replace(/\/$/, '') + '/api/v1/lab'))
       },
       extendWebpack (cfg) {
         cfg.resolve.alias = {
