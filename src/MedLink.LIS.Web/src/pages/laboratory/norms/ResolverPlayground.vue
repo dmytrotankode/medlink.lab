@@ -31,7 +31,7 @@
         <div class="row q-col-gutter-sm">
           <div class="col-6 col-md-3"><div class="kpi-tile kpi-tile--positive"><div class="kpi-tile__label">Норма</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.normLow | num }} – {{ result.normHigh | num }}</div><div class="kpi-tile__hint">{{ result.unit }}</div></div></div>
           <div class="col-6 col-md-3"><div class="kpi-tile kpi-tile--negative"><div class="kpi-tile__label">Критичні</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.critLow | num }} / {{ result.critHigh | num }}</div></div></div>
-          <div class="col-6 col-md-3"><div class="kpi-tile" :class="result.isPanicCito ? 'kpi-tile--negative' : ''"><div class="kpi-tile__label">Паніка / CITO</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.isPanicCito ? 'ТАК' : 'ні' }}</div></div></div>
+          <div class="col-6 col-md-3"><div class="kpi-tile" :class="result.isPanicCito ? 'kpi-tile--negative' : ''"><div class="kpi-tile__label">Критичні / CITO</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.isPanicCito ? 'ТАК' : 'ні' }}</div></div></div>
           <div class="col-6 col-md-3"><div class="kpi-tile" :class="result.isDeltaAlert ? 'kpi-tile--warning' : ''"><div class="kpi-tile__label">Delta</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.deltaPercent | pct }}</div><div class="kpi-tile__hint">{{ result.isDeltaAlert ? 'перевищено поріг' : 'у межах' }}</div></div></div>
         </div>
         <div v-if="result.winningLayer" class="q-mt-md">

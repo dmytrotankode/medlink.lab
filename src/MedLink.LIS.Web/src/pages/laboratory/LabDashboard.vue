@@ -51,11 +51,11 @@
         </div>
       </div>
 
-      <!-- Панічні значення без дзвінка -->
+      <!-- Критичні значення без повідомлення -->
       <div class="col-12 col-lg-6">
         <div class="medlink-card">
           <div class="medlink-card__title">
-            <span><q-icon name="priority_high" color="negative" class="q-mr-xs" />Панічні значення без дзвінка</span>
+            <span><q-icon name="priority_high" color="negative" class="q-mr-xs" />Критичні значення без повідомлення</span>
             <q-btn flat dense size="sm" color="negative" label="Журнал дзвінків" :to="{ name: 'lab-validation', query: { tab: 'panic' } }" />
           </div>
           <q-table
@@ -226,7 +226,7 @@ export default {
       return [
         { key: 'pending', label: 'Очікують', value: s.pending || 0, hint: 'тестів у роботі', cls: 'kpi-tile--accent', to: { name: 'lab-workstation' } },
         { key: 'review', label: 'Очікує лікаря', value: s.needsReview || 0, hint: 'на верифікацію', cls: 'kpi-tile--warning', to: { name: 'lab-validation' } },
-        { key: 'panic', label: 'Паніка', value: s.panic || 0, hint: 'критичних без дзвінка', cls: 'kpi-tile--negative', to: { name: 'lab-validation', query: { tab: 'panic' } } },
+        { key: 'panic', label: 'Критичні', value: s.panic || 0, hint: 'критичних без дзвінка', cls: 'kpi-tile--negative', to: { name: 'lab-validation', query: { tab: 'panic' } } },
         { key: 'cito', label: 'CITO', value: s.cito || 0, hint: 'термінових замовлень', cls: 'kpi-tile--negative', to: { name: 'lab-orders', query: { cito: 'true' } } },
         { key: 'auto', label: 'Автоверифіковано', value: s.autoVerifiedToday || 0, hint: 'сьогодні', cls: 'kpi-tile--positive', to: { name: 'lab-workstation', query: { status: 'AUTO_VERIFIED' } } },
         { key: 'lock', label: 'Lockout ВКЯ', value: this.lockouts.length, hint: 'активних блокувань', cls: 'kpi-tile--warning', to: { name: 'lab-qc', query: { tab: 'lockouts' } } },

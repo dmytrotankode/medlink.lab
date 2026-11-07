@@ -36,7 +36,7 @@ export default [
       lab('clients', 'lab-clients', 'Клієнти (клініки)', () => import('pages/laboratory/ClientsPage.vue')),
       lab('send-out', 'lab-send-out', 'Зовнішні лабораторії', () => import('pages/laboratory/SendOutPage.vue')),
       lab('workstation', 'lab-workstation', 'Робочий стіл лаборанта', () => import('pages/laboratory/workstation/LabWorkstation.vue')),
-      lab('validation', 'lab-validation', 'Валідація та паніка', () => import('pages/laboratory/validation/ValidationPanic.vue')),
+      lab('validation', 'lab-validation', 'Валідація та критичні значення', () => import('pages/laboratory/validation/ValidationPanic.vue')),
       lab('quality-control', 'lab-qc', 'Контроль якості (ВКЯ)', () => import('pages/laboratory/qc/QualityControl.vue')),
       lab('biobank', 'lab-biobank', 'Біобанк та кріо-архів', () => import('pages/laboratory/BiobankArchive.vue')),
       lab('reagents', 'lab-reagents', 'Склад реагентів', () => import('pages/laboratory/ReagentInventory.vue')),

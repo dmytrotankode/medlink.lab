@@ -29,7 +29,7 @@ import { formatDateTime } from '../../utils/format';
 const LABELS = {
   CREATE: 'Створено', UPDATE: 'Оновлено', DELETE: 'Видалено', CANCEL: 'Скасовано', RELEASE: 'Видано',
   COLLECT: 'Забір проби', RECEIVE: 'Прийом проби', REJECT: 'Відхилено', VERIFY: 'Верифіковано', AUTO_VERIFY: 'Автоверифікація',
-  RESULT: 'Результат', RERUN: 'Повтор', REOPEN: 'Повернуто в роботу', STATUS_CHANGE: 'Зміна статусу', PANIC_CALL: 'Панічний дзвінок',
+  RESULT: 'Результат', RERUN: 'Повтор', REOPEN: 'Повернуто в роботу', STATUS_CHANGE: 'Зміна статусу', PANIC_CALL: 'Повідомлення про критичне значення',
   REFLEX: 'Reflex-тест', DELTA: 'Delta-check', PRINT: 'Друк'
 };
 

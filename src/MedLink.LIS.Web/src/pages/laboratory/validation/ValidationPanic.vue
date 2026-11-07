@@ -1,6 +1,6 @@
 <template>
   <div class="validation-page" data-testid="validationPage">
-    <page-header title="Валідація та паніка" icon="fas fa-user-check" subtitle="Робоче місце лікаря-лаборанта: верифікація результатів, порівняння з попередніми, панічні значення та CITO-дзвінки" :breadcrumbs="[{ label: 'Валідація' }]">
+    <page-header title="Валідація та критичні значення" icon="fas fa-user-check" subtitle="Робоче місце лікаря-лаборанта: верифікація результатів, порівняння з попередніми, критичні значення та CITO-повідомлення" :breadcrumbs="[{ label: 'Валідація' }]">
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
       <q-btn unelevated dense color="green-8" icon="done_all" :label="`Верифікувати обрані (${selected.length})`" :disable="!selected.length" data-testid="verifySelected" @click="verifySelected" />
     </page-header>
@@ -9,7 +9,7 @@
 
     <q-tabs v-model="tab" dense align="left" class="text-grey-8 medlink-card bg-white" active-color="primary" indicator-color="primary">
       <q-tab name="review" icon="rate_review" :label="`На верифікацію (${rows.length})`" data-testid="tab-review" />
-      <q-tab name="pending" icon="priority_high" :label="`Паніка без дзвінка (${pending.length})`" data-testid="tab-panic" />
+      <q-tab name="pending" icon="priority_high" :label="`Критичні без повідомлення (${pending.length})`" data-testid="tab-panic" />
       <q-tab name="calls" icon="call" :label="`Журнал дзвінків (${calls.length})`" data-testid="tab-calls" />
     </q-tabs>
 
@@ -79,7 +79,7 @@
         </div>
       </q-tab-panel>
 
-      <!-- Паніка без дзвінка -->
+      <!-- Критичні без повідомлення -->
       <q-tab-panel name="pending" class="q-pa-none">
         <div class="medlink-card">
           <q-table :data="pending" :columns="pendingColumns" row-key="resultId" dense flat :loading="loading" :pagination="{ rowsPerPage: 25 }" no-data-label="Усі критичні результати опрацьовано" data-testid="panicTable">

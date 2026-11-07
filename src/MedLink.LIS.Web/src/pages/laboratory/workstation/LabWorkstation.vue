@@ -24,7 +24,7 @@
         <div class="col-6 col-md-1"><q-toggle v-model="filters.cito" label="CITO" color="deep-orange-6" keep-color @input="load" /></div>
         <div class="col-12 col-md-2 row justify-end q-gutter-xs">
           <q-chip dense outline color="primary" icon="assignment">{{ rows.length }} ряд.</q-chip>
-          <q-chip dense outline color="negative" icon="warning">Паніка {{ summary.panic || 0 }}</q-chip>
+          <q-chip dense outline color="negative" icon="warning">Критичні {{ summary.panic || 0 }}</q-chip>
           <q-chip dense outline color="warning" text-color="dark" icon="rate_review">Лікар {{ summary.needsReview || 0 }}</q-chip>
         </div>
       </div>
@@ -180,7 +180,7 @@ export default {
         if (idx >= 0) this.$set(this.rows, idx, { ...this.rows[idx], ...result });
         if (this.selectedRow && this.selectedRow.orderTestId === result.orderTestId) this.selectedRow = this.rows[idx];
         if (result.flag === 'CRIT_LOW' || result.flag === 'CRIT_HIGH') {
-          this.$q.notify({ type: 'negative', icon: 'warning', message: `ПАНІКА: ${result.testCode} = ${formatNumber(result.value)} ${result.unit || ''} — потрібен дзвінок лікарю`, timeout: 8000, actions: [{ label: 'Паніка', color: 'white', handler: () => this.$router.push({ name: 'lab-validation', query: { tab: 'panic' } }) }] });
+          this.$q.notify({ type: 'negative', icon: 'warning', message: `КРИТИЧНЕ ЗНАЧЕННЯ: ${result.testCode} = ${formatNumber(result.value)} ${result.unit || ''} — потрібен дзвінок лікарю`, timeout: 8000, actions: [{ label: 'Критичні', color: 'white', handler: () => this.$router.push({ name: 'lab-validation', query: { tab: 'panic' } }) }] });
         }
       } else {
         this.load();

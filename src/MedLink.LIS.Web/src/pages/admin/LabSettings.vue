@@ -1,6 +1,6 @@
 <template>
   <div class="settings-page" data-testid="settingsPage">
-    <page-header title="Налаштування лабораторії" icon="fas fa-cog" subtitle="Реквізити, логотип, нумератори, принтер етикеток, бланки, телефон паніки, retention" :breadcrumbs="[{ label: 'Адміністрування' }, { label: 'Налаштування' }]">
+    <page-header title="Налаштування лабораторії" icon="fas fa-cog" subtitle="Реквізити, логотип, нумератори, принтер етикеток, бланки, телефон для критичних значень, retention" :breadcrumbs="[{ label: 'Адміністрування' }, { label: 'Налаштування' }]">
       <q-btn flat dense color="primary" icon="refresh" :loading="loading" @click="load" />
       <q-btn unelevated dense color="primary" icon="save" label="Зберегти" :loading="saving" data-testid="settingsSave" @click="save" />
     </page-header>
@@ -20,7 +20,7 @@
             <div class="col-6"><q-input v-model="form.email" outlined dense label="E-mail" /></div>
             <div class="col-6"><q-input v-model="form.directorName" outlined dense label="Керівник / завідувач" /></div>
             <div class="col-6"><q-input v-model="form.workingHours" outlined dense label="Графік роботи" /></div>
-            <div class="col-12"><q-input v-model="form.panicPhone" outlined dense label="Телефон для панічних сповіщень (черговий лікар)" data-testid="panicPhone"><template v-slot:prepend><q-icon name="call" color="negative" /></template></q-input></div>
+            <div class="col-12"><q-input v-model="form.panicPhone" outlined dense label="Телефон для повідомлень про критичні значення (черговий лікар)" data-testid="panicPhone"><template v-slot:prepend><q-icon name="call" color="negative" /></template></q-input></div>
           </div>
         </div>
 

@@ -92,7 +92,7 @@ export default {
             { name: 'clients', label: 'Клієнти (клініки)', icon: 'fas fa-handshake', to: { name: 'lab-clients' } },
             { name: 'send-out', label: 'Зовнішні лабораторії', icon: 'fas fa-share-square', to: { name: 'lab-send-out' } },
             { name: 'workstation', label: 'Робочий стіл лаборанта', icon: 'fas fa-microscope', to: { name: 'lab-workstation' }, badgeKey: 'pending' },
-            { name: 'validation', label: 'Валідація та паніка', icon: 'fas fa-user-check', to: { name: 'lab-validation' }, badgeKey: 'panic' },
+            { name: 'validation', label: 'Валідація та критичні значення', icon: 'fas fa-user-check', to: { name: 'lab-validation' }, badgeKey: 'panic' },
             { name: 'qc', label: 'Контроль якості', icon: 'fas fa-chart-line', to: { name: 'lab-qc' }, badgeKey: 'lockout' },
             { name: 'biobank', label: 'Біобанк', icon: 'fas fa-snowflake', to: { name: 'lab-biobank' } },
             { name: 'reagents', label: 'Реагенти', icon: 'fas fa-boxes', to: { name: 'lab-reagents' } },
