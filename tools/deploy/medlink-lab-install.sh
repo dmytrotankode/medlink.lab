@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Встановлення/оновлення демо-стенда ЛІС у підпапці https://med-one.avowiz.com/lab/
+# Запуск з ПК розробника (архів збірки вже завантажено в /tmp/lab-app.tgz):
+#   ssh -i ~/.ssh/medone_ed25519 root@94.130.180.117 'bash -s' < tools/deploy/medlink-lab-install.sh
+# Що робить: окремий системний користувач medlinklab, каталог /srv/medlink-lab, служба medlink-lab
+# на 127.0.0.1:5190 (PathBase=/lab, SQLite у /srv/medlink-lab/data), сніпет nginx /lab/.
+# Наявні служби (med-one, /fin/, PostgreSQL 17, контейнери medlink-*) не змінюються.
+set -euo pipefail
+
+APP=/srv/medlink-lab
+PORT=5190
+
+id medlinklab >/dev/null 2>&1 || useradd --system --home "$APP" --shell /usr/sbin/nologin medlinklab
+mkdir -p "$APP/app" "$APP/data"
+if [ -f /tmp/lab-app.tgz ]; then
+  systemctl stop medlink-lab.service 2>/dev/null || true
+  find "$APP/app" -mindepth 1 -delete
+  tar -xzf /tmp/lab-app.tgz -C "$APP/app"
+  rm -f /tmp/lab-app.tgz
+fi
+chown -R medlinklab:medlinklab "$APP"
+
+cat > /etc/systemd/system/medlink-lab.service <<UNIT
+[Unit]
+Description=MedLink LIS (лабораторія, демо-стенд /lab)
+After=network.target
+
+[Service]
+User=medlinklab
+WorkingDirectory=$APP/app
+ExecStart=/usr/share/dotnet/dotnet $APP/app/MedLink.LIS.Api.dll
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=DOTNET_ROLL_FORWARD=Major
+Environment=Urls=http://127.0.0.1:$PORT
+Environment=PathBase=/lab
+Environment=Database__SqlitePath=$APP/data/medlink_lis.db
+Environment=Database__GuideSqlitePath=$APP/data/medlink_guide.db
+Restart=on-failure
+RestartSec=5
+MemoryMax=1G
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+# nginx: окремий сніпет, підключений у server-блок med-one.avowiz.com поруч із medlink-fin.conf
+cat > /etc/nginx/snippets/medlink-lab.conf <<NGX
+location = /lab { return 301 /lab/; }
+location /lab/ {
+  include snippets/medone-proxy.conf;
+  client_max_body_size 20m;
+  proxy_pass http://127.0.0.1:$PORT;
+}
+NGX
+SITE=/etc/nginx/sites-enabled/medone-web
+if ! grep -q "snippets/medlink-lab.conf" "$SITE"; then
+  cp "$SITE" "/root/medone-web.bak.$(date +%Y%m%d%H%M%S)"
+  sed -i 's#^\(\s*\)include snippets/medlink-fin.conf;#&\n\1include snippets/medlink-lab.conf;#' "$SITE"
+fi
+
+systemctl daemon-reload
+systemctl enable --now medlink-lab.service
+systemctl restart medlink-lab.service
+nginx -t && systemctl reload nginx
+
+for i in $(seq 1 30); do
+  curl -sf -m 3 "http://127.0.0.1:$PORT/lab/health" >/dev/null && break
+  sleep 2
+done
+echo "health: $(curl -s -m 5 http://127.0.0.1:$PORT/lab/health)"
+echo "public: $(curl -s -o /dev/null -w '%{http_code}' -m 10 https://med-one.avowiz.com/lab/)"
