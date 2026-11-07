@@ -10025,6 +10025,211 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 <p><img alt="Кумулятивний звіт пацієнта" src="screenshots/app_cumulative_report.jpg" /></p>
 </div>
 <hr />
+<h2 id="24-medlink"><span class="tag-new">НОВЕ</span>24. Два режими розгортання (автономна ЛІС та модуль MedLink) і мультитенантність</h2>
+<p>Розділ фіксує цільову архітектуру, за якою один і той самий код працює (а) як автономний продукт Medlink-LAB для сторонніх лабораторій і (б) як вбудований модуль веб-МІС MedLink (evomis), а також вимоги до мультитенантності. Він є основою для рев'ю гілки <code>tenancy</code> розробника MedLink (24.4–24.5).</p>
+<h3 id="241">24.1. Принцип: одна кодова база, два профілі хостингу</h3>
+<table>
+<thead>
+<tr>
+<th>Аспект</th>
+<th>Режим A — автономна ЛІС (standalone)</th>
+<th>Режим B — модуль MedLink (embedded)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Процес</td>
+<td><code>MedLink.LIS.Api</code> як окремий сервіс (Kestrel/Docker), SPA з <code>wwwroot</code></td>
+<td>Контролери й сервіси ЛІС реєструються в <code>App.Api</code> evomis; сторінки Quasar — у <code>App.View</code></td>
+</tr>
+<tr>
+<td>База даних</td>
+<td>SQLite (пілот) або власний PostgreSQL; дзеркальні таблиці <code>mis_*</code>, <code>org_*</code>, <code>dct_service</code>, <code>ehe_*</code> належать ЛІС і заповнюються сідом/імпортом</td>
+<td>PostgreSQL evomis; дзеркальні DbSet вказують на реальні таблиці МІС (ті самі імена колонок), ЛІС-таблиці <code>lab_*</code> створюються міграцією в тій самій базі</td>
+</tr>
+<tr>
+<td>Користувачі</td>
+<td>Заголовок <code>X-MedLink-Employee-Id</code> + перемикач «Працюю як…» (без автентифікації)</td>
+<td>IdentityServer evomis: <code>ICurrentEmployee</code> читає claims (<code>employee_id</code>, <code>organization_id</code>, <code>department_id</code>, ролі)</td>
+</tr>
+<tr>
+<td>Пацієнти, лікарі, відділення, послуги</td>
+<td>Локальні CRUD у ЛІС</td>
+<td>Тільки читання з МІС; створення пацієнта — через сервіс МІС</td>
+</tr>
+<tr>
+<td>eHealth, каса, нотифікації</td>
+<td>Mock/автономні реалізації (<code>IEhealthGateway</code>, <code>IPaymentGateway</code>, <code>INotificationSender</code>)</td>
+<td>Реальні сервіси evomis через ті самі інтерфейси</td>
+</tr>
+<tr>
+<td>Коннектор аналізаторів</td>
+<td>Підключається до <code>/api/v1/lab/connector/*</code> автономного сервісу</td>
+<td>Той самий протокол; URL сервера — адреса МІС, ключ інсталяції видається в UI модуля</td>
+</tr>
+<tr>
+<td>Кабінет пацієнта</td>
+<td><code>/portal/{patientId}</code></td>
+<td>Вбудовується в існуючий ПІС MedLink через ті самі ендпоінти</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Правила, що роблять це можливим (AR-12…AR-16):</strong></p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AR-12</td>
+<td>Усі залежності від МІС ізольовані інтерфейсами в <code>MedLink.LIS.Core</code>/<code>Api.Abstractions</code>: <code>ICurrentEmployee</code>, <code>IPatientDirectory</code>, <code>IEmployeeDirectory</code>, <code>IServiceCatalog</code>, <code>IEhealthGateway</code>, <code>IPaymentGateway</code>, <code>INotificationSender</code>, <code>IReportSigner</code>. Режим обирається у DI (<code>Lab:HostingMode = Standalone | MedLink</code>) без зміни бізнес-коду</td>
+</tr>
+<tr>
+<td>AR-13</td>
+<td>Дзеркальні сутності (<code>MisPatientCard</code>, <code>OrgEmployee</code>, <code>OrgDepartment</code>, <code>OrgOrganization</code>, <code>EheIncomingMedicalReferral</code>, <code>MisDiagnosticReport</code>, <code>dct_service</code>) повторюють імена таблиць і колонок evomis один в один; у режимі B вони мапляться на реальні таблиці <code>ToTable(...)</code> без змін сутностей. Розширення полів (напр., <code>last_name_latin</code>) — лише через окрему таблицю <code>lab_patient_ext</code> з FK, а не зміною таблиць МІС</td>
+</tr>
+<tr>
+<td>AR-14</td>
+<td>Заборонено копіювати код <code>medlink.core</code>/<code>medlink.data</code> всередину ЛІС як постійне рішення. Допускається тимчасовий «shim» (мінімальний набір типів для компіляції) у окремому проєкті <code>MedLink.LIS.MisShim</code>, який у режимі B замінюється посиланням на справжні пакети. Shim не повинен містити бізнес-логіки МІС</td>
+</tr>
+<tr>
+<td>AR-15</td>
+<td>Схема ЛІС (<code>lab_*</code>) керується міграціями EF Core, однаковими для SQLite та PostgreSQL; <code>SchemaUpgrader</code> і <code>PostgresDdlGenerator</code> — лише для пілота</td>
+</tr>
+<tr>
+<td>AR-16</td>
+<td>Фронтенд: сторінки ЛІС не імпортують нічого з <code>App.View</code> напряму; спільні компоненти (layout, drawer, axios boot) підміняються при перенесенні; <code>labApiService.js</code> — єдина точка доступу до API</td>
+</tr>
+</tbody>
+</table>
+<h3 id="242">24.2. Мультитенантність (кілька організацій/лабораторій в одній інсталяції)</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Вимога</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-TEN-001</td>
+<td>Модель ізоляції — <strong>рядкова</strong> (колонка <code>organization_id</code> у кожній таблиці <code>lab_*</code>), як в evomis (<code>org_organization</code>). Окремі схеми/бази не використовуються, щоб модуль працював у спільній базі МІС</td>
+</tr>
+<tr>
+<td>FR-TEN-002</td>
+<td>Поточний tenant визначається <code>ITenantContext</code>: режим B — з claims IdentityServer (<code>organization_id</code>); режим A — з налаштувань (<code>Lab:OrganizationId</code>) або заголовка <code>X-MedLink-Organization-Id</code> (лише для тестів/пілота)</td>
+</tr>
+<tr>
+<td>FR-TEN-003</td>
+<td>Глобальні фільтри EF Core (<code>HasQueryFilter(e =&gt; e.OrganizationId == tenant.Id)</code>) на всіх <code>lab_*</code> сутностях; запис без <code>organization_id</code> відхиляється на рівні <code>SaveChanges</code></td>
+</tr>
+<tr>
+<td>FR-TEN-004</td>
+<td>Довідники поділяються на <strong>системні</strong> (біоматеріали, типи пробірок, методики, типи аналізаторів, каталог профілів приладів, EUCAST, LOINC) — спільні, без <code>organization_id</code>, редагуються тільки адміністратором платформи, та <strong>організаційні</strong> (тести, профілі/послуги, шари норм, підрозділи, аналізатори, коннектори, налаштування, ВКЯ) — з <code>organization_id</code> і можливістю скопіювати системний шаблон</td>
+</tr>
+<tr>
+<td>FR-TEN-005</td>
+<td>Нумератори (замовлення, штрихкоди, журнали) — у межах організації; штрихкод пробірки має префікс організації (<code>Lab:BarcodePrefix</code>) для унікальності між тенантами при обміні зразками</td>
+</tr>
+<tr>
+<td>FR-TEN-006</td>
+<td>Коннектор прив'язується до організації при реєстрації інсталяції (<code>LabConnectorInstallation.organization_id</code>); усі <code>/connector/*</code> виклики працюють у контексті цієї організації, API-ключ не може бачити інші тенанти</td>
+</tr>
+<tr>
+<td>FR-TEN-007</td>
+<td>Кабінет пацієнта показує результати пацієнта з усіх організацій, де є його картка (крос-тенантне читання лише за <code>patient_id</code>, без розкриття внутрішніх даних)</td>
+</tr>
+<tr>
+<td>FR-TEN-008</td>
+<td>Аудит і журнали обміну — з <code>organization_id</code>; звіти та BI — лише в межах організації, консолідовані звіти — окрема роль платформи</td>
+</tr>
+<tr>
+<td>FR-TEN-009</td>
+<td>Міграція пілотних даних SQLite в мультитенантну схему: усі наявні рядки отримують <code>organization_id</code> пілотної організації</td>
+</tr>
+</tbody>
+</table>
+<h3 id="243">24.3. Поетапний план переходу</h3>
+<ol>
+<li><strong>Крок 1 (R1.1):</strong> ввести <code>organization_id</code> у <code>lab_*</code>, <code>ITenantContext</code>, глобальні фільтри, поділ довідників на системні/організаційні; режим A працює з однією організацією за замовчуванням.</li>
+<li><strong>Крок 2:</strong> винести залежності від МІС в інтерфейси (AR-12), реалізації <code>Standalone*</code> і <code>MedLink*</code>; <code>Lab:HostingMode</code>.</li>
+<li><strong>Крок 3:</strong> збірка в режимі B на тестовому стенді evomis: DbSet на реальні таблиці, IdentityServer, перенесення сторінок у <code>App.View</code>.</li>
+<li><strong>Крок 4:</strong> пілот двох лабораторій в одній інсталяції (режим A) для перевірки ізоляції.</li>
+</ol>
+<h3 id="244-tenancy-gitlab-medlink">24.4. Чек-лист рев'ю гілки <code>tenancy</code> (GitLab MedLink)</h3>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Що перевірити</th>
+<th>Критерій прийнятності</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Що саме перенесено з <code>medlink.core</code> / <code>medlink.data</code></td>
+<td>Лише типи, потрібні для компіляції (shim, AR-14); без дублювання бізнес-логіки МІС; є план заміни на пакети</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Імена таблиць/колонок дзеркальних сутностей</td>
+<td>Збігаються з evomis один в один; жодних змін таблиць МІС</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Модель tenant</td>
+<td>Рядкова ізоляція <code>organization_id</code>, глобальні фільтри, джерело tenant абстраговане (<code>ITenantContext</code>)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Покриття tenant</td>
+<td>Усі <code>lab_*</code> таблиці, коннектор, портал, аудит, нумератори, довідники (системні vs організаційні)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Контракт API</td>
+<td><code>docs/API_CONTRACT.md</code> не порушено: маршрути, DTO, заголовок співробітника; нові заголовки/параметри задокументовані</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Автентифікація</td>
+<td>Не додано власної авторизації; у режимі B — claims IdentityServer через <code>ICurrentEmployee</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Міграції</td>
+<td>EF Core міграції для SQLite і PostgreSQL; сід не ламається; <code>dotnet test</code> проходить</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Фронтенд</td>
+<td>Сторінки не залежать від <code>App.View</code>; перемикач організації (для режиму A) або tenant із сесії (режим B)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Коннектор</td>
+<td>Інсталяція прив'язана до організації; ключ не крос-тенантний</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Документація</td>
+<td>Оновлено README/контракт/ТЗ з описом режимів та tenant</td>
+</tr>
+</tbody>
+</table>
+<h3 id="245-tenancy">24.5. Питання до розробника гілки <code>tenancy</code></h3>
+<ol>
+<li>Який спосіб ізоляції обрано (колонка / схема / база) і чому?</li>
+<li>Звідки береться tenant у режимі модуля MedLink і в автономному режимі?</li>
+<li>Які саме файли скопійовано з <code>medlink.core</code> і <code>medlink.data</code>; чи є список і план повернення до пакетних посилань?</li>
+<li>Чи змінювалися таблиці МІС (<code>mis_*</code>, <code>org_*</code>, <code>dct_service</code>) або лише додано <code>lab_*</code>?</li>
+<li>Як поділено довідники на системні/організаційні?</li>
+<li>Чи проходять тести (<code>dotnet test</code>) і збірка фронтенду на гілці?</li>
+</ol>
 <h2 id="15_1">15. Додатки</h2>
 <h3 id="a-ac_analyzer_type-simplex-labanalyzertype">Додаток A. Каталог профілів аналізаторів (<code>ac_analyzer_type</code> Simplex → <code>LabAnalyzerType</code>)</h3>
 <p>Усього 64 записів (id 1–65, id 35 відсутній у вихідному дампі). Виробник наведено орієнтовно (за назвою моделі), для уточнення у довіднику. <code>bop/eop</code> — base64 байтів початку/кінця пакета (порожньо = ENQ/EOT для ASTM). Шаблон замовлення — ключ <code>IAnalyzerOrderBuilder</code>; «лише прийом» — прилад не приймає замовлень.</p>
