@@ -32,6 +32,7 @@ ExecStart=/usr/share/dotnet/dotnet $APP/app/MedLink.LIS.Api.dll
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=DOTNET_ROLL_FORWARD=Major
 Environment=Urls=http://127.0.0.1:$PORT
+Environment=Kestrel__Endpoints__Http__Url=http://127.0.0.1:$PORT
 Environment=PathBase=/lab
 Environment=Database__SqlitePath=$APP/data/medlink_lis.db
 Environment=Database__GuideSqlitePath=$APP/data/medlink_guide.db
