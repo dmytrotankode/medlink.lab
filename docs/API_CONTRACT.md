@@ -334,3 +334,12 @@ Payload `RESULT_FINAL` / `ADDENDUM.payload`: `caseNo, version, kind, addendumTyp
 - Номер замовлення: `{yyMM}-{000000}` за лічильником, маска з налаштувань.
 - Штрихкод пробірки: 8 цифр (Simplex), Code128 на етикетці 40×25 мм (ZPL `^BCN,60,Y,N,N`).
 - QR бланка: `https://{host}/verify/{token}`; `token` = HMAC-SHA256(orderId+releasedAt, secret) base64url.
+
+## 8. API модуля «Інструкції» `/api/v1/guide/*` (MedLink Guide)
+Окрема бібліотека `src/MedLink.Guide`, схема БД `guide` (`db/postgres/guide/001_guide_schema.sql`). Опис і конфігурація — `src/MedLink.Guide/README.md`, `docs/GUIDE_MODULE.md`. Заголовки: `X-MedLink-Employee-Id`, `X-MedLink-Roles`, `X-MedLink-Tenant-Id`. Шляхи відносні до `PathBase` хоста. Помилки — ProblemDetails.
+
+**Плеєр (відкрито):** `GET apps/{app}/catalog?role=&route=` (опубліковані розділи та інструкції), `GET scenarios/{id}/play` (знімок опублікованої версії з якорями), `POST progress`, `GET progress/me`, `POST anchor-reports` (`ok|healed|missing`), `GET media/{id}`.
+
+**Конструктор (роль редактора або `Guide:AllowAnonymousEditing`):** `POST apps`; `GET apps/{app}/tree`; папки: `POST/PUT/DELETE folders`, `POST folders/{id}/move`; інструкції: `POST/GET/PUT/DELETE scenarios`, `POST scenarios/{id}/duplicate|publish|unpublish`, `PUT scenarios/{id}/steps|variables`, `GET scenarios/{id}/export`, `POST apps/{app}/import`; якорі: `GET apps/{app}/anchors`, `PUT anchors/{id}`, `GET apps/{app}/anchors/health`, `POST anchor-reports/{id}/accept`; `POST media`.
+
+Сутність кроку: `stepType` (`info|click|input|select|hover|navigate|wait`), `expect`, `highlight` (`element|parent|rect|none`), `parentLevels`, `inputValue` з `{{змінними}}`, `inputMode`, `anchor {strategies[], fingerprint, parentLevels}`.

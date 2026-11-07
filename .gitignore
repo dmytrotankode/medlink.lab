@@ -46,3 +46,6 @@ installers/**/Output/
 
 # Video artifacts are generated
 artifacts/
+
+# MedLink Guide DemoHost
+src/MedLink.Guide.DemoHost/App_Data/

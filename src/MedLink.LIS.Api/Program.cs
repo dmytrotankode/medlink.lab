@@ -2,6 +2,7 @@
 // MedLink LIS 4.0 — ASP.NET Core 8 Web API (SQLite, EF Core 8, без автентифікації користувачів)
 // =============================================================================
 using System.Text.Json.Serialization;
+using MedLink.Guide;
 using MedLink.LIS.Api.Data;
 using MedLink.LIS.Api.Data.Seed;
 using MedLink.LIS.Api.Domain;
@@ -25,6 +26,16 @@ static string ResolveSqlitePath(IConfiguration cfg, IHostEnvironment env)
 }
 builder.Services.AddDbContext<LisDbContext>((sp, o) =>
     o.UseSqlite($"Data Source={ResolveSqlitePath(sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<IHostEnvironment>())}"));
+
+// --- MedLink Guide: інтерактивні покрокові інструкції (окрема бібліотека/схема guide, API /api/v1/guide) ---
+// На SQLite — окремий файл App_Data/medlink_guide.db; на PostgreSQL — та сама БД, схема "guide" (db/postgres/guide).
+var guideDbPath = Path.Combine(builder.Environment.ContentRootPath, builder.Configuration["Database:GuideSqlitePath"] ?? "App_Data/medlink_guide.db");
+Directory.CreateDirectory(Path.GetDirectoryName(guideDbPath)!);
+builder.Services.AddGuide(builder.Configuration, o =>
+{
+    o.ConfigureDb = db => db.UseSqlite($"Data Source={guideDbPath}");
+    o.AllowAnonymousEditing = true; // у ЛІС немає автентифікації (її надає evomis); розмежування — через Guide:EditorRoles у evomis
+});
 
 // --- MVC / JSON / ProblemDetails ---
 builder.Services.AddControllers()
@@ -159,6 +170,9 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+await app.Services.EnsureGuideDatabaseAsync();
+await app.Services.SeedGuideBundlesAsync();
+
 app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseCors("AllowAll");
 app.UseDefaultFiles();
@@ -168,6 +182,7 @@ app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "MedLink L
 app.UseMiddleware<CurrentEmployeeMiddleware>();
 app.UseRouting();
 app.MapControllers();
+app.MapGuide();
 
 // Health
 app.MapGet("/health", async (LisDbContext db) =>

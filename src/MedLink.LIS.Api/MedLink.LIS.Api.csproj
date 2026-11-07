@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MedLink.LIS.Core\MedLink.LIS.Core.csproj" />
+    <ProjectReference Include="..\MedLink.Guide\MedLink.Guide.csproj" />
   </ItemGroup>
 
   <!-- Сід-дані: db/seed/*.json вбудовуються як ресурси (працює і в тестах, і в publish) -->

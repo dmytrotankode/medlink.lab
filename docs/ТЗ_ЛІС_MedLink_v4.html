@@ -10230,6 +10230,28 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 <li>Як поділено довідники на системні/організаційні?</li>
 <li>Чи проходять тести (<code>dotnet test</code>) і збірка фронтенду на гілці?</li>
 </ol>
+<h2 id="25-"><span class="tag-new">НОВЕ</span>25. Модуль «Інструкції»: інтерактивні покрокові інструкції (плагін до будь-якої системи)</h2>
+<h3 id="251">25.1 Призначення</h3>
+<p>Впроваджувач без програмування створює покрокові інструкції прямо в інтерфейсі ЛІС: вказує елемент, пише або диктує пояснення, задає тестові дані. Користувач натискає «?» у шапці, обирає інструкцію з дерева розділів — система сама переходить на потрібний екран і веде по кроках. Модуль окремий (не залежить від <code>LisDbContext</code> і Quasar), підключається і до evomis.</p>
+<h3 id="252">25.2 Вимоги</h3>
+<ol>
+<li><strong>Дерево</strong>: система → розділи → інструкції; фільтр за ролями (<code>required_roles</code>) і <code>tenant_id</code> (= <code>organization_id</code>; NULL — для всіх); пошук; блок «Для цієї сторінки».</li>
+<li><strong>Конструктор</strong>: вибір елемента наведенням з вибором батьківського блоку (↑/↓ або ланцюжок), власна зона підсвічування, запис реальних дій (паролі не записуються), текст пояснення з диктовкою (Web Speech або зовнішній <code>transcribe</code>), тестові змінні <code>{{…}}</code>, перевірка якоря, порядок кроків, перегляд чернетки, публікація.</li>
+<li><strong>Якорі не губляться</strong>: набір стратегій (<code>data-guide-id</code>, <code>data-testid</code>, <code>id</code>, <code>aria</code>, текст, css-шлях) + відбиток; за невдачі — нечіткий пошук; звіти <code>healed/missing</code> у <code>gd_anchor_report</code>, прийняття виправлення без перепублікації.</li>
+<li><strong>Плеєр</strong>: перехід на екран кроку з будь-якого місця, очікування елемента, spotlight елемента/батька/зони, завершення кроку за <code>expect</code> (кнопка, клік, введення, зміна, маршрут), «Зроби за мене», демо-режим, автозаповнення тестовими даними, стан у <code>sessionStorage</code>.</li>
+<li><strong>Версії</strong>: редагується чернетка, публікація створює незмінний знімок <code>gd_scenario_version</code>; прогрес — <code>gd_progress</code>.</li>
+<li><strong>БД</strong>: схема PostgreSQL <code>guide</code>, таблиці <code>gd_*</code>, uuid, аудит-колонки, <code>record_state</code>; на пілоті SQLite.</li>
+</ol>
+<h3 id="253">25.3 Реалізація</h3>
+<p><code>src/MedLink.Guide</code> (.NET 8, API — розд. 8 <code>API_CONTRACT.md</code>), <code>src/MedLink.Guide.Web</code> (SDK), <code>src/MedLink.Guide.DemoHost</code>, <code>tests/MedLink.Guide.Tests</code>, <code>tools/guide/gen_lab_processes.py</code> (сід 7 інструкцій ЛІС: меню, забір, результати, верифікація, паніка, розподіл МІС, ВКЯ). Документація — <code>docs/GUIDE_MODULE.md</code>.</p>
+<p><img alt="Плеєр інструкції на робочому столі лаборанта" src="screenshots/guide_player_workstation.jpg" /></p>
+<h3 id="254">25.4 Критерії приймання</h3>
+<ul>
+<li>Кнопка «?» у шапці відкриває дерево; запуск інструкції з іншого екрана переводить на потрібний екран.</li>
+<li>Створена в конструкторі інструкція публікується і проходиться іншим користувачем.</li>
+<li>Зміна інтерфейсу не ламає якір, якщо збігається відбиток; інакше з'являється запис у <code>anchors/health</code>.</li>
+<li><code>dotnet test</code> — усі тести проходять, включно з <code>MedLink.Guide.Tests</code>.</li>
+</ul>
 <h2 id="15_1">15. Додатки</h2>
 <h3 id="a-ac_analyzer_type-simplex-labanalyzertype">Додаток A. Каталог профілів аналізаторів (<code>ac_analyzer_type</code> Simplex → <code>LabAnalyzerType</code>)</h3>
 <p>Усього 64 записів (id 1–65, id 35 відсутній у вихідному дампі). Виробник наведено орієнтовно (за назвою моделі), для уточнення у довіднику. <code>bop/eop</code> — base64 байтів початку/кінця пакета (порожньо = ENQ/EOT для ASTM). Шаблон замовлення — ключ <code>IAnalyzerOrderBuilder</code>; «лише прийом» — прилад не приймає замовлень.</p>

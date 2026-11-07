@@ -44,6 +44,9 @@
         <!-- Сесія ЕСОЗ (ТЗ 21.13) -->
         <ehealth-session-chip class="gt-sm q-mr-sm" />
 
+        <!-- Інструкції (MedLink Guide): сюди вбудовується кнопка «?» (boot/guide.js) -->
+        <span id="guide-help-slot" class="q-mr-sm row items-center" />
+
         <!-- Паніка -->
         <router-link :to="{ name: 'lab-validation', query: { tab: 'panic' } }" class="header-chip gt-xs q-mr-sm" :class="panicCount > 0 ? 'header-chip--bad' : 'header-chip--muted'" style="text-decoration: none">
           <q-icon name="priority_high" size="15px" />

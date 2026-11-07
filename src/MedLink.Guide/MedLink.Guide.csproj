@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- MedLink Guide — модуль інтерактивних покрокових інструкцій (бібліотека без залежності від конкретної СУБД) -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>MedLink.Guide</RootNamespace>
+    <AssemblyName>MedLink.Guide</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.10" />
+  </ItemGroup>
+
+  <!-- Сід-бандли та DDL PostgreSQL вбудовуються як ресурси -->
+  <ItemGroup>
+    <EmbeddedResource Include="Seed\*.json" LogicalName="MedLink.Guide.Seed.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\db\postgres\guide\001_guide_schema.sql" LogicalName="MedLink.Guide.Sql.001_guide_schema.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MedLink.Guide.Tests" />
+  </ItemGroup>
+
+</Project>

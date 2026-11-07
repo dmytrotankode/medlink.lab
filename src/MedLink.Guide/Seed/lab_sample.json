@@ -1,0 +1,172 @@
+{
+  "format": "medlink-guide-bundle",
+  "version": 1,
+  "app": { "code": "lab", "caption": "MedLink LIS" },
+  "folders": [
+    { "code": "start", "caption": "Початок роботи", "icon": "rocket_launch", "sortOrder": 10 },
+    { "code": "orders", "caption": "Реєстрація направлень", "icon": "assignment", "sortOrder": 20 }
+  ],
+  "scenarios": [
+    {
+      "code": "lab.header-barcode",
+      "folderCode": "start",
+      "caption": "Пошук за штрихкодом у шапці",
+      "description": "Швидкий пошук пробірки або замовлення за штрихкодом з будь-якого екрана.",
+      "icon": "qr_code_scanner",
+      "startRoute": "/laboratory/dashboard",
+      "requiredRoles": [],
+      "tags": ["пошук", "штрихкод"],
+      "estMinutes": 1,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [
+        { "name": "barcode", "caption": "Штрихкод для прикладу", "kind": "fixed", "defaultValue": "20260001" }
+      ],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Глобальний пошук",
+          "body": "У шапці будь-якої сторінки є поле пошуку за штрихкодом пробірки або номером замовлення.",
+          "route": "/laboratory/dashboard",
+          "highlight": "element",
+          "expect": "next",
+          "anchor": {
+            "code": "lab.header.barcode-input",
+            "caption": "Поле штрихкоду в шапці",
+            "routePattern": "*",
+            "strategies": [
+              { "type": "css", "value": ".header-barcode input", "weight": 80 },
+              { "type": "aria", "value": "Штрихкод пробірки / № замовлення", "weight": 50 }
+            ],
+            "fingerprint": { "tag": "input", "label": "Штрихкод пробірки / № замовлення", "classes": ["q-field__native"] },
+            "parentLevels": 3
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Введіть штрихкод",
+          "body": "Введіть або відскануйте штрихкод — наприклад {{barcode}} — і натисніть Enter.",
+          "route": "/laboratory/dashboard",
+          "highlight": "parent",
+          "parentLevels": 3,
+          "inputValue": "{{barcode}}",
+          "inputMode": "prefill",
+          "expect": "input",
+          "optional": true,
+          "anchor": { "code": "lab.header.barcode-input" }
+        }
+      ]
+    },
+    {
+      "code": "lab.create-order",
+      "folderCode": "orders",
+      "caption": "Створення нового направлення",
+      "description": "Відкрийте форму «Нове направлення», оберіть тип направлення, платника та перевірте суму до сплати.",
+      "icon": "add_circle",
+      "startRoute": "/laboratory/orders",
+      "requiredRoles": [],
+      "tags": ["направлення", "замовлення"],
+      "estMinutes": 3,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [
+        { "name": "ehealthNumber", "caption": "Номер е-направлення", "kind": "fixed", "defaultValue": "TEST-0000-0001" }
+      ],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Нове направлення",
+          "body": "Натисніть «Нове направлення», щоб відкрити форму реєстрації.",
+          "route": "/laboratory/orders",
+          "highlight": "element",
+          "expect": "click",
+          "anchor": {
+            "code": "lab.orders.new-button",
+            "caption": "Кнопка «Нове направлення»",
+            "routePattern": "/laboratory/orders",
+            "strategies": [
+              { "type": "text", "value": "Нове направлення", "weight": 70 },
+              { "type": "css", "value": "button.q-btn.bg-primary", "weight": 20 }
+            ],
+            "fingerprint": { "tag": "button", "text": "Нове направлення", "classes": ["q-btn", "bg-primary"] }
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Тип направлення",
+          "body": "Оберіть тип направлення: електронне (ЕСОЗ), паперове або без направлення.",
+          "route": "/laboratory/orders",
+          "highlight": "element",
+          "expect": "change",
+          "anchor": {
+            "code": "lab.order.referral-type",
+            "caption": "Перемикач типу направлення",
+            "routePattern": "/laboratory/orders",
+            "strategies": [
+              { "type": "css", "value": "[data-testid=\"referralType\"]", "weight": 100 }
+            ],
+            "fingerprint": { "tag": "div", "attrs": { "data-testid": "referralType" } }
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Номер е-направлення",
+          "body": "Для е-направлення введіть його номер і натисніть Enter — система перевірить направлення в ЕСОЗ.",
+          "route": "/laboratory/orders",
+          "highlight": "parent",
+          "parentLevels": 2,
+          "inputValue": "{{ehealthNumber}}",
+          "inputMode": "prefill",
+          "expect": "input",
+          "optional": true,
+          "anchor": {
+            "code": "lab.order.ehealth-number",
+            "caption": "Номер е-направлення",
+            "routePattern": "/laboratory/orders",
+            "strategies": [
+              { "type": "css", "value": "input[data-testid=\"ehealthNumber\"]", "weight": 100 }
+            ],
+            "fingerprint": { "tag": "input", "attrs": { "data-testid": "ehealthNumber" }, "label": "Номер е-направлення *" }
+          }
+        },
+        {
+          "stepType": "select",
+          "title": "Платник",
+          "body": "Оберіть платника: пацієнт, страхова або програма медичних гарантій.",
+          "route": "/laboratory/orders",
+          "highlight": "parent",
+          "parentLevels": 2,
+          "expect": "change",
+          "optional": true,
+          "anchor": {
+            "code": "lab.order.payer",
+            "caption": "Вибір платника",
+            "routePattern": "/laboratory/orders",
+            "strategies": [
+              { "type": "css", "value": "[data-testid=\"payerSelect\"]", "weight": 100 }
+            ],
+            "fingerprint": { "attrs": { "data-testid": "payerSelect" }, "label": "Платник" }
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "До сплати пацієнтом",
+          "body": "Тут відображається розрахована сума до сплати пацієнтом з урахуванням платника та знижок.",
+          "route": "/laboratory/orders",
+          "highlight": "element",
+          "optional": true,
+          "expect": "next",
+          "anchor": {
+            "code": "lab.order.patient-to-pay",
+            "caption": "Сума до сплати",
+            "routePattern": "/laboratory/orders",
+            "strategies": [
+              { "type": "css", "value": "[data-testid=\"patientToPay\"]", "weight": 100 }
+            ],
+            "fingerprint": { "attrs": { "data-testid": "patientToPay" }, "text": "До сплати пацієнтом" }
+          }
+        }
+      ]
+    }
+  ]
+}

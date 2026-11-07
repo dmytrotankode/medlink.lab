@@ -1,0 +1,1202 @@
+{
+  "format": "medlink-guide-bundle",
+  "version": 1,
+  "app": {
+    "code": "lab",
+    "caption": "MedLink LIS"
+  },
+  "folders": [
+    {
+      "code": "start",
+      "caption": "Початок роботи",
+      "icon": "🚀",
+      "sortOrder": 10
+    },
+    {
+      "code": "preanalytics",
+      "caption": "Преаналітика",
+      "icon": "🩸",
+      "sortOrder": 30
+    },
+    {
+      "code": "analytics",
+      "caption": "Аналітика та результати",
+      "icon": "🔬",
+      "sortOrder": 40
+    },
+    {
+      "code": "validation",
+      "caption": "Верифікація та паніка",
+      "icon": "✅",
+      "sortOrder": 50
+    },
+    {
+      "code": "mis",
+      "caption": "Інтеграція з МІС",
+      "icon": "🔗",
+      "sortOrder": 60
+    },
+    {
+      "code": "quality",
+      "caption": "Контроль якості",
+      "icon": "📈",
+      "sortOrder": 70
+    }
+  ],
+  "scenarios": [
+    {
+      "code": "lab.nav.menu",
+      "folderCode": "start",
+      "caption": "Навігація: бічне меню ЛІС",
+      "description": "Як знайти потрібний модуль: групи процесів, довідників, інтеграцій.",
+      "startRoute": "/laboratory/dashboard",
+      "requiredRoles": [],
+      "tags": [
+        "меню",
+        "навігація"
+      ],
+      "estMinutes": 1,
+      "sortOrder": 5,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Меню модулів лабораторії",
+          "body": "Усі функції ЛІС згруповані в бічному меню: процеси лабораторії, довідники, інтеграції та адміністрування. Пункти з цифрами показують кількість завдань.",
+          "route": "/laboratory/dashboard",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "right",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.menu.drawer",
+            "caption": "Бічне меню ЛІС",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"labMenuDrawer\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Відкриємо реєстрацію направлень",
+          "body": "Натисніть пункт «Реєстрація направлень» — це черга замовлень лабораторії.",
+          "route": "/laboratory/dashboard",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "right",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.menu.orders",
+            "caption": "Меню: Реєстрація направлень",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": "a[href=\"/laboratory/orders\"]",
+                "weight": 90
+              },
+              {
+                "type": "text",
+                "value": "div|Реєстрація направлень",
+                "weight": 60
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Ви в черзі замовлень",
+          "body": "Тут реєструються нові направлення, шукаються замовлення за № або штрихкодом, фільтруються за статусом, датою та відділенням. Повернутися на дашборд можна кліком по логотипу.",
+          "route": "/laboratory/orders",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false
+        }
+      ]
+    },
+    {
+      "code": "lab.preanalytics.collect",
+      "folderCode": "preanalytics",
+      "caption": "Забір біоматеріалу за чек-листом",
+      "description": "Пункт забору: сканування штрихкоду пробірки, чек-лист безпеки, підтвердження забору, друк етикетки.",
+      "startRoute": "/laboratory/phlebotomy",
+      "requiredRoles": [],
+      "tags": [
+        "забір",
+        "проби",
+        "штрихкод"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [
+        {
+          "name": "barcode",
+          "caption": "Штрихкод для прикладу",
+          "kind": "fixed",
+          "defaultValue": "20260001"
+        }
+      ],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Пункт забору біоматеріалу",
+          "body": "Тут медсестра відкриває пробірку за штрихкодом і фіксує забір. Робіть це біля пацієнта.",
+          "route": "/laboratory/phlebotomy",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.phlebotomy.page",
+            "caption": "Сторінка пункту забору",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"phlebotomyPage\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Скануйте штрихкод",
+          "body": "Наведіть сканер на етикетку пробірки або введіть штрихкод вручну та натисніть Enter.",
+          "route": "/laboratory/phlebotomy",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "{{barcode}}",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.phlebotomy.scan",
+            "caption": "Поле сканування",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"scanInput\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Картка пробірки",
+          "body": "Перевірте пацієнта, тип пробірки, статус «Очікує забору» та план пробірок замовлення.",
+          "route": "/laboratory/phlebotomy",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.phlebotomy.sample-card",
+            "caption": "Картка пробірки",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"sampleCard\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Забір за чек-листом",
+          "body": "Натисніть «Забір за чек-листом» — відкриється перелік обов'язкових перевірок.",
+          "route": "/laboratory/phlebotomy",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.phlebotomy.collect-btn",
+            "caption": "Кнопка «Забір за чек-листом»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"collectBtn\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Чек-лист безпеки",
+          "body": "Позначте всі пункти: ідентифікація пацієнта, натще, порядок пробірок, перемішування. Без усіх відміток підтвердити забір неможливо.",
+          "route": "/laboratory/phlebotomy",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.phlebotomy.collect-dialog",
+            "caption": "Діалог забору",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"collectDialog\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Підтвердіть забір",
+          "body": "Коли всі пункти позначені, натисніть «Підтвердити забір». Статус пробірки зміниться на «Зібрано», час і виконавець збережуться в журналі.",
+          "route": "/laboratory/phlebotomy",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.phlebotomy.collect-confirm",
+            "caption": "Підтвердити забір",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"collectConfirm\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Етикетка та список проб",
+          "body": "Надрукуйте етикетку кнопкою «Друк етикетки», а нижче у таблиці бачите всі проби поточного замовлення.",
+          "route": "/laboratory/phlebotomy",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.phlebotomy.samples-table",
+            "caption": "Таблиця проб",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"samplesTable\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.analytics.results",
+      "folderCode": "analytics",
+      "caption": "Введення результатів на робочому столі лаборанта",
+      "description": "Робочий лист: пошук, вибір рядка, введення результату, коментар, автоверифікація.",
+      "startRoute": "/laboratory/workstation",
+      "requiredRoles": [],
+      "tags": [
+        "результати",
+        "робочий лист"
+      ],
+      "estMinutes": 4,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [
+        {
+          "name": "search",
+          "caption": "Що шукати",
+          "kind": "fixed",
+          "defaultValue": "Мельник"
+        }
+      ],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Робочий стіл лаборанта",
+          "body": "Головний екран лаборанта: робочий лист із показниками, які чекають на результат. Дані від аналізаторів надходять автоматично.",
+          "route": "/laboratory/workstation",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.ws.page",
+            "caption": "Робочий стіл",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"workstationPage\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Пошук у робочому листі",
+          "body": "Шукайте за штрихкодом, пацієнтом, тестом або № замовлення. Фільтр «Підрозділ» звужує список до вашого відділення.",
+          "route": "/laboratory/workstation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "{{search}}",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.ws.search",
+            "caption": "Пошук",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"wsSearch\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Таблиця робочого листа",
+          "body": "CITO-проби підсвічено, критичні значення виділено червоним. Клік по рядку відкриває деталі, подвійний клік — швидке введення результату.",
+          "route": "/laboratory/workstation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.ws.table",
+            "caption": "Робочий лист",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"worklistTable\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Виберіть рядок",
+          "body": "Клікніть будь-який рядок робочого листа, щоб побачити деталі показника.",
+          "route": "/laboratory/workstation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.ws.row",
+            "caption": "Рядок робочого листа",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid^=\"wl-row-\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Ввести або змінити результат",
+          "body": "Натисніть «Ввести / змінити» у панелі деталей.",
+          "route": "/laboratory/workstation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.ws.detail-edit",
+            "caption": "Ввести / змінити",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"detailEdit\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Редактор результату",
+          "body": "Введіть число, виберіть значення зі списку або текст — залежно від типу показника. Система одразу порівняє з нормою та виставить прапорець (↑↓, критичний).",
+          "route": "/laboratory/workstation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.ws.result-editor",
+            "caption": "Редактор результату",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"resultEditor\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Коментар оператора",
+          "body": "За потреби додайте коментар — він потрапить у журнал і на бланк.",
+          "route": "/laboratory/workstation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.ws.result-comment",
+            "caption": "Коментар оператора",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"resultComment\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Збережіть результат",
+          "body": "Натисніть «Зберегти». Результат отримає статус RESULTED і піде на верифікацію.",
+          "route": "/laboratory/workstation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.ws.result-save",
+            "caption": "Зберегти",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"resultSave\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Автоверифікація",
+          "body": "Кнопка «Автоверифікація» автоматично підтверджує результати в межах норми за правилами лабораторії (delta-check, ВКЯ, діапазони).",
+          "route": "/laboratory/workstation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.ws.autoverify",
+            "caption": "Автоверифікація",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"wsAutoverify\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.validation.verify",
+      "folderCode": "validation",
+      "caption": "Верифікація результатів",
+      "description": "Підтвердження результатів лікарем-лаборантом: порівняння з попередніми, пакетна верифікація.",
+      "startRoute": "/laboratory/validation",
+      "requiredRoles": [],
+      "tags": [
+        "верифікація",
+        "delta-check"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Валідація та паніка",
+          "body": "Тут лікар-лаборант підтверджує результати перед випуском бланка. Три вкладки: на верифікацію, паніка без дзвінка, журнал дзвінків.",
+          "route": "/laboratory/validation",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.validation.page",
+            "caption": "Сторінка валідації",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"validationPage\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Вкладка «На верифікацію»",
+          "body": "Результати, що очікують підтвердження. Червоним виділено критичні.",
+          "route": "/laboratory/validation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.validation.tab-review",
+            "caption": "Вкладка «На верифікацію»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"tab-review\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Верифікація одного результату",
+          "body": "Кнопка з іконкою відкриває порівняння з попередніми результатами пацієнта (delta-check) — перевірте динаміку перед підтвердженням.",
+          "route": "/laboratory/validation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.validation.verify-row",
+            "caption": "Верифікувати рядок",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid^=\"verify-\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Пакетна верифікація",
+          "body": "Відмітьте кілька рядків чекбоксами та натисніть «Верифікувати обрані» — так швидше за великих обсягів. Критичні значення потребують окремого рішення.",
+          "route": "/laboratory/validation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.validation.verify-selected",
+            "caption": "Верифікувати обрані",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"verifySelected\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.validation.panic",
+      "folderCode": "validation",
+      "caption": "Реєстрація дзвінка про критичний результат",
+      "description": "Паніка: обов'язкове повідомлення лікаря та підтвердження read-back.",
+      "startRoute": "/laboratory/validation?tab=panic",
+      "requiredRoles": [],
+      "tags": [
+        "паніка",
+        "критичні"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 20,
+      "publish": true,
+      "variables": [
+        {
+          "name": "doctor",
+          "caption": "Лікар",
+          "kind": "fixed",
+          "defaultValue": "Іваненко Петро Олексійович"
+        },
+        {
+          "name": "phone",
+          "caption": "Телефон",
+          "kind": "fixed",
+          "defaultValue": "+380501234567"
+        }
+      ],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Паніка без дзвінка",
+          "body": "Критичні значення, про які лікаря ще не повідомлено. Поки дзвінок не зареєстровано, бланк не випускається.",
+          "route": "/laboratory/validation?tab=panic",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.validation.tab-panic",
+            "caption": "Вкладка «Паніка»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"tab-panic\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Зареєструйте дзвінок",
+          "body": "Телефонуйте лікарю та натисніть «Дзвінок» у відповідному рядку.",
+          "route": "/laboratory/validation?tab=panic",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.validation.call-btn",
+            "caption": "Кнопка «Дзвінок»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid^=\"call-\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "ПІБ лікаря",
+          "body": "Вкажіть, кому саме повідомлено критичний результат.",
+          "route": "/laboratory/validation?tab=panic",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "{{doctor}}",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.panic.doctor",
+            "caption": "ПІБ лікаря",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"panicDoctor\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Телефон",
+          "body": "Телефон, за яким зв'язалися.",
+          "route": "/laboratory/validation?tab=panic",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "{{phone}}",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.panic.phone",
+            "caption": "Телефон",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"panicPhone\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Read-back",
+          "body": "Позначте, що лікар повторив значення голосом (read-back) — це вимога безпеки.",
+          "route": "/laboratory/validation?tab=panic",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.panic.readback",
+            "caption": "Read-back",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"panicReadback\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Збережіть",
+          "body": "Натисніть «Зареєструвати дзвінок». Запис потрапить у журнал дзвінків з часом і виконавцем.",
+          "route": "/laboratory/validation?tab=panic",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.panic.save",
+            "caption": "Зареєструвати дзвінок",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"panicSave\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.mis.distribute",
+      "folderCode": "mis",
+      "caption": "Розподіл вхідного направлення з МІС",
+      "description": "Прийом направлення з МІС, вибір аналізаторів, постановка в черги.",
+      "startRoute": "/laboratory/refs",
+      "requiredRoles": [],
+      "tags": [
+        "МІС",
+        "направлення"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Вхідні направлення",
+          "body": "Направлення з МІС MedLink потрапляють у цю чергу автоматично. Лабораторія розподіляє показники між аналізаторами.",
+          "route": "/laboratory/refs",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.mis.page",
+            "caption": "Вхідні направлення",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"incomingReferralsPage\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Виберіть направлення",
+          "body": "Клікніть направлення зі списку ліворуч.",
+          "route": "/laboratory/refs",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.mis.inbox-item",
+            "caption": "Направлення у списку",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid^=\"inbox-\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Панель розподілу",
+          "body": "Для кожного показника вибрано аналізатор за налаштуваннями «Послуги ЕСОЗ × аналізатори». Перевірте або змініть вибір.",
+          "route": "/laboratory/refs",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.mis.distribution",
+            "caption": "Панель розподілу",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"distributionPanel\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Підтвердіть розподіл",
+          "body": "Натисніть «Підтвердити й поставити в черги» — показники з'являться в робочих листах аналізаторів.",
+          "route": "/laboratory/refs",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.mis.confirm",
+            "caption": "Підтвердити розподіл",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"confirmDistribution\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.quality.point",
+      "folderCode": "quality",
+      "caption": "Внесення точки контролю якості (ВКЯ)",
+      "description": "Внесення вимірювання контрольного матеріалу, оцінка за правилами Вестгарда, lockout.",
+      "startRoute": "/laboratory/quality-control",
+      "requiredRoles": [],
+      "tags": [
+        "ВКЯ",
+        "Вестгард"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [
+        {
+          "name": "value",
+          "caption": "Виміряне значення",
+          "kind": "fixed",
+          "defaultValue": "5.2"
+        }
+      ],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Контроль якості",
+          "body": "Щодня перед роботою вносьте вимірювання контрольних матеріалів. Порушення правил Вестгарда блокують випуск результатів показника (lockout).",
+          "route": "/laboratory/quality-control",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.qc.page",
+            "caption": "Сторінка ВКЯ",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"qcPage\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Контрольний матеріал",
+          "body": "Виберіть матеріал / лот. Новий матеріал додається кнопкою «Матеріал» вгорі.",
+          "route": "/laboratory/quality-control",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.qc.material",
+            "caption": "Матеріал / лот",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"qcMaterialSelect\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Показник",
+          "body": "Виберіть показник, для якого вносите контроль.",
+          "route": "/laboratory/quality-control",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.qc.test",
+            "caption": "Показник",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"qcTestSelect\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Внести точку",
+          "body": "Натисніть «Внести точку контролю».",
+          "route": "/laboratory/quality-control",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.qc.add-point",
+            "caption": "Внести точку контролю",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"qcAddPoint\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Виміряне значення",
+          "body": "Введіть результат, отриманий на аналізаторі для контрольного матеріалу.",
+          "route": "/laboratory/quality-control",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "{{value}}",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.qc.value",
+            "caption": "Виміряне значення",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"qcPointValue\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Збережіть та оцініть",
+          "body": "Натисніть «Зберегти та оцінити»: система порахує відхилення, застосує правила Вестгарда та покаже, чи потрібен lockout.",
+          "route": "/laboratory/quality-control",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.qc.save",
+            "caption": "Зберегти та оцінити",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"qcPointSave\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Lockout",
+          "body": "Якщо правило порушено — показник заблоковано. Розблокувати можна тут із зазначенням причини та коригувальної дії.",
+          "route": "/laboratory/quality-control",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.qc.tab-lockouts",
+            "caption": "Вкладка Lockout",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"tab-lockouts\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

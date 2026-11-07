@@ -11,7 +11,8 @@ module.exports = function (ctx) {
     boot: [
       'fonts',
       'axios',
-      'components'
+      'components',
+      'guide'
     ],
 
     css: [
@@ -51,8 +52,12 @@ module.exports = function (ctx) {
       extendWebpack (cfg) {
         cfg.resolve.alias = {
           ...cfg.resolve.alias,
-          '@': require('path').resolve(__dirname, './src')
+          '@': require('path').resolve(__dirname, './src'),
+          // MedLink Guide SDK — окрема бібліотека поруч (src/MedLink.Guide.Web), без залежності від Quasar
+          '@guide': require('path').resolve(__dirname, '../MedLink.Guide.Web/src')
         };
+        // SDK лежить поза коренем проєкту: дозволяємо резолвити core-js/runtime з node_modules вебу
+        cfg.resolve.modules = (cfg.resolve.modules || ['node_modules']).concat([require('path').resolve(__dirname, 'node_modules')]);
       }
     },
 
