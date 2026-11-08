@@ -354,6 +354,7 @@ const labApi = {
   pathReturn: blockId => data(http.post(`/pathology/blocks/${blockId}/return`)),
   pathDictionaries: () => data(http.get('/pathology/dictionaries')),
   pathStaff: () => data(http.get('/pathology/staff')),
+  pathMethodPrice: (code, price) => data(http.put(`/pathology/methods/${encodeURIComponent(code)}/price`, { price })),
   pathRooms: () => data(http.get('/pathology/rooms')),
   pathDisposeSlide: (slideId, body) => data(http.post(`/pathology/slides/${slideId}/dispose`, body)),
   pathSetStorage: (blockId, body) => data(http.put(`/pathology/blocks/${blockId}/storage`, body)),

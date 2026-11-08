@@ -11,7 +11,15 @@
       <q-tab v-for="t in tabs" :key="t.name" :name="t.name" :label="t.label" />
     </q-tabs>
     <div class="medlink-card">
-      <q-table :data="rows" :columns="columns" row-key="__k" flat dense :pagination="{ rowsPerPage: 50 }" :loading="loading" wrap-cells />
+      <q-table :data="rows" :columns="columns" row-key="__k" flat dense :pagination="{ rowsPerPage: 50 }" :loading="loading" wrap-cells>
+        <template v-if="tab === 'stains'" #body-cell-price="p">
+          <q-td :props="p">
+            <q-input :value="p.row.price" dense outlined type="number" min="0" step="1" suffix="грн" style="width: 130px" :data-testid="`price-${p.row.code}`"
+                     @change="v => savePrice(p.row, v)" />
+          </q-td>
+        </template>
+      </q-table>
+      <div v-if="tab === 'stains'" class="text-caption text-grey-7 q-pa-sm">Ціну змінює адміністратор. Для методик цитології (Папаніколау, Май-Грюнвальд-Гімза) це вартість одного скельця; 0 — типова ціна.</div>
     </div>
   </div>
 </template>
@@ -49,6 +57,12 @@ export default {
   },
   created () { this.load(); },
   methods: {
+    async savePrice (row, v) {
+      const price = Number(v);
+      if (!(price >= 0)) { this.$q.notify({ type: 'negative', message: 'Ціна має бути числом від 0' }); this.load(); return; }
+      const r = await this.callApi(() => this.$api.pathMethodPrice(row.code, price), { success: `Ціну «${row.name}» збережено` });
+      if (r) row.price = r.price; else this.load();
+    },
     async load () { const d = await this.callApi(() => this.$api.pathDictionaries()); if (d) this.dict = d; }
   }
 };

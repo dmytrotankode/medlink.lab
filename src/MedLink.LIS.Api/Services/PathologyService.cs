@@ -1393,6 +1393,7 @@ public sealed class PathologyService
     public async Task<object> DictionariesAsync()
     {
         await EnsureRoomsAsync();
+        await EnsureCytoMethodsAsync();
         return new
     {
         templates = await _db.PathTemplates.AsNoTracking().OrderBy(t => t.Name).Select(t => new { t.Id, t.Name, t.Macro, t.Micro }).ToListAsync(),
