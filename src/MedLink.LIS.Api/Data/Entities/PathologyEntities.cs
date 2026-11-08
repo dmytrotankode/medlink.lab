@@ -18,18 +18,18 @@ public static class LabDepartments
 /// <summary>Тип матеріалу (п. 12–14 форми 014/о) і SLA в робочих днях (FR-PAT-090).</summary>
 public static class PathKinds
 {
-    public const string Operative = "OPERATIVE", Biopsy = "BIOPSY", Cito = "CITO", Consult = "CONSULT";
-    public static readonly string[] All = { Operative, Biopsy, Cito, Consult };
+    public const string Operative = "OPERATIVE", Biopsy = "BIOPSY", Cito = "CITO", Consult = "CONSULT", Cyto = "CYTO";
+    public static readonly string[] All = { Operative, Biopsy, Cito, Consult, Cyto };
     public static string Label(string? k) => k switch
     {
-        Operative => "Операційний матеріал", Biopsy => "Біопсія діагностична", Cito => "Біопсія термінова (інтраопераційна)", Consult => "Консультація готових препаратів", _ => k ?? "—"
+        Operative => "Операційний матеріал", Biopsy => "Біопсія діагностична", Cito => "Біопсія термінова (інтраопераційна)", Consult => "Консультація готових препаратів", Cyto => "Цитологічне дослідження", _ => k ?? "—"
     };
 }
 
 /// <summary>Тарифи за замовчуванням (прайс розд. 20.7 може перевизначити): вирізка — перший блок + кожен наступний, ІГХ, консультація за скельце.</summary>
 public static class PathPrices
 {
-    public const decimal FirstBlock = 420m, NextBlock = 140m, Ihc = 650m, ConsultSlide = 210m, Cito = 900m;
+    public const decimal FirstBlock = 420m, NextBlock = 140m, Ihc = 650m, ConsultSlide = 210m, Cito = 900m, CytoSlide = 160m;
     public const int IhcExtraWorkdays = 3;
 }
 
@@ -48,6 +48,31 @@ public static class PathStages
         Microscopy => "Мікроскопія й опис", Signed => "Підписано", _ => s ?? "—"
     };
     public static string? Next(string stage) { var i = Array.IndexOf(All, stage); return i >= 0 && i < All.Length - 1 ? All[i + 1] : null; }
+}
+
+/// <summary>Довідники цитології (FR-CYT-001, 006): види матеріалу, адекватність, категорії висновку, оцінка скринера.</summary>
+public static class PathCytology
+{
+    public static readonly (string Code, string Name)[] Materials =
+    {
+        ("GYN", "Гінекологічний мазок"), ("LIQUID", "Рідинна цитологія"), ("ASPIRATE", "Пунктат / аспірат"),
+        ("DISCHARGE", "Виділення і змиви"), ("SEROUS", "Серозна рідина")
+    };
+    public static readonly (string Code, string Name)[] Adequacy =
+    {
+        ("SATISFACTORY", "Задовільний для оцінки"), ("LIMITED", "Обмежено придатний"), ("UNSATISFACTORY", "Непридатний для оцінки")
+    };
+    /// <summary>Категорії висновку; High — випадки, що потребують повідомлення направнику (FR-CYT-008).</summary>
+    public static readonly (string Code, string Name, bool High)[] Categories =
+    {
+        ("NILM", "Без інтраепітеліальних уражень і злоякісності", false), ("ASC-US", "Атипові клітини плоского епітелію невизначеного значення", false),
+        ("LSIL", "Плоскоклітинне інтраепітеліальне ураження низького ступеня", false), ("ASC-H", "Атипові клітини, не виключено ураження високого ступеня", true),
+        ("HSIL", "Плоскоклітинне інтраепітеліальне ураження високого ступеня", true), ("AGC", "Атипові залозисті клітини", true),
+        ("BENIGN", "Доброякісні зміни", false), ("ATYPICAL", "Атипові клітини", false), ("SUSPICIOUS", "Підозра на злоякісність", true), ("MALIGNANT", "Злоякісні клітини", true)
+    };
+    public static readonly string[] Assessments = { "NORMAL", "SUSPECT" };
+    public static bool IsHigh(string? c) => Categories.Any(x => x.High && x.Code == c);
+    public static bool IsNormal(string? c) => c is "NILM" or "BENIGN";
 }
 
 /// <summary>Маршрут обробки блока (FR-PAT-110): стандартна проводка або з попередньою декальцинацією (кісткова та кальцинована тканина).</summary>
@@ -126,6 +151,16 @@ public class LabPathReferral : GuidEntity
     [MaxLength(16)] public string? MenopauseState { get; set; }
     /// <summary>Адреса для розсилки підписаного висновку (FR-PAT-119).</summary>
     [MaxLength(256)] public string? ResultEmail { get; set; }
+    /// <summary>Цитологія: вид матеріалу (GYN | LIQUID | ASPIRATE | DISCHARGE | SEROUS), FR-CYT-001.</summary>
+    [MaxLength(16)] public string? CytoMaterial { get; set; }
+    /// <summary>Цитологія: приготування препаратів завершено (FR-CYT-003).</summary>
+    public DateTime? PreparedAt { get; set; }
+    /// <summary>Цитологія: попередня оцінка скринера NORMAL | SUSPECT (FR-CYT-005).</summary>
+    [MaxLength(16)] public string? ScreenAssessment { get; set; }
+    [MaxLength(512)] public string? ScreenNote { get; set; }
+    [MaxLength(64)] public string? ScreenerId { get; set; }
+    [MaxLength(256)] public string? ScreenerName { get; set; }
+    public DateTime? ScreenedAt { get; set; }
 }
 
 /// <summary>[ЛІС] Об'єкт (контейнер) з маркуванням МІС (п. 7 форми); аналог проби.</summary>
@@ -243,6 +278,10 @@ public class LabPathReport : GuidEntity
     public bool? Pni { get; set; }
     public bool ChangesDiagnosis { get; set; }
     [MaxLength(1024)] public string? Reason { get; set; }
+    /// <summary>Цитологія: адекватність матеріалу, категорія висновку, рекомендації (FR-CYT-006).</summary>
+    [MaxLength(16)] public string? Adequacy { get; set; }
+    [MaxLength(16)] public string? CytoCategory { get; set; }
+    [MaxLength(1024)] public string? Recommendation { get; set; }
     /// <summary>Доповнення CONSULT: ПІБ консультанта зовнішньої консультації (FR-PAT-117).</summary>
     [MaxLength(256)] public string? ConsultantName { get; set; }
     public bool IsPreliminarySent { get; set; }

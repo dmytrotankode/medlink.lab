@@ -70,6 +70,8 @@ public sealed class PathologyReferralRequest
     public string? MenopauseState { get; set; }
     /// <summary>Адреса розсилки підписаного висновку (FR-PAT-119).</summary>
     public string? ResultEmail { get; set; }
+    /// <summary>Цитологія (Kind=CYTO): GYN | LIQUID | ASPIRATE | DISCHARGE | SEROUS.</summary>
+    public string? CytoMaterial { get; set; }
     public PathExternalRequest? External { get; set; }
     /// <summary>Повний знімок п. 1–9 форми 014/о з МІС (довільний JSON).</summary>
     public JsonElement? Form014 { get; set; }
@@ -167,7 +169,32 @@ public sealed class PathReportRequest
     public bool? Lvi { get; set; }
     public bool? Pni { get; set; }
     public List<PathIhcRow>? Ihc { get; set; }
+    /// <summary>Цитологія (FR-CYT-006).</summary>
+    public string? Adequacy { get; set; }
+    public string? CytoCategory { get; set; }
+    public string? Recommendation { get; set; }
 }
+
+public sealed class PathPrepSlide { public string? Method { get; set; } }
+public sealed class PathPrepObject
+{
+    public string ObjectId { get; set; } = "";
+    /// <summary>Скельця об'єкта (1…10); кожне з власною методикою (за замовчуванням Папаніколау).</summary>
+    public List<PathPrepSlide> Slides { get; set; } = new();
+}
+/// <summary>Приготування цитологічних препаратів (FR-CYT-003).</summary>
+public sealed class PathPrepareRequest
+{
+    public List<PathPrepObject> Objects { get; set; } = new();
+    public string? Note { get; set; }
+}
+public sealed class PathScreeningRequest
+{
+    /// <summary>NORMAL | SUSPECT</summary>
+    public string Assessment { get; set; } = "";
+    public string? Note { get; set; }
+}
+public sealed class PathRepeatRequest { public string Reason { get; set; } = ""; public string? Method { get; set; } }
 
 public sealed class PathPreliminaryRequest { public string Text { get; set; } = ""; }
 
@@ -325,7 +352,16 @@ public sealed class PathologyService
     {
         var kind = (req.Kind ?? "").Trim().ToUpperInvariant();
         if (kind == "OPER") kind = PathKinds.Operative;
-        if (!PathKinds.All.Contains(kind)) throw ValidationException.Field("kind", "Тип матеріалу: BIOPSY, CITO, OPERATIVE або CONSULT");
+        if (!PathKinds.All.Contains(kind)) throw ValidationException.Field("kind", "Тип матеріалу: BIOPSY, CITO, OPERATIVE, CONSULT або CYTO");
+        var cytoMaterial = string.IsNullOrWhiteSpace(req.CytoMaterial) ? null : req.CytoMaterial.Trim().ToUpperInvariant();
+        if (kind == PathKinds.Cyto)
+        {
+            cytoMaterial ??= "GYN";
+            if (!PathCytology.Materials.Any(m => m.Code == cytoMaterial)) throw ValidationException.Field("cytoMaterial", "Вид матеріалу: GYN, LIQUID, ASPIRATE, DISCHARGE або SEROUS");
+            if (cytoMaterial == "GYN" && req.CycleDay == null && req.LastMenstrualDate == null)
+                throw ValidationException.Field("cycleDay", "Для гінекологічного мазка вкажіть день циклу або дату останніх місячних");
+        }
+        else cytoMaterial = null;
         var source = (req.Source ?? ReferralSources.Inpatient).Trim().ToUpperInvariant();
         if (source == "AMBULATORY") source = ReferralSources.Polyclinic;
         if (!ReferralSources.All.Contains(source)) throw ValidationException.Field("source", "Джерело: INPATIENT, POLYCLINIC, EHEALTH або PARTNER");
@@ -365,7 +401,7 @@ public sealed class PathologyService
             MedicalCardNo = req.MedicalCardNo, OperationText = req.OperationText, MarkingText = req.MarkingText, TemplateName = req.TemplateName,
             ExternalInstitution = req.External?.Institution, ExternalNumber = req.External?.Number, ExternalDate = req.External?.Date,
             ExternalSlides = req.External?.Slides ?? 0, ExternalBlocks = req.External?.Blocks ?? 0,
-            CycleDay = req.CycleDay, LastMenstrualDate = req.LastMenstrualDate, MenopauseState = menopause, ResultEmail = Clean(req.ResultEmail, null)
+            CycleDay = req.CycleDay, LastMenstrualDate = req.LastMenstrualDate, MenopauseState = menopause, ResultEmail = Clean(req.ResultEmail, null), CytoMaterial = cytoMaterial
         };
         _db.PathReferrals.Add(r);
         var objects = req.Objects.ToList();
@@ -453,8 +489,9 @@ public sealed class PathologyService
         var settings = await _db.Settings.AsNoTracking().FirstOrDefaultAsync() ?? new LabSettings();
         var type = await _db.PathMaterialTypes.AsNoTracking().FirstOrDefaultAsync(t => t.Code == o.PathologyKind);
         var yy = now.ToString("yy");
-        o.CaseNo = $"ПГД-{yy}-{await _numerators.NextCounterAsync("PATH_CASE_" + yy):D4}";
-        o.SlaDueAt = o.PathologyKind == PathKinds.Cito ? now.AddMinutes(settings.PathologyCitoTargetMinutes) : AddWorkdays(now, type?.SlaDays ?? (o.PathologyKind == PathKinds.Operative ? 7 : 5));
+        var cyto = o.PathologyKind == PathKinds.Cyto;
+        o.CaseNo = cyto ? $"ЦИТ-{yy}-{await _numerators.NextCounterAsync("CYTO_CASE_" + yy):D4}" : $"ПГД-{yy}-{await _numerators.NextCounterAsync("PATH_CASE_" + yy):D4}";
+        o.SlaDueAt = o.PathologyKind == PathKinds.Cito ? now.AddMinutes(settings.PathologyCitoTargetMinutes) : AddWorkdays(now, type?.SlaDays ?? (cyto ? 3 : o.PathologyKind == PathKinds.Operative ? 7 : 5));
         o.Status = OrderStatuses.Received;
         r.IntakeStatus = PathIntake.Accepted; r.AcceptedAt = now; r.AcceptedById = _current.EmployeeId;
         foreach (var x in objects) x.Accepted = true;
@@ -515,10 +552,12 @@ public sealed class PathologyService
     }
 
     // ------------------------------------------------------------------ журнал і картка справи
-    public async Task<object> CasesAsync(string? stage, string? src, string? q)
+    public async Task<object> CasesAsync(string? stage, string? src, string? q, string? group = null)
     {
         var query = _db.PathReferrals.AsNoTracking().Include(r => r.Order).ThenInclude(o => o!.Patient).Where(r => r.IntakeStatus == PathIntake.Accepted);
         var all = await query.ToListAsync();
+        if (group == "cyto") all = all.Where(r => r.Order!.PathologyKind == PathKinds.Cyto).ToList();
+        else if (group == "hist") all = all.Where(r => r.Order!.PathologyKind != PathKinds.Cyto).ToList();
         var ids = all.Select(r => r.OrderId).ToList();
         var blocks = (await _db.PathBlocks.AsNoTracking().Where(b => ids.Contains(b.OrderId)).Select(b => new { b.OrderId, b.Barcode, b.Code }).ToListAsync()).ToLookup(b => b.OrderId);
         var slides = (await _db.PathSlides.AsNoTracking().Where(s => ids.Contains(s.OrderId)).Select(s => new { s.OrderId, s.Barcode, s.Status, s.IsIhc }).ToListAsync()).ToLookup(s => s.OrderId);
@@ -553,7 +592,7 @@ public sealed class PathologyService
                     source = ReferralSources.Of(o), sourceLabel = ReferralSources.Label(ReferralSources.Of(o)), department = o.RequestingDepartmentName, cito = o.IsUrgentCito,
                     stage = r.Stage, stageLabel = PathStages.Label(r.Stage), stageIndex = Array.IndexOf(PathStages.All, r.Stage), receivedAt = r.AcceptedAt, slaDueAt = o.SlaDueAt, overdue = Overdue(r),
                     citoMinutes = o.IsUrgentCito && r.AcceptedAt.HasValue ? (int?)(int)((r.CitoNotifiedAt ?? now) - r.AcceptedAt.Value).TotalMinutes : null,
-                    blocks = blocks[o.Id].Count(), slides = slides[o.Id].Count(), ihcInWork = slides[o.Id].Count(x => x.Status == "IHC_IN_WORK"), price = r.Price
+                    screen = r.ScreenAssessment, material = r.CytoMaterial, blocks = blocks[o.Id].Count(), slides = slides[o.Id].Count(), ihcInWork = slides[o.Id].Count(x => x.Status == "IHC_IN_WORK"), price = r.Price
                 };
             }).ToList();
         var incoming = await _db.PathReferrals.CountAsync(r => r.IntakeStatus == PathIntake.Incoming && r.Order!.Status != OrderStatuses.Cancelled);
@@ -608,8 +647,14 @@ public sealed class PathologyService
             patient = new { id = o.PatientId, name = o.Patient?.Caption, birthday = o.Patient?.Birthday, gender = o.Patient?.Gender },
             createdAt = o.OrderDatetime, receivedAt = r.AcceptedAt, slaDueAt = o.SlaDueAt, overdue = r.Stage != PathStages.Signed && o.SlaDueAt < now, releasedAt = o.ReleasedAt,
             stage = r.Stage, stageLabel = PathStages.Label(r.Stage),
-            stages = PathStages.All.Where(s => s != PathStages.Decalcification || blocks.Any(b => b.Track == PathTracks.Decalc))
-                .Select(s => new { code = s, label = PathStages.Label(s), done = Array.IndexOf(PathStages.All, s) < Array.IndexOf(PathStages.All, r.Stage) || r.Stage == PathStages.Signed, current = s == r.Stage }),
+            stages = PathStages.All.Where(s => o.PathologyKind == PathKinds.Cyto ? s is PathStages.Received or PathStages.Staining or PathStages.Microscopy or PathStages.Signed
+                    : s != PathStages.Decalcification || blocks.Any(b => b.Track == PathTracks.Decalc))
+                .Select(s => new { code = s, label = o.PathologyKind == PathKinds.Cyto ? (s == PathStages.Received ? "Прийом і приготування" : s == PathStages.Microscopy ? "Скринінг і висновок" : PathStages.Label(s)) : PathStages.Label(s), done = Array.IndexOf(PathStages.All, s) < Array.IndexOf(PathStages.All, r.Stage) || r.Stage == PathStages.Signed, current = s == r.Stage }),
+            cyto = o.PathologyKind != PathKinds.Cyto ? null : new
+            {
+                material = r.CytoMaterial, materialLabel = PathCytology.Materials.FirstOrDefault(m => m.Code == r.CytoMaterial).Name, prepared = r.PreparedAt,
+                screening = r.ScreenAssessment == null ? null : new { assessment = r.ScreenAssessment, note = r.ScreenNote, by = r.ScreenerName, at = r.ScreenedAt }
+            },
             pathologist = r.PathologistId == null ? null : new { id = r.PathologistId, name = r.PathologistName }, assistant = r.AssistantId == null ? null : new { id = r.AssistantId, name = r.AssistantName },
             citoTimer = o.IsUrgentCito ? new
             {
@@ -643,7 +688,7 @@ public sealed class PathologyService
     private static object ReportView(LabPathReport x) => new
     {
         x.Id, x.Version, x.Kind, x.Macro, x.Micro, x.ConclusionText, x.Icd10, x.IcdoTopo, x.IcdoMorph, x.Grade, x.Pt, x.Pn, x.LnTotal, x.LnPositive, x.Margin, x.Lvi, x.Pni,
-        signed = x.SignedAt != null, x.SignedAt, x.SignedByName,
+        x.Adequacy, x.CytoCategory, x.Recommendation, signed = x.SignedAt != null, x.SignedAt, x.SignedByName,
         ihc = x.Ihc.Select(i => new { i.Marker, i.SlideId, i.ResultText, i.Score, i.Unit })
     };
 
@@ -651,7 +696,10 @@ public sealed class PathologyService
     public static string Compose(LabPathReport x)
     {
         var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(x.Adequacy)) parts.Add("Адекватність: " + PathCytology.Adequacy.FirstOrDefault(a => a.Code == x.Adequacy).Name + ".");
         if (!string.IsNullOrWhiteSpace(x.Micro)) parts.Add(x.Micro.Trim().TrimEnd('.') + ".");
+        if (!string.IsNullOrWhiteSpace(x.CytoCategory)) parts.Add("Категорія: " + PathCytology.Categories.FirstOrDefault(c => c.Code == x.CytoCategory).Name + $" ({x.CytoCategory}).");
+        if (!string.IsNullOrWhiteSpace(x.Recommendation)) parts.Add("Рекомендації: " + x.Recommendation.Trim().TrimEnd('.') + ".");
         var stage = string.Join(" ", new[] { x.Grade, x.Pt, x.Pn, x.Lvi == null ? null : x.Lvi.Value ? "L1" : "L0", x.Pni == null ? null : x.Pni.Value ? "Pn1" : "Pn0" }.Where(s => !string.IsNullOrWhiteSpace(s)));
         if (stage != "") parts.Add(stage + (string.IsNullOrWhiteSpace(x.Margin) ? "" : $", край резекції {x.Margin}") + ".");
         else if (!string.IsNullOrWhiteSpace(x.Margin)) parts.Add($"Край резекції: {x.Margin}.");
@@ -778,7 +826,7 @@ public sealed class PathologyService
             return new { caseId = o.Id, o.CaseNo, blockCode = block.Code, slideCode = slide.Code, stage = PathStages.Coverslip, stageLabel = PathStages.Label(PathStages.Coverslip), coveredAt = slide.CoveredAt };
         }
         if (!PathStages.Lab.Contains(r.Stage)) throw new ConflictException($"Справа {o.CaseNo} на етапі «{PathStages.Label(r.Stage)}» — сканування етапів обробки недоступне");
-        var first = block.Track == PathTracks.Decalc ? PathStages.Decalcification : PathStages.Processing;
+        var first = o.PathologyKind == PathKinds.Cyto ? PathStages.Staining : block.Track == PathTracks.Decalc ? PathStages.Decalcification : PathStages.Processing;
         var target = string.IsNullOrWhiteSpace(req.Stage) ? (block.Stage == null ? first : PathStages.Next(block.Stage)) : req.Stage.Trim().ToUpperInvariant();
         if (target == null || !PathStages.Lab.Contains(target)) throw ValidationException.Field("stage", "Етап: DECALC, PROC, EMB, SECT або STAIN");
         CheckTrack(block, target);
@@ -882,6 +930,9 @@ public sealed class PathologyService
     {
         x.Macro = req.Macro ?? x.Macro; x.Micro = req.Micro ?? x.Micro; x.ConclusionText = req.ConclusionText ?? x.ConclusionText;
         x.Icd10 = Clean(req.Icd10, x.Icd10); x.IcdoTopo = Clean(req.IcdoTopo, x.IcdoTopo); x.IcdoMorph = Clean(req.IcdoMorph, x.IcdoMorph);
+        x.Adequacy = Clean(req.Adequacy, x.Adequacy); x.CytoCategory = Clean(req.CytoCategory, x.CytoCategory); x.Recommendation = Clean(req.Recommendation, x.Recommendation);
+        if (x.Adequacy != null && !PathCytology.Adequacy.Any(a => a.Code == x.Adequacy)) throw ValidationException.Field("adequacy", "Адекватність: SATISFACTORY, LIMITED або UNSATISFACTORY");
+        if (x.CytoCategory != null && !PathCytology.Categories.Any(c => c.Code == x.CytoCategory)) throw ValidationException.Field("cytoCategory", "Невідома категорія висновку");
         x.Grade = Clean(req.Grade, x.Grade); x.Pt = Clean(req.Pt, x.Pt); x.Pn = Clean(req.Pn, x.Pn); x.Margin = Clean(req.Margin, x.Margin);
         x.LnTotal = req.LnTotal ?? x.LnTotal; x.LnPositive = req.LnPositive ?? x.LnPositive; x.Lvi = req.Lvi ?? x.Lvi; x.Pni = req.Pni ?? x.Pni;
         if (x.LnTotal.HasValue && x.LnPositive > x.LnTotal) throw ValidationException.Field("lnPositive", "Уражених лімфовузлів не може бути більше, ніж досліджено");
@@ -942,6 +993,7 @@ public sealed class PathologyService
     private object FinalPayload(LabOrder o, LabPathReport x, IEnumerable<LabPathIhcResult> ihc) => new
     {
         o.CaseNo, version = x.Version, kind = x.Kind, addendumType = x.AddendumType, signedAt = x.SignedAt, signedBy = x.SignedByName, conclusionText = x.ConclusionText,
+        adequacy = x.Adequacy, cytoCategory = x.CytoCategory, recommendation = x.Recommendation,
         icd10 = x.Icd10, icdoTopo = x.IcdoTopo, icdoMorph = x.IcdoMorph, grade = x.Grade, pT = x.Pt, pN = x.Pn, lnTotal = x.LnTotal, lnPositive = x.LnPositive,
         margin = x.Margin, lvi = x.Lvi, pni = x.Pni, ihc = ihc.Select(i => new { i.Marker, i.ResultText, i.Score }), changesDiagnosis = x.ChangesDiagnosis, reason = x.Reason
     };
@@ -955,7 +1007,14 @@ public sealed class PathologyService
         if (r.Stage == PathStages.Signed) throw Problem("report-signed", "Висновок уже підписано — оформіть доповнення", 409);
         var x = await _db.PathReports.Include(p => p.Ihc).Where(p => p.OrderId == o.Id && p.Kind == PathReportKinds.Main).OrderByDescending(p => p.Version).FirstOrDefaultAsync()
                 ?? throw ValidationException.Field("report", "Заповніть опис і висновок");
-        if (string.IsNullOrWhiteSpace(x.IcdoTopo) || string.IsNullOrWhiteSpace(x.IcdoMorph))
+        var isCyto = o.PathologyKind == PathKinds.Cyto;
+        if (isCyto)
+        {
+            if (string.IsNullOrWhiteSpace(x.Adequacy)) throw Problem("adequacy-required", "Для підпису обов'язкова адекватність матеріалу (FR-CYT-006)", 422);
+            if (x.Adequacy != "UNSATISFACTORY" && string.IsNullOrWhiteSpace(x.CytoCategory)) throw Problem("category-required", "Для підпису обов'язкова категорія висновку (FR-CYT-006)", 422);
+            if (r.ScreenAssessment == null && !r.PreparedAt.HasValue) throw new ConflictException("Спершу приготуйте препарати");
+        }
+        else if (string.IsNullOrWhiteSpace(x.IcdoTopo) || string.IsNullOrWhiteSpace(x.IcdoMorph))
             throw Problem("icdo-required", "Для підпису обов'язкові топографія та морфологія МКХ-О (FR-PAT-041)");
         var signer = await _sign.CheckSignerAsync(req.Signer);
         if (string.IsNullOrWhiteSpace(x.ConclusionText)) x.ConclusionText = Compose(x);
@@ -977,7 +1036,12 @@ public sealed class PathologyService
         Log(o, PathStages.Signed, comment: $"Підписано КЕП: {x.SignedByName}");
         MisReferralService.EmitFor(_db, o, MisEvents.ResultFinal, FinalPayload(o, x, x.Ihc));
         var clinical = (r.ClinicalDxIcd10 ?? o.Icd10Code ?? "").Trim().ToUpperInvariant();
-        if (IsMalignant(x.IcdoMorph) && !(clinical.StartsWith("C") || clinical.StartsWith("D0")))
+        if (isCyto && PathCytology.IsHigh(x.CytoCategory))
+        {
+            MisReferralService.EmitFor(_db, o, MisEvents.CriticalResult, new { o.CaseNo, reason = "cytology-high-grade", text = "Цитологія: " + x.ConclusionText, category = x.CytoCategory, acknowledgeRequired = true });
+            warnings.Add("Високий ступінь підозри — направнику надіслано критичний результат (FR-CYT-008)");
+        }
+        if (!isCyto && IsMalignant(x.IcdoMorph) && !(clinical.StartsWith("C") || clinical.StartsWith("D0")))
         {
             MisReferralService.EmitFor(_db, o, MisEvents.CriticalResult, new { o.CaseNo, reason = "unexpected-malignancy", text = "Неочікувана злоякісність: " + x.ConclusionText, clinicalDiagnosis = r.ClinicalDxIcd10, x.IcdoMorph, acknowledgeRequired = true });
             warnings.Add("Неочікувана злоякісність — направнику надіслано критичну знахідку з підтвердженням ознайомлення (FR-PAT-047)");
@@ -1196,6 +1260,121 @@ public sealed class PathologyService
         return await _db.PathDispatches.AsNoTracking().Where(x => x.OrderId == o.Id).OrderByDescending(x => x.CreatedOn).Select(x => new { x.Id, x.Address, x.Status, x.Error, x.CreatedOn }).ToListAsync();
     }
 
+    // ------------------------------------------------------------------ цитологія (22.19)
+    /// <summary>Методики цитології, якщо їх немає в довіднику (бази, створені до появи цитології).</summary>
+    private async Task EnsureCytoMethodsAsync()
+    {
+        if (!await _db.StainMethods.AnyAsync(m => m.Code == "PAP")) _db.StainMethods.Add(new LabStainMethod { Code = "PAP", Name = "Папаніколау", Price = 0 });
+        if (!await _db.StainMethods.AnyAsync(m => m.Code == "MGG")) _db.StainMethods.Add(new LabStainMethod { Code = "MGG", Name = "Май-Грюнвальд-Гімза", Price = 0 });
+        await _db.SaveChangesAsync();
+    }
+
+    private static string CytoSlideCode(string? caseNo, int n)
+    {
+        var parts = (caseNo ?? "").Split('-');
+        return parts.Length == 3 ? $"C{parts[1]}-{parts[2]}-{n}" : $"{caseNo}-{n}";
+    }
+
+    /// <summary>Приготування препаратів (FR-CYT-003): скельця за методиками, вартість, справа переходить до фарбування.</summary>
+    public async Task<object> PrepareAsync(string id, PathPrepareRequest req)
+    {
+        _policy.Require("Приготування цитологічних препаратів", HistotechRoles);
+        var (o, r) = await LoadAsync(id);
+        if (o.PathologyKind != PathKinds.Cyto) throw new ConflictException("Приготування препаратів — лише для цитологічних справ");
+        if (r.IntakeStatus != PathIntake.Accepted) throw new ConflictException("Справу не прийнято");
+        if (r.PreparedAt.HasValue) throw new ConflictException("Препарати вже приготовано; повторне приготування — окремою дією");
+        await EnsureCytoMethodsAsync();
+        var methods = await _db.StainMethods.AsNoTracking().ToListAsync();
+        var objects = await _db.PathObjects.Where(x => x.OrderId == o.Id).OrderBy(x => x.DisplayOrder).ToListAsync();
+        if (req.Objects.Count == 0 || req.Objects.All(x => x.Slides.Count == 0)) throw ValidationException.Field("objects", "Вкажіть хоча б одне скельце");
+        var n = 0;
+        foreach (var g in req.Objects)
+        {
+            var obj = objects.FirstOrDefault(x => x.Id == g.ObjectId || x.Mark == g.ObjectId) ?? throw NotFoundException.For("Контейнер", g.ObjectId);
+            if (g.Slides.Count > 10) throw ValidationException.Field("slides", "На контейнер — не більше 10 скелець");
+            if (g.Slides.Count == 0) continue;
+            var block = new LabPathBlock { ObjectId = obj.Id, OrderId = o.Id, Code = $"{obj.Letter}1", Pieces = 0, Barcode = $"PB{await _numerators.NextCounterAsync("PATH_BARCODE"):D8}" };
+            _db.PathBlocks.Add(block);
+            foreach (var sl in g.Slides)
+            {
+                var code = string.IsNullOrWhiteSpace(sl.Method) ? "PAP" : sl.Method.Trim();
+                var m = methods.FirstOrDefault(d => d.Code.Equals(code, StringComparison.OrdinalIgnoreCase)) ?? throw ValidationException.Field("method", $"Методику «{code}» не знайдено в довіднику");
+                _db.PathSlides.Add(new LabPathSlide
+                {
+                    BlockId = block.Id, OrderId = o.Id, Code = CytoSlideCode(o.CaseNo, ++n), StainMethod = m.Name, IsIhc = false, Status = "IN_WORK",
+                    Barcode = $"PS{await _numerators.NextCounterAsync("PATH_BARCODE"):D8}"
+                });
+            }
+        }
+        r.PreparedAt = DateTime.UtcNow; r.Price = PathPrices.CytoSlide * n;
+        Log(o, PathStages.Gross, comment: $"Приготовано скелець: {n}{(string.IsNullOrWhiteSpace(req.Note) ? "" : "; " + req.Note.Trim())}");
+        SetStage(o, r, PathStages.Staining);
+        _audit.Log("CYTO_PREPARE", "lab_order", o.Id, null, new { slides = n });
+        await _db.SaveChangesAsync();
+        return await CaseAsync(o.Id);
+    }
+
+    /// <summary>Повторне приготування (FR-CYT-003): додаткове скельце з обов'язковою причиною.</summary>
+    public async Task<object> RepeatPrepAsync(string id, PathRepeatRequest req)
+    {
+        _policy.Require("Приготування цитологічних препаратів", HistotechRoles);
+        if (string.IsNullOrWhiteSpace(req.Reason)) throw ValidationException.Field("reason", "Вкажіть причину повторного приготування");
+        var (o, r) = await LoadAsync(id);
+        if (o.PathologyKind != PathKinds.Cyto || !r.PreparedAt.HasValue) throw new ConflictException("Повторне приготування можливе після первинного");
+        if (r.Stage == PathStages.Signed) throw Problem("report-signed", "Справу підписано", 409);
+        await EnsureCytoMethodsAsync();
+        var code = string.IsNullOrWhiteSpace(req.Method) ? "PAP" : req.Method.Trim();
+        var m = await _db.StainMethods.AsNoTracking().FirstOrDefaultAsync(d => d.Code == code) ?? throw ValidationException.Field("method", $"Методику «{code}» не знайдено");
+        var block = await _db.PathBlocks.Where(b => b.OrderId == o.Id).OrderBy(b => b.Code).FirstAsync();
+        var count = await _db.PathSlides.CountAsync(s => s.OrderId == o.Id);
+        var sl = new LabPathSlide { BlockId = block.Id, OrderId = o.Id, Code = CytoSlideCode(o.CaseNo, count + 1), StainMethod = m.Name, Status = "IN_WORK", Barcode = $"PS{await _numerators.NextCounterAsync("PATH_BARCODE"):D8}" };
+        _db.PathSlides.Add(sl);
+        r.Price += PathPrices.CytoSlide;
+        Log(o, PathStages.Gross, block.Id, sl.Id, null, $"Повторне приготування: {req.Reason.Trim()}");
+        await _db.SaveChangesAsync();
+        return await CaseAsync(o.Id);
+    }
+
+    /// <summary>Скринінг (FR-CYT-005): попередня оцінка лаборанта-скринера; остаточний висновок виносить лікар.</summary>
+    public async Task<object> ScreeningAsync(string id, PathScreeningRequest req)
+    {
+        _policy.Require("Скринінг цитологічних препаратів", HistotechRoles.Concat(PathologistRoles).ToArray());
+        var a = (req.Assessment ?? "").Trim().ToUpperInvariant();
+        if (!PathCytology.Assessments.Contains(a)) throw ValidationException.Field("assessment", "Оцінка: NORMAL або SUSPECT");
+        var (o, r) = await LoadAsync(id);
+        if (o.PathologyKind != PathKinds.Cyto) throw new ConflictException("Скринінг — лише для цитологічних справ");
+        if (r.Stage != PathStages.Microscopy) throw new ConflictException($"Скринінг можливий на етапі «{PathStages.Label(PathStages.Microscopy)}» (зараз «{PathStages.Label(r.Stage)}»)");
+        r.ScreenAssessment = a; r.ScreenNote = Clean(req.Note, null); r.ScreenerId = _current.EmployeeId; r.ScreenerName = Who(); r.ScreenedAt = DateTime.UtcNow;
+        Log(o, PathStages.Microscopy, comment: $"Скринінг: {(a == "NORMAL" ? "норма" : "підозра")}{(r.ScreenNote == null ? "" : " — " + r.ScreenNote)}");
+        _audit.Log("CYTO_SCREEN", "lab_order", o.Id, null, new { a });
+        await _db.SaveChangesAsync();
+        return await CaseAsync(o.Id);
+    }
+
+    /// <summary>Аналітика цитології (FR-CYT-011): непридатні, розбіжність скринер/лікар, TAT, навантаження.</summary>
+    public async Task<object> CytoAnalyticsAsync()
+    {
+        var refs = await _db.PathReferrals.AsNoTracking().Include(r => r.Order).Where(r => r.Order!.PathologyKind == PathKinds.Cyto && r.IntakeStatus == PathIntake.Accepted).ToListAsync();
+        var ids = refs.Select(r => r.OrderId).ToList();
+        var reports = (await _db.PathReports.AsNoTracking().Where(p => ids.Contains(p.OrderId) && p.Kind == PathReportKinds.Main && p.SignedAt != null).ToListAsync()).ToDictionary(p => p.OrderId);
+        var signed = refs.Where(r => reports.ContainsKey(r.OrderId)).ToList();
+        int Mismatch(LabPathReferral r) { var c = reports[r.OrderId].CytoCategory; return r.ScreenAssessment == null || c == null ? 0 : (r.ScreenAssessment == "NORMAL" && !PathCytology.IsNormal(c)) || (r.ScreenAssessment == "SUSPECT" && PathCytology.IsNormal(c)) ? 1 : 0; }
+        var screened = signed.Where(r => r.ScreenAssessment != null && reports[r.OrderId].CytoCategory != null).ToList();
+        var tat = signed.Where(r => r.AcceptedAt.HasValue).Select(r => (reports[r.OrderId].SignedAt!.Value - r.AcceptedAt!.Value).TotalHours).OrderBy(x => x).ToList();
+        return new
+        {
+            total = refs.Count, signed = signed.Count, inWork = refs.Count - signed.Count,
+            unsatisfactory = signed.Count(r => reports[r.OrderId].Adequacy == "UNSATISFACTORY"),
+            unsatisfactoryShare = signed.Count == 0 ? 0 : Math.Round(100.0 * signed.Count(r => reports[r.OrderId].Adequacy == "UNSATISFACTORY") / signed.Count, 1),
+            screened = screened.Count, mismatches = screened.Sum(Mismatch),
+            mismatchShare = screened.Count == 0 ? 0 : Math.Round(100.0 * screened.Sum(Mismatch) / screened.Count, 1),
+            tatMedianHours = tat.Count == 0 ? (double?)null : Math.Round(tat[tat.Count / 2], 1),
+            byCategory = signed.GroupBy(r => reports[r.OrderId].CytoCategory ?? "—").Select(g => new { category = g.Key, count = g.Count() }).OrderByDescending(x => x.count),
+            byScreener = refs.Where(r => r.ScreenerName != null).GroupBy(r => r.ScreenerName!).Select(g => new { name = g.Key, count = g.Count() }),
+            byPathologist = signed.GroupBy(r => reports[r.OrderId].SignedByName ?? "—").Select(g => new { name = g.Key, count = g.Count() })
+        };
+    }
+
     // ------------------------------------------------------------------ довідники (22.10)
     public async Task<object> DictionariesAsync()
     {
@@ -1213,6 +1392,13 @@ public sealed class PathologyService
         rooms = await _db.PathStorageRooms.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.Code).Select(x => new { x.Id, x.Code, x.Name }).ToListAsync(),
         tracks = PathTracks.All.Select(t => new { code = t, name = PathTracks.Label(t) }),
         maxMethodsPerBlock = PathLimits.MaxMethodsPerBlock,
+        cytology = new
+        {
+            materials = PathCytology.Materials.Select(m => new { code = m.Code, name = m.Name }),
+            adequacy = PathCytology.Adequacy.Select(a => new { code = a.Code, name = a.Name }),
+            categories = PathCytology.Categories.Select(c => new { code = c.Code, name = c.Name, high = c.High }),
+            slidePrice = PathPrices.CytoSlide
+        },
         prices = new { firstBlock = PathPrices.FirstBlock, nextBlock = PathPrices.NextBlock, ihc = PathPrices.Ihc, consultSlide = PathPrices.ConsultSlide, cito = PathPrices.Cito, ihcExtraDays = PathPrices.IhcExtraWorkdays }
     };
     }

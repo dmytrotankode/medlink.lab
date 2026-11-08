@@ -424,4 +424,108 @@ public class PathologyApiTests
         var row = (await Json(await Registrar.GetAsync($"{B}/archive?status=ISSUED"))).AsArray().First(b => S(b!["id"]) == blockId)!;
         Assert.Equal("INTERNAL", S(row["issue"]!["scope"]));
     }
+
+    private async Task<JsonNode> ReferCyto(string material = "GYN", int? cycleDay = 14, int containers = 2)
+    {
+        var objs = Enumerable.Range(1, containers).Select(i => (object)Container(i.ToString(), $"Мазок {i}")).ToArray();
+        var body = new
+        {
+            type = "PATHOLOGY", misReferralId = Guid.NewGuid().ToString(), referralNumber = "ЦИТ-НП-" + Random.Shared.Next(1000, 9999), patientId = Patient,
+            department = "Жіноча консультація", doctorName = "Ткаченко В. Ю.", priority = "ROUTINE",
+            pathology = new
+            {
+                kind = "CYTO", cytoMaterial = material, cycleDay, menopauseState = "NONE", clinicalDiagnosis = "N87.0 Дисплазія шийки матки слабка", clinicalData = "Плановий скринінг",
+                markingText = $"{containers} препарати", objects = objs, resultEmail = "lab.test@example.org"
+            }
+        };
+        var r = await _f.As(DemoDataSeeder.Doctor).PostAsJsonAsync("/api/v1/lab/mis/referrals", body);
+        return r.StatusCode == HttpStatusCode.Created ? await Json(r) : throw new Xunit.Sdk.XunitException($"{(int)r.StatusCode}: {await r.Content.ReadAsStringAsync()}");
+    }
+
+    [Fact]
+    public async Task S120_cytology_full_cycle_prepare_stain_screen_sign_critical_and_analytics()
+    {
+        // гінекологічний мазок без анамнезу циклу — відмова
+        var bad = await _f.As(DemoDataSeeder.Doctor).PostAsJsonAsync("/api/v1/lab/mis/referrals", new
+        {
+            type = "PATHOLOGY", misReferralId = Guid.NewGuid().ToString(), patientId = Patient,
+            pathology = new { kind = "CYTO", cytoMaterial = "GYN", objects = new[] { Container("1", "Мазок") } }
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+
+        var c = await Accept(await ReferCyto());
+        var id = S(c["id"]);
+        Assert.StartsWith("ЦИТ-", S(c["caseNo"]));
+        Assert.Equal("CYTO", S(c["kind"]));
+        Assert.Equal("GYN", S(c["cyto"]!["material"]));
+        var objs = c["objects"]!.AsArray();
+
+        // скринінг до приготування й підпис без адекватності — заборонені
+        Assert.Equal(HttpStatusCode.Conflict, (await Histotech.PostAsJsonAsync($"{B}/cases/{id}/screening", new { assessment = "NORMAL" })).StatusCode);
+        // приготування — лише лаборант
+        var prep = new { objects = new object[] { new { objectId = S(objs[0]!["id"]), slides = new[] { new { method = "PAP" }, new { method = "PAP" } } }, new { objectId = S(objs[1]!["id"]), slides = new[] { new { method = "MGG" } } } } };
+        Assert.Equal(HttpStatusCode.Forbidden, (await Pathologist.PostAsJsonAsync($"{B}/cases/{id}/prepare", prep)).StatusCode);
+        var prepared = await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/prepare", prep));
+        Assert.Equal(PathStages.Staining, S(prepared["stage"]));
+        Assert.Equal(3 * PathPrices.CytoSlide, prepared["price"]!.GetValue<decimal>());
+        var slides = prepared["objects"]!.AsArray().SelectMany(o => o!["blocks"]!.AsArray()).SelectMany(b => b!["slides"]!.AsArray()).ToList();
+        Assert.Equal(3, slides.Count);
+        Assert.All(slides, s => Assert.StartsWith("C", S(s!["code"])));
+        Assert.Equal(HttpStatusCode.Conflict, (await Histotech.PostAsJsonAsync($"{B}/cases/{id}/prepare", prep)).StatusCode);
+
+        // повторне приготування — потрібна причина
+        Assert.Equal(HttpStatusCode.BadRequest, (await Histotech.PostAsJsonAsync($"{B}/cases/{id}/prepare-repeat", new { reason = "" })).StatusCode);
+        var again = await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/prepare-repeat", new { reason = "Мало клітин", method = "PAP" }));
+        Assert.Equal(4, again["totals"]!["slides"]!.GetValue<int>());
+
+        // фарбування → скринінг
+        var adv = await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/advance", new { stage = "STAIN" }));
+        Assert.Equal(PathStages.Microscopy, S(adv["stage"]));
+        var firstSlide = adv["objects"]![0]!["blocks"]![0]!["slides"]![0]!;
+        Assert.Equal("COVER", S((await Json(await Histotech.PostAsJsonAsync($"{B}/scan", new { barcode = S(firstSlide["barcode"]), stage = "COVER" })))["stage"]));
+        Assert.Equal(HttpStatusCode.BadRequest, (await Histotech.PostAsJsonAsync($"{B}/cases/{id}/screening", new { assessment = "?" })).StatusCode);
+        var screened = await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/screening", new { assessment = "SUSPECT", note = "Атипові клітини в полі 3" }));
+        Assert.Equal("SUSPECT", S(screened["cyto"]!["screening"]!["assessment"]));
+
+        // підпис: спершу адекватність і категорія
+        var cert = await Cert(Pathologist);
+        await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/report", new { micro = "Клітини з ядерною атипією" }));
+        Assert.Equal("adequacy-required", await Problem(await Pathologist.PostAsJsonAsync($"{B}/cases/{id}/report/sign", new { signer = cert }), HttpStatusCode.UnprocessableEntity));
+        await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/report", new { micro = "Клітини з ядерною атипією", adequacy = "SATISFACTORY" }));
+        Assert.Equal("category-required", await Problem(await Pathologist.PostAsJsonAsync($"{B}/cases/{id}/report/sign", new { signer = cert }), HttpStatusCode.UnprocessableEntity));
+        Assert.Equal(HttpStatusCode.BadRequest, (await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/report", new { cytoCategory = "XYZ" })).StatusCode);
+        await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/report", new { cytoCategory = "HSIL", recommendation = "Кольпоскопія, біопсія" }));
+        var signed = await Json(await Pathologist.PostAsJsonAsync($"{B}/cases/{id}/report/sign", new { signer = cert }));
+        Assert.Equal(PathStages.Signed, S(signed["case"]!["stage"]));
+        Assert.Contains("HSIL", S(signed["case"]!["versions"]![0]!["conclusionText"]));
+        var events = await Events(id);
+        Assert.Contains(MisEvents.ResultFinal, events);
+        Assert.Contains(MisEvents.CriticalResult, events);
+        Assert.Contains((await Json(await Pathologist.GetAsync($"{B}/cases?group=cyto")))["items"]!.AsArray(), i => S(i!["id"]) == id);
+        Assert.DoesNotContain((await Json(await Pathologist.GetAsync($"{B}/cases?group=hist")))["items"]!.AsArray(), i => S(i!["id"]) == id);
+
+        // розсилка за адресою з направлення
+        Assert.Equal("lab.test@example.org", S((await Json(await Registrar.PostAsJsonAsync($"{B}/cases/{id}/dispatch", new { })))["address"]));
+
+        var an = await Json(await Pathologist.GetAsync($"{B}/cytology/analytics"));
+        Assert.True(an["signed"]!.GetValue<int>() >= 1);
+        Assert.True(an["screened"]!.GetValue<int>() >= 1);
+    }
+
+    [Fact]
+    public async Task S121_cytology_unsatisfactory_material_signs_without_category_and_dictionaries_have_cytology()
+    {
+        var dict = await Json(await Pathologist.GetAsync($"{B}/dictionaries"));
+        Assert.Contains(dict["cytology"]!["categories"]!.AsArray(), x => S(x!["code"]) == "HSIL" && x!["high"]!.GetValue<bool>());
+        Assert.Equal(5, dict["cytology"]!["materials"]!.AsArray().Count);
+
+        var c = await Accept(await ReferCyto("ASPIRATE", null, 1));
+        var id = S(c["id"]);
+        await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/prepare", new { objects = new[] { new { objectId = S(c["objects"]![0]!["id"]), slides = new[] { new { method = "PAP" } } } } }));
+        await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/advance", new { stage = "STAIN" }));
+        await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/report", new { micro = "Матеріал без клітинних елементів", adequacy = "UNSATISFACTORY", recommendation = "Повторити забір" }));
+        var signed = await Json(await Pathologist.PostAsJsonAsync($"{B}/cases/{id}/report/sign", new { signer = await Cert(Pathologist) }));
+        Assert.Equal(PathStages.Signed, S(signed["case"]!["stage"]));
+        Assert.DoesNotContain(MisEvents.CriticalResult, await Events(id));
+    }
 }

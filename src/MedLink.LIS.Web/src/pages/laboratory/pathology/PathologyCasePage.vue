@@ -38,10 +38,11 @@
 
       <q-tabs v-model="tab" dense align="left" active-color="primary" indicator-color="primary" class="text-grey-8 q-mb-sm">
         <q-tab name="ref" icon="description" label="Направлення" />
-        <q-tab name="gross" icon="content_cut" label="Вирізка" />
+        <q-tab v-if="!isCyto" name="gross" icon="content_cut" label="Вирізка" />
+        <q-tab v-else name="prep" icon="science" label="Приготування" data-testid="prepTab" />
         <q-tab name="blocks" icon="view_module" :label="`Блоки і скельця (${c.totals.blocks}/${c.totals.slides})`" />
         <q-tab name="report" icon="biotech" label="Опис і висновок" />
-        <q-tab name="print" icon="print" label="Друк 014/о" />
+        <q-tab v-if="!isCyto" name="print" icon="print" label="Друк 014/о" />
         <q-tab name="events" icon="history" label="Події" />
       </q-tabs>
 
@@ -60,6 +61,10 @@
               <span v-else-if="c.referral.primaryCaseNo"> · первинна справа {{ c.referral.primaryCaseNo }}</span></td></tr>
             <tr><td>6. Операція</td><td>{{ c.referral.operationText || '—' }}</td></tr>
             <tr><td>7. Маркування</td><td>{{ c.referral.markingText || '—' }}</td></tr>
+            <tr v-if="c.cyto"><td>Вид матеріалу</td><td>{{ c.cyto.materialLabel }}</td></tr>
+            <tr v-if="c.referral.gyn"><td>Гінекологічний анамнез</td><td>
+              <span v-if="c.referral.gyn.cycleDay">день циклу {{ c.referral.gyn.cycleDay }}</span><span v-if="c.referral.gyn.lastMenstrualDate"> · останні місячні {{ c.referral.gyn.lastMenstrualDate | date }}</span>
+              <span v-if="c.referral.gyn.menopauseState"> · {{ { NONE: 'менопаузи немає', PERI: 'перименопауза', POST: 'постменопауза', AMENORRHEA: 'аменорея' }[c.referral.gyn.menopauseState] }}</span></td></tr>
             <tr><td>8. Клінічні дані</td><td>{{ c.referral.clinicalData || '—' }}</td></tr>
             <tr><td>9. Клінічний діагноз</td><td>{{ c.referral.clinicalDiagnosis || '—' }}</td></tr>
             <tr v-if="c.ehealthReferral"><td>Е-направлення ЕСОЗ</td><td>{{ c.ehealthReferral }} · {{ c.ehealthStatus }}</td></tr>
@@ -109,6 +114,31 @@
           <q-btn unelevated color="primary" icon="done_all" label="Завершити вирізку" data-testid="finishGross" :disable="!grossBlocks" @click="saveGross(true)" />
         </div>
         <div v-else class="text-caption text-grey-7">Вирізку завершено {{ c.grossFinishedAt | datetime }} — скельця створено за обраними методиками. Патолог: {{ c.pathologist && c.pathologist.name }}; вирізку провів: {{ c.assistant && c.assistant.name }}.</div>
+      </div>
+
+      <!-- Цитологія: приготування препаратів -->
+      <div v-if="isCyto" v-show="tab === 'prep'" class="medlink-card q-pa-md" data-testid="prepPane">
+        <div v-if="!c.cyto.prepared">
+          <div class="text-caption text-grey-8 q-mb-sm">Для кожного контейнера вкажіть скельця й методику (за замовчуванням Папаніколау). Вартість: {{ cytoPrice | money }} за скельце — разом <b>{{ prepTotal * cytoPrice | money }}</b>.</div>
+          <div v-for="o in prep.objects" :key="o.objectId" class="q-mb-sm">
+            <div class="row items-center q-mb-xs"><b>Контейнер №{{ o.mark }}</b>&nbsp;<span class="text-grey-7">{{ o.description }}</span><q-space />
+              <q-btn flat dense size="sm" color="primary" icon="add" label="Скельце" :disable="o.slides.length >= 10" @click="o.slides.push({ method: 'PAP' })" /></div>
+            <div class="row q-gutter-sm">
+              <div v-for="(s, i) in o.slides" :key="i" class="block-chip">
+                <div class="text-weight-bold">{{ i + 1 }}</div>
+                <q-select v-model="s.method" dense outlined emit-value map-options :options="cytoMethodOptions" style="min-width: 190px" />
+                <q-btn flat dense round size="xs" icon="close" @click="o.slides.splice(i, 1)" />
+              </div>
+              <div v-if="!o.slides.length" class="text-caption text-grey-6">Скелець немає</div>
+            </div>
+          </div>
+          <q-input v-model="prep.note" dense outlined label="Примітка до приготування" class="q-mb-sm" />
+          <div class="row justify-end"><q-btn unelevated color="primary" icon="done_all" label="Приготувати препарати" data-testid="prepareBtn" :disable="!prepTotal" @click="prepare" /></div>
+        </div>
+        <div v-else>
+          <q-banner dense class="bg-green-1 text-green-10 q-mb-sm">Препарати приготовано {{ c.cyto.prepared | datetime }} — скельця: {{ c.totals.slides }}. Далі — «Блоки і скельця» (фарбування, покриття скла).</q-banner>
+          <q-btn v-if="!signed" outline color="primary" icon="replay" label="Повторне приготування" data-testid="repeatPrepBtn" @click="repeatPrep" />
+        </div>
       </div>
 
       <!-- Блоки і скельця -->
@@ -162,18 +192,36 @@
             <span v-else-if="!r.missing.length" class="text-caption">панель замовлено</span>
           </template>
         </q-banner>
+        <div v-if="isCyto" class="q-mb-md" data-testid="screeningCard">
+          <div class="text-weight-bold q-mb-xs">Скринінг (лаборант)</div>
+          <q-banner v-if="c.cyto.screening" dense :class="c.cyto.screening.assessment === 'SUSPECT' ? 'bg-orange-1 text-orange-10' : 'bg-green-1 text-green-10'">
+            {{ c.cyto.screening.assessment === 'SUSPECT' ? 'Підозра' : 'Норма' }} · {{ c.cyto.screening.by }} · {{ c.cyto.screening.at | datetime }}<span v-if="c.cyto.screening.note"> — {{ c.cyto.screening.note }}</span>
+          </q-banner>
+          <div v-if="c.stage === 'MICRO'" class="row q-gutter-sm items-center q-mt-xs">
+            <q-input v-model="screenNote" dense outlined placeholder="Примітка скринера" style="min-width: 260px" />
+            <q-btn unelevated color="positive" label="Норма" data-testid="screenNormal" @click="screen('NORMAL')" />
+            <q-btn unelevated color="orange-8" label="Підозра" data-testid="screenSuspect" @click="screen('SUSPECT')" />
+          </div>
+          <div v-else-if="!c.cyto.screening" class="text-caption text-grey-7">Скринінг стане доступним після фарбування.</div>
+        </div>
         <q-banner v-if="c.preliminary" dense class="bg-amber-1 text-amber-10 q-mb-sm">Попередній висновок надіслано в МІС {{ c.preliminary.at | datetime }}: {{ c.preliminary.conclusionText }}</q-banner>
 
         <div class="row q-col-gutter-sm">
           <div class="col-12 col-md-7">
             <q-select v-model="microTemplate" dense outlined emit-value map-options :options="templateOptions" label="Шаблон мікроопису" :disable="signed" class="q-mb-sm" @input="applyMicroTemplate" />
             <q-input v-model="rep.micro" dense outlined type="textarea" autogrow label="Мікроскопічний опис (п. 17)" :readonly="signed" class="q-mb-sm" data-testid="microText" />
-            <q-input v-model="rep.conclusionText" dense outlined type="textarea" autogrow label="Патогістологічний висновок (п. 18)" :readonly="signed" data-testid="conclusionText">
+            <q-input v-model="rep.conclusionText" dense outlined type="textarea" autogrow :label="isCyto ? 'Цитологічний висновок' : 'Патогістологічний висновок (п. 18)'" :readonly="signed" data-testid="conclusionText">
               <template v-slot:after><q-btn v-if="!signed" flat dense color="primary" icon="merge_type" label="Зібрати текст" @click="compose" /></template>
             </q-input>
           </div>
           <div class="col-12 col-md-5">
-            <div class="row q-col-gutter-xs">
+            <div v-if="isCyto" class="row q-col-gutter-xs" data-testid="cytoFields">
+              <div class="col-12"><q-select v-model="rep.adequacy" dense outlined emit-value map-options :options="adequacyOptions" label="Адекватність матеріалу *" :readonly="signed" data-testid="adequacy" /></div>
+              <div class="col-12"><q-select v-model="rep.cytoCategory" dense outlined clearable emit-value map-options :options="categoryOptions" label="Категорія висновку *" :readonly="signed" data-testid="cytoCategory" /></div>
+              <div class="col-12"><q-input v-model="rep.recommendation" dense outlined type="textarea" autogrow label="Рекомендації" :readonly="signed" /></div>
+              <div class="col-12"><q-input v-model="rep.icd10" dense outlined label="МКХ-10" :readonly="signed" /></div>
+            </div>
+            <div v-else class="row q-col-gutter-xs">
               <div class="col-6"><q-input v-model="rep.icd10" dense outlined label="МКХ-10" :readonly="signed" /></div>
               <div class="col-6"><q-select v-model="rep.grade" dense outlined clearable :options="['G1', 'G2', 'G3', 'GX']" label="G" :readonly="signed" /></div>
               <div class="col-12"><q-select v-model="rep.icdoTopo" dense outlined clearable use-input fill-input hide-selected input-debounce="0" emit-value map-options :options="topoOptions" label="МКХ-О топографія *" :readonly="signed" data-testid="icdoTopo" @new-value="(v, done) => done(v, 'add-unique')" /></div>
@@ -371,7 +419,7 @@ export default {
   data () {
     return {
       c: null, tab: this.$route.query.tab || 'ref', dict: { templates: [], topo: [], morph: [], stains: [], prices: {} }, form: null, highlight: true,
-      gross: { macro: '', templateName: null, objects: [] }, rep: this.emptyReport(), microTemplate: null, scan: '',
+      gross: { macro: '', templateName: null, objects: [] }, prep: { objects: [], note: '' }, screenNote: '', rep: this.emptyReport(), microTemplate: null, scan: '',
       addOpen: false, add: { blockId: null, methods: [], source: 'LAB' }, prelimOpen: false, prelimText: '',
       addendumOpen: false, addendum: { type: 'IHC', text: '', reason: '', consultantName: '', icdoMorph: '', changesDiagnosis: false },
       citoOpen: false, cito: { text: '', notifiedPerson: '', method: 'PHONE', readBack: false },
@@ -391,7 +439,14 @@ export default {
     grossPieces () { return this.gross.objects.reduce((n, o) => n + o.blocks.reduce((m, b) => m + (Number(b.pieces) || 0), 0), 0); },
     grossPrice () { const n = this.grossBlocks; return (this.c && this.c.kind === 'CITO' ? this.prices.cito : 0) + (n ? this.prices.firstBlock + this.prices.nextBlock * (n - 1) : 0); },
     canAdditional () { return this.c && !['RCV', 'GROSS'].includes(this.c.stage); },
-    canSign () { return this.rep.icdoTopo && this.rep.icdoMorph; },
+    isCyto () { return !!this.c && this.c.kind === 'CYTO'; },
+    cytoDict () { return this.dict.cytology || { materials: [], adequacy: [], categories: [], slidePrice: 0 }; },
+    cytoPrice () { return this.cytoDict.slidePrice; },
+    adequacyOptions () { return this.cytoDict.adequacy.map(a => ({ label: a.name, value: a.code })); },
+    categoryOptions () { return this.cytoDict.categories.map(a => ({ label: `${a.code} — ${a.name}${a.high ? ' (критично)' : ''}`, value: a.code })); },
+    cytoMethodOptions () { return this.dict.stains.filter(s => !s.isIhc).map(s => ({ label: s.name, value: s.code })).concat(this.dict.stains.some(s => s.code === 'PAP') ? [] : [{ label: 'Папаніколау', value: 'PAP' }]); },
+    prepTotal () { return this.prep.objects.reduce((n, o) => n + o.slides.length, 0); },
+    canSign () { return this.isCyto ? this.rep.adequacy && (this.rep.adequacy === 'UNSATISFACTORY' || this.rep.cytoCategory) : this.rep.icdoTopo && this.rep.icdoMorph; },
     templateOptions () { return this.dict.templates.map(t => ({ label: t.name, value: t.name })); },
     topoOptions () { return this.dict.topo.map(t => ({ label: `${t.code} ${t.name}`, value: t.code })); },
     morphOptions () { return this.dict.morph.map(t => ({ label: `${t.code} ${t.name}`, value: t.code })); },
@@ -408,11 +463,12 @@ export default {
     this.dict = await this.$api.pathDictionaries().catch(() => this.dict);
     this.staff = await this.$api.pathStaff().catch(() => this.staff);
     await this.load();
-    if (this.tab === 'ref' && this.c) this.tab = this.c.stage === 'RCV' || this.c.stage === 'GROSS' ? 'gross' : LAB_STAGES.includes(this.c.stage) ? 'blocks' : this.c.stage === 'MICRO' ? 'report' : 'ref';
+    if (this.tab === 'ref' && this.c && this.c.kind === 'CYTO') this.tab = this.c.stage === 'RCV' ? 'prep' : this.c.stage === 'STAIN' ? 'blocks' : this.c.stage === 'MICRO' ? 'report' : 'ref';
+    else if (this.tab === 'ref' && this.c) this.tab = this.c.stage === 'RCV' || this.c.stage === 'GROSS' ? 'gross' : LAB_STAGES.includes(this.c.stage) ? 'blocks' : this.c.stage === 'MICRO' ? 'report' : 'ref';
     if (this.tab === 'print') this.loadForm();
   },
   methods: {
-    emptyReport () { return { micro: '', conclusionText: '', icd10: '', icdoTopo: null, icdoMorph: null, grade: null, pt: '', pn: '', lnTotal: null, lnPositive: null, margin: '', lvi: null, pni: null, ihc: [] }; },
+    emptyReport () { return { adequacy: null, cytoCategory: null, recommendation: '', micro: '', conclusionText: '', icd10: '', icdoTopo: null, icdoMorph: null, grade: null, pt: '', pn: '', lnTotal: null, lnPositive: null, margin: '', lvi: null, pni: null, ihc: [] }; },
     stageLabel (s) { return STAGE_LABELS[s] || s; },
     staffOptions (kind) { return (this.staff[kind] || []).map(e => ({ label: e.name, value: e.id })); },
     defaultStaff (kind) { const e = (this.staff[kind] || []).find(x => x.id === this.staff.current); return e ? e.id : null; },
@@ -426,6 +482,7 @@ export default {
     },
     apply (c) {
       this.c = c;
+      this.prep = { note: '', objects: c.objects.map(o => ({ objectId: o.id, mark: o.mark, description: o.description, slides: c.kind === 'CYTO' && !(c.cyto && c.cyto.prepared) ? [{ method: 'PAP' }] : [] })) };
       this.gross = {
         macro: c.macro || '', templateName: c.templateName,
         pathologistId: (c.pathologist && c.pathologist.id) || this.defaultStaff('pathologists'), assistantId: (c.assistant && c.assistant.id) || null,
@@ -462,6 +519,21 @@ export default {
       };
       const c = await this.callApi(() => this.$api.pathGross(this.c.id, body), { success: finish ? 'Вирізку завершено: скельця створено за методиками, вартість перераховано' : 'Збережено' });
       if (c) { this.apply(c); if (finish) this.tab = 'blocks'; }
+    },
+    async prepare () {
+      const body = { note: this.prep.note || null, objects: this.prep.objects.filter(o => o.slides.length).map(o => ({ objectId: o.objectId, slides: o.slides.map(s => ({ method: s.method })) })) };
+      const c = await this.callApi(() => this.$api.pathPrepare(this.c.id, body), { success: 'Препарати приготовано, справа передана на фарбування' });
+      if (c) { this.apply(c); this.tab = 'blocks'; }
+    },
+    repeatPrep () {
+      this.$q.dialog({ title: 'Повторне приготування', message: 'Причина (наприклад, мало клітин, брак мазка):', prompt: { model: '', type: 'text' }, cancel: true, persistent: true }).onOk(async reason => {
+        const c = await this.callApi(() => this.$api.pathPrepareRepeat(this.c.id, { reason, method: 'PAP' }), { success: 'Додано скельце' });
+        if (c) this.apply(c);
+      });
+    },
+    async screen (assessment) {
+      const c = await this.callApi(() => this.$api.pathScreening(this.c.id, { assessment, note: this.screenNote || null }), { success: 'Скринінг збережено' });
+      if (c) { this.screenNote = ''; this.apply(c); }
     },
     async doScan () {
       const code = (this.scan || '').trim();

@@ -4,9 +4,9 @@
 -->
 <template>
   <div data-testid="pathologyCasesPage">
-    <page-header :title="cito ? 'Інтраопераційні (CITO)' : 'Журнал справ ПГД'" :icon="cito ? 'fas fa-stopwatch' : 'fas fa-folder-open'"
-      :subtitle="cito ? `Термінові біопсії з протоколу операції: таймер від надходження, ціль ${target} хв, повідомлення результату в операційну з read-back` : 'Патоморфологія: справи від прийому до підпису висновку — етапи, блоки й скельця, строки виконання'"
-      :breadcrumbs="[{ label: 'Патоморфологія' }, { label: cito ? 'CITO' : 'Журнал справ' }]">
+    <page-header :title="cito ? 'Інтраопераційні (CITO)' : cyto ? 'Журнал цитології' : 'Журнал справ ПГД'" :icon="cito ? 'fas fa-stopwatch' : cyto ? 'fas fa-microscope' : 'fas fa-folder-open'"
+      :subtitle="cito ? `Термінові біопсії з протоколу операції: таймер від надходження, ціль ${target} хв, повідомлення результату в операційну з read-back` : cyto ? 'Цитологія: від прийому мазка до підпису висновку — приготування, фарбування, скринінг, висновок лікаря' : 'Патоморфологія: справи від прийому до підпису висновку — етапи, блоки й скельця, строки виконання'"
+      :breadcrumbs="[{ label: cyto ? 'Цитологія' : 'Патоморфологія' }, { label: cito ? 'CITO' : cyto ? 'Журнал цитології' : 'Журнал справ' }]">
       <q-input v-if="!cito" v-model="q" dense outlined clearable debounce="300" placeholder="№ справи, ПІБ, штрихкод" style="min-width: 240px" class="q-mr-sm" data-testid="pathSearch">
         <template v-slot:prepend><q-icon name="search" /></template>
       </q-input>
@@ -21,6 +21,12 @@
           <div class="text-caption text-grey-7">{{ t.label }}</div>
           <div class="text-h6" :class="t.cls">{{ t.count }}</div>
         </div>
+      </div>
+    </div>
+
+    <div v-if="cyto && an" class="row q-col-gutter-sm q-mb-md" data-testid="cytoAnalytics">
+      <div v-for="a in analyticsTiles" :key="a.label" class="col-6 col-sm-4 col-md">
+        <div class="medlink-card q-pa-sm"><div class="text-caption text-grey-7">{{ a.label }}</div><div class="text-subtitle1 text-weight-bold">{{ a.value }}</div></div>
       </div>
     </div>
 
@@ -41,7 +47,7 @@
           <q-td :props="p">
             <div class="row items-center no-wrap">
               <div class="mini-progress q-mr-sm">
-                <span v-for="i in 8" :key="i" :class="i - 1 < p.row.stageIndex || p.row.stage === 'SIGNED' ? 'done' : i - 1 === p.row.stageIndex ? 'cur' : ''" />
+                <span v-for="i in (cyto ? 4 : 8)" :key="i" :class="stepClass(i - 1, p.row)" />
               </div>
               <span class="text-caption">{{ p.row.stageLabel }}</span>
             </div>
@@ -65,14 +71,14 @@
 <script>
 import apiMixin from '../../../mixins/apiMixin';
 
-const KIND_SHORT = { BIOPSY: 'Біопсія діагностична', CITO: 'Термінова (інтраопер.)', OPERATIVE: 'Операційний матеріал', CONSULT: 'Консультація препаратів' };
+const KIND_SHORT = { CYTO: 'Цитологія', BIOPSY: 'Біопсія діагностична', CITO: 'Термінова (інтраопер.)', OPERATIVE: 'Операційний матеріал', CONSULT: 'Консультація препаратів' };
 
 export default {
   name: 'PathologyCasesPage',
   mixins: [apiMixin],
   data () {
     return {
-      data: {}, stage: 'all', src: null, q: '', target: 20, timer: null,
+      data: {}, an: null, stage: 'all', src: null, q: '', target: 20, timer: null,
       sourceOptions: [{ label: 'Стаціонар', value: 'INPATIENT' }, { label: 'Поліклініка', value: 'POLYCLINIC' }, { label: 'Е-направлення ЕСОЗ', value: 'EHEALTH' }, { label: 'Клініка-партнер', value: 'PARTNER' }],
       columns: [
         { name: 'caseNo', label: '№ справи', field: 'caseNo', align: 'left', sortable: true },
@@ -87,9 +93,30 @@ export default {
   },
   computed: {
     cito () { return !!this.$route.meta.cito; },
+    cyto () { return this.$route.meta.group === 'cyto'; },
+    analyticsTiles () {
+      const a = this.an || {};
+      return [
+        { label: 'Підписано / у роботі', value: `${a.signed || 0} / ${a.inWork || 0}` },
+        { label: 'Непридатний матеріал', value: `${a.unsatisfactory || 0} (${a.unsatisfactoryShare || 0}%)` },
+        { label: 'Розбіжність скринер / лікар', value: `${a.mismatches || 0} з ${a.screened || 0} (${a.mismatchShare || 0}%)` },
+        { label: 'TAT, медіана', value: a.tatMedianHours == null ? '—' : `${a.tatMedianHours} год` }
+      ];
+    },
     items () { return this.data.items || []; },
     tiles () {
       const t = this.data.tiles || {};
+      if (this.cyto) {
+        return [
+          { value: 'all', label: 'Усі справи', count: this.data.total || 0 },
+          { value: 'work', label: 'У роботі', count: this.data.inWork || 0 },
+          { value: 'overdue', label: 'Прострочені', count: this.data.overdue || 0, cls: 'text-negative' },
+          { value: 'GROSS', label: 'Приготування', count: (t.RCV || 0) + (t.GROSS || 0) },
+          { value: 'STAIN', label: 'Фарбування', count: t.STAIN || 0 },
+          { value: 'MICRO', label: 'Скринінг і висновок', count: t.MICRO || 0 },
+          { value: 'SIGNED', label: 'Підписано', count: t.SIGNED || 0, cls: 'text-positive' }
+        ];
+      }
       return [
         { value: 'all', label: 'Усі справи', count: this.data.total || 0 },
         { value: 'work', label: 'У роботі', count: this.data.inWork || 0 },
@@ -116,11 +143,17 @@ export default {
   methods: {
     async load (silent) {
       const stage = this.cito ? 'cito' : this.stage === 'GROSS' ? 'all' : this.stage;
-      const res = await this.callApi(() => this.$api.pathCases({ stage, src: this.src, q: this.q }), { silent: silent === true, loading: silent !== true });
+      const group = this.cito ? null : this.$route.meta.group || null;
+      if (this.cyto && silent !== true) this.an = await this.$api.pathCytoAnalytics().catch(() => null);
+      const res = await this.callApi(() => this.$api.pathCases({ stage, src: this.src, q: this.q, group }), { silent: silent === true, loading: silent !== true });
       if (res) {
         if (this.stage === 'GROSS' && !this.cito) res.items = res.items.filter(i => i.stage === 'RCV' || i.stage === 'GROSS');
         this.data = res;
       }
+    },
+    stepClass (i, row) {
+      const idx = this.cyto ? ({ RCV: 0, GROSS: 0, STAIN: 1, MICRO: 2, SIGNED: 3 }[row.stage] || 0) : row.stageIndex;
+      return i < idx || row.stage === 'SIGNED' ? 'done' : i === idx ? 'cur' : '';
     },
     openCase (r) { this.$router.push({ name: 'lab-path-case', params: { id: r.id } }); }
   }

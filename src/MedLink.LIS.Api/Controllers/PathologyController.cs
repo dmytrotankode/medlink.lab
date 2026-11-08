@@ -18,7 +18,7 @@ public sealed class PathologyController : LisControllerBase
     [HttpPost("pathology/incoming/{id}/query")] public async Task<IActionResult> Query(string id, [FromBody] PathQueryRequest req) => Ok(await _svc.QueryAsync(id, req));
 
     /// <summary>Журнал справ: stage=RCV|GROSS|…|work|lab|cito|overdue, src=INPATIENT|POLYCLINIC|EHEALTH|PARTNER, q — № / ПІБ / штрихкод.</summary>
-    [HttpGet("pathology/cases")] public async Task<IActionResult> Cases([FromQuery] string? stage, [FromQuery] string? src, [FromQuery] string? q) => Ok(await _svc.CasesAsync(stage, src, q));
+    [HttpGet("pathology/cases")] public async Task<IActionResult> Cases([FromQuery] string? stage, [FromQuery] string? src, [FromQuery] string? q, [FromQuery] string? group) => Ok(await _svc.CasesAsync(stage, src, q, group));
     [HttpGet("pathology/summary")] public async Task<IActionResult> Summary() => Ok(await _svc.SummaryAsync());
     [HttpGet("pathology/cases/{id}")] public async Task<IActionResult> Case(string id) => Ok(await _svc.CaseAsync(id));
     [HttpPut("pathology/cases/{id}/gross")] public async Task<IActionResult> Gross(string id, [FromBody] PathGrossRequest req) => Ok(await _svc.SaveGrossAsync(id, req));
@@ -48,6 +48,11 @@ public sealed class PathologyController : LisControllerBase
     [HttpPost("pathology/cases/{id}/dispatch")] public async Task<IActionResult> Dispatch(string id, [FromBody] PathDispatchRequest req) => Ok(await _svc.DispatchAsync(id, req));
     [HttpGet("pathology/cases/{id}/dispatches")] public async Task<IActionResult> Dispatches(string id) => Ok(await _svc.DispatchesAsync(id));
 
+    // цитологія (розд. 22.19)
+    [HttpPost("pathology/cases/{id}/prepare")] public async Task<IActionResult> Prepare(string id, [FromBody] PathPrepareRequest req) => Ok(await _svc.PrepareAsync(id, req));
+    [HttpPost("pathology/cases/{id}/prepare-repeat")] public async Task<IActionResult> PrepareRepeat(string id, [FromBody] PathRepeatRequest req) => Ok(await _svc.RepeatPrepAsync(id, req));
+    [HttpPost("pathology/cases/{id}/screening")] public async Task<IActionResult> Screening(string id, [FromBody] PathScreeningRequest req) => Ok(await _svc.ScreeningAsync(id, req));
+    [HttpGet("pathology/cytology/analytics")] public async Task<IActionResult> CytoAnalytics() => Ok(await _svc.CytoAnalyticsAsync());
     [HttpGet("pathology/dictionaries")] public async Task<IActionResult> Dictionaries() => Ok(await _svc.DictionariesAsync());
     /// <summary>Поля форми 014/о (сторони 1 і 2) для екрана «Друк 014/о».</summary>
     [HttpGet("pathology/cases/{id}/form014")] public async Task<IActionResult> Form014(string id) => Ok(await _svc.Form014Async(id));

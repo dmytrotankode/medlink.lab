@@ -113,6 +113,13 @@ export default {
           ]
         },
         {
+          title: 'Цитологія',
+          items: [
+            { name: 'cyto-cases', label: 'Журнал цитології', icon: 'fas fa-microscope', to: { name: 'lab-cyto-cases' }, exact: true },
+            { name: 'cyto-intake', label: 'Прийом матеріалу', icon: 'fas fa-box-open', to: { name: 'lab-path-intake' } }
+          ]
+        },
+        {
           title: 'Довідники',
           items: [
             { name: 'pricing', label: 'Прайси та платники', icon: 'fas fa-file-invoice-dollar', to: { name: 'lab-pricing' } },
