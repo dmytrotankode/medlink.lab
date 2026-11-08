@@ -61,7 +61,7 @@ export default {
       const price = Number(v);
       if (!(price >= 0)) { this.$q.notify({ type: 'negative', message: 'Ціна має бути числом від 0' }); this.load(); return; }
       const r = await this.callApi(() => this.$api.pathMethodPrice(row.code, price), { success: `Ціну «${row.name}» збережено` });
-      if (r) row.price = r.price; else this.load();
+      await this.load();
     },
     async load () { const d = await this.callApi(() => this.$api.pathDictionaries()); if (d) this.dict = d; }
   }
