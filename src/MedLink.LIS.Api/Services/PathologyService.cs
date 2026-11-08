@@ -254,6 +254,7 @@ public sealed class PathRoomRequest
     public string Name { get; set; } = "";
 }
 
+public sealed class PathMethodPriceRequest { public decimal Price { get; set; } }
 public sealed class PathDispatchRequest { public string? Address { get; set; } }
 
 /// <summary>Обмеження процесу обробки (FR-PAT-113).</summary>
@@ -1264,8 +1265,8 @@ public sealed class PathologyService
     /// <summary>Методики цитології, якщо їх немає в довіднику (бази, створені до появи цитології).</summary>
     private async Task EnsureCytoMethodsAsync()
     {
-        if (!await _db.StainMethods.AnyAsync(m => m.Code == "PAP")) _db.StainMethods.Add(new LabStainMethod { Code = "PAP", Name = "Папаніколау", Price = 0 });
-        if (!await _db.StainMethods.AnyAsync(m => m.Code == "MGG")) _db.StainMethods.Add(new LabStainMethod { Code = "MGG", Name = "Май-Грюнвальд-Гімза", Price = 0 });
+        if (!await _db.StainMethods.AnyAsync(m => m.Code == "PAP")) _db.StainMethods.Add(new LabStainMethod { Code = "PAP", Name = "Папаніколау", Price = PathPrices.CytoSlide });
+        if (!await _db.StainMethods.AnyAsync(m => m.Code == "MGG")) _db.StainMethods.Add(new LabStainMethod { Code = "MGG", Name = "Май-Грюнвальд-Гімза", Price = PathPrices.CytoSlide });
         await _db.SaveChangesAsync();
     }
 
@@ -1287,7 +1288,7 @@ public sealed class PathologyService
         var methods = await _db.StainMethods.AsNoTracking().ToListAsync();
         var objects = await _db.PathObjects.Where(x => x.OrderId == o.Id).OrderBy(x => x.DisplayOrder).ToListAsync();
         if (req.Objects.Count == 0 || req.Objects.All(x => x.Slides.Count == 0)) throw ValidationException.Field("objects", "Вкажіть хоча б одне скельце");
-        var n = 0;
+        var n = 0; var cytoPrice = 0m;
         foreach (var g in req.Objects)
         {
             var obj = objects.FirstOrDefault(x => x.Id == g.ObjectId || x.Mark == g.ObjectId) ?? throw NotFoundException.For("Контейнер", g.ObjectId);
@@ -1299,6 +1300,7 @@ public sealed class PathologyService
             {
                 var code = string.IsNullOrWhiteSpace(sl.Method) ? "PAP" : sl.Method.Trim();
                 var m = methods.FirstOrDefault(d => d.Code.Equals(code, StringComparison.OrdinalIgnoreCase)) ?? throw ValidationException.Field("method", $"Методику «{code}» не знайдено в довіднику");
+                cytoPrice += m.Price > 0 ? m.Price : PathPrices.CytoSlide;
                 _db.PathSlides.Add(new LabPathSlide
                 {
                     BlockId = block.Id, OrderId = o.Id, Code = CytoSlideCode(o.CaseNo, ++n), StainMethod = m.Name, IsIhc = false, Status = "IN_WORK",
@@ -1306,7 +1308,7 @@ public sealed class PathologyService
                 });
             }
         }
-        r.PreparedAt = DateTime.UtcNow; r.Price = PathPrices.CytoSlide * n;
+        r.PreparedAt = DateTime.UtcNow; r.Price = cytoPrice;
         Log(o, PathStages.Gross, comment: $"Приготовано скелець: {n}{(string.IsNullOrWhiteSpace(req.Note) ? "" : "; " + req.Note.Trim())}");
         SetStage(o, r, PathStages.Staining);
         _audit.Log("CYTO_PREPARE", "lab_order", o.Id, null, new { slides = n });
@@ -1315,6 +1317,18 @@ public sealed class PathologyService
     }
 
     /// <summary>Повторне приготування (FR-CYT-003): додаткове скельце з обов'язковою причиною.</summary>
+    /// <summary>Довідник методик: ціна скельця (у т. ч. цитології) задається адміністратором, 0 — типова ціна.</summary>
+    public async Task<object> SetMethodPriceAsync(string code, PathMethodPriceRequest req)
+    {
+        _policy.Require("Довідник методик фарбування", new[] { "Admin" });
+        if (req.Price < 0) throw ValidationException.Field("price", "Ціна не може бути від'ємною");
+        var m = await _db.StainMethods.FirstOrDefaultAsync(d => d.Code == code) ?? throw NotFoundException.For("Методика", code);
+        m.Price = req.Price;
+        _audit.Log("STAIN_PRICE", "lab_stain_method", m.Id, null, new { code, req.Price });
+        await _db.SaveChangesAsync();
+        return new { m.Code, m.Name, m.IsIhc, m.Price };
+    }
+
     public async Task<object> RepeatPrepAsync(string id, PathRepeatRequest req)
     {
         _policy.Require("Приготування цитологічних препаратів", HistotechRoles);
@@ -1329,7 +1343,7 @@ public sealed class PathologyService
         var count = await _db.PathSlides.CountAsync(s => s.OrderId == o.Id);
         var sl = new LabPathSlide { BlockId = block.Id, OrderId = o.Id, Code = CytoSlideCode(o.CaseNo, count + 1), StainMethod = m.Name, Status = "IN_WORK", Barcode = $"PS{await _numerators.NextCounterAsync("PATH_BARCODE"):D8}" };
         _db.PathSlides.Add(sl);
-        r.Price += PathPrices.CytoSlide;
+        r.Price += m.Price > 0 ? m.Price : PathPrices.CytoSlide;
         Log(o, PathStages.Gross, block.Id, sl.Id, null, $"Повторне приготування: {req.Reason.Trim()}");
         await _db.SaveChangesAsync();
         return await CaseAsync(o.Id);
@@ -1397,7 +1411,7 @@ public sealed class PathologyService
             materials = PathCytology.Materials.Select(m => new { code = m.Code, name = m.Name }),
             adequacy = PathCytology.Adequacy.Select(a => new { code = a.Code, name = a.Name }),
             categories = PathCytology.Categories.Select(c => new { code = c.Code, name = c.Name, high = c.High }),
-            slidePrice = PathPrices.CytoSlide
+            slidePrice = PathPrices.CytoSlide // типова; фактична — з довідника методик (stains[].price)
         },
         prices = new { firstBlock = PathPrices.FirstBlock, nextBlock = PathPrices.NextBlock, ihc = PathPrices.Ihc, consultSlide = PathPrices.ConsultSlide, cito = PathPrices.Cito, ihcExtraDays = PathPrices.IhcExtraWorkdays }
     };

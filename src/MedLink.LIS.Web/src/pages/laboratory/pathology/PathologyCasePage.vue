@@ -119,7 +119,7 @@
       <!-- Цитологія: приготування препаратів -->
       <div v-if="isCyto" v-show="tab === 'prep'" class="medlink-card q-pa-md" data-testid="prepPane">
         <div v-if="!c.cyto.prepared">
-          <div class="text-caption text-grey-8 q-mb-sm">Для кожного контейнера вкажіть скельця й методику (за замовчуванням Папаніколау). Вартість: {{ cytoPrice | money }} за скельце — разом <b>{{ prepTotal * cytoPrice | money }}</b>.</div>
+          <div class="text-caption text-grey-8 q-mb-sm">Для кожного контейнера вкажіть скельця й методику (за замовчуванням Папаніколау). Вартість скельця — за довідником методик; разом <b>{{ prepSum | money }}</b>.</div>
           <div v-for="o in prep.objects" :key="o.objectId" class="q-mb-sm">
             <div class="row items-center q-mb-xs"><b>Контейнер №{{ o.mark }}</b>&nbsp;<span class="text-grey-7">{{ o.description }}</span><q-space />
               <q-btn flat dense size="sm" color="primary" icon="add" label="Скельце" :disable="o.slides.length >= 10" @click="o.slides.push({ method: 'PAP' })" /></div>
@@ -445,6 +445,7 @@ export default {
     adequacyOptions () { return this.cytoDict.adequacy.map(a => ({ label: a.name, value: a.code })); },
     categoryOptions () { return this.cytoDict.categories.map(a => ({ label: `${a.code} — ${a.name}${a.high ? ' (критично)' : ''}`, value: a.code })); },
     cytoMethodOptions () { return this.dict.stains.filter(s => !s.isIhc).map(s => ({ label: s.name, value: s.code })).concat(this.dict.stains.some(s => s.code === 'PAP') ? [] : [{ label: 'Папаніколау', value: 'PAP' }]); },
+    prepSum () { return this.prep.objects.reduce((n, o) => n + o.slides.reduce((m, s) => m + ((this.dict.stains.find(x => x.code === s.method) || {}).price || this.cytoPrice), 0), 0); },
     prepTotal () { return this.prep.objects.reduce((n, o) => n + o.slides.length, 0); },
     canSign () { return this.isCyto ? this.rep.adequacy && (this.rep.adequacy === 'UNSATISFACTORY' || this.rep.cytoCategory) : this.rep.icdoTopo && this.rep.icdoMorph; },
     templateOptions () { return this.dict.templates.map(t => ({ label: t.name, value: t.name })); },

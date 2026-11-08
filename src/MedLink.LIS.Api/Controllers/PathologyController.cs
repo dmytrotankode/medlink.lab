@@ -44,6 +44,7 @@ public sealed class PathologyController : LisControllerBase
     [HttpPut("pathology/blocks/{id}/storage")] public async Task<IActionResult> SetStorage(string id, [FromBody] PathStorageRequest req) => Ok(await _svc.SetStorageAsync(id, req));
     [HttpGet("pathology/rooms")] public async Task<IActionResult> Rooms() => Ok(await _svc.RoomsAsync());
     [HttpPost("pathology/rooms")] public async Task<IActionResult> AddRoom([FromBody] PathRoomRequest req) => Ok(await _svc.AddRoomAsync(req));
+    [HttpPut("pathology/methods/{code}/price")] public async Task<IActionResult> MethodPrice(string code, [FromBody] PathMethodPriceRequest req) => Ok(await _svc.SetMethodPriceAsync(code, req));
     [HttpGet("pathology/staff")] public async Task<IActionResult> Staff() => Ok(await _svc.StaffAsync());
     [HttpPost("pathology/cases/{id}/dispatch")] public async Task<IActionResult> Dispatch(string id, [FromBody] PathDispatchRequest req) => Ok(await _svc.DispatchAsync(id, req));
     [HttpGet("pathology/cases/{id}/dispatches")] public async Task<IActionResult> Dispatches(string id) => Ok(await _svc.DispatchesAsync(id));

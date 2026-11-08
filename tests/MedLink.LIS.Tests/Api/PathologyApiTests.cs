@@ -528,4 +528,24 @@ public class PathologyApiTests
         Assert.Equal(PathStages.Signed, S(signed["case"]!["stage"]));
         Assert.DoesNotContain(MisEvents.CriticalResult, await Events(id));
     }
+
+    [Fact]
+    public async Task S122_cytology_slide_price_comes_from_methods_dictionary()
+    {
+        var admin = _f.CreateClient();
+        Assert.Equal(HttpStatusCode.Forbidden, (await Histotech.PutAsJsonAsync($"{B}/methods/MGG/price", new { price = 10 })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await admin.PutAsJsonAsync($"{B}/methods/MGG/price", new { price = -1 })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await admin.PutAsJsonAsync($"{B}/methods/NOPE/price", new { price = 1 })).StatusCode);
+        var c = await Accept(await ReferCyto("ASPIRATE", null, 1));
+        var id = S(c["id"]);
+        await Json(await admin.PutAsJsonAsync($"{B}/methods/MGG/price", new { price = 200 }));
+        try
+        {
+            var prepared = await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/prepare", new { objects = new[] { new { objectId = S(c["objects"]![0]!["id"]), slides = new[] { new { method = "PAP" }, new { method = "MGG" } } } } }));
+            Assert.Equal(PathPrices.CytoSlide + 200m, prepared["price"]!.GetValue<decimal>());
+            var again = await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/prepare-repeat", new { reason = "Брак", method = "MGG" }));
+            Assert.Equal(PathPrices.CytoSlide + 400m, again["price"]!.GetValue<decimal>());
+        }
+        finally { await admin.PutAsJsonAsync($"{B}/methods/MGG/price", new { price = PathPrices.CytoSlide }); }
+    }
 }

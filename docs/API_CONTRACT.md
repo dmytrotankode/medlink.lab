@@ -241,13 +241,14 @@
 | GET | `/pathology/incoming` | черга прийому: пацієнт, джерело, тип матеріалу, направник, контейнери (`labeled`, `fixationHours`, `fixationWarning`), знімок п. 1–9 форми |
 | POST | `/pathology/incoming/{id}/accept` | `{scannedBarcodes[]}` (штрихкоди або маркування всіх контейнерів) → № справи, SLA (робочі дні; CITO — `PathologyCitoTargetMinutes`), вартість (консультація — скельця × 210, зовнішні блоки/скельця зі штрихкодами), подія `RECEIVED` |
 | POST | `/pathology/incoming/{id}/reject` | `{reason (код або назва з довідника), comment}` → `REJECTED`; е-направлення не погашається |
-| POST | `/pathology/incoming/{id}/query` | `{text}` → подія `QUERY` направнику |
+| POST | `/pathology/incoming/{id}/query` | `{text}` → подія `QUERY` направнику |
 | PUT | `/pathology/cases/{id}/gross` | + `pathologistId`, `assistantId` (обов'язкові для `finish`), `blocks[].track` (`STANDARD`/`DECALC`), `blocks[].methods[]` (до 5 кодів довідника), `objects[].remainderState` (`NONE`/`KEPT`/`DISCARDED`) + `remainderNote` |
 | POST | `/pathology/scan`, `/pathology/cases/{id}/advance` | + `performerId`, `count` (мікротомія); `stage=COVER` — покриття скельця, `stage=DECALC` — лише для блоків `DECALC` |
 | POST | `/pathology/cases/{id}/prepare` | цитологія: `{objects:[{objectId, slides:[{method}]}], note}` → скельця `C{yy}-NNNN-n`, етап `STAIN`; лише лаборант |
 | POST | `/pathology/cases/{id}/prepare-repeat` | `{reason, method}` — додаткове скельце |
 | POST | `/pathology/cases/{id}/screening` | `{assessment: NORMAL/SUSPECT, note}` на етапі `MICRO` |
 | GET | `/pathology/cytology/analytics` | непридатні, розбіжність скринер/лікар, TAT, навантаження |
+| PUT | `/pathology/methods/{code}/price` | ціна скельця методики в довіднику (Admin); для цитології — вартість приготування, 0 = типова |
 | GET | `/pathology/cases?group=cyto|hist` | журнал за групою; направлення `kind=CYTO`, `cytoMaterial`; висновок: `adequacy`, `cytoCategory`, `recommendation` |
 | POST | `/pathology/slides/{id}/dispose` | `{reason, recreate}` → скельце `DISPOSED`, за потреби нове тієї ж методики |
 | PUT | `/pathology/blocks/{id}/storage` | `{roomId, location}` |
