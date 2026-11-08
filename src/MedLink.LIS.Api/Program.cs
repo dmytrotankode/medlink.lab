@@ -173,6 +173,9 @@ using (var scope = app.Services.CreateScope())
 await app.Services.EnsureGuideDatabaseAsync();
 await app.Services.SeedGuideBundlesAsync();
 
+// Розгортання в підпапці за зворотним проксі (напр. PathBase=/lab)
+var pathBase = app.Configuration["PathBase"];
+if (!string.IsNullOrWhiteSpace(pathBase)) app.UsePathBase(pathBase.TrimEnd('/'));
 app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseCors("AllowAll");
 app.UseDefaultFiles();

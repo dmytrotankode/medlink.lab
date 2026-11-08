@@ -9,8 +9,8 @@ KEY=~/.ssh/medone_ed25519
 HOST=root@94.130.180.117
 OUT="$(mktemp -d)"
 
-echo "==> 1/4 фронтенд (quasar build) -> wwwroot"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./build.ps1 -SkipInstall
+echo "==> 1/4 фронтенд (quasar build, підпапка /lab/) -> wwwroot"
+MSYS_NO_PATHCONV=1 MSYS2_ENV_CONV_EXCL=LIS_PUBLIC_PATH LIS_PUBLIC_PATH=/lab/ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./build.ps1 -SkipInstall
 
 echo "==> 2/4 dotnet publish (linux-x64, framework-dependent)"
 dotnet publish src/MedLink.LIS.Api/MedLink.LIS.Api.csproj -c Release -r linux-x64 --self-contained false -o "$OUT/app" --nologo -v q
