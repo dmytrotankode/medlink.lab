@@ -5,7 +5,7 @@
 -->
 <template>
   <div data-testid="pathologyCasePage">
-    <page-header :title="c ? `Справа ${c.caseNo || c.orderNumber}` : 'Справа ПГД'" icon="fas fa-folder-open"
+    <page-header :title="c ? `Справа ${c.caseNo || c.orderNumber}` : (isCyto ? 'Справа цитології' : 'Справа ПГД')" icon="fas fa-folder-open"
       :subtitle="c ? `${c.patient.name} · ${c.kindLabel} · ${c.sourceLabel}${c.department ? ' · ' + c.department : ''}` : ''"
       :breadcrumbs="[{ label: 'Патоморфологія' }, { label: 'Журнал справ', to: { name: 'lab-path-cases' } }, { label: c ? c.caseNo || '' : '' }]">
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
@@ -48,7 +48,7 @@
 
       <!-- Направлення -->
       <div v-show="tab === 'ref'" class="medlink-card q-pa-md">
-        <q-banner v-if="c.priorSignedCases && c.priorSignedCases.length" dense class="bg-amber-1 text-amber-10 q-mb-sm">
+        <q-banner v-if="!isCyto && c.priorSignedCases && c.priorSignedCases.length" dense class="bg-amber-1 text-amber-10 q-mb-sm">
           МІС позначила біопсію «первинна», але в пацієнта є підписані справи: {{ c.priorSignedCases.join(', ') }} (FR-PAT-010)
         </q-banner>
         <q-markup-table dense flat bordered wrap-cells class="kv">
@@ -56,10 +56,10 @@
             <tr v-if="c.referral.form014 && c.referral.form014.facility"><td>1. Заклад</td><td>{{ c.referral.form014.facility }}</td></tr>
             <tr><td>Пацієнт</td><td>{{ c.patient.name }}, {{ c.patient.birthday | date }}</td></tr>
             <tr><td>Направник</td><td>{{ c.department }} · {{ c.referral.referringDoctor }}<span v-if="c.referral.medicalCardNo"> · карта {{ c.referral.medicalCardNo }}</span></td></tr>
-            <tr><td>4–5. Біопсія</td><td>{{ c.referral.biopsyKindLabel }}
+            <tr v-if="!isCyto"><td>4–5. Біопсія</td><td>{{ c.referral.biopsyKindLabel }}
               <router-link v-if="c.primaryCaseId" :to="{ name: 'lab-path-case', params: { id: c.primaryCaseId } }"> · первинна справа {{ c.referral.primaryCaseNo }}</router-link>
               <span v-else-if="c.referral.primaryCaseNo"> · первинна справа {{ c.referral.primaryCaseNo }}</span></td></tr>
-            <tr><td>6. Операція</td><td>{{ c.referral.operationText || '—' }}</td></tr>
+            <tr v-if="!isCyto"><td>6. Операція</td><td>{{ c.referral.operationText || '—' }}</td></tr>
             <tr><td>7. Маркування</td><td>{{ c.referral.markingText || '—' }}</td></tr>
             <tr v-if="c.cyto"><td>Вид матеріалу</td><td>{{ c.cyto.materialLabel }}</td></tr>
             <tr v-if="c.referral.gyn"><td>Гінекологічний анамнез</td><td>
@@ -209,7 +209,7 @@
         <div class="row q-col-gutter-sm">
           <div class="col-12 col-md-7">
             <q-select v-model="microTemplate" dense outlined emit-value map-options :options="templateOptions" label="Шаблон мікроопису" :disable="signed" class="q-mb-sm" @input="applyMicroTemplate" />
-            <q-input v-model="rep.micro" dense outlined type="textarea" autogrow label="Мікроскопічний опис (п. 17)" :readonly="signed" class="q-mb-sm" data-testid="microText" />
+            <q-input v-model="rep.micro" dense outlined type="textarea" autogrow :label="isCyto ? 'Опис препарату' : 'Мікроскопічний опис (п. 17)'" :readonly="signed" class="q-mb-sm" data-testid="microText" />
             <q-input v-model="rep.conclusionText" dense outlined type="textarea" autogrow :label="isCyto ? 'Цитологічний висновок' : 'Патогістологічний висновок (п. 18)'" :readonly="signed" data-testid="conclusionText">
               <template v-slot:after><q-btn v-if="!signed" flat dense color="primary" icon="merge_type" label="Зібрати текст" @click="compose" /></template>
             </q-input>
