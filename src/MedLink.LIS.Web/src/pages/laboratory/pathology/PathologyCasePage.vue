@@ -79,17 +79,26 @@
             <div>перший блок {{ prices.firstBlock | money }} + кожен наступний {{ prices.nextBlock | money }}</div>
           </div>
         </div>
+        <div class="row q-col-gutter-sm q-mb-sm">
+          <div class="col-12 col-md-6"><q-select v-model="gross.pathologistId" dense outlined emit-value map-options :options="staffOptions('pathologists')" label="Лікар-патолог *" :disable="!grossEditable" data-testid="grossPathologist" /></div>
+          <div class="col-12 col-md-6"><q-select v-model="gross.assistantId" dense outlined emit-value map-options :options="staffOptions('assistants')" label="Вирізку провів (асистент) *" :disable="!grossEditable" data-testid="grossAssistant" /></div>
+        </div>
         <q-input v-model="gross.macro" dense outlined type="textarea" autogrow label="Макроопис (п. 17)" :readonly="!grossEditable" class="q-mb-md" />
         <div v-for="o in gross.objects" :key="o.objectId" class="q-mb-sm">
           <div class="row items-center q-mb-xs">
             <b>Об'єкт №{{ o.mark }}</b>&nbsp;<span class="text-grey-7">{{ o.description }}</span>
             <q-space />
-            <q-btn v-if="grossEditable" flat dense size="sm" color="primary" icon="add" label="Блок" @click="o.blocks.push({ pieces: 1 })" />
+            <q-select v-model="o.remainderState" dense outlined emit-value map-options :options="remainderOptions" label="Залишок матеріалу" style="min-width: 190px" class="q-mr-sm" :disable="!grossEditable" />
+            <q-input v-if="o.remainderState && o.remainderState !== 'NONE'" v-model="o.remainderNote" dense outlined label="Де / примітка" style="min-width: 180px" class="q-mr-sm" :readonly="!grossEditable" />
+            <q-btn v-if="grossEditable" flat dense size="sm" color="primary" icon="add" label="Блок" @click="o.blocks.push({ pieces: 1, track: 'STANDARD', methods: ['HE'] })" />
           </div>
           <div class="row q-gutter-sm">
             <div v-for="(b, i) in o.blocks" :key="i" class="block-chip">
               <div class="text-weight-bold">{{ o.letter }}{{ i + 1 }}</div>
               <q-input v-model.number="b.pieces" dense outlined type="number" min="1" style="width: 70px" label="шм." :readonly="!grossEditable" />
+              <q-toggle v-model="b.track" true-value="DECALC" false-value="STANDARD" dense label="Декальцинація" :disable="!grossEditable" />
+              <q-select v-model="b.methods" dense outlined multiple use-chips emit-value map-options :options="gross5Options" :label="`Методики (до ${maxMethods})`" style="min-width: 190px; max-width: 260px"
+                        :disable="!grossEditable" :rules="[v => !v || v.length <= maxMethods || `не більше ${maxMethods}`]" />
               <q-btn v-if="grossEditable" flat dense round size="xs" icon="close" @click="o.blocks.splice(i, 1)" />
             </div>
             <div v-if="!o.blocks.length" class="text-caption text-grey-6">Блоків немає</div>
@@ -99,7 +108,7 @@
           <q-btn flat color="primary" icon="save" label="Зберегти" @click="saveGross(false)" />
           <q-btn unelevated color="primary" icon="done_all" label="Завершити вирізку" data-testid="finishGross" :disable="!grossBlocks" @click="saveGross(true)" />
         </div>
-        <div v-else class="text-caption text-grey-7">Вирізку завершено {{ c.grossFinishedAt | datetime }} — скельця Г-Е створено для кожного блока.</div>
+        <div v-else class="text-caption text-grey-7">Вирізку завершено {{ c.grossFinishedAt | datetime }} — скельця створено за обраними методиками. Патолог: {{ c.pathologist && c.pathologist.name }}; вирізку провів: {{ c.assistant && c.assistant.name }}.</div>
       </div>
 
       <!-- Блоки і скельця -->
@@ -108,6 +117,8 @@
           <q-input v-model="scan" dense outlined placeholder="Скан касети або скельця" style="width: 240px" @keyup.enter="doScan">
             <template v-slot:prepend><q-icon name="qr_code_scanner" /></template>
           </q-input>
+          <q-select v-if="labStage" v-model="performerId" dense outlined clearable emit-value map-options :options="staffOptions('assistants')" label="Виконавець" style="width: 200px" />
+          <q-input v-if="c.stage === 'SECT'" v-model.number="sectCount" dense outlined type="number" min="1" label="Зрізів" style="width: 90px" />
           <q-btn v-if="labStage" unelevated color="teal-7" icon="fact_check" :label="`${stageLabel(c.stage)}: виконано для всіх касет`" data-testid="advanceAll" @click="advance" />
           <q-space />
           <q-btn outline color="purple-6" icon="add_circle_outline" label="Додаткові забарвлення / ІГХ" :disable="!canAdditional" @click="openAdditional()" />
@@ -119,12 +130,16 @@
               <tr v-for="b in o.blocks" :key="b.id">
                 <td><b>{{ b.code }}</b> <q-badge v-if="b.isExternal" outline color="indigo-6" label="зовнішній" /><div class="text-caption"><code>{{ b.barcode }}</code></div></td>
                 <td>{{ b.pieces || '—' }}</td>
-                <td>{{ b.stageLabel || '—' }}</td>
+                <td>{{ b.stageLabel || '—' }}<div v-if="b.track === 'DECALC'" class="text-caption text-deep-orange-8">декальцинація</div></td>
                 <td>
                   <div v-for="s in b.slides" :key="s.id" class="row items-center no-wrap">
                     <q-badge :color="s.status === 'IHC_IN_WORK' ? 'purple-5' : s.status === 'READY' ? 'positive' : 'grey-6'" :label="s.code" class="q-mr-xs" />
                     <span class="text-caption">{{ s.stainMethod }}<span v-if="s.status === 'IHC_IN_WORK'"> · ІГХ в роботі</span><span v-if="s.orderedFrom && s.orderedFrom !== 'LAB'"> · з {{ s.orderedFrom }}</span></span>
                     <q-btn v-if="s.status === 'IHC_IN_WORK'" flat dense size="xs" color="positive" icon="done" @click="slideReady(s)"><q-tooltip>Скельце готове</q-tooltip></q-btn>
+                    <span v-if="s.status === 'DISPOSED'" class="text-caption text-negative q-ml-xs">· утилізовано: {{ s.disposeReason }}</span>
+                    <q-icon v-else-if="s.coveredAt" name="layers" size="xs" color="teal-7" class="q-ml-xs"><q-tooltip>Покрито покривним склом {{ s.coveredAt | datetime }}</q-tooltip></q-icon>
+                    <q-btn v-if="s.status !== 'DISPOSED' && b.stage === 'STAIN' && !s.coveredAt" flat dense size="xs" color="teal-7" icon="layers" @click="coverSlide(s)"><q-tooltip>Покрити покривним склом</q-tooltip></q-btn>
+                    <q-btn v-if="s.status !== 'DISPOSED' && !s.isExternal" flat dense size="xs" color="negative" icon="delete_outline" @click="disposeSlide(s)"><q-tooltip>Утилізувати скельце</q-tooltip></q-btn>
                   </div>
                 </td>
                 <td class="text-caption">
@@ -197,7 +212,10 @@
               <q-tooltip v-if="!rep.icdoTopo || !rep.icdoMorph">Для підпису обов'язкові топографія та морфологія МКХ-О</q-tooltip>
             </q-btn>
           </template>
-          <q-btn v-else unelevated color="primary" icon="post_add" label="Доповнення" data-testid="addendumBtn" @click="openAddendum" />
+          <template v-else>
+            <q-btn outline color="teal-7" icon="forward_to_inbox" label="Надіслати на пошту" data-testid="dispatchBtn" @click="dispatchResult" />
+            <q-btn unelevated color="primary" icon="post_add" label="Доповнення" data-testid="addendumBtn" @click="openAddendum" />
+          </template>
         </div>
 
         <div v-if="c.versions.length" class="q-mt-md">
@@ -311,12 +329,13 @@
           <q-select v-model="addendum.type" dense outlined emit-value map-options :options="addendumTypes" label="Тип доповнення" />
           <q-input v-model="addendum.text" dense outlined type="textarea" autogrow label="Текст доповнення" />
           <q-input v-if="addendum.type === 'CORRECTION'" v-model="addendum.reason" dense outlined label="Обґрунтування виправлення *" />
+          <q-input v-if="addendum.type === 'CONSULT'" v-model="addendum.consultantName" dense outlined label="Консультант (ПІБ, заклад) *" data-testid="consultantName" />
           <q-input v-model="addendum.icdoMorph" dense outlined label="МКХ-О морфологія (якщо змінюється)" />
           <q-checkbox v-model="addendum.changesDiagnosis" label="Змінює діагноз / стадію (сповіщення МДК)" />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Скасувати" v-close-popup />
-          <q-btn unelevated color="primary" icon="draw" label="Підписати доповнення КЕП" :disable="!addendum.text || (addendum.type === 'CORRECTION' && !addendum.reason)" @click="doAddendum" />
+          <q-btn unelevated color="primary" icon="draw" label="Підписати доповнення КЕП" :disable="!addendum.text || (addendum.type === 'CORRECTION' && !addendum.reason) || (addendum.type === 'CONSULT' && !addendum.consultantName)" @click="doAddendum" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -342,8 +361,8 @@
 <script>
 import apiMixin from '../../../mixins/apiMixin';
 
-const LAB_STAGES = ['PROC', 'EMB', 'SECT', 'STAIN'];
-const STAGE_LABELS = { RCV: 'Прийнято', GROSS: 'Вирізка', PROC: 'Проводка', EMB: 'Заливка', SECT: 'Мікротомія', STAIN: 'Фарбування', MICRO: 'Мікроскопія й опис', SIGNED: 'Підписано' };
+const LAB_STAGES = ['DECALC', 'PROC', 'EMB', 'SECT', 'STAIN'];
+const STAGE_LABELS = { RCV: 'Прийнято', GROSS: 'Вирізка', DECALC: 'Декальцинація', COVER: 'Покриття скла', PROC: 'Проводка', EMB: 'Заливка', SECT: 'Мікротомія', STAIN: 'Фарбування', MICRO: 'Мікроскопія й опис', SIGNED: 'Підписано' };
 
 export default {
   name: 'PathologyCasePage',
@@ -354,10 +373,12 @@ export default {
       c: null, tab: this.$route.query.tab || 'ref', dict: { templates: [], topo: [], morph: [], stains: [], prices: {} }, form: null, highlight: true,
       gross: { macro: '', templateName: null, objects: [] }, rep: this.emptyReport(), microTemplate: null, scan: '',
       addOpen: false, add: { blockId: null, methods: [], source: 'LAB' }, prelimOpen: false, prelimText: '',
-      addendumOpen: false, addendum: { type: 'IHC', text: '', reason: '', icdoMorph: '', changesDiagnosis: false },
+      addendumOpen: false, addendum: { type: 'IHC', text: '', reason: '', consultantName: '', icdoMorph: '', changesDiagnosis: false },
       citoOpen: false, cito: { text: '', notifiedPerson: '', method: 'PHONE', readBack: false },
       yesNo: [{ label: 'виявлено', value: true }, { label: 'не виявлено', value: false }],
-      addendumTypes: [{ label: 'ІГХ / молекулярні дослідження', value: 'IHC' }, { label: 'Перегляд препаратів', value: 'REVIEW' }, { label: 'Виправлення з обґрунтуванням', value: 'CORRECTION' }]
+      addendumTypes: [{ label: 'ІГХ / молекулярні дослідження', value: 'IHC' }, { label: 'Перегляд препаратів', value: 'REVIEW' }, { label: 'Виправлення з обґрунтуванням', value: 'CORRECTION' }, { label: 'Висновок зовнішнього консультанта', value: 'CONSULT' }],
+      staff: { pathologists: [], assistants: [], current: null }, performerId: null, sectCount: null,
+      remainderOptions: [{ label: 'Залишку немає', value: 'NONE' }, { label: 'Залишок збережено', value: 'KEPT' }, { label: 'Залишок утилізовано', value: 'DISCARDED' }]
     };
   },
   computed: {
@@ -375,6 +396,8 @@ export default {
     topoOptions () { return this.dict.topo.map(t => ({ label: `${t.code} ${t.name}`, value: t.code })); },
     morphOptions () { return this.dict.morph.map(t => ({ label: `${t.code} ${t.name}`, value: t.code })); },
     blockOptions () { return this.c ? this.c.objects.flatMap(o => o.blocks).map(b => ({ label: `${b.code}${b.status === 'ISSUED' ? ' (видано)' : ''}`, value: b.id, disable: b.status === 'ISSUED' })) : []; },
+    maxMethods () { return this.dict.maxMethodsPerBlock || 5; },
+    gross5Options () { return this.dict.stains.map(s => ({ label: s.isIhc ? `ІГХ ${s.code}` : s.name, value: s.code })); },
     methodOptions () { return this.dict.stains.filter(s => s.code !== 'HE').map(s => ({ label: s.isIhc ? `ІГХ ${s.code} — ${s.name}` : s.name, value: s.code })); }
   },
   watch: {
@@ -383,6 +406,7 @@ export default {
   },
   async created () {
     this.dict = await this.$api.pathDictionaries().catch(() => this.dict);
+    this.staff = await this.$api.pathStaff().catch(() => this.staff);
     await this.load();
     if (this.tab === 'ref' && this.c) this.tab = this.c.stage === 'RCV' || this.c.stage === 'GROSS' ? 'gross' : LAB_STAGES.includes(this.c.stage) ? 'blocks' : this.c.stage === 'MICRO' ? 'report' : 'ref';
     if (this.tab === 'print') this.loadForm();
@@ -390,6 +414,9 @@ export default {
   methods: {
     emptyReport () { return { micro: '', conclusionText: '', icd10: '', icdoTopo: null, icdoMorph: null, grade: null, pt: '', pn: '', lnTotal: null, lnPositive: null, margin: '', lvi: null, pni: null, ihc: [] }; },
     stageLabel (s) { return STAGE_LABELS[s] || s; },
+    staffOptions (kind) { return (this.staff[kind] || []).map(e => ({ label: e.name, value: e.id })); },
+    defaultStaff (kind) { const e = (this.staff[kind] || []).find(x => x.id === this.staff.current); return e ? e.id : null; },
+    methodCode (name) { const m = this.dict.stains.find(s => s.name === name); return m ? m.code : null; },
     addendumLabel (t) { return (this.addendumTypes.find(x => x.value === t) || { label: t }).label; },
     eventColor (e) { return { RECEIVED: 'primary', REJECTED: 'negative', CRITICAL_RESULT: 'negative', RESULT_FINAL: 'positive', ADDENDUM: 'teal-6', RESULT_PRELIMINARY: 'amber-9', ADDITIONAL_STUDY_ORDERED: 'purple-5' }[e] || 'grey-7'; },
     slideCode (id) { const s = this.c && this.c.objects.flatMap(o => o.blocks).flatMap(b => b.slides).find(x => x.id === id); return s ? s.code : '—'; },
@@ -401,7 +428,11 @@ export default {
       this.c = c;
       this.gross = {
         macro: c.macro || '', templateName: c.templateName,
-        objects: c.objects.map(o => ({ objectId: o.id, mark: o.mark, letter: o.letter, description: o.description, blocks: o.blocks.filter(b => !b.isExternal).map(b => ({ pieces: b.pieces })) }))
+        pathologistId: (c.pathologist && c.pathologist.id) || this.defaultStaff('pathologists'), assistantId: (c.assistant && c.assistant.id) || null,
+        objects: c.objects.map(o => ({
+          objectId: o.id, mark: o.mark, letter: o.letter, description: o.description, remainderState: o.remainderState || 'NONE', remainderNote: o.remainderNote || '',
+          blocks: o.blocks.filter(b => !b.isExternal).map(b => ({ pieces: b.pieces, track: b.track || 'STANDARD', methods: b.slides && b.slides.length ? b.slides.filter(x => x.status !== 'DISPOSED' && !x.isIhc).map(x => this.methodCode(x.stainMethod)).filter(Boolean).slice(0, 5) : ['HE'] }))
+        }))
       };
       const r = c.report || {};
       const rep = this.emptyReport();
@@ -422,8 +453,14 @@ export default {
     },
     applyMicroTemplate (name) { const t = this.dict.templates.find(x => x.name === name); if (t) this.rep.micro = t.micro; },
     async saveGross (finish) {
-      const body = { macro: this.gross.macro, templateName: this.gross.templateName, finish, objects: this.gross.objects.map(o => ({ objectId: o.objectId, blocks: o.blocks.map(b => ({ pieces: Number(b.pieces) || 1 })) })) };
-      const c = await this.callApi(() => this.$api.pathGross(this.c.id, body), { success: finish ? 'Вирізку завершено: скельця Г-Е створено, вартість перераховано' : 'Збережено' });
+      const body = {
+        macro: this.gross.macro, templateName: this.gross.templateName, finish, pathologistId: this.gross.pathologistId, assistantId: this.gross.assistantId,
+        objects: this.gross.objects.map(o => ({
+          objectId: o.objectId, remainderState: o.remainderState, remainderNote: o.remainderNote || null,
+          blocks: o.blocks.map(b => ({ pieces: Number(b.pieces) || 1, track: b.track || 'STANDARD', methods: (b.methods && b.methods.length ? b.methods : ['HE']) }))
+        }))
+      };
+      const c = await this.callApi(() => this.$api.pathGross(this.c.id, body), { success: finish ? 'Вирізку завершено: скельця створено за методиками, вартість перераховано' : 'Збережено' });
       if (c) { this.apply(c); if (finish) this.tab = 'blocks'; }
     },
     async doScan () {
@@ -434,8 +471,26 @@ export default {
       if (r) { this.$q.notify({ type: 'positive', message: `${r.blockCode}: ${r.stageLabel}` }); await this.load(); }
     },
     async advance () {
-      const c = await this.callApi(() => this.$api.pathAdvance(this.c.id, { stage: this.c.stage }), { success: `${this.stageLabel(this.c.stage)}: виконано` });
+      const body = { stage: this.c.stage, performerId: this.performerId || null, count: this.c.stage === 'SECT' && this.sectCount ? this.sectCount : null };
+      const c = await this.callApi(() => this.$api.pathAdvance(this.c.id, body), { success: `${this.stageLabel(this.c.stage)}: виконано` });
       if (c) this.apply(c);
+    },
+    async coverSlide (s) {
+      const r = await this.callApi(() => this.$api.pathScan({ barcode: s.barcode, stage: 'COVER', performerId: this.performerId || null }), { success: `Скельце ${s.code}: покрито` });
+      if (r) await this.load();
+    },
+    disposeSlide (s) {
+      this.$q.dialog({ title: `Утилізувати скельце ${s.code}`, message: 'Причина утилізації:', prompt: { model: '', type: 'text' }, cancel: true, persistent: true }).onOk(async reason => {
+        const recreate = await new Promise(resolve => this.$q.dialog({ title: 'Створити нове скельце тієї ж методики?', cancel: true, ok: 'Так', persistent: true }).onOk(() => resolve(true)).onCancel(() => resolve(false)));
+        const r = await this.callApi(() => this.$api.pathDisposeSlide(s.id, { reason, recreate }), { success: 'Скельце утилізовано' });
+        if (r) await this.load();
+      });
+    },
+    dispatchResult () {
+      this.$q.dialog({ title: 'Надіслати висновок на пошту', message: 'Адреса отримувача:', prompt: { model: (this.c.referral && this.c.referral.resultEmail) || this.c.resultEmail || '', type: 'email' }, cancel: true, persistent: true }).onOk(async address => {
+        const r = await this.callApi(() => this.$api.pathDispatch(this.c.id, { address }), { success: 'Висновок поставлено в розсилку' });
+        if (r) await this.load();
+      });
     },
     async slideReady (s) { if (await this.callApi(() => this.$api.pathSlideReady(s.id))) await this.load(); },
     openAdditional (markers) {
@@ -476,7 +531,7 @@ export default {
         if (r) { (r.warnings || []).forEach(w => this.$q.notify({ type: 'warning', message: w, timeout: 6000 })); this.apply(r.case); }
       });
     },
-    openAddendum () { this.addendum = { type: 'IHC', text: '', reason: '', icdoMorph: '', changesDiagnosis: false }; this.addendumOpen = true; },
+    openAddendum () { this.addendum = { type: 'IHC', text: '', reason: '', consultantName: '', icdoMorph: '', changesDiagnosis: false }; this.addendumOpen = true; },
     async doAddendum () {
       const cert = await this.signer();
       const body = { ...this.addendum, icdoMorph: this.addendum.icdoMorph || null, ihc: this.addendum.type === 'IHC' ? this.reportBody().ihc.filter(i => i.resultText) : null, signer: cert };

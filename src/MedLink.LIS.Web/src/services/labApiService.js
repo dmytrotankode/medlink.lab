@@ -349,6 +349,12 @@ const labApi = {
   pathIssue: (blockId, body) => data(http.post(`/pathology/blocks/${blockId}/issue`, body)),
   pathReturn: blockId => data(http.post(`/pathology/blocks/${blockId}/return`)),
   pathDictionaries: () => data(http.get('/pathology/dictionaries')),
+  pathStaff: () => data(http.get('/pathology/staff')),
+  pathRooms: () => data(http.get('/pathology/rooms')),
+  pathDisposeSlide: (slideId, body) => data(http.post(`/pathology/slides/${slideId}/dispose`, body)),
+  pathSetStorage: (blockId, body) => data(http.put(`/pathology/blocks/${blockId}/storage`, body)),
+  pathDispatch: (id, body) => data(http.post(`/pathology/cases/${id}/dispatch`, body)),
+  pathDispatches: id => data(http.get(`/pathology/cases/${id}/dispatches`)),
   pathForm014: id => data(http.get(`/pathology/cases/${id}/form014`)),
   pathForm014PdfUrl: (id, sides = '1,2') => absoluteUrl(`/pathology/cases/${id}/form014.pdf?sides=${sides}`),
 

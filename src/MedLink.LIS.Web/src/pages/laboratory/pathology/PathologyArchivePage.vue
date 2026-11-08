@@ -25,13 +25,14 @@
         <template v-slot:body-cell-status="p">
           <q-td :props="p">
             <q-badge :color="p.row.status === 'ISSUED' ? 'orange-8' : 'positive'" :label="p.row.statusLabel" />
-            <div v-if="p.row.issue" class="text-caption">{{ p.row.issue.recipient }} · {{ p.row.issue.purpose }}<br>видано {{ p.row.issue.issuedAt | date }}, повернути до
+            <div v-if="p.row.issue" class="text-caption"><q-badge v-if="p.row.issue.scope === 'INTERNAL'" outline color="teal-7" :label="`внутрішня · ${p.row.issue.recipientUnit}`" class="q-mr-xs" />{{ p.row.issue.recipient }} · {{ p.row.issue.purpose }}<br>видано {{ p.row.issue.issuedAt | date }}, повернути до
               <b :class="p.row.issue.overdue ? 'text-negative' : ''">{{ p.row.issue.dueBack | date }}</b></div>
             <div v-else-if="p.row.returnedAt" class="text-caption text-grey-7">повернено {{ p.row.returnedAt | datetime }}</div>
           </q-td>
         </template>
         <template v-slot:body-cell-actions="p">
           <q-td :props="p">
+            <q-btn v-if="p.row.status === 'ARCHIVED'" flat dense size="sm" color="grey-8" icon="place" :data-testid="`place-${p.row.code}`" @click="openPlace(p.row)"><q-tooltip>Місце зберігання</q-tooltip></q-btn>
             <q-btn v-if="p.row.status === 'ARCHIVED'" flat dense size="sm" color="primary" icon="outbox" label="Видати" :data-testid="`issue-${p.row.code}`" @click="openIssue(p.row)" />
             <q-btn v-else flat dense size="sm" color="positive" icon="move_to_inbox" label="Повернення" @click="ret(p.row)" />
           </q-td>
@@ -43,6 +44,8 @@
       <q-card style="min-width: 460px">
         <q-card-section class="text-h6">Видача блока {{ issueRow && issueRow.code }} ({{ issueRow && issueRow.caseNo }})</q-card-section>
         <q-card-section class="q-gutter-sm">
+          <q-btn-toggle v-model="issue.scope" dense unelevated toggle-color="primary" color="grey-2" text-color="grey-9" :options="[{ label: 'Зовнішня', value: 'EXTERNAL' }, { label: 'Внутрішня (підрозділ)', value: 'INTERNAL' }]" />
+          <q-input v-if="issue.scope === 'INTERNAL'" v-model="issue.recipientUnit" dense outlined label="Підрозділ закладу *" data-testid="issueUnit" />
           <q-input v-model="issue.recipient" dense outlined label="Отримувач (ПІБ / заклад) *" />
           <q-input v-model="issue.document" dense outlined label="Документ (акт, довіреність)" />
           <q-select v-model="issue.purpose" dense outlined :options="purposes" label="Мета *" />
@@ -50,7 +53,21 @@
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Скасувати" v-close-popup />
-          <q-btn unelevated color="primary" label="Видати й сформувати акт" :disable="!issue.recipient || !issue.purpose" @click="doIssue" />
+          <q-btn unelevated color="primary" label="Видати й сформувати акт" :disable="!issue.recipient || !issue.purpose || (issue.scope === 'INTERNAL' && !issue.recipientUnit)" @click="doIssue" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="placeOpen">
+      <q-card style="min-width: 400px">
+        <q-card-section class="text-h6">Місце зберігання блока {{ placeRow && placeRow.code }}</q-card-section>
+        <q-card-section class="q-gutter-sm">
+          <q-select v-model="place.roomId" dense outlined clearable emit-value map-options :options="roomOptions" label="Приміщення" />
+          <q-input v-model="place.location" dense outlined label="Шафа / полиця / комірка" />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Скасувати" v-close-popup />
+          <q-btn unelevated color="primary" label="Зберегти" @click="doPlace" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -65,21 +82,22 @@ export default {
   mixins: [apiMixin],
   data () {
     return {
-      rows: [], q: '', status: 'all', issueOpen: false, issueRow: null, issue: {},
+      rows: [], q: '', status: 'all', issueOpen: false, issueRow: null, issue: {}, rooms: [], placeOpen: false, placeRow: null, place: {},
       purposes: ['Консультація', 'Друга думка', 'Молекулярне дослідження', 'Клінічне дослідження'],
       columns: [
         { name: 'caseNo', label: '№ справи', field: 'caseNo', align: 'left', sortable: true },
         { name: 'patient', label: 'Пацієнт', field: 'patient', align: 'left' },
         { name: 'code', label: 'Блок', field: 'code', align: 'left' },
         { name: 'slides', label: 'Скелець', field: 'slides', align: 'center' },
-        { name: 'location', label: 'Місце зберігання', field: 'storageLocation', align: 'left', classes: 'text-caption' },
+        { name: 'location', label: 'Місце зберігання', field: r => [r.roomName, r.storageLocation].filter(Boolean).join(' · '), align: 'left', classes: 'text-caption' },
         { name: 'status', label: 'Стан', field: 'status', align: 'left' },
         { name: 'actions', label: '', field: 'id', align: 'right' }
       ]
     };
   },
   watch: { q () { this.load(); }, status () { this.load(); } },
-  created () { this.load(); },
+  computed: { roomOptions () { return this.rooms.map(r => ({ label: r.name, value: r.id })); } },
+  async created () { this.rooms = await this.$api.pathRooms().catch(() => []); this.load(); },
   methods: {
     async load () {
       const r = await this.callApi(() => this.$api.pathArchive({ q: this.q, status: this.status }));
@@ -87,11 +105,15 @@ export default {
     },
     openIssue (row) {
       const due = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
-      this.issueRow = row; this.issue = { recipient: '', document: '', purpose: 'Консультація', dueBack: due }; this.issueOpen = true;
+      this.issueRow = row; this.issue = { scope: 'EXTERNAL', recipientUnit: '', recipient: '', document: '', purpose: 'Консультація', dueBack: due }; this.issueOpen = true;
     },
     async doIssue () {
       const r = await this.callApi(() => this.$api.pathIssue(this.issueRow.id, { ...this.issue, dueBack: this.issue.dueBack || null }), { success: 'Блок видано' });
       if (r) { this.issueOpen = false; await this.load(); }
+    },
+    openPlace (row) { this.placeRow = row; this.place = { roomId: row.roomId || null, location: row.storageLocation || '' }; this.placeOpen = true; },
+    async doPlace () {
+      if (await this.callApi(() => this.$api.pathSetStorage(this.placeRow.id, this.place), { success: 'Місце зберігання збережено' })) { this.placeOpen = false; await this.load(); }
     },
     async ret (row) {
       if (await this.callApi(() => this.$api.pathReturn(row.id), { success: `Блок ${row.code} повернено в архів` })) await this.load();

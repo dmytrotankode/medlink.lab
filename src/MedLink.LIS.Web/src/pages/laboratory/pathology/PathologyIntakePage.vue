@@ -51,6 +51,10 @@
               <tr><td>7. Маркування</td><td>{{ ref.markingText || '—' }}</td></tr>
               <tr><td>8. Клінічні дані</td><td>{{ ref.clinicalData || '—' }}</td></tr>
               <tr><td>9. Клінічний діагноз</td><td>{{ ref.clinicalDiagnosis || '—' }}</td></tr>
+              <tr v-if="ref.gyn"><td>Гінекологічний анамнез</td><td>
+                <span v-if="ref.gyn.cycleDay">день циклу {{ ref.gyn.cycleDay }}</span><span v-if="ref.gyn.lastMenstrualDate"> · останні місячні {{ ref.gyn.lastMenstrualDate | date }}</span>
+                <span v-if="ref.gyn.menopauseState"> · {{ { NONE: 'менопаузи немає', PERI: 'перименопауза', POST: 'постменопауза', AMENORRHEA: 'аменорея' }[ref.gyn.menopauseState] || ref.gyn.menopauseState }}</span></td></tr>
+              <tr v-if="ref.resultEmail"><td>Розсилка висновку</td><td>{{ ref.resultEmail }}</td></tr>
               <tr v-if="ref.external"><td>Зовнішні препарати</td><td>{{ ref.external.institution }} № {{ ref.external.number }}: скелець {{ ref.external.slides }}, блоків {{ ref.external.blocks }}</td></tr>
             </tbody>
           </q-markup-table>
