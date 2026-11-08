@@ -3,7 +3,7 @@
     <q-header id="main-header" reveal-offset="80">
       <div class="brand-gradient-line" />
       <q-toolbar class="q-px-sm" style="min-height: 52px">
-        <q-btn flat dense round icon="menu" color="grey-8" aria-label="Меню" @click="toggleDrawer" />
+        <q-btn flat dense round icon="menu" color="grey-8" aria-label="Меню" data-testid="menuToggle" @click="toggleDrawer" />
 
         <router-link :to="{ name: 'lab-dashboard' }" class="row items-center no-wrap q-ml-sm text-dark" style="text-decoration: none">
           <div class="brand-logo-box q-mr-sm">
@@ -20,6 +20,7 @@
         <!-- Глобальний пошук за штрихкодом -->
         <q-input
           v-model="barcodeQuery"
+          data-testid="headerBarcode"
           dense
           outlined
           class="header-barcode gt-xs q-mr-sm"
@@ -47,10 +48,10 @@
         <!-- Інструкції (MedLink Guide): сюди вбудовується кнопка «?» (boot/guide.js) -->
         <span id="guide-help-slot" class="q-mr-sm row items-center" />
 
-        <!-- Паніка -->
+        <!-- Критичні -->
         <router-link :to="{ name: 'lab-validation', query: { tab: 'panic' } }" class="header-chip gt-xs q-mr-sm" :class="panicCount > 0 ? 'header-chip--bad' : 'header-chip--muted'" style="text-decoration: none">
           <q-icon name="priority_high" size="15px" />
-          <span>Паніка: {{ panicCount }}</span>
+          <span>Критичні: {{ panicCount }}</span>
           <q-tooltip>Критичні результати без зареєстрованого дзвінка</q-tooltip>
         </router-link>
 
@@ -63,6 +64,7 @@
         <!-- Працюю як… -->
         <q-select
           v-model="employeeId"
+          data-testid="employeeSelect"
           :options="employeeOptions"
           dense
           outlined
