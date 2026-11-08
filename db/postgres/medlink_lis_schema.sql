@@ -1,6 +1,6 @@
 -- =============================================================================
 -- MedLink LIS — схема модуля «Лабораторія» для PostgreSQL (evomis). Згенеровано з EF-моделі ЛІС.
--- Дата генерації: 2026-11-02. Не редагувати вручну — перегенерувати: --export-pg-ddl.
+-- Дата генерації: 2026-11-08. Не редагувати вручну — перегенерувати: --export-pg-ddl.
 -- [MedLink]  — таблиця evomis, не створюється (наведено колонки, які використовує ЛІС).
 -- [MedLink+] — колонки, які ЛІС додає до таблиці evomis.
 -- [ЛІС]      — таблиця модуля, створюється цим скриптом.
@@ -1017,9 +1017,11 @@ CREATE TABLE IF NOT EXISTS lab_path_block (
     order_id uuid NOT NULL,
     pieces integer NOT NULL,
     record_state integer NOT NULL DEFAULT 2,
+    room_id uuid,
     stage varchar(16),
     status varchar(16) NOT NULL,
     storage_location varchar(128),
+    track varchar(16) NOT NULL,
     CONSTRAINT pk_lab_path_block PRIMARY KEY (id)
 );
 CREATE INDEX IF NOT EXISTS ix_lab_path_block_barcode ON lab_path_block (barcode);
@@ -1044,6 +1046,24 @@ CREATE TABLE IF NOT EXISTS lab_path_cito_notice (
     CONSTRAINT pk_lab_path_cito_notice PRIMARY KEY (id)
 );
 CREATE INDEX IF NOT EXISTS ix_lab_path_cito_notice_order_id ON lab_path_cito_notice (order_id);
+
+-- [ЛІС] lab_path_dispatch (LabPathDispatch)
+CREATE TABLE IF NOT EXISTS lab_path_dispatch (
+    id uuid NOT NULL,
+    address varchar(256) NOT NULL,
+    channel varchar(16) NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    error varchar(512),
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    order_id uuid NOT NULL,
+    record_state integer NOT NULL DEFAULT 2,
+    report_id uuid NOT NULL,
+    requested_by_id uuid,
+    status varchar(16) NOT NULL,
+    CONSTRAINT pk_lab_path_dispatch PRIMARY KEY (id)
+);
 
 -- [ЛІС] lab_path_ihc_result (LabPathIhcResult)
 CREATE TABLE IF NOT EXISTS lab_path_ihc_result (
@@ -1078,8 +1098,10 @@ CREATE TABLE IF NOT EXISTS lab_path_issue (
     order_id uuid NOT NULL,
     purpose varchar(128) NOT NULL,
     recipient varchar(256) NOT NULL,
+    recipient_unit varchar(256),
     record_state integer NOT NULL DEFAULT 2,
     returned_at timestamp without time zone,
+    scope varchar(16) NOT NULL,
     CONSTRAINT pk_lab_path_issue PRIMARY KEY (id)
 );
 CREATE INDEX IF NOT EXISTS ix_lab_path_issue_block_id_returned_at ON lab_path_issue (block_id, returned_at);
@@ -1123,6 +1145,8 @@ CREATE TABLE IF NOT EXISTS lab_path_object (
     order_id uuid NOT NULL,
     record_state integer NOT NULL DEFAULT 2,
     reject_reason varchar(256),
+    remainder_note varchar(256),
+    remainder_state varchar(16) NOT NULL,
     taken_at timestamp without time zone,
     CONSTRAINT pk_lab_path_object PRIMARY KEY (id)
 );
@@ -1134,12 +1158,15 @@ CREATE TABLE IF NOT EXISTS lab_path_referral (
     id uuid NOT NULL,
     accepted_at timestamp without time zone,
     accepted_by_id uuid,
+    assistant_id uuid,
+    assistant_name varchar(256),
     biopsy_kind varchar(16) NOT NULL,
     cito_notified_at timestamp without time zone,
     clinical_data text,
     clinical_dx_icd10 varchar(256),
     created_by uuid NOT NULL,
     created_on timestamp without time zone NOT NULL,
+    cycle_day integer,
     external_blocks integer NOT NULL,
     external_date timestamp without time zone,
     external_institution varchar(256),
@@ -1149,13 +1176,17 @@ CREATE TABLE IF NOT EXISTS lab_path_referral (
     gross_by_id uuid,
     gross_finished_at timestamp without time zone,
     intake_status varchar(16) NOT NULL,
+    last_menstrual_date timestamp without time zone,
     macro text,
     marking_text varchar(1024),
     medical_card_no varchar(64),
+    menopause_state varchar(16),
     modified_by uuid NOT NULL,
     modified_on timestamp without time zone,
     operation_text varchar(1024),
     order_id uuid NOT NULL,
+    pathologist_id uuid,
+    pathologist_name varchar(256),
     price numeric(18,2) NOT NULL,
     primary_case_no varchar(64),
     record_state integer NOT NULL DEFAULT 2,
@@ -1163,6 +1194,7 @@ CREATE TABLE IF NOT EXISTS lab_path_referral (
     referring_doctor varchar(256),
     reject_comment varchar(1024),
     reject_reason varchar(256),
+    result_email varchar(256),
     stage varchar(16) NOT NULL,
     template_name varchar(128),
     CONSTRAINT pk_lab_path_referral PRIMARY KEY (id)
@@ -1189,6 +1221,7 @@ CREATE TABLE IF NOT EXISTS lab_path_report (
     addendum_type varchar(16),
     changes_diagnosis boolean NOT NULL,
     conclusion_text text,
+    consultant_name varchar(256),
     created_by uuid NOT NULL,
     created_on timestamp without time zone NOT NULL,
     grade varchar(8),
@@ -1227,8 +1260,11 @@ CREATE TABLE IF NOT EXISTS lab_path_slide (
     barcode varchar(32) NOT NULL,
     block_id uuid NOT NULL,
     code varchar(24) NOT NULL,
+    covered_at timestamp without time zone,
     created_by uuid NOT NULL,
     created_on timestamp without time zone NOT NULL,
+    dispose_reason varchar(256),
+    disposed_at timestamp without time zone,
     is_external boolean NOT NULL,
     is_ihc boolean NOT NULL,
     marker varchar(32),
@@ -1237,6 +1273,7 @@ CREATE TABLE IF NOT EXISTS lab_path_slide (
     order_id uuid NOT NULL,
     ordered_from varchar(8),
     record_state integer NOT NULL DEFAULT 2,
+    replaces_slide_id uuid,
     stain_method varchar(128) NOT NULL,
     status varchar(16) NOT NULL,
     wsi_url varchar(512),
@@ -1266,6 +1303,20 @@ CREATE TABLE IF NOT EXISTS lab_path_stage_log (
     CONSTRAINT pk_lab_path_stage_log PRIMARY KEY (id)
 );
 CREATE INDEX IF NOT EXISTS ix_lab_path_stage_log_order_id_performed_at ON lab_path_stage_log (order_id, performed_at);
+
+-- [ЛІС] lab_path_storage_room (LabPathStorageRoom)
+CREATE TABLE IF NOT EXISTS lab_path_storage_room (
+    id uuid NOT NULL,
+    code varchar(32) NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    is_active boolean NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    name varchar(128) NOT NULL,
+    record_state integer NOT NULL DEFAULT 2,
+    CONSTRAINT pk_lab_path_storage_room PRIMARY KEY (id)
+);
 
 -- [ЛІС] lab_path_template (LabPathTemplate)
 CREATE TABLE IF NOT EXISTS lab_path_template (

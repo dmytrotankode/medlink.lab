@@ -36,16 +36,33 @@ public static class PathPrices
 /// <summary>Етапи справи (FR-PAT-023): прийнято → вирізка → проводка → заливка → мікротомія → фарбування → мікроскопія й опис → підписано.</summary>
 public static class PathStages
 {
-    public const string Received = "RCV", Gross = "GROSS", Processing = "PROC", Embedding = "EMB", Sectioning = "SECT", Staining = "STAIN", Microscopy = "MICRO", Signed = "SIGNED";
-    public static readonly string[] All = { Received, Gross, Processing, Embedding, Sectioning, Staining, Microscopy, Signed };
-    /// <summary>Етапи лабораторної обробки, що фіксуються скануванням касет/скелець.</summary>
-    public static readonly string[] Lab = { Processing, Embedding, Sectioning, Staining };
+    public const string Received = "RCV", Gross = "GROSS", Decalcification = "DECALC", Processing = "PROC", Embedding = "EMB", Sectioning = "SECT", Staining = "STAIN", Microscopy = "MICRO", Signed = "SIGNED";
+    /// <summary>Допоміжна відмітка «покрито покривним склом» (FR-PAT-114): фіксується скануванням скельця, не входить до лінійного потоку етапів.</summary>
+    public const string Coverslip = "COVER";
+    public static readonly string[] All = { Received, Gross, Decalcification, Processing, Embedding, Sectioning, Staining, Microscopy, Signed };
+    /// <summary>Етапи лабораторної обробки, що фіксуються скануванням касет/скелець. Декальцинація — лише для блоків із маршрутом DECALC.</summary>
+    public static readonly string[] Lab = { Decalcification, Processing, Embedding, Sectioning, Staining };
     public static string Label(string? s) => s switch
     {
-        Received => "Прийнято", Gross => "Вирізка", Processing => "Проводка", Embedding => "Заливка", Sectioning => "Мікротомія", Staining => "Фарбування",
+        Received => "Прийнято", Gross => "Вирізка", Decalcification => "Декальцинація", Coverslip => "Покриття скла", Processing => "Проводка", Embedding => "Заливка", Sectioning => "Мікротомія", Staining => "Фарбування",
         Microscopy => "Мікроскопія й опис", Signed => "Підписано", _ => s ?? "—"
     };
     public static string? Next(string stage) { var i = Array.IndexOf(All, stage); return i >= 0 && i < All.Length - 1 ? All[i + 1] : null; }
+}
+
+/// <summary>Маршрут обробки блока (FR-PAT-110): стандартна проводка або з попередньою декальцинацією (кісткова та кальцинована тканина).</summary>
+public static class PathTracks
+{
+    public const string Standard = "STANDARD", Decalc = "DECALC";
+    public static readonly string[] All = { Standard, Decalc };
+    public static string Label(string? t) => t == Decalc ? "Декальцинація → проводка" : "Проводка";
+}
+
+/// <summary>Залишок матеріалу в контейнері після вирізки (FR-PAT-116).</summary>
+public static class PathRemainder
+{
+    public const string None = "NONE", Kept = "KEPT", Discarded = "DISCARDED";
+    public static readonly string[] All = { None, Kept, Discarded };
 }
 
 /// <summary>Стан прийому направлення ПГД (FR-PAT-001…005).</summary>
@@ -94,8 +111,21 @@ public class LabPathReferral : GuidEntity
     public string? Macro { get; set; }
     public DateTime? GrossFinishedAt { get; set; }
     [MaxLength(64)] public string? GrossById { get; set; }
+    /// <summary>Лікар-патолог справи (обов'язковий до завершення вирізки, FR-PAT-111).</summary>
+    [MaxLength(64)] public string? PathologistId { get; set; }
+    [MaxLength(256)] public string? PathologistName { get; set; }
+    /// <summary>Асистент, який провів вирізку (обов'язковий до завершення вирізки, FR-PAT-111).</summary>
+    [MaxLength(64)] public string? AssistantId { get; set; }
+    [MaxLength(256)] public string? AssistantName { get; set; }
     public decimal Price { get; set; }
     public DateTime? CitoNotifiedAt { get; set; }
+    /// <summary>Гінекологічний анамнез (FR-PAT-120): день менструального циклу, дата останніх місячних, стан менопаузи.</summary>
+    public int? CycleDay { get; set; }
+    public DateTime? LastMenstrualDate { get; set; }
+    /// <summary>NONE | PERI | POST | AMENORRHEA</summary>
+    [MaxLength(16)] public string? MenopauseState { get; set; }
+    /// <summary>Адреса для розсилки підписаного висновку (FR-PAT-119).</summary>
+    [MaxLength(256)] public string? ResultEmail { get; set; }
 }
 
 /// <summary>[ЛІС] Об'єкт (контейнер) з маркуванням МІС (п. 7 форми); аналог проби.</summary>
@@ -119,6 +149,9 @@ public class LabPathObject : GuidEntity
     public bool Accepted { get; set; }
     [MaxLength(256)] public string? RejectReason { get; set; }
     public int DisplayOrder { get; set; }
+    /// <summary>Залишок матеріалу після вирізки: NONE | KEPT | DISCARDED (FR-PAT-116).</summary>
+    [MaxLength(16)] public string RemainderState { get; set; } = PathRemainder.None;
+    [MaxLength(256)] public string? RemainderNote { get; set; }
     public List<LabPathBlock> Blocks { get; set; } = new();
 }
 
@@ -133,9 +166,13 @@ public class LabPathBlock : GuidEntity
     public bool IsExternal { get; set; }
     [MaxLength(32)] public string Barcode { get; set; } = "";
     [MaxLength(128)] public string? StorageLocation { get; set; }
+    /// <summary>Приміщення архіву (довідник lab_path_storage_room); полиця/комірка — у StorageLocation.</summary>
+    [MaxLength(64)] public string? RoomId { get; set; }
     /// <summary>IN_WORK | ARCHIVED | ISSUED</summary>
     [MaxLength(16)] public string Status { get; set; } = "IN_WORK";
     [MaxLength(16)] public string? Stage { get; set; }
+    /// <summary>STANDARD | DECALC (FR-PAT-110).</summary>
+    [MaxLength(16)] public string Track { get; set; } = PathTracks.Standard;
     public List<LabPathSlide> Slides { get; set; } = new();
 }
 
@@ -157,6 +194,13 @@ public class LabPathSlide : GuidEntity
     [MaxLength(512)] public string? WsiUrl { get; set; }
     /// <summary>LAB | MIS | MDK — джерело дозамовлення (FR-PAT-026).</summary>
     [MaxLength(8)] public string? OrderedFrom { get; set; }
+    /// <summary>Скельце покрито покривним склом (FR-PAT-114).</summary>
+    public DateTime? CoveredAt { get; set; }
+    /// <summary>Утилізація скельця (FR-PAT-118): статус DISPOSED, причина.</summary>
+    public DateTime? DisposedAt { get; set; }
+    [MaxLength(256)] public string? DisposeReason { get; set; }
+    /// <summary>Скельце, замість якого створено це (після утилізації).</summary>
+    [MaxLength(64)] public string? ReplacesSlideId { get; set; }
 }
 
 /// <summary>[ЛІС] Журнал етапів обробки (FR-PAT-023): хто, коли, на якому пристрої.</summary>
@@ -199,6 +243,8 @@ public class LabPathReport : GuidEntity
     public bool? Pni { get; set; }
     public bool ChangesDiagnosis { get; set; }
     [MaxLength(1024)] public string? Reason { get; set; }
+    /// <summary>Доповнення CONSULT: ПІБ консультанта зовнішньої консультації (FR-PAT-117).</summary>
+    [MaxLength(256)] public string? ConsultantName { get; set; }
     public bool IsPreliminarySent { get; set; }
     [MaxLength(64)] public string? SignedBy { get; set; }
     [MaxLength(256)] public string? SignedByName { get; set; }
@@ -245,6 +291,32 @@ public class LabPathIssue : GuidEntity
     public DateTime? DueBack { get; set; }
     public DateTime? ReturnedAt { get; set; }
     [MaxLength(64)] public string? IssuedById { get; set; }
+    /// <summary>EXTERNAL — зовнішній отримувач; INTERNAL — внутрішня видача в підрозділ закладу (FR-PAT-118).</summary>
+    [MaxLength(16)] public string Scope { get; set; } = "EXTERNAL";
+    [MaxLength(256)] public string? RecipientUnit { get; set; }
+}
+
+/// <summary>[ЛІС] Відправка підписаного висновку електронною поштою (FR-PAT-119): черга повідомлень, адреса, результат.</summary>
+[Table("lab_path_dispatch")]
+public class LabPathDispatch : GuidEntity
+{
+    [MaxLength(64)] public string OrderId { get; set; } = "";
+    [MaxLength(64)] public string ReportId { get; set; } = "";
+    [MaxLength(16)] public string Channel { get; set; } = "EMAIL";
+    [MaxLength(256)] public string Address { get; set; } = "";
+    /// <summary>QUEUED | SENT | FAILED</summary>
+    [MaxLength(16)] public string Status { get; set; } = "QUEUED";
+    [MaxLength(512)] public string? Error { get; set; }
+    [MaxLength(64)] public string? RequestedById { get; set; }
+}
+
+/// <summary>[ЛІС] Приміщення архіву блоків і скелець (довідник; FR-PAT-118).</summary>
+[Table("lab_path_storage_room")]
+public class LabPathStorageRoom : GuidEntity
+{
+    [MaxLength(32)] public string Code { get; set; } = "";
+    [MaxLength(128)] public string Name { get; set; } = "";
+    public bool IsActive { get; set; } = true;
 }
 
 // ----------------------------------------------------------------- довідники (FR-PAT-100…106)

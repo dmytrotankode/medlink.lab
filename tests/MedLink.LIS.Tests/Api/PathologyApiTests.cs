@@ -82,7 +82,7 @@ public class PathologyApiTests
         var id = S(c["id"]);
         await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/gross", new
         {
-            macro = "Сектор молочної залози 7×5×3 см", finish = true,
+            macro = "Сектор молочної залози 7×5×3 см", finish = true, pathologistId = DemoDataSeeder.Doctor, assistantId = DemoDataSeeder.Technician,
             objects = new[] { new { objectId = S(c["objects"]![0]!["id"]), blocks = blocks.Select(p => new { pieces = p }) } }
         }));
         foreach (var stage in new[] { "PROC", "EMB", "SECT", "STAIN" })
@@ -152,7 +152,7 @@ public class PathologyApiTests
         Assert.Equal(PathStages.Gross, S(draft["stage"]));
         var done = await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/gross", new
         {
-            finish = true, objects = new[] { new { objectId = obj, blocks = new[] { 2, 2, 1, 2, 3 }.Select(p => new { pieces = p }) } }
+            finish = true, pathologistId = DemoDataSeeder.Doctor, assistantId = DemoDataSeeder.Technician, objects = new[] { new { objectId = obj, blocks = new[] { 2, 2, 1, 2, 3 }.Select(p => new { pieces = p }) } }
         }));
         var blocks = done["objects"]![0]!["blocks"]!.AsArray();
         Assert.Equal(new[] { "A1", "A2", "A3", "A4", "A5" }, blocks.Select(b => S(b!["code"])));
@@ -345,5 +345,83 @@ public class PathologyApiTests
         Assert.Contains(dict["reflex"]!.AsArray(), r => S(r!["panel"]) == "MLH1,PMS2,MSH2,MSH6");
         var summary = await Json(await Pathologist.GetAsync($"{B}/summary"));
         Assert.True(summary["incoming"]!.GetValue<int>() >= 3);
+    }
+
+    private object Staff => new { pathologistId = DemoDataSeeder.Doctor, assistantId = DemoDataSeeder.Technician };
+
+    [Fact]
+    public async Task S110_gross_needs_pathologist_and_assistant_methods_limit_and_decalc_route()
+    {
+        var c = await Accept(await Refer(PathKinds.Operative, new[] { Container("1", "Фрагмент кістки") }));
+        var id = S(c["id"]); var obj = S(c["objects"]![0]!["id"]);
+        // без патолога й асистента вирізку завершити не можна
+        Assert.Equal(HttpStatusCode.BadRequest, (await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/gross", new { macro = "x", finish = true, objects = new[] { new { objectId = obj, blocks = new[] { new { pieces = 1 } } } } })).StatusCode);
+        // не більше 5 методик на блок
+        var tooMany = new { objectId = obj, blocks = new[] { new { pieces = 1, track = "STANDARD", methods = new[] { "HE", "VG", "ER", "PR", "HER2", "KI67" } } } };
+        Assert.Equal(HttpStatusCode.BadRequest, (await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/gross", new { macro = "x", objects = new[] { tooMany } })).StatusCode);
+
+        var done = await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/gross", new
+        {
+            macro = "Фрагмент кістки 3 см", finish = true, pathologistId = DemoDataSeeder.Doctor, assistantId = DemoDataSeeder.Technician,
+            objects = new[] { new { objectId = obj, remainderState = "KEPT", remainderNote = "У контейнері", blocks = new[] { new { pieces = 2, track = "DECALC", methods = new[] { "HE", "VG" } }, new { pieces = 1, track = "STANDARD", methods = new[] { "HE" } } } } }
+        }));
+        Assert.Equal(PathStages.Decalcification, S(done["stage"]));
+        Assert.Contains(done["stages"]!.AsArray(), x => S(x!["code"]) == PathStages.Decalcification);
+        Assert.Equal("KEPT", S(done["objects"]![0]!["remainderState"]));
+        var blocks = done["objects"]![0]!["blocks"]!.AsArray();
+        Assert.Equal(2, blocks[0]!["slides"]!.AsArray().Count);
+        Assert.Equal(PathPrices.FirstBlock + PathPrices.NextBlock + 180, done["price"]!.GetValue<decimal>());
+
+        // стандартний блок не проходить декальцинацію; блок DECALC не може йти на проводку раніше
+        Assert.Equal(HttpStatusCode.Conflict, (await Histotech.PostAsJsonAsync($"{B}/scan", new { barcode = S(blocks[1]!["barcode"]), stage = "DECALC" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await Histotech.PostAsJsonAsync($"{B}/scan", new { barcode = S(blocks[0]!["barcode"]), stage = "PROC" })).StatusCode);
+        Assert.Equal("DECALC", S((await Json(await Histotech.PostAsJsonAsync($"{B}/scan", new { barcode = S(blocks[0]!["barcode"]) })))["stage"]));
+        Assert.Equal("PROC", S((await Json(await Histotech.PostAsJsonAsync($"{B}/scan", new { barcode = S(blocks[0]!["barcode"]) })))["stage"]));
+        Assert.Equal("PROC", S((await Json(await Histotech.PostAsJsonAsync($"{B}/scan", new { barcode = S(blocks[1]!["barcode"]) })))["stage"]));
+        foreach (var st in new[] { "EMB", "SECT" })
+            await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/advance", new { stage = st }));
+        var sect = await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/advance", new { stage = "STAIN", count = 4 }));
+        Assert.NotNull(sect);
+    }
+
+    [Fact]
+    public async Task S114_coverslip_dispose_storage_internal_issue_consult_and_dispatch()
+    {
+        var id = await CaseAtMicroscopy(new[] { 1 });
+        var c = await Json(await Pathologist.GetAsync($"{B}/cases/{id}"));
+        var block = c["objects"]![0]!["blocks"]![0]!; var slide = block["slides"]![0]!;
+        // покриття скла після фарбування
+        var cov = await Json(await Histotech.PostAsJsonAsync($"{B}/scan", new { barcode = S(slide["barcode"]), stage = "COVER" }));
+        Assert.Equal("COVER", S(cov["stage"]));
+        // утилізація з відтворенням
+        Assert.Equal(HttpStatusCode.BadRequest, (await Histotech.PostAsJsonAsync($"{B}/slides/{S(slide["id"])}/dispose", new { reason = "" })).StatusCode);
+        var disp = await Json(await Histotech.PostAsJsonAsync($"{B}/slides/{S(slide["id"])}/dispose", new { reason = "Брак зрізу", recreate = true }));
+        Assert.Equal("DISPOSED", S(disp["status"]));
+        Assert.NotNull(disp["created"]);
+
+        await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/report", new { micro = "Фіброаденома", icdoTopo = "C50.4", icdoMorph = "9010/0" }));
+        var cert = await Cert(Pathologist);
+        await Json(await Pathologist.PostAsJsonAsync($"{B}/cases/{id}/report/sign", new { signer = cert }));
+
+        // відправка підписаного висновку
+        Assert.Equal(HttpStatusCode.BadRequest, (await Registrar.PostAsJsonAsync($"{B}/cases/{id}/dispatch", new { address = "не-пошта" })).StatusCode);
+        Assert.Equal("QUEUED", S((await Json(await Registrar.PostAsJsonAsync($"{B}/cases/{id}/dispatch", new { address = "patient@example.org" })))["status"]));
+        Assert.Single((await Json(await Registrar.GetAsync($"{B}/cases/{id}/dispatches"))).AsArray());
+
+        // консультація: потрібне ім'я консультанта
+        Assert.Equal(HttpStatusCode.BadRequest, (await Pathologist.PostAsJsonAsync($"{B}/cases/{id}/report/addendum", new { type = "CONSULT", text = "Підтверджую", signer = cert })).StatusCode);
+        var withConsult = await Json(await Pathologist.PostAsJsonAsync($"{B}/cases/{id}/report/addendum", new { type = "CONSULT", consultantName = "Проф. Консультант", text = "Підтверджую діагноз", signer = cert }));
+        Assert.Contains(withConsult["versions"]!.AsArray(), v => v!["consultantName"]?.GetValue<string>() == "Проф. Консультант");
+
+        // місце зберігання та внутрішня видача
+        var rooms = (await Json(await Registrar.GetAsync($"{B}/rooms"))).AsArray();
+        Assert.NotEmpty(rooms);
+        var blockId = S(block["id"]);
+        var st = await Json(await Registrar.PutAsJsonAsync($"{B}/blocks/{blockId}/storage", new { roomId = S(rooms[0]!["id"]), location = "Шафа 2, полиця 3" }));
+        Assert.Equal("Шафа 2, полиця 3", S(st["storageLocation"]));
+        Assert.Equal(HttpStatusCode.BadRequest, (await Registrar.PostAsJsonAsync($"{B}/blocks/{blockId}/issue", new { scope = "INTERNAL", recipient = "Лікар", purpose = "Нарада" })).StatusCode);
+        await Json(await Registrar.PostAsJsonAsync($"{B}/blocks/{blockId}/issue", new { scope = "INTERNAL", recipientUnit = "Хірургічне відділення", recipient = "Іваненко І. І.", purpose = "Консиліум" }));
+        var row = (await Json(await Registrar.GetAsync($"{B}/archive?status=ISSUED"))).AsArray().First(b => S(b!["id"]) == blockId)!;
+        Assert.Equal("INTERNAL", S(row["issue"]!["scope"]));
     }
 }

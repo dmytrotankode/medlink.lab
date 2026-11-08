@@ -57,7 +57,7 @@ public sealed class PathologyDemoSeeder
             var objects = await _db.PathObjects.Where(o => o.OrderId == id).OrderBy(o => o.DisplayOrder).Select(o => o.Id).ToListAsync();
             await _path.SaveGrossAsync(id, new PathGrossRequest
             {
-                Macro = macro, TemplateName = template, Finish = true,
+                Macro = macro, TemplateName = template, Finish = true, PathologistId = DemoDataSeeder.Doctor, AssistantId = DemoDataSeeder.Technician,
                 Objects = objects.Select((oid, i) => new PathGrossObject { ObjectId = oid, Blocks = blocksPerObject[i].Select(p => new PathGrossBlock { Pieces = p }).ToList() }).ToList()
             });
             As(admin);

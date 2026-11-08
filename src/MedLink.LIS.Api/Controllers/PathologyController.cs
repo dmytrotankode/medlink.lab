@@ -40,6 +40,14 @@ public sealed class PathologyController : LisControllerBase
     [HttpPost("pathology/blocks/{id}/issue")] public async Task<IActionResult> Issue(string id, [FromBody] PathIssueRequest req) => Ok(await _svc.IssueAsync(id, req));
     [HttpPost("pathology/blocks/{id}/return")] public async Task<IActionResult> Return(string id) => Ok(await _svc.ReturnAsync(id));
 
+    [HttpPost("pathology/slides/{id}/dispose")] public async Task<IActionResult> DisposeSlide(string id, [FromBody] PathDisposeRequest req) => Ok(await _svc.DisposeSlideAsync(id, req));
+    [HttpPut("pathology/blocks/{id}/storage")] public async Task<IActionResult> SetStorage(string id, [FromBody] PathStorageRequest req) => Ok(await _svc.SetStorageAsync(id, req));
+    [HttpGet("pathology/rooms")] public async Task<IActionResult> Rooms() => Ok(await _svc.RoomsAsync());
+    [HttpPost("pathology/rooms")] public async Task<IActionResult> AddRoom([FromBody] PathRoomRequest req) => Ok(await _svc.AddRoomAsync(req));
+    [HttpGet("pathology/staff")] public async Task<IActionResult> Staff() => Ok(await _svc.StaffAsync());
+    [HttpPost("pathology/cases/{id}/dispatch")] public async Task<IActionResult> Dispatch(string id, [FromBody] PathDispatchRequest req) => Ok(await _svc.DispatchAsync(id, req));
+    [HttpGet("pathology/cases/{id}/dispatches")] public async Task<IActionResult> Dispatches(string id) => Ok(await _svc.DispatchesAsync(id));
+
     [HttpGet("pathology/dictionaries")] public async Task<IActionResult> Dictionaries() => Ok(await _svc.DictionariesAsync());
     /// <summary>Поля форми 014/о (сторони 1 і 2) для екрана «Друк 014/о».</summary>
     [HttpGet("pathology/cases/{id}/form014")] public async Task<IActionResult> Form014(string id) => Ok(await _svc.Form014Async(id));

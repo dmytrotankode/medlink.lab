@@ -131,6 +131,8 @@ public class LisDbContext : DbContext
     public DbSet<LabPathMaterialType> PathMaterialTypes => Set<LabPathMaterialType>();
     public DbSet<LabFixative> Fixatives => Set<LabFixative>();
     public DbSet<LabPathRejectReason> PathRejectReasons => Set<LabPathRejectReason>();
+    public DbSet<LabPathDispatch> PathDispatches => Set<LabPathDispatch>();
+    public DbSet<LabPathStorageRoom> PathStorageRooms => Set<LabPathStorageRoom>();
 
     // --- оплата (FR-GAP-060) ---
     public DbSet<LabPriceList> PriceLists => Set<LabPriceList>();
