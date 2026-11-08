@@ -273,16 +273,17 @@ public sealed class GuideService
     private void ApplyMeta(GuideScenario s, ScenarioDto dto)
     {
         s.Caption = dto.Caption.Trim();
-        s.Code = NullIfEmpty(dto.Code);
+        var st0 = _db.Entry(s).State; var isNew = st0 == Microsoft.EntityFrameworkCore.EntityState.Detached || st0 == Microsoft.EntityFrameworkCore.EntityState.Added;
+        if (isNew || dto.Code != null) s.Code = NullIfEmpty(dto.Code) ?? s.Code;
         s.Description = dto.Description;
-        s.Icon = dto.Icon;
+        if (isNew || dto.Icon != null) s.Icon = dto.Icon ?? s.Icon;
         s.StartRoute = NullIfEmpty(dto.StartRoute);
         s.RequiredRoles = GuideJson.Stringify(dto.RequiredRoles);
-        s.Tags = GuideJson.Stringify(dto.Tags);
-        s.EstMinutes = dto.EstMinutes;
-        s.Locale = string.IsNullOrWhiteSpace(dto.Locale) ? "uk" : dto.Locale;
-        s.SortOrder = dto.SortOrder;
-        s.TenantId = dto.TenantId;
+        if (isNew || (dto.Tags != null && dto.Tags.Count > 0)) s.Tags = GuideJson.Stringify(dto.Tags);
+        if (isNew || dto.EstMinutes != null) s.EstMinutes = dto.EstMinutes ?? s.EstMinutes;
+        if (isNew || !string.IsNullOrWhiteSpace(dto.Locale)) s.Locale = string.IsNullOrWhiteSpace(dto.Locale) ? "uk" : dto.Locale;
+        if (isNew || dto.SortOrder != 0) s.SortOrder = dto.SortOrder;
+        if (isNew || dto.TenantId != null) s.TenantId = dto.TenantId;
     }
 
     public async Task<ScenarioDto> CreateScenarioAsync(ScenarioDto dto, GuideUser user)
@@ -340,6 +341,13 @@ public sealed class GuideService
     }
 
     // ------------------------------------------------------------------ кроки / якорі / змінні
+    private static bool JsonSameContent(string? x, string? y)
+    {
+        if (x == y) return true;
+        try { return System.Text.Json.Nodes.JsonNode.DeepEquals(System.Text.Json.Nodes.JsonNode.Parse(x ?? "null"), System.Text.Json.Nodes.JsonNode.Parse(y ?? "null")); }
+        catch { return false; }
+    }
+
     private async Task<GuideAnchor?> UpsertAnchorAsync(GuideScenario sc, AnchorDto dto, Dictionary<string, GuideAnchor> cache, string? defaultCode)
     {
         GuideAnchor? a = null;
@@ -364,7 +372,7 @@ public sealed class GuideService
         if (dto.Strategies != null)
         {
             var json = dto.Strategies.ToJsonString();
-            if (!created && json != a.Strategies) { a.HealthStatus = "unknown"; a.HealthCheckedOn = null; }
+            if (!created && !JsonSameContent(json, a.Strategies)) { a.HealthStatus = "unknown"; a.HealthCheckedOn = null; }
             a.Strategies = json;
         }
         if (dto.Fingerprint != null) a.Fingerprint = dto.Fingerprint.ToJsonString();
@@ -398,7 +406,7 @@ public sealed class GuideService
 
             if (d.Anchor != null)
             {
-                var a = await UpsertAnchorAsync(sc, d.Anchor, cache, $"{sc.Code ?? Short(sc.Id)}.s{i + 1}");
+                var a = await UpsertAnchorAsync(sc, d.Anchor, cache, byIndex ? $"{sc.Code ?? Short(sc.Id)}.s{i + 1}" : null);
                 st.AnchorId = a?.Id;
             }
             else if (!string.IsNullOrWhiteSpace(d.AnchorId))

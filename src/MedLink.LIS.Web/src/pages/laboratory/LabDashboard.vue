@@ -1,8 +1,8 @@
 <template>
-  <div class="lab-dashboard">
+  <div class="lab-dashboard" data-testid="dashboardPage">
     <page-header title="Дашборд лабораторії" icon="fas fa-tachometer-alt" :subtitle="subtitle">
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
-      <q-btn unelevated color="primary" icon="add" label="Нове направлення" :to="{ name: 'lab-orders', query: { create: 1 } }" />
+      <q-btn unelevated color="primary" icon="add" label="Нове направлення" data-testid="dashCreateOrder" :to="{ name: 'lab-orders', query: { create: 1 } }" />
     </page-header>
 
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />

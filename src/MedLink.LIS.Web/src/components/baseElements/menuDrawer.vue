@@ -32,6 +32,7 @@
             clickable
             v-ripple
             :to="item.to"
+            :data-testid="'nav-' + item.name"
             active-class="nav-active-item"
             :exact="item.exact"
           >

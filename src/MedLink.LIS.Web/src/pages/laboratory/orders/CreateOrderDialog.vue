@@ -1,11 +1,11 @@
 <template>
   <q-dialog :value="value" @input="$emit('input', $event)" persistent maximized-mobile>
-    <q-card style="width: 980px; max-width: 98vw">
+    <q-card style="width: 980px; max-width: 98vw" data-testid="createOrderDialog">
       <q-card-section class="row items-center bg-primary text-white q-py-sm">
         <q-icon name="post_add" class="q-mr-sm" />
         <div class="text-subtitle1 text-weight-bold">Нове направлення / замовлення</div>
         <q-space />
-        <q-toggle v-model="form.isUrgentCito" color="deep-orange-5" keep-color label="CITO (терміново)" class="q-mr-md" />
+        <q-toggle data-testid="citoToggle" v-model="form.isUrgentCito" color="deep-orange-5" keep-color label="CITO (терміново)" class="q-mr-md" />
         <q-btn flat round dense icon="close" v-close-popup />
       </q-card-section>
 
@@ -97,6 +97,7 @@
             <div class="col-12 col-md-6">
               <q-select
                 v-model="form.profileIds"
+                data-testid="profileSelect"
                 outlined dense multiple use-chips use-input input-debounce="0"
                 label="Профілі (послуги)"
                 :options="profileOptionsFiltered"
@@ -117,6 +118,7 @@
             <div class="col-12 col-md-6">
               <q-select
                 v-model="form.testIds"
+                data-testid="testSelect"
                 outlined dense multiple use-chips use-input input-debounce="0"
                 label="Окремі показники (тести)"
                 :options="testOptionsFiltered"
@@ -187,7 +189,7 @@
         <q-card-actions align="right" class="bg-grey-1">
           <div v-if="submitError" class="text-negative text-caption q-mr-md ellipsis" style="max-width: 50%">{{ submitError }}</div>
           <q-btn flat label="Скасувати" v-close-popup />
-          <q-btn type="submit" color="primary" icon="save" label="Створити замовлення" :loading="saving" :disable="!canSubmit" />
+          <q-btn type="submit" data-testid="createOrderSubmit" color="primary" icon="save" label="Створити замовлення" :loading="saving" :disable="!canSubmit" />
         </q-card-actions>
       </q-form>
     </q-card>

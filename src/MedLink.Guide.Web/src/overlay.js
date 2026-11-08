@@ -10,7 +10,7 @@ function ensure () {
 }
 
 function clear () {
-  cancelAnimationFrame(raf); raf = 0; getRect = null; lastKey = '';
+  cancelAnimationFrame(raf); raf = 0; clearInterval(timer); timer = 0; getRect = null; lastKey = '';
   if (hole) { hole.remove(); hole = null; }
   blockers.forEach(b => b.remove()); blockers = [];
   if (tip) { tip.remove(); tip = null; }
@@ -47,8 +47,12 @@ function placeTip (r, placement) {
   tip.style.top = Math.max(8, Math.min(H - th - 8, y)) + 'px';
 }
 
+let timer = 0;
 function loop () {
   raf = requestAnimationFrame(loop);
+  tick();
+}
+function tick () {
   if (!cfg) return;
   const r = getRect ? getRect() : null;
   const key = r ? [r.left, r.top, r.width, r.height, innerWidth, innerHeight, tip ? tip.offsetHeight : 0].map(Math.round).join(',') : 'none' + (tip ? tip.offsetHeight : 0);
@@ -88,6 +92,7 @@ export function show (o) {
   );
   getLayer().appendChild(tip);
   if (!raf) raf = requestAnimationFrame(loop);
+  if (!timer) timer = setInterval(tick, 250); // у прихованій вкладці rAF не працює — оновлюємо за таймером
 }
 
 export function hide () { cfg = null; clear(); }

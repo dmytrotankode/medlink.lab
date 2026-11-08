@@ -8,7 +8,7 @@ FOLDERS = [
     {"code": "start", "caption": "Початок роботи", "icon": "🚀", "sortOrder": 10},
     {"code": "preanalytics", "caption": "Преаналітика", "icon": "🩸", "sortOrder": 30},
     {"code": "analytics", "caption": "Аналітика та результати", "icon": "🔬", "sortOrder": 40},
-    {"code": "validation", "caption": "Верифікація та паніка", "icon": "✅", "sortOrder": 50},
+    {"code": "validation", "caption": "Верифікація та критичні значення", "icon": "✅", "sortOrder": 50},
     {"code": "mis", "caption": "Інтеграція з МІС", "icon": "🔗", "sortOrder": 60},
     {"code": "quality", "caption": "Контроль якості", "icon": "📈", "sortOrder": 70},
 ]
@@ -70,8 +70,12 @@ SC.append(scenario("lab.preanalytics.collect", "preanalytics", "Забір бі�
         step("Скануйте штрихкод", "Наведіть сканер на етикетку пробірки або введіть штрихкод вручну та натисніть Enter.", PH, tid("lab.phlebotomy.scan", "Поле сканування", "scanInput"), type="input", value="{{barcode}}"),
         step("Картка пробірки", "Перевірте пацієнта, тип пробірки, статус «Очікує забору» та план пробірок замовлення.", PH, tid("lab.phlebotomy.sample-card", "Картка пробірки", "sampleCard")),
         step("Забір за чек-листом", "Натисніть «Забір за чек-листом» — відкриється перелік обов'язкових перевірок.", PH, tid("lab.phlebotomy.collect-btn", "Кнопка «Забір за чек-листом»", "collectBtn"), type="click", expect="click"),
-        step("Чек-лист безпеки", "Позначте всі пункти: ідентифікація пацієнта, натще, порядок пробірок, перемішування. Без усіх відміток підтвердити забір неможливо.", PH, tid("lab.phlebotomy.collect-dialog", "Діалог забору", "collectDialog"), placement="left"),
-        step("Підтвердіть забір", "Коли всі пункти позначені, натисніть «Підтвердити забір». Статус пробірки зміниться на «Зібрано», час і виконавець збережуться в журналі.", PH, tid("lab.phlebotomy.collect-confirm", "Підтвердити забір", "collectConfirm"), type="click", expect="click"),
+        step("Чек-лист безпеки", "Відкрито перелік перевірок. Без усіх відміток підтвердити забір неможливо.", PH, tid("lab.phlebotomy.collect-dialog", "Діалог забору", "collectDialog"), placement="left", optional=True),
+        step("Ідентифікація пацієнта", "Назвіть пацієнта та звірте ПІБ і дату народження з направленням — позначте пункт.", PH, tid("lab.phlebotomy.chk-id", "Чек: ідентифікація", "chk-id"), placement="left", optional=True),
+        step("Натще", "Уточніть, чи дотримано умову «натще», якщо її вимагає аналіз.", PH, tid("lab.phlebotomy.chk-fasting", "Чек: натще", "chk-fasting"), placement="left", optional=True),
+        step("Відповідність направленню", "Переконайтеся, що пробірка відповідає призначеним дослідженням.", PH, tid("lab.phlebotomy.chk-order", "Чек: направлення", "chk-order"), placement="left", optional=True),
+        step("Перемішування", "Після забору обережно перемішайте пробірку з реагентом, дотримуючись порядку пробірок.", PH, tid("lab.phlebotomy.chk-mixing", "Чек: перемішування", "chk-mixing"), placement="left", optional=True),
+        step("Підтвердіть забір", "Коли всі пункти позначені, натисніть «Підтвердити забір». Статус пробірки зміниться на «Зібрано», час і виконавець збережуться в журналі.", PH, tid("lab.phlebotomy.collect-confirm", "Підтвердити забір", "collectConfirm"), type="click", expect="click", optional=True, placement="left"),
         step("Етикетка та список проб", "Надрукуйте етикетку кнопкою «Друк етикетки», а нижче у таблиці бачите всі проби поточного замовлення.", PH, tid("lab.phlebotomy.samples-table", "Таблиця проб", "samplesTable"), optional=True),
     ], variables=[var("barcode", "Штрихкод для прикладу", "20260001")], tags=["забір", "проби", "штрихкод"]))
 
@@ -94,23 +98,26 @@ SC.append(scenario("lab.analytics.results", "analytics", "Введення ре�
 VL = "/laboratory/validation"
 SC.append(scenario("lab.validation.verify", "validation", "Верифікація результатів",
     "Підтвердження результатів лікарем-лаборантом: порівняння з попередніми, пакетна верифікація.", VL, 3, 10, [
-        step("Валідація та паніка", "Тут лікар-лаборант підтверджує результати перед випуском бланка. Три вкладки: на верифікацію, паніка без дзвінка, журнал дзвінків.", VL, tid("lab.validation.page", "Сторінка валідації", "validationPage"), highlight="none"),
+        step("Валідація та критичні значення", "Тут лікар-лаборант підтверджує результати перед випуском бланка. Три вкладки: на верифікацію, критичні без повідомлення, журнал повідомлень.", VL, tid("lab.validation.page", "Сторінка валідації", "validationPage"), highlight="none"),
         step("Вкладка «На верифікацію»", "Результати, що очікують підтвердження. Червоним виділено критичні.", VL, tid("lab.validation.tab-review", "Вкладка «На верифікацію»", "tab-review")),
         step("Верифікація одного результату", "Кнопка з іконкою відкриває порівняння з попередніми результатами пацієнта (delta-check) — перевірте динаміку перед підтвердженням.", VL, tid("lab.validation.verify-row", "Верифікувати рядок", "verify-", prefix=True), optional=True),
+        step("Діалог верифікації", "Відкривається порівняння з попередніми результатами пацієнта (delta-check).", VL, tid("lab.validation.dialog", "Діалог верифікації", "verifyDialog"), optional=True, placement="left"),
+        step("Коментар", "За потреби залиште коментар лікаря-лаборанта.", VL, tid("lab.validation.comment", "Коментар", "verifyComment"), optional=True, placement="left"),
+        step("Підтвердіть", "Натисніть «Верифікувати» — результат стане доступним для випуску бланка.", VL, tid("lab.validation.confirm", "Підтвердити верифікацію", "verifyConfirm"), type="click", expect="click", optional=True, placement="left"),
         step("Пакетна верифікація", "Відмітьте кілька рядків чекбоксами та натисніть «Верифікувати обрані» — так швидше за великих обсягів. Критичні значення потребують окремого рішення.", VL, tid("lab.validation.verify-selected", "Верифікувати обрані", "verifySelected")),
     ], tags=["верифікація", "delta-check"]))
 
-# 5. Паніка
+# 5. Критичні значення
 PV = "/laboratory/validation?tab=panic"
 SC.append(scenario("lab.validation.panic", "validation", "Реєстрація дзвінка про критичний результат",
-    "Паніка: обов'язкове повідомлення лікаря та підтвердження read-back.", PV, 3, 20, [
-        step("Паніка без дзвінка", "Критичні значення, про які лікаря ще не повідомлено. Поки дзвінок не зареєстровано, бланк не випускається.", PV, tid("lab.validation.tab-panic", "Вкладка «Паніка»", "tab-panic")),
+    "Критичне значення: обов'язкове повідомлення лікаря та підтвердження read-back.", PV, 3, 20, [
+        step("Критичні без повідомлення", "Критичні значення, про які лікаря ще не повідомлено. Поки повідомлення не зареєстровано, бланк не випускається.", PV, tid("lab.validation.tab-panic", "Вкладка «Критичні без повідомлення»", "tab-panic")),
         step("Зареєструйте дзвінок", "Телефонуйте лікарю та натисніть «Дзвінок» у відповідному рядку.", PV, tid("lab.validation.call-btn", "Кнопка «Дзвінок»", "call-", prefix=True), type="click", expect="click", optional=True),
         step("ПІБ лікаря", "Вкажіть, кому саме повідомлено критичний результат.", PV, tid("lab.panic.doctor", "ПІБ лікаря", "panicDoctor"), type="input", value="{{doctor}}", optional=True, placement="left"),
         step("Телефон", "Телефон, за яким зв'язалися.", PV, tid("lab.panic.phone", "Телефон", "panicPhone"), type="input", value="{{phone}}", optional=True, placement="left"),
         step("Read-back", "Позначте, що лікар повторив значення голосом (read-back) — це вимога безпеки.", PV, tid("lab.panic.readback", "Read-back", "panicReadback"), type="click", expect="click", optional=True, placement="left"),
         step("Збережіть", "Натисніть «Зареєструвати дзвінок». Запис потрапить у журнал дзвінків з часом і виконавцем.", PV, tid("lab.panic.save", "Зареєструвати дзвінок", "panicSave"), type="click", expect="click", optional=True, placement="left"),
-    ], variables=[var("doctor", "Лікар", "Іваненко Петро Олексійович"), var("phone", "Телефон", "+380501234567")], tags=["паніка", "критичні"]))
+    ], variables=[var("doctor", "Лікар", "Іваненко Петро Олексійович"), var("phone", "Телефон", "+380501234567")], tags=["критичні значення", "критичні"]))
 
 # 6. МІС
 RF = "/laboratory/refs"
@@ -134,6 +141,26 @@ SC.append(scenario("lab.quality.point", "quality", "Внесення точки 
         step("Збережіть та оцініть", "Натисніть «Зберегти та оцінити»: система порахує відхилення, застосує правила Вестгарда та покаже, чи потрібен lockout.", QC, tid("lab.qc.save", "Зберегти та оцінити", "qcPointSave"), type="click", expect="click", optional=True, placement="left"),
         step("Lockout", "Якщо правило порушено — показник заблоковано. Розблокувати можна тут із зазначенням причини та коригувальної дії.", QC, tid("lab.qc.tab-lockouts", "Вкладка Lockout", "tab-lockouts"), optional=True),
     ], variables=[var("value", "Виміряне значення", "5.2")], tags=["ВКЯ", "Вестгард"]))
+
+# 8. Нове направлення
+OR = "/laboratory/orders"
+SC.append(scenario("lab.orders.create", "start", "Створення нового направлення",
+    "Реєстрація замовлення: пацієнт, профілі та тести, CITO, створення.", OR, 4, 20, [
+        step("Черга замовлень", "Тут реєструються й відстежуються всі направлення лабораторії.", OR, tid("lab.orders.page", "Сторінка замовлень", "ordersPage"), highlight="none"),
+        step("Нове направлення", "Натисніть «Нове направлення» — відкриється форма реєстрації.", OR, tid("lab.orders.create", "Кнопка «Нове направлення»", "ordersCreate"), type="click", expect="click"),
+        step("Форма замовлення", "Заповніть дані пацієнта, лікаря та оберіть дослідження.", OR, tid("lab.orders.dialog", "Форма замовлення", "createOrderDialog"), placement="left", optional=True),
+        step("Профілі досліджень", "Оберіть готові профілі (набори тестів).", OR, tid("lab.orders.profiles", "Профілі", "profileSelect"), placement="left", optional=True),
+        step("Окремі тести", "Або додайте окремі тести.", OR, tid("lab.orders.tests", "Тести", "testSelect"), placement="left", optional=True),
+        step("Терміново (CITO)", "Увімкніть, якщо замовлення термінове — воно потрапить на початок черги.", OR, tid("lab.orders.cito", "CITO", "citoToggle"), placement="left", optional=True),
+        step("Створіть замовлення", "Натисніть «Створити замовлення». Система присвоїть номер і штрихкоди пробірок.", OR, tid("lab.orders.submit", "Створити замовлення", "createOrderSubmit"), type="click", expect="click", optional=True, placement="left"),
+    ], tags=["направлення", "замовлення", "CITO"]))
+
+# 9. Пошук за штрихкодом
+SC.append(scenario("lab.nav.barcode", "start", "Пошук за штрихкодом у шапці",
+    "Швидко відкрити замовлення за штрихкодом пробірки.", D, 1, 15, [
+        step("Пошук у шапці", "Введіть штрихкод пробірки або № замовлення й натисніть Enter — відкриється картка замовлення з будь-якого екрана.", D, tid("lab.header.barcode", "Пошук за штрихкодом", "headerBarcode"), placement="bottom"),
+        step("Меню", "Кнопка згортає або розгортає бічне меню.", D, tid("lab.header.menu", "Кнопка меню", "menuToggle"), placement="bottom", optional=True),
+    ], tags=["штрихкод", "пошук"]))
 
 bundle = {"format": "medlink-guide-bundle", "version": 1, "app": {"code": "lab", "caption": "MedLink LIS"},
           "folders": FOLDERS, "scenarios": SC}

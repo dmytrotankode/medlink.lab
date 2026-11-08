@@ -30,10 +30,14 @@ public static class GuideEndpoints
             Results.Json(await s.CatalogAsync(appCode, role, route, U(h)), GuideJson.Options));
         open.MapGet("/scenarios/{id}/play", async (HttpContext h, GuideService s, string id) =>
             Results.Json(await s.PlayAsync(id, U(h)), GuideJson.Options));
-        open.MapGet("/media/{id}", async (GuideService s, string id) =>
+        open.MapGet("/media/{id}", async (HttpContext h, GuideService s, string id) =>
         {
             var m = await s.GetMediaAsync(id);
-            return Results.File(m.Content, m.Mime, m.FileName);
+            var mime = (m.Mime ?? "").ToLowerInvariant();
+            var safe = mime.StartsWith("image/") && !mime.Contains("svg") || mime.StartsWith("audio/") || mime.StartsWith("video/");
+            h.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            h.Response.Headers["Content-Security-Policy"] = "sandbox; default-src 'none'";
+            return Results.File(m.Content, safe ? mime : "application/octet-stream", safe ? null : (m.FileName ?? "file"));
         });
         open.MapPost("/progress", async (HttpContext h, GuideService s) =>
             Results.Json(await s.SaveProgressAsync(await Body<ProgressDto>(h), U(h)), GuideJson.Options));

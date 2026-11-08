@@ -14,13 +14,45 @@ export class Builder {
     this.ctx = ctx; this.el = null; this.mode = 'idle';
     this.sc = null; this.steps = []; this.vars = []; this.sel = -1; this.folders = []; this.dirty = false;
     this.pick = null; this.listeners = []; this.hoverBox = null; this.crumbs = null; this.minimized = false; this.rec = null;
+    this.status = { text: '', kind: '' }; this.undoStack = []; this.repickIdx = null; this.checklist = null; this.autoTimer = null; this.onKey = null; this.restorable = null;
+  }
+
+  // ------------------------------------------------------------------------------------ статус, скасування, автозбереження
+  setStatus (text, kind) {
+    this.status = { text: text, kind: kind || '' };
+    const el = this.el && this.el.querySelector('[data-status]');
+    if (el) { el.textContent = text; el.className = 'status ' + (kind || ''); }
+  }
+
+  pushUndo () {
+    this.undoStack.push(JSON.stringify({ steps: this.steps, sel: this.sel }));
+    if (this.undoStack.length > 30) this.undoStack.shift();
+  }
+
+  undo () {
+    const last = this.undoStack.pop();
+    if (!last) { this.setStatus('Немає що скасовувати'); return; }
+    const o = JSON.parse(last);
+    this.steps = o.steps; this.sel = Math.min(o.sel, this.steps.length - 1); this.dirty = true;
+    this.setStatus('Скасовано останню дію', 'ok'); this.render();
+  }
+
+  scheduleAutosave () {
+    clearTimeout(this.autoTimer);
+    this.autoTimer = setTimeout(() => {
+      try { localStorage.setItem('mlg.draft.' + (this.sc && this.sc.id ? this.sc.id : 'new'), JSON.stringify({ sc: this.sc, steps: this.steps, vars: this.vars, ts: Date.now() })); } catch (e) { /* ignore */ }
+    }, 1200);
+  }
+
+  clearDraftCopy () {
+    try { localStorage.removeItem('mlg.draft.' + (this.sc && this.sc.id ? this.sc.id : 'new')); localStorage.removeItem('mlg.draft.new'); } catch (e) { /* ignore */ }
   }
 
   // ------------------------------------------------------------------------------------ життєвий цикл
   async open (scenarioId) {
     this.close(true);
     try { const t = await this.ctx.api.tree(); this.folders = t.folders || []; } catch (e) { this.folders = []; }
-    this.steps = []; this.vars = []; this.sel = -1; this.dirty = false; this.mode = 'idle';
+    this.steps = []; this.vars = []; this.sel = -1; this.dirty = false; this.mode = 'idle'; this.undoStack = []; this.restorable = null; this.checklist = null;
     if (scenarioId) {
       const s = await this.ctx.api.getScenario(scenarioId);
       this.sc = { id: s.id, caption: s.caption, description: s.description || '', folderId: s.folderId || '', startRoute: s.startRoute || '', requiredRoles: s.requiredRoles || [], status: s.status, publishedVersion: s.publishedVersion };
@@ -28,12 +60,28 @@ export class Builder {
       if (this.steps.length) this.sel = 0;
     } else {
       this.sc = { id: null, caption: '', description: '', folderId: '', startRoute: this.ctx.host.currentRoute(), requiredRoles: [], status: 'draft' };
+      try {
+        const d = JSON.parse(localStorage.getItem('mlg.draft.new') || 'null');
+        if (d && d.steps && d.steps.length) this.restorable = d;
+      } catch (e) { /* ignore */ }
+    }
+    if (!this.onKey) {
+      this.onKey = e => {
+        if (!this.el || !(e.ctrlKey || e.metaKey)) return;
+        const t = (e.composedPath && e.composedPath()[0]) || {};
+        const inField = /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || '');
+        if (e.key === 's' || e.key === 'S') { e.preventDefault(); this.save(); }
+        else if ((e.key === 'z' || e.key === 'Z') && !inField) { e.preventDefault(); this.undo(); }
+      };
+      document.addEventListener('keydown', this.onKey, true);
     }
     this.render();
+    if (this.restorable) this.setStatus('Знайдено незбережену чернетку («' + (this.restorable.sc.caption || 'без назви') + '», кроків: ' + this.restorable.steps.length + ') — натисніть «Відновити».', 'warn');
   }
 
   close (silent) {
     this.stopPick(); this.stopRecord();
+    if (this.onKey) { document.removeEventListener('keydown', this.onKey, true); this.onKey = null; }
     if (this.el) { this.el.remove(); this.el = null; }
     if (!silent) overlay.hide();
   }
@@ -95,8 +143,15 @@ export class Builder {
   }
 
   lockPick () {
-    const base = this.pick.base; const level = this.pick.level;
+    const base = this.pick.base; const level = this.pick.level; const idx = this.repickIdx;
     this.stopPick();
+    if (idx !== null && this.steps[idx]) {
+      this.pushUndo();
+      const a = buildAnchor(base); a.parentLevels = level; const st = this.steps[idx];
+      st.anchor = a; st.parentLevels = level; st.highlight = level ? 'parent' : 'element'; this.dirty = true;
+      this.setStatus('Елемент кроку ' + (idx + 1) + ' замінено', 'ok'); this.render();
+      return;
+    }
     this.addStepFromElement(base, { level: level, type: 'info' });
     this.render(true);
   }
@@ -105,19 +160,31 @@ export class Builder {
     const type = o.type || 'info';
     const anchor = buildAnchor(el); anchor.parentLevels = o.level || 0;
     const step = this.normStep({
-      stepType: type, anchor: anchor, route: this.ctx.host.currentRoute(),
+      stepType: type, anchor: anchor, route: String(this.ctx.host.currentRoute()).split('?')[0],
       highlight: o.level ? 'parent' : 'element', parentLevels: o.level || 0,
-      title: o.title || '', expect: type === 'click' ? 'click' : (type === 'input' ? 'input' : 'next'), inputValue: o.value || ''
+      title: o.title || this.autoTitle(el, type), expect: type === 'click' ? 'click' : (type === 'input' ? 'input' : 'next'), inputValue: o.value || ''
     });
+    this.pushUndo();
     const at = this.sel >= 0 ? this.sel + 1 : this.steps.length;
-    this.steps.splice(at, 0, step); this.sel = at; this.dirty = true;
+    this.steps.splice(at, 0, step); this.sel = at; this.dirty = true; this.scheduleAutosave();
+    this.setStatus('Додано крок ' + (at + 1) + ': ' + step.title, 'ok');
     return step;
+  }
+
+  /** Заголовок-підказка з назви елемента, щоб у списку не було «(без заголовка)» */
+  autoTitle (el, type) {
+    const name = describe(el).replace(/^[a-z0-9-]+\s*/i, '').replace(/[«»]/g, '').trim();
+    const t = name ? '«' + name.slice(0, 40) + '»' : '';
+    if (type === 'click') return t ? 'Натисніть ' + t : 'Натисніть на елемент';
+    if (type === 'input') return t ? 'Заповніть ' + t : 'Заповніть поле';
+    if (type === 'select') return t ? 'Виберіть значення ' + t : 'Виберіть значення';
+    return t ? 'Зверніть увагу: ' + t : 'Зверніть увагу на цей елемент';
   }
 
   stopPick () {
     this.removeListeners();
     if (this.hoverBox) this.hoverBox.remove(); if (this.crumbs) this.crumbs.remove();
-    this.hoverBox = this.crumbs = null; this.pick = null; if (this.mode === 'pick') this.mode = 'idle';
+    this.hoverBox = this.crumbs = null; this.pick = null; this.repickIdx = null; if (this.mode === 'pick') this.mode = 'idle';
   }
 
   on (t, ev, fn) { t.addEventListener(ev, fn, true); this.listeners.push(() => t.removeEventListener(ev, fn, true)); }
@@ -243,8 +310,8 @@ export class Builder {
     bodyEls.push(field('Назва інструкції', input(sc, 'caption', 'Напр.: Як створити замовлення')));
     bodyEls.push(h('div', { class: 'grid2' },
       field('Розділ', h('div', { class: 'row' }, folderSel, h('button', { class: 'btn sm', title: 'Новий розділ', text: '＋', onclick: async () => { const n = prompt('Назва нового розділу' + (sc.folderId ? ' (всередині вибраного)' : '')); if (!n) return; try { const f = await this.ctx.api.createFolder({ caption: n, parentId: sc.folderId || null }); this.folders.push(f); sc.folderId = f.id; this.render(); } catch (e) { toast('Помилка: ' + e.message); } } }))),
-      field('Ролі (через кому, порожньо — всім)', bind(h('input', { class: 'inp', value: (sc.requiredRoles || []).join(', ') }), sc, 'requiredRoles', { after: v => { sc.requiredRoles = String(v).split(',').map(x => x.trim()).filter(Boolean); } }))));
-    bodyEls.push(field('Початковий екран (куди перейти при запуску)', h('div', { class: 'row' }, input(sc, 'startRoute', '/laboratory/orders'), h('button', { class: 'btn sm', text: 'Поточний', onclick: () => { sc.startRoute = this.ctx.host.currentRoute(); this.dirty = true; this.render(); } }))));
+      field('Хто бачить (ролі через кому; порожньо — усі)', bind(h('input', { class: 'inp', value: (sc.requiredRoles || []).join(', ') }), sc, 'requiredRoles', { after: v => { sc.requiredRoles = String(v).split(',').map(x => x.trim()).filter(Boolean); } }))));
+    bodyEls.push(field('Початкова сторінка (куди перейти при запуску)', h('div', { class: 'row' }, input(sc, 'startRoute', '/laboratory/orders'), h('button', { class: 'btn sm', text: 'Поточний', onclick: () => { sc.startRoute = this.ctx.host.currentRoute(); this.dirty = true; this.render(); } }))));
 
     bodyEls.push(h('div', { class: 'row' },
       h('button', { class: 'btn pri', text: '🎯 Вибрати елемент', onclick: () => this.startPick() }),
@@ -291,7 +358,7 @@ export class Builder {
       list.appendChild(h('div', { class: 'st' + (i === this.sel ? ' sel' : ''), onclick: () => { this.sel = i; this.render(); } },
         h('span', { class: 'n', text: i + 1 }),
         h('span', { class: 't' }, h('b', { text: s.title || '(без заголовка)' }), h('i', { text: TYPES[s.stepType] + (s.anchor ? ' · ' + s.anchor.caption : '') })),
-        q ? h('span', { class: 'q ' + q, title: 'Надійність якоря', text: q === 'high' ? '●●●' : q === 'medium' ? '●●○' : '●○○' }) : null,
+        q ? h('span', { class: 'q ' + q, title: 'Наскільки надійно знайдеться елемент на екрані: ●●● — дуже, ●○○ — може зламатись', text: q === 'high' ? '●●●' : q === 'medium' ? '●●○' : '●○○' }) : null,
         h('button', { class: 'btn sm', text: '↑', disabled: i === 0, onclick: e => { e.stopPropagation(); this.move(i, -1); } }),
         h('button', { class: 'btn sm', text: '↓', disabled: i === this.steps.length - 1, onclick: e => { e.stopPropagation(); this.move(i, 1); } }),
         h('button', { class: 'btn sm dng', text: '🗑', onclick: e => { e.stopPropagation(); this.steps.splice(i, 1); this.sel = Math.min(this.sel, this.steps.length - 1); this.dirty = true; this.render(); } })));
@@ -332,14 +399,11 @@ export class Builder {
       hasAnchor ? h('div', { class: 'row' },
         h('button', { class: 'btn sm', text: '👁 Показати елемент', onclick: () => { const r = resolveAnchor(st.anchor); if (r) { r.el.scrollIntoView({ block: 'center' }); overlay.flash(climb(r.el, st.parentLevels || 0), 1600); toast('Знайдено: ' + r.how + (r.healed ? ' (за схожістю)' : '')); } else toast('Елемент на цій сторінці не знайдено'); } }),
         h('button', { class: 'btn sm', text: '🎯 Перевибрати', onclick: () => { this.repick = this.sel; this.startRepick(); } }),
-        h('span', { style: { fontSize: '11.5px', color: '#6b7280' }, text: 'стратегій: ' + (st.anchor.strategies || []).length + ' · ' + (st.anchor.strategies[0] ? st.anchor.strategies[0].type : '—') })) : null);
+        h('span', { style: { fontSize: '11.5px', color: '#6b7280' }, text: 'способів знайти елемент: ' + (st.anchor.strategies || []).length })) : null);
   }
 
   startRepick () {
-    const idx = this.repick; this.startPick();
-    // перехоплюємо lockPick один раз: замінюємо якір, а не додаємо крок
-    const orig = this.lockPick.bind(this);
-    this.lockPick = () => { const base = this.pick.base; const level = this.pick.level; this.stopPick(); const a = buildAnchor(base); a.parentLevels = level; const s = this.steps[idx]; s.anchor = a; s.parentLevels = level; s.highlight = level ? 'parent' : 'element'; this.lockPick = orig; this.dirty = true; this.render(); };
+    const idx = this.repick; this.startPick(); this.repickIdx = idx;
   }
 
   varsBlock (f) {

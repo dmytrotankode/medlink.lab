@@ -1,8 +1,8 @@
 <template>
-  <div class="orders-queue">
+  <div class="orders-queue" data-testid="ordersPage">
     <page-header title="Реєстрація направлень" icon="fas fa-file-medical" subtitle="Черга замовлень лабораторії: реєстрація, пошук, статуси, CITO" :breadcrumbs="[{ label: 'Замовлення' }]">
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
-      <q-btn unelevated color="primary" icon="add" label="Нове направлення" @click="createOpen = true" />
+      <q-btn unelevated color="primary" icon="add" label="Нове направлення" data-testid="ordersCreate" @click="createOpen = true" />
     </page-header>
 
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />

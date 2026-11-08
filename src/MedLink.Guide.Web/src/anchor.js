@@ -164,7 +164,7 @@ export function score (el, fp) {
  * Знайти елемент якоря. Повертає {el, how, confidence, healed} або null.
  * how: назва спрацювавшої стратегії; healed=true — знайдено нечітким збігом (якір варто оновити).
  */
-export function resolveAnchor (anchor, doc) {
+export function resolveAnchor (anchor, doc, noFuzzy) {
   doc = doc || document;
   if (!anchor) return null;
   const strategies = (anchor.strategies || []).slice().sort((a, b) => b.weight - a.weight);
@@ -179,14 +179,14 @@ export function resolveAnchor (anchor, doc) {
   }
   // нечіткий пошук за відбитком
   const fp = anchor.fingerprint;
-  if (fp && fp.tag) {
+  if (fp && fp.tag && !noFuzzy) {
     let best = null; let second = 0;
     Array.prototype.forEach.call(doc.querySelectorAll(fp.tag), el => {
       if (isOurs(el) || !isVisible(el)) return;
       const s = score(el, fp);
       if (!best || s > best.s) { if (best) second = best.s; best = { el: el, s: s }; } else if (s > second) second = s;
     });
-    if (best && best.s >= 0.62 && best.s - second >= 0.04) return { el: best.el, how: 'fuzzy', confidence: +best.s.toFixed(3), healed: true };
+    if (best && best.s >= 0.8 && best.s - second >= 0.08) return { el: best.el, how: 'fuzzy', confidence: +best.s.toFixed(3), healed: true };
   }
   return null;
 }
@@ -200,7 +200,7 @@ export function climb (el, levels) {
 
 /** Найближчий інтерактивний елемент (для запису кліків) */
 export function interactiveTarget (el) {
-  const sel = 'button, a[href], input, select, textarea, [role=button], [role=tab], [role=menuitem], [role=option], .q-btn, .q-item, .q-tab, label, summary';
+  const sel = 'button, a[href], input, select, textarea, [role=button], [role=tab], [role=menuitem], [role=option], [role=checkbox], [role=radio], .q-btn, .q-item, .q-tab, .q-checkbox, .q-toggle, .q-radio, .q-chip, label, summary';
   return (el.closest && el.closest(sel)) || el;
 }
 

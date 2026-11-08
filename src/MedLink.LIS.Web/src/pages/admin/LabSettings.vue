@@ -20,7 +20,7 @@
             <div class="col-6"><q-input v-model="form.email" outlined dense label="E-mail" /></div>
             <div class="col-6"><q-input v-model="form.directorName" outlined dense label="Керівник / завідувач" /></div>
             <div class="col-6"><q-input v-model="form.workingHours" outlined dense label="Графік роботи" /></div>
-            <div class="col-12"><q-input v-model="form.panicPhone" outlined dense label="Телефон для повідомлень про критичні значення (черговий лікар)" data-testid="panicPhone"><template v-slot:prepend><q-icon name="call" color="negative" /></template></q-input></div>
+            <div class="col-12"><q-input v-model="form.panicPhone" outlined dense label="Телефон для повідомлень про критичні значення (черговий лікар)" data-testid="settingsPanicPhone"><template v-slot:prepend><q-icon name="call" color="negative" /></template></q-input></div>
           </div>
         </div>
 

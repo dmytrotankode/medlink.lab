@@ -88,7 +88,7 @@ export function isVisible (el) {
 /** Підстановка {{змінних}} */
 export function interpolate (text, vars) {
   if (!text) return text || '';
-  return String(text).replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (m, k) => (vars && vars[k] !== undefined ? vars[k] : m));
+  return String(text).replace(/\{\{\s*([^\s{}]+)\s*\}\}/g, (m, k) => (vars && vars[k] !== undefined ? vars[k] : m));
 }
 
 /** Визначення змінних сценарію → конкретні значення для запуску */
@@ -100,8 +100,8 @@ export function resolveVariables (defs) {
     switch (d.kind) {
       case 'random_number': out[d.name] = (o.prefix || '') + rnd(o.length || 6); break;
       case 'random_text': out[d.name] = (o.prefix || 'Тест') + ' ' + rnd(o.length || 4); break;
-      case 'today': out[d.name] = new Date().toISOString().slice(0, 10); break;
-      case 'now': out[d.name] = new Date().toISOString().slice(0, 16).replace('T', ' '); break;
+      case 'today': out[d.name] = localIso(new Date()).slice(0, 10); break;
+      case 'now': out[d.name] = localIso(new Date()).slice(0, 16).replace('T', ' '); break;
       case 'pick': { const v = o.values || []; out[d.name] = v.length ? v[Math.floor(Math.random() * v.length)] : (d.defaultValue || ''); break; }
       default: out[d.name] = d.defaultValue || '';
     }
@@ -123,4 +123,10 @@ export function lstore (key, value) {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (e) { /* ignore */ }
   return null;
+}
+
+/** ISO-формат за локальним часом (а не UTC) */
+function localIso (d) {
+  const p = n => (n < 10 ? '0' : '') + n;
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
 }

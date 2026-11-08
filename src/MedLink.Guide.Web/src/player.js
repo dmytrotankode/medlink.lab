@@ -15,6 +15,9 @@ export class Player {
 
   get active () { return !!this.run; }
 
+  /** Чи потрібен перехід: порівнюємо шлях (без query), бо сторінка може сама змінити query */
+  needNav (route) { return !!route && !routeMatches(String(route).split('?')[0], String(this.ctx.host.currentRoute()).split('?')[0]); }
+
   async start (scenarioId, o) {
     o = o || {};
     const sc = await this.ctx.api.play(scenarioId);
@@ -66,8 +69,7 @@ export class Player {
     await this.ctx.host.navigate(route);
     const t0 = Date.now();
     while (Date.now() - t0 < 6000) {
-      if (this.ctx.host.currentRoute() !== before && routeMatches(route, this.ctx.host.currentRoute())) break;
-      if (routeMatches(route, this.ctx.host.currentRoute())) break;
+      if (!this.needNav(route)) break;
       await sleep(100);
     }
     await sleep(350); // дати сторінці відрендеритись
@@ -84,7 +86,7 @@ export class Player {
     this.token++; this.runCleanup();
     overlay.show({
       title: 'Готово!', body: 'Інструкцію «' + r.scenario.caption + '» пройдено.', target: null, blockOutside: true,
-      buttons: [{ text: 'Закрити', kind: 'pri', onClick: () => this.stop(true) }, { text: 'Повторити', onClick: () => this.start(r.scenarioId, { mode: r.mode }) }]
+      buttons: [{ text: 'Закрити', kind: 'pri', onClick: () => this.stop(true) }, { text: 'Повторити', onClick: () => (r.preview ? this.startWith(r.scenario, { preview: true, mode: r.mode }) : this.start(r.scenarioId, { mode: r.mode })) }]
     });
     this.run = null; store(RUN_KEY, null);
     if (this.ctx.onDone) this.ctx.onDone(r.scenarioId, r.preview);
@@ -109,7 +111,16 @@ export class Player {
   }
 
   async go (i) {
+    try { await this.goInner(i); } catch (e) {
+      if (typeof console !== 'undefined') console.error('[guide]', e);
+      toast('Не вдалося показати крок — інструкцію зупинено');
+      this.stop(true);
+    }
+  }
+
+  async goInner (i) {
     const r = this.run; if (!r) return;
+    if (!r.scenario.steps[i]) return this.finish();
     const token = ++this.token; this.runCleanup();
     r.i = i; this.persist();
     const steps = r.scenario.steps; const step = steps[i];
@@ -117,8 +128,8 @@ export class Player {
     const stale = () => token !== this.token || this.run !== r;
 
     // 1. потрібна сторінка
-    if (step.route && !routeMatches(step.route, this.ctx.host.currentRoute())) {
-      overlay.show({ title: 'Перехід…', body: 'Відкриваю потрібний екран', target: null, blockOutside: true, buttons: [] });
+    if (this.needNav(step.route)) {
+      overlay.show({ title: 'Перехід…', body: 'Відкриваю потрібний екран', target: null, blockOutside: true, buttons: [{ text: 'Закрити', kind: 'dng', onClick: () => this.stop() }] });
       await this.navigate(step.route);
       if (stale()) return;
     }
@@ -129,7 +140,7 @@ export class Player {
     // 2. кроки без елемента
     if (type === 'navigate') {
       const target = step.waitRoute || step.route;
-      if (target && !routeMatches(target, this.ctx.host.currentRoute())) await this.navigate(target);
+      if (this.needNav(target)) await this.navigate(target);
       if (stale()) return; return this.next();
     }
     if (!step.anchor || type === 'wait') {
@@ -138,7 +149,14 @@ export class Player {
     }
 
     // 3. пошук якоря (з очікуванням появи)
-    const found = await this.waitFor(() => resolveAnchor(step.anchor), step.timeoutMs || 8000);
+    const searchTimer = setTimeout(() => {
+      if (stale()) return;
+      overlay.show({ title: 'Шукаю елемент на екрані…', body: 'Зачекайте мить — сторінка ще завантажується.', target: null, blockOutside: true, index: i, total: total,
+        buttons: [{ text: 'Закрити', kind: 'dng', onClick: () => this.stop() }, { spacer: true }, { text: 'Пропустити крок →', onClick: () => this.next() }] });
+    }, 600);
+    const tFind = Date.now();
+    const found = await this.waitFor(() => resolveAnchor(step.anchor, undefined, Date.now() - tFind < 2500), step.timeoutMs || 8000);
+    clearTimeout(searchTimer);
     if (stale()) return;
     if (!found) {
       this.report(step, null, 'missing');
@@ -161,7 +179,8 @@ export class Player {
     const { step, title, body, i, total, el, value, r } = c;
     const type = step.stepType || 'info';
     const expect = step.expect || 'next';
-    let hlEl = el ? climb(el, step.highlight === 'parent' ? Math.max(1, step.parentLevels || 1) : (step.parentLevels || 0)) : null;
+    const noHole = step.highlight === 'none';
+    let hlEl = el && !noHole ? climb(el, step.highlight === 'parent' ? Math.max(1, step.parentLevels || 1) : (step.parentLevels || 0)) : null;
     // поле вводу всередині обгортки UI-бібліотеки (Quasar q-field тощо) — підсвічуємо всю обгортку, а не нативний input
     if (hlEl === el && step.highlight !== 'none' && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && !/^(checkbox|radio)$/.test(el.type || '')) { const w = el.closest('.q-field, .q-select, .v-input, .el-input, .ant-input-affix-wrapper'); if (w) hlEl = w; }
     // дуже малий/згорнутий елемент (напр. поле в адаптивній шапці) — підсвічуємо найближчого достатньо великого предка
@@ -169,15 +188,22 @@ export class Player {
     const mode = r.mode;
     const token = this.token;
     let advanced = false;
+    const live = fn => (...a) => (token === this.token ? fn(...a) : undefined);
     const advance = (delay) => { if (advanced || token !== this.token) return; advanced = true; setTimeout(() => { if (token === this.token) this.next(); }, delay === undefined ? 450 : delay); };
 
+    const clamp = b => {
+      // зона не виходить за межі вікна (великі блоки: меню на всю висоту, широкі таблиці)
+      const l = Math.max(b.left, 4); const t = Math.max(b.top, 4);
+      const r2 = Math.min(b.left + b.width, innerWidth - 4); const b2 = Math.min(b.top + b.height, innerHeight - 4);
+      return { left: l, top: t, width: Math.max(0, r2 - l), height: Math.max(0, b2 - t) };
+    };
     const rectFn = () => {
       if (!hlEl) return null;
       const b = hlEl.getBoundingClientRect();
       if (step.highlight === 'rect' && step.rect) {
-        return { left: b.left + step.rect.x * b.width, top: b.top + step.rect.y * b.height, width: step.rect.w * b.width, height: step.rect.h * b.height };
+        return clamp({ left: b.left + step.rect.x * b.width, top: b.top + step.rect.y * b.height, width: step.rect.w * b.width, height: step.rect.h * b.height });
       }
-      return b;
+      return clamp(b);
     };
 
     const perform = async () => {
@@ -206,11 +232,12 @@ export class Player {
         nextEnabled = true;
       } else if (!prefilled && (expect === 'input' || (type === 'input' && expect === 'next' && step.inputMode === 'require'))) {
         hint = 'Заповніть поле — перейдемо далі автоматично.';
+        let typingTimer = null; this.cleanup.push(() => clearTimeout(typingTimer));
         const chk = () => {
           const v = String(el.value === undefined ? el.textContent : el.value).trim();
           if (!v) return;
           if (value && step.inputMode === 'require' && v.toLowerCase() !== String(value).trim().toLowerCase()) return;
-          advance(900);
+          clearTimeout(typingTimer); typingTimer = setTimeout(() => advance(0), 1400);
         };
         listen(el, 'input', chk); listen(el, 'change', chk);
       } else if (expect === 'change') {
@@ -228,17 +255,17 @@ export class Player {
 
     const canAuto = !!el && (type === 'click' || type === 'input' || (type === 'select' && el.tagName === 'SELECT') || type === 'hover');
     const buttons = [];
-    if (i > 0) buttons.push({ text: '← Назад', onClick: () => this.prev() });
+    if (i > 0) buttons.push({ text: '← Назад', onClick: live(() => this.prev()) });
     buttons.push({ text: 'Закрити', kind: 'dng', onClick: () => this.stop() });
     buttons.push({ spacer: true });
-    if (mode === 'guided' && canAuto) buttons.push({ text: 'Зроби за мене', onClick: async () => { await perform(); advance(500); } });
-    buttons.push({ text: i === total - 1 ? 'Завершити' : (c.warn ? 'Пропустити →' : 'Далі →'), kind: 'pri', disabled: !nextEnabled, onClick: () => this.next() });
+    if (mode === 'guided' && canAuto) buttons.push({ text: 'Зроби за мене', onClick: live(async () => { await perform(); advance(500); }) });
+    buttons.push({ text: i === total - 1 ? 'Завершити' : (c.warn ? 'Пропустити →' : 'Далі →'), kind: 'pri', disabled: !nextEnabled, onClick: live(() => this.next()) });
     if (c.warn) buttons.splice(buttons.length - 1, 0, { text: 'Повторити', onClick: () => this.go(i) });
 
     const valueHint = (type === 'input' || type === 'select') && value ? ((step.inputMode === 'show' ? 'Введіть: ' : step.inputMode === 'prefill' ? 'Автозаповнено: ' : 'Потрібно ввести: ') + value) : '';
     overlay.show({
       target: hlEl ? rectFn : null, padding: step.padding === undefined ? 6 : step.padding, placement: step.placement,
-      blockOutside: step.blockOutside !== false,
+      blockOutside: step.blockOutside !== false && !(el && (type === 'select' || (el.closest && el.closest('.q-select, .q-menu, .q-btn-dropdown, .q-date, .q-time, [role=listbox]')))),
       title: title || (el ? '' : 'Крок ' + (i + 1)), body: body, valueHint: valueHint, warn: c.warn, hint: hint || (c.healed ? 'Елемент знайдено за схожістю — повідомлено автору інструкції.' : ''),
       index: i, total: total, buttons: buttons
     });
