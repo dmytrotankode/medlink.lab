@@ -63,7 +63,7 @@
             <q-td key="tests" :props="props">
               <span class="text-caption">{{ testsSummary(props.row) }}</span>
             </q-td>
-            <q-td key="department" :props="props">{{ departmentName(props.row.departmentId) }}</q-td>
+            <q-td key="department" :props="props">{{ props.row.departmentName || departmentName(props.row.departmentId) }}</q-td>
             <q-td key="totalPrice" :props="props" class="text-right">{{ props.row.totalPrice | money }}</q-td>
             <q-td key="status" :props="props"><status-chip :value="props.row.status" type="order" icon /></q-td>
             <q-td key="actions" :props="props" @click.stop>
@@ -151,7 +151,8 @@ export default {
     },
     testsSummary (row) {
       const tests = row.tests || [];
-      if (!tests.length) return row.testsCount ? `${row.testsCount} показн.` : '—';
+      const total = row.testsTotal != null ? row.testsTotal : row.testsCount;
+      if (!tests.length) return total ? `${total} показн.${row.testsVerified != null ? ` (верифіковано ${row.testsVerified})` : ''}` : '—';
       const codes = tests.map(t => t.testCode).filter(Boolean);
       return codes.length > 6 ? `${codes.slice(0, 6).join(', ')} +${codes.length - 6}` : codes.join(', ');
     },
