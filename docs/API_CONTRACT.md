@@ -241,7 +241,16 @@
 | GET | `/pathology/incoming` | черга прийому: пацієнт, джерело, тип матеріалу, направник, контейнери (`labeled`, `fixationHours`, `fixationWarning`), знімок п. 1–9 форми |
 | POST | `/pathology/incoming/{id}/accept` | `{scannedBarcodes[]}` (штрихкоди або маркування всіх контейнерів) → № справи, SLA (робочі дні; CITO — `PathologyCitoTargetMinutes`), вартість (консультація — скельця × 210, зовнішні блоки/скельця зі штрихкодами), подія `RECEIVED` |
 | POST | `/pathology/incoming/{id}/reject` | `{reason (код або назва з довідника), comment}` → `REJECTED`; е-направлення не погашається |
-| POST | `/pathology/incoming/{id}/query` | `{text}` → подія `QUERY` направнику |
+| POST | `/pathology/incoming/{id}/query` | `{text}` → подія `QUERY` направнику |
+| PUT | `/pathology/cases/{id}/gross` | + `pathologistId`, `assistantId` (обов'язкові для `finish`), `blocks[].track` (`STANDARD`/`DECALC`), `blocks[].methods[]` (до 5 кодів довідника), `objects[].remainderState` (`NONE`/`KEPT`/`DISCARDED`) + `remainderNote` |
+| POST | `/pathology/scan`, `/pathology/cases/{id}/advance` | + `performerId`, `count` (мікротомія); `stage=COVER` — покриття скельця, `stage=DECALC` — лише для блоків `DECALC` |
+| POST | `/pathology/slides/{id}/dispose` | `{reason, recreate}` → скельце `DISPOSED`, за потреби нове тієї ж методики |
+| PUT | `/pathology/blocks/{id}/storage` | `{roomId, location}` |
+| GET/POST | `/pathology/rooms` | приміщення архіву (POST — Admin) |
+| GET | `/pathology/staff` | `{pathologists[], assistants[], current}` для вибору виконавців |
+| POST | `/pathology/cases/{id}/dispatch`, GET `/pathology/cases/{id}/dispatches` | `{address}` → запис черги розсилки (`QUEUED`); лише для підписаної справи |
+| POST | `/pathology/blocks/{id}/issue` | + `scope` (`EXTERNAL`/`INTERNAL`), `recipientUnit` (обов'язково для `INTERNAL`) |
+| POST | `/pathology/cases/{id}/report/addendum` | + тип `CONSULT` з `consultantName` |
 | GET | `/pathology/cases?stage=RCV\|…\|SIGNED\|work\|lab\|cito\|overdue&src=&q=` | журнал: `tiles{stage: n}`, `total, inWork, overdue, cito, lab, incoming`, `items[]` (CITO і прострочені вгорі) |
 | GET | `/pathology/summary` | бейджі меню; також `pathologyIncoming, pathologyCito, pathologyOverdue` у `/worklist/summary` |
 | GET | `/pathology/cases/{id}` | id — id замовлення, № справи або `misReferralId`: шапка, `stages[]`, `citoTimer`, направлення, об'єкти → блоки → скельця, `totals`, чернетка висновку, `composedText`, `reflex[]`, `versions[]`, `preliminary`, `citoNotices[]`, `stageLog[]`, `events[]` |
