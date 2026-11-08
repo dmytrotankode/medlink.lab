@@ -15,7 +15,7 @@
         <template v-if="tab === 'stains'" #body-cell-price="p">
           <q-td :props="p">
             <q-input :value="p.row.price" dense outlined type="number" min="0" step="1" suffix="грн" style="width: 130px" :data-testid="`price-${p.row.code}`"
-                     @change="v => savePrice(p.row, v)" />
+                     @change="e => savePrice(p.row, e.target.value)" />
           </q-td>
         </template>
       </q-table>

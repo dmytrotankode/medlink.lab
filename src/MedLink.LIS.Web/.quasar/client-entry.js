@@ -40,6 +40,8 @@ import qboot_Bootaxios from 'boot/axios'
 
 import qboot_Bootcomponents from 'boot/components'
 
+import qboot_Bootguide from 'boot/guide'
+
 
 
 
@@ -64,7 +66,7 @@ async function start () {
   }
 
   const urlPath = window.location.href.replace(window.location.origin, '')
-  const bootFiles = [qboot_Bootfonts,qboot_Bootaxios,qboot_Bootcomponents]
+  const bootFiles = [qboot_Bootfonts,qboot_Bootaxios,qboot_Bootcomponents,qboot_Bootguide]
 
   for (let i = 0; routeUnchanged === true && i < bootFiles.length; i++) {
     if (typeof bootFiles[i] !== 'function') {
