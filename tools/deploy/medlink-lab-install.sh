@@ -60,12 +60,25 @@ if ! grep -q "snippets/medlink-lab.conf" "$SITE"; then
   sed -i 's#^\(\s*\)include snippets/medlink-fin.conf;#&\n\1include snippets/medlink-lab.conf;#' "$SITE"
 fi
 
+# PostgreSQL (БД medlink_lab, роль lab_stand): drop-in з паролем лише для root (0600); без PGPW наявний drop-in не чіпається.
+if [ -n "${PGPW:-}" ]; then
+  mkdir -p /etc/systemd/system/medlink-lab.service.d
+  umask 077
+  cat > /etc/systemd/system/medlink-lab.service.d/postgres.conf <<PGCONF
+[Service]
+Environment=Database__Provider=Postgres
+Environment="Database__ConnectionString=Host=127.0.0.1;Port=5432;Database=medlink_lab;Username=lab_stand;Password=${PGPW}"
+PGCONF
+  chmod 600 /etc/systemd/system/medlink-lab.service.d/postgres.conf
+  umask 022
+fi
+
 systemctl daemon-reload
 systemctl enable --now medlink-lab.service
 systemctl restart medlink-lab.service
 nginx -t && systemctl reload nginx
 
-for i in $(seq 1 30); do
+for i in $(seq 1 90); do
   curl -sf -m 3 "http://127.0.0.1:$PORT/lab/health" >/dev/null && break
   sleep 2
 done

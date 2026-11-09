@@ -38,22 +38,10 @@
      "scenarioCode": "lab.orders.track-status"
     },
     {
-     "scenarioCode": "lab.ws.enter-result"
+     "scenarioCode": "lab.containers.receive"
     },
     {
-     "scenarioCode": "lab.ws.verify-one"
-    },
-    {
-     "scenarioCode": "lab.val.verify-one"
-    },
-    {
-     "scenarioCode": "lab.val.critical-verify"
-    },
-    {
-     "scenarioCode": "lab.qc.add-point"
-    },
-    {
-     "scenarioCode": "lab.qc.lockout-resolve"
+     "scenarioCode": "lab.containers.receive-from-card"
     },
     {
      "scenarioCode": "lab.an.connect"
@@ -65,25 +53,28 @@
      "scenarioCode": "lab.im.csv-dryrun"
     },
     {
-     "scenarioCode": "lab.tat.read"
+     "scenarioCode": "lab.qc.add-point"
+    },
+    {
+     "scenarioCode": "lab.qc.lockout-resolve"
     },
     {
      "scenarioCode": "lab.rp.cumulative"
     },
     {
-     "scenarioCode": "lab.ws.fast-entry"
+     "scenarioCode": "lab.tat.read"
     },
     {
-     "scenarioCode": "lab.ws.autoverify"
+     "scenarioCode": "lab.val.critical-verify"
     },
     {
-     "scenarioCode": "lab.val.verify-batch"
+     "scenarioCode": "lab.val.verify-one"
     },
     {
-     "scenarioCode": "lab.val.critical-call"
+     "scenarioCode": "lab.ws.enter-result"
     },
     {
-     "scenarioCode": "lab.qc.read-chart"
+     "scenarioCode": "lab.ws.verify-one"
     },
     {
      "scenarioCode": "lab.an.connector-create"
@@ -92,49 +83,64 @@
      "scenarioCode": "lab.an.order-preview"
     },
     {
+     "scenarioCode": "lab.qc.read-chart"
+    },
+    {
      "scenarioCode": "lab.rp.table-report"
     },
     {
-     "scenarioCode": "lab.ws.critical-entry"
+     "scenarioCode": "lab.val.critical-call"
     },
     {
-     "scenarioCode": "lab.val.calls-journal"
+     "scenarioCode": "lab.val.verify-batch"
     },
     {
-     "scenarioCode": "lab.qc.westgard"
+     "scenarioCode": "lab.ws.autoverify"
+    },
+    {
+     "scenarioCode": "lab.ws.fast-entry"
     },
     {
      "scenarioCode": "lab.an.status"
     },
     {
+     "scenarioCode": "lab.qc.westgard"
+    },
+    {
      "scenarioCode": "lab.rp.export"
     },
     {
-     "scenarioCode": "lab.ws.needs-review"
+     "scenarioCode": "lab.val.calls-journal"
     },
     {
-     "scenarioCode": "lab.val.lockout-override"
-    },
-    {
-     "scenarioCode": "lab.qc.report"
+     "scenarioCode": "lab.ws.critical-entry"
     },
     {
      "scenarioCode": "lab.an.messages"
     },
     {
+     "scenarioCode": "lab.qc.report"
+    },
+    {
      "scenarioCode": "lab.tat.sla"
+    },
+    {
+     "scenarioCode": "lab.val.lockout-override"
+    },
+    {
+     "scenarioCode": "lab.ws.needs-review"
     },
     {
      "scenarioCode": "lab.an.connection"
     },
     {
-     "scenarioCode": "lab.path.intake-accept"
+     "scenarioCode": "lab.path.cassettes"
     },
     {
      "scenarioCode": "lab.path.gross"
     },
     {
-     "scenarioCode": "lab.path.cassettes"
+     "scenarioCode": "lab.path.intake-accept"
     },
     {
      "scenarioCode": "lab.path.microscopy"
@@ -146,10 +152,10 @@
      "scenarioCode": "lab.cyto.intake"
     },
     {
-     "scenarioCode": "lab.path.archive-issue"
+     "scenarioCode": "lab.cyto.prepare"
     },
     {
-     "scenarioCode": "lab.cyto.prepare"
+     "scenarioCode": "lab.path.archive-issue"
     },
     {
      "scenarioCode": "lab.cyto.stain-cover"
@@ -161,19 +167,19 @@
      "scenarioCode": "lab.cyto.conclusion"
     },
     {
-     "scenarioCode": "lab.nav.tour-header"
-    },
-    {
      "scenarioCode": "lab.bill.view-price"
     },
     {
      "scenarioCode": "lab.mis.send-results"
     },
     {
-     "scenarioCode": "lab.nav.drawer-groups"
+     "scenarioCode": "lab.nav.tour-header"
     },
     {
      "scenarioCode": "lab.dict.view-tests"
+    },
+    {
+     "scenarioCode": "lab.nav.drawer-groups"
     },
     {
      "scenarioCode": "lab.nav.find-by-barcode"

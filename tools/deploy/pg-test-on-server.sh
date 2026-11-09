@@ -18,9 +18,9 @@ echo "==> тести на сервері (PostgreSQL)"
 ssh -i "$KEY" "$HOST" "PGPW='$PW' FILTER='$FILTER' bash -s" <<'REMOTE'
 set -e
 rm -rf /tmp/lab-src && mkdir -p /tmp/lab-src && tar -xzf /tmp/lab-src.tgz -C /tmp/lab-src && cd /tmp/lab-src
-export DOTNET_ROLL_FORWARD=Major DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
+export DOTNET_ROOT=/opt/dotnet8-lab PATH=/opt/dotnet8-lab:$PATH DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_ROLL_FORWARD=LatestPatch
 export LIS_TEST_PG="Host=127.0.0.1;Port=5432;Database=medlink_lab_test;Username=lab_stand;Password=$PGPW;Include Error Detail=true"
-if [ -n "$FILTER" ]; then dotnet test tests/MedLink.LIS.Tests --filter "$FILTER" --nologo -v q 2>&1 | tail -60
-else dotnet test tests/MedLink.LIS.Tests --nologo -v q 2>&1 | tail -80; fi
+if [ -n "$FILTER" ]; then dotnet test tests/MedLink.LIS.Tests --filter "$FILTER" --nologo --logger "console;verbosity=normal" 2>&1 | grep -vE "warning|^\s*$" | tail -60
+else dotnet test tests/MedLink.LIS.Tests --nologo --logger "console;verbosity=normal" 2>&1 | grep -vE "warning|^\s*$" | tail -400; fi
 REMOTE
 rm -rf "$TMP"
