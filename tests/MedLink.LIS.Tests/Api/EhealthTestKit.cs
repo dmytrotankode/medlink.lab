@@ -109,12 +109,12 @@ public static class EhealthKit
     public static EhealthMockState.MockServiceRequest RegisterReferral(this WebApplicationFactory<Program> f, string number, string? programId = null, string? patientId = Patient, string serviceCode = "LAB-BIOCHEM")
         => f.Mock().Register(number, patientId, serviceCode, programId);
 
-    /// <summary>Входить лікарем в мок-ЕСОЗ (пароль + 2FA) і повертає тестовий сертифікат КЕП.</summary>
+    /// <summary>Входить в ЄСОЗ через двійник проксі (посилання -> тестовий код -> обмін коду) і повертає тестовий сертифікат КЕП.</summary>
     public static async Task<JsonNode> LoginAsync(HttpClient doc)
     {
-        await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session", new { login = "doctor@clinic.ua", password = "secret" });
-        await doc.PostAsync("/api/v1/lab/ehealth/session/totp", null);
-        var s = await Json(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/confirm", new { method = "TOTP", code = "123456" }));
+        var link = await Json(await doc.PostAsync("/api/v1/lab/ehealth/session/link", null));
+        var s = await Json(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/callback", new { code = S(link["code"]) }));
+        Assert.Equal("L2", S(s["level"]));
         return s["testCertificate"]!;
     }
 

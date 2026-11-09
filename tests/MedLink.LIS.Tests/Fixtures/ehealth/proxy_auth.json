@@ -1,0 +1,86 @@
+[
+  {
+    "name": "Auth link: auth/EhealthUILink/{role} -- scopes, client_id, redirect_uri (the proxy answers a plain object)",
+    "match": {
+      "method": "GET",
+      "pathRegex": "/auth/EhealthUILink/[^/]+$"
+    },
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "scopes": "service_request:read service_request:use service_request:complete diagnostic_report:write job:read",
+          "client_id": "6f1b2a80-3c4d-4e5f-8a9b-0c1d2e3f4a5b",
+          "redirect_uri": "https://lis.example.test/ehealth/callback"
+        }
+      }
+    ]
+  },
+  {
+    "name": "Auth: exchange of the authorization code (POST auth {code, role_name}) -- success",
+    "match": {
+      "method": "POST",
+      "pathRegex": "/auth$",
+      "bodyContains": "mock-"
+    },
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "authorized": true
+        }
+      }
+    ]
+  },
+  {
+    "name": "Auth: invalid authorization code",
+    "match": {
+      "method": "POST",
+      "pathRegex": "/auth$"
+    },
+    "responses": [
+      {
+        "status": 401,
+        "body": {
+          "HasException": true,
+          "InternalMessage": "Authorization code is invalid or expired",
+          "StatusCode": 401,
+          "EhealthResponse": {
+            "error": {
+              "type": "invalid_grant",
+              "message": "Authorization code is invalid or expired"
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "Auth: auth/hasAccessToken -- the proxy holds a token (Replay always answers true)",
+    "match": {
+      "method": "GET",
+      "pathRegex": "/auth/hasAccessToken$"
+    },
+    "responses": [
+      {
+        "status": 200,
+        "body": true
+      }
+    ]
+  },
+  {
+    "name": "Auth: auth/update and auth/logout",
+    "match": {
+      "method": "GET",
+      "pathRegex": "/auth/(update|logout)$"
+    },
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "ok": true
+        }
+      }
+    ]
+  }
+]

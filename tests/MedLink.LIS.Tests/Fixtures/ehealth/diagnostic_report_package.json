@@ -1,25 +1,117 @@
 [
   {
     "name": "Submit Diagnostic Report Package: 202 + job link (1st call: job processed after one pending poll; 2nd call: job fails with 422; 3rd+ call: processed)",
-    "match": { "method": "POST", "pathRegex": "/api/patients/[^/]+/diagnostic_report_package$" },
+    "match": {
+      "method": "POST",
+      "pathRegex": "/patients/[^/]+/diagnostic_report_package$"
+    },
     "responses": [
-      { "status": 202, "body": { "data": { "status": "pending", "eta": "{{now}}" }, "links": [ { "entity": "job", "href": "/Jobs/NBXk9EyErUZv1RhXgyvgg" } ], "meta": { "code": 202 } } },
-      { "status": 202, "body": { "data": { "status": "pending", "eta": "{{now}}" }, "links": [ { "entity": "job", "href": "/Jobs/Fq3rYt8LmZp2VxA6Hc1Wd" } ], "meta": { "code": 202 } } },
-      { "status": 202, "body": { "data": { "status": "pending", "eta": "{{now}}" }, "links": [ { "entity": "job", "href": "/Jobs/Pk7sBn4TgQe9JuR5Mz0Lw" } ], "meta": { "code": 202 } } }
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "status": "pending",
+            "eta": "{{now}}",
+            "links": [
+              {
+                "entity": "job",
+                "href": "/Jobs/NBXk9EyErUZv1RhXgyvgg"
+              }
+            ]
+          },
+          "meta": {
+            "code": 200
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "status": "pending",
+            "eta": "{{now}}",
+            "links": [
+              {
+                "entity": "job",
+                "href": "/Jobs/Fq3rYt8LmZp2VxA6Hc1Wd"
+              }
+            ]
+          },
+          "meta": {
+            "code": 200
+          }
+        }
+      },
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "status": "pending",
+            "eta": "{{now}}",
+            "links": [
+              {
+                "entity": "job",
+                "href": "/Jobs/Pk7sBn4TgQe9JuR5Mz0Lw"
+              }
+            ]
+          },
+          "meta": {
+            "code": 200
+          }
+        }
+      }
     ]
   },
   {
     "name": "Cancel Diagnostic Report Package: 202 + job link",
-    "match": { "method": "PATCH", "pathRegex": "/api/patients/[^/]+/diagnostic_report_package$" },
+    "match": {
+      "method": "PATCH",
+      "pathRegex": "/patients/[^/]+/diagnostic_report_package$"
+    },
     "responses": [
-      { "status": 202, "body": { "data": { "status": "pending", "eta": "{{now}}" }, "links": [ { "entity": "job", "href": "/Jobs/Cn2vHd6WqXk8SyT4Ba9Ge" } ], "meta": { "code": 202 } } }
+      {
+        "status": 200,
+        "body": {
+          "data": {
+            "status": "pending",
+            "eta": "{{now}}",
+            "links": [
+              {
+                "entity": "job",
+                "href": "/Jobs/Cn2vHd6WqXk8SyT4Ba9Ge"
+              }
+            ]
+          },
+          "meta": {
+            "code": 200
+          }
+        }
+      }
     ]
   },
   {
     "name": "Get Diagnostic Report by id: 404 (report is not registered yet)",
-    "match": { "method": "GET", "pathRegex": "/api/patients/[^/]+/diagnostic_reports/[^/]+$" },
+    "match": {
+      "method": "GET",
+      "pathRegex": "/patients/[^/]+/diagnostic_reports/[^/]+$"
+    },
     "responses": [
-      { "status": 404, "body": { "error": { "type": "not_found" }, "meta": { "code": 404 } } }
+      {
+        "status": 404,
+        "body": {
+          "HasException": true,
+          "InternalMessage": "not_found",
+          "StatusCode": 404,
+          "EhealthResponse": {
+            "error": {
+              "type": "not_found"
+            },
+            "meta": {
+              "code": 404
+            }
+          }
+        }
+      }
     ]
   }
 ]
