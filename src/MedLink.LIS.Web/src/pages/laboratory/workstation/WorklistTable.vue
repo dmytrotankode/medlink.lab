@@ -93,6 +93,11 @@
           <div v-else @dblclick.stop="startEdit(props.row)">
             <span :class="valueClass(props.row)">{{ displayValue(props.row) }}</span>
             <span class="text-caption text-grey-7 q-ml-xs">{{ props.row.unit }}</span>
+            <q-badge v-if="props.row.isCalculated" outline color="indigo-6" class="q-ml-xs" label="розрах." data-testid="badge-calc"><q-tooltip>Обчислено за формулою: {{ props.row.formula }}</q-tooltip></q-badge>
+            <q-badge v-if="props.row.dilutionFactor > 1" outline color="deep-purple-6" class="q-ml-xs" :label="'1:' + props.row.dilutionFactor" data-testid="badge-dilution"><q-tooltip>Зразок розведено 1:{{ props.row.dilutionFactor }}; результат перераховано на вихідний зразок</q-tooltip></q-badge>
+            <q-badge v-if="props.row.rerunCount > 0 && !props.row.isCalculated" outline color="purple-6" class="q-ml-xs" label="повтор" data-testid="badge-rerun"><q-tooltip>Повторів: {{ props.row.rerunCount }}. Усі вимірювання збережено в історії</q-tooltip></q-badge>
+            <q-badge v-if="props.row.status === 'RERUN' && props.row.plannedDilution > 1" color="deep-purple-6" class="q-ml-xs" :label="'повтор з розведенням 1:' + props.row.plannedDilution" />
+            <q-badge v-if="props.row.outOfLinearity" color="orange-8" class="q-ml-xs" label="поза лінійністю"><q-tooltip>Значення вийшло за лінійний діапазон приладу</q-tooltip></q-badge>
           </div>
         </q-td>
         <q-td key="reference" :props="props">{{ referenceDisplay(props.row) || '—' }}</q-td>
@@ -284,6 +289,7 @@ export default {
       this.saving = true;
       try {
         const res = await this.$api.saveResult(row.orderTestId, body);
+        (res && res.warnings ? res.warnings : []).forEach(m => this.$q.notify({ type: 'warning', message: m, timeout: 8000 }));
         this.$emit('saved', { row, result: res });
         this.editingId = null;
         if (moveNext) {

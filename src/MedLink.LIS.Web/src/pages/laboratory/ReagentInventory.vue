@@ -2,6 +2,7 @@
   <div class="reagents-page" data-testid="reagentsPage">
     <page-header title="Склад реагентів" icon="fas fa-boxes" subtitle="Лоти реагентів, терміни придатності, залишки" :breadcrumbs="[{ label: 'Реагенти' }]">
       <q-btn flat dense color="primary" icon="refresh" :loading="loading" @click="load" />
+      <q-btn flat dense color="primary" icon="query_stats" label="Витрати" data-testid="consumptionOpen" @click="openReport" />
       <span class="inline-block">
         <q-btn unelevated dense color="primary" icon="add" label="Новий лот" :disable="!canWork" data-testid="lotCreate" @click="openLot(null)" />
         <q-tooltip v-if="!canWork">{{ workHint }}</q-tooltip>
@@ -70,6 +71,7 @@
             <div class="col-4"><q-input v-model="form.expiryDate" outlined dense type="date" stack-label label="Придатний до *" data-testid="lotExpiry" :error="touched && !form.expiryDate" hide-bottom-space /></div>
             <div class="col-4"><q-input v-model="form.openedAt" outlined dense type="date" stack-label label="Відкрито" /></div>
             <div class="col-4"><q-input v-model="form.onboardStabilityDays" outlined dense type="number" min="0" label="Стабільність після відкриття, діб" /></div>
+            <div class="col-4"><q-input v-model="form.unitsPerTest" outlined dense type="number" min="1" label="Норма витрати на тест" hint="Скільки одиниць лота йде на одне вимірювання" /></div>
           </div>
           <div v-if="formError" class="text-negative q-mt-sm">{{ formError }}</div>
         </q-card-section>
@@ -87,6 +89,31 @@
           <div v-if="consumeError" class="text-negative">{{ consumeError }}</div>
         </q-card-section>
         <q-card-actions align="right" class="bg-grey-1"><q-btn flat label="Скасувати" v-close-popup /><q-btn color="deep-orange-6" icon="check" label="Списати" :loading="saving" :disable="!consumeTests || consumeTests <= 0" data-testid="consumeConfirm" @click="doConsume" /></q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Звіт про витрати -->
+    <q-dialog v-model="reportOpen">
+      <q-card style="min-width: 760px; max-width: 96vw" data-testid="consumptionDialog">
+        <q-card-section class="row items-center bg-grey-8 text-white q-py-sm"><q-icon name="query_stats" class="q-mr-sm" /><div class="text-subtitle1 text-weight-bold">Витрати реагентів</div><q-space /><q-btn flat round dense icon="close" v-close-popup /></q-card-section>
+        <q-card-section class="row q-col-gutter-sm items-center">
+          <div class="col-4"><q-input v-model="reportFrom" outlined dense type="date" stack-label label="З" /></div>
+          <div class="col-4"><q-input v-model="reportTo" outlined dense type="date" stack-label label="До" /></div>
+          <div class="col-4"><q-btn color="primary" icon="refresh" label="Показати" :loading="reportLoading" @click="loadReport" /></div>
+        </q-card-section>
+        <q-card-section v-if="report">
+          <div class="q-mb-sm">Списано: <b>{{ report.totals.units }}</b> · нестача: <b :class="report.totals.shortfall ? 'text-negative' : ''">{{ report.totals.shortfall }}</b> · записів: {{ report.totals.records }}</div>
+          <q-markup-table dense flat>
+            <thead><tr><th class="text-left">Реагент</th><th class="text-left">Лот</th><th class="text-left">Прилад</th><th class="text-left">Показник</th><th class="text-right">Списано</th><th class="text-right">Нестача</th><th class="text-right">Вимірювань</th><th class="text-right">Залишок</th></tr></thead>
+            <tbody>
+              <tr v-for="b in report.byLot" :key="b.lotId" :class="b.belowMinimum ? 'text-negative' : ''">
+                <td>{{ b.reagentName }}</td><td class="mono">{{ b.lotNumber }}</td><td>{{ b.analyzer || '—' }}</td><td>{{ b.testCode || 'усі' }}</td>
+                <td class="text-right">{{ b.units }}</td><td class="text-right">{{ b.shortfall }}</td><td class="text-right">{{ b.runs }}</td><td class="text-right">{{ b.remaining }} <span class="text-caption">/ мін. {{ b.minimum }}</span></td>
+              </tr>
+              <tr v-if="!report.byLot.length"><td colspan="8" class="text-grey-7">За період списань немає</td></tr>
+            </tbody>
+          </q-markup-table>
+        </q-card-section>
       </q-card>
     </q-dialog>
 
@@ -125,7 +152,7 @@ export default {
     return {
       touched: false, remainingEdited: false, lots: [], alerts: [], search: '', onlyProblems: false, testFilter: '',
       lotOpen: false, consumeOpen: false, cardOpen: false, deleteOpen: false,
-      form: {}, formError: '', saving: false, active: null, consumeTests: 1, consumeError: '',
+      form: {}, formError: '', saving: false, reportOpen: false, reportLoading: false, report: null, reportFrom: '', reportTo: '', active: null, consumeTests: 1, consumeError: '',
       columns: [
         { name: 'name', label: 'Реагент', field: 'reagentName', align: 'left', sortable: true },
         { name: 'lotNumber', label: 'Лот', field: 'lotNumber', align: 'left' },
@@ -179,8 +206,8 @@ export default {
     filterTests (val, update) { update(() => { this.testFilter = val || ''; }); },
     openLot (l) {
       // Поля форми збігаються з контрактом API: reagentName, testsInitial, testsRemaining, testCode
-      this.form = l ? { id: l.id, reagentName: l.reagentName, lotNumber: l.lotNumber, manufacturer: l.manufacturer || '', analyzerId: l.analyzerId, testCode: l.testCode, testsInitial: this.initial(l), testsRemaining: this.remaining(l), minimumTests: l.minimumTests, expiryDate: (l.expiryDate || '').slice(0, 10), openedAt: (l.openedAt || '').slice(0, 10), onboardStabilityDays: l.onboardStabilityDays, isActive: l.isActive !== false }
-        : { id: null, reagentName: '', lotNumber: '', manufacturer: '', analyzerId: null, testCode: null, testsInitial: 100, testsRemaining: 100, minimumTests: 50, expiryDate: '', openedAt: '', onboardStabilityDays: null, isActive: true };
+      this.form = l ? { id: l.id, reagentName: l.reagentName, lotNumber: l.lotNumber, manufacturer: l.manufacturer || '', analyzerId: l.analyzerId, testCode: l.testCode, testsInitial: this.initial(l), testsRemaining: this.remaining(l), minimumTests: l.minimumTests, expiryDate: (l.expiryDate || '').slice(0, 10), openedAt: (l.openedAt || '').slice(0, 10), onboardStabilityDays: l.onboardStabilityDays, unitsPerTest: l.unitsPerTest || 1, isActive: l.isActive !== false }
+        : { id: null, reagentName: '', lotNumber: '', manufacturer: '', analyzerId: null, testCode: null, testsInitial: 100, testsRemaining: 100, minimumTests: 50, expiryDate: '', openedAt: '', onboardStabilityDays: null, unitsPerTest: 1, isActive: true };
       this.formError = ''; this.touched = false; this.remainingEdited = false; this.lotOpen = true;
     },
     async saveLot () {
@@ -191,7 +218,7 @@ export default {
       if (!f.expiryDate) { this.formError = 'Вкажіть, до якої дати придатний лот'; return; }
       this.saving = true;
       const num = v => { const n = parseDecimal(v); return n === null ? null : Math.round(n); };
-      const body = { reagentName: f.reagentName, lotNumber: f.lotNumber, manufacturer: f.manufacturer || null, analyzerId: f.analyzerId || null, testCode: f.testCode || null, testsInitial: num(f.testsInitial) || 0, testsRemaining: num(f.testsRemaining), minimumTests: num(f.minimumTests) || 0, expiryDate: f.expiryDate, openedAt: f.openedAt || null, onboardStabilityDays: num(f.onboardStabilityDays), isActive: f.isActive !== false };
+      const body = { reagentName: f.reagentName, lotNumber: f.lotNumber, manufacturer: f.manufacturer || null, analyzerId: f.analyzerId || null, testCode: f.testCode || null, testsInitial: num(f.testsInitial) || 0, testsRemaining: num(f.testsRemaining), minimumTests: num(f.minimumTests) || 0, expiryDate: f.expiryDate, openedAt: f.openedAt || null, onboardStabilityDays: num(f.onboardStabilityDays), unitsPerTest: num(f.unitsPerTest) || 1, isActive: f.isActive !== false };
       try {
         if (this.form.id) await this.$api.updateReagentLot(this.form.id, body); else await this.$api.createReagentLot(body);
         this.notifyOk('Лот збережено'); this.lotOpen = false; this.load();
@@ -200,9 +227,22 @@ export default {
     openConsume (l) { this.active = l; this.consumeTests = 1; this.consumeError = ''; this.consumeOpen = true; },
     async doConsume () {
       this.saving = true; this.consumeError = '';
-      try { await this.$api.consumeReagent(this.active.id, Number(this.consumeTests)); this.notifyOk(`Списано ${this.consumeTests} ${this.testsWord(this.consumeTests)}`); this.consumeOpen = false; this.load(); } catch (e) { this.consumeError = e.userMessage || 'Не вдалося списати тести'; } finally { this.saving = false; }
+      try {
+        const lot = await this.$api.consumeReagent(this.active.id, Number(this.consumeTests));
+        this.notifyOk(`Списано ${this.consumeTests} ${this.testsWord(this.consumeTests)}`);
+        if (lot && lot.warning) this.$q.notify({ type: 'warning', message: lot.warning, timeout: 8000 });
+        this.consumeOpen = false; this.load();
+      } catch (e) { this.consumeError = e.userMessage || 'Не вдалося списати тести'; } finally { this.saving = false; }
     },
     testsWord (n) { const m = Math.abs(Number(n)) % 100; const d = m % 10; return m > 10 && m < 20 ? 'тестів' : d === 1 ? 'тест' : d >= 2 && d <= 4 ? 'тести' : 'тестів'; },
+    openReport () {
+      const d = new Date(); const iso = x => x.toISOString().slice(0, 10);
+      this.reportTo = iso(d); this.reportFrom = iso(new Date(d.getTime() - 30 * 86400000)); this.report = null; this.reportOpen = true; this.loadReport();
+    },
+    async loadReport () {
+      this.reportLoading = true;
+      try { this.report = await this.$api.reagentConsumption({ from: this.reportFrom, to: this.reportTo }); } catch (e) { this.notifyError(e); } finally { this.reportLoading = false; }
+    },
     openCard (l) { this.active = l; this.cardOpen = true; },
     askDelete (l) { this.active = l; this.deleteOpen = true; },
     async doDelete () { try { await this.$api.deleteReagentLot(this.active.id); this.notifyOk('Лот видалено'); this.load(); } catch (e) { this.notifyError(e); } }

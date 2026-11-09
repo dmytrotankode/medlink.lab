@@ -225,8 +225,19 @@ export default {
       if (reason) { this.$q.notify({ type: 'warning', message: reason, timeout: 5000 }); return; }
       this.activeRow = row; this.verifyOpen = true;
     },
-    async rerun (row) {
-      try { await this.$api.rerunResult(row.orderTestId); this.notifyOk(`Показник ${row.testCode} відправлено на повтор`); this.load(); } catch (e) { this.notifyError(e); }
+    rerun (row) {
+      // Повтор можна відправити з розведенням: лаборант вказує коефіцієнт (порожньо — без розведення)
+      this.$q.dialog({
+        title: `Повтор: ${row.testCode}`, message: 'Розведення зразка 1:N (необов’язково). Попереднє значення збережеться в історії.',
+        prompt: { model: '', type: 'number', outlined: true, dense: true, isValid: v => v === '' || Number(v) >= 1, label: 'Коефіцієнт розведення (N)' },
+        cancel: { label: 'Скасувати', flat: true }, ok: { label: 'Повторити', color: 'primary' }, persistent: true
+      }).onOk(async v => {
+        const factor = v === '' || v === null ? null : Number(v);
+        try {
+          await this.$api.rerunResult(row.orderTestId, { dilutionFactor: factor && factor > 1 ? factor : null });
+          this.notifyOk(`Показник ${row.testCode} відправлено на повтор${factor && factor > 1 ? ' з розведенням 1:' + factor : ''}`); this.load();
+        } catch (e) { this.notifyError(e); }
+      });
     },
     askReject (row) { this.activeRow = row; this.rejectOpen = true; },
     async doReject (reason) {

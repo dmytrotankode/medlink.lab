@@ -66,7 +66,7 @@ export const DICTIONARIES = {
       { name: 'resultType', label: 'Тип результату', type: 'select', options: [{ value: 'NUMERIC', label: 'Числовий' }, { value: 'TEXT', label: 'Текстовий' }, { value: 'DROPDOWN', label: 'Вибір зі списку' }, { value: 'CALCULATED', label: 'Розрахунковий' }], col: 3, default: 'NUMERIC' },
       { name: 'price', label: 'Ціна, грн', type: 'decimal', col: 3 },
       { name: 'dropdownOptions', label: 'Варіанти зі списку', type: 'chips', col: 6, showIf: f => f.resultType === 'DROPDOWN' },
-      { name: 'formula', label: 'Формула розрахунку', type: 'text', col: 6, showIf: f => f.resultType === 'CALCULATED' },
+      { name: 'formula', label: 'Формула розрахунку', type: 'text', col: 6, showIf: f => f.resultType === 'CALCULATED', hint: 'Коди показників, + − * / ^, дужки; ROUND(x; 2), MIN, MAX, ABS, SQRT, POW; вік — AGE, стать — MALE / FEMALE. Десяткова крапка. Напр.: ROUND(CHOL - HDL - TG / 2.2; 2)' },
       { name: 'biomaterialTypeId', label: 'Біоматеріал', type: 'dict', dict: 'biomaterials', col: 6 },
       { name: 'methodId', label: 'Методика', type: 'dict', dict: 'method-types', col: 6 },
       { name: 'tubeTypeId', label: 'Тара', type: 'dict', dict: 'tube-types', col: 6 },
