@@ -110,10 +110,10 @@ public class LimitsConnectorRerouteTests
         var orderId = S(order["id"]);
         var test = order["tests"]!.AsArray().Single(t => S(t!["testCode"]) == "GLU")!;
         var from = test["assignedAnalyzerId"]?.GetValue<string>();
-        var target = from == DemoDataSeeder.Sysmex ? DemoDataSeeder.Mindray : DemoDataSeeder.Sysmex;
 
+        // кандидати з урахуванням стану, який лишили інші тести (наприклад, lockout ВКЯ на Mindray): обираємо доступний прилад, відмінний від поточного
         var cands = await Json(await tech.GetAsync($"/api/v1/lab/order-tests/{S(test["id"])}/analyzer-candidates"));
-        Assert.Contains(cands["candidates"]!.AsArray(), c => S(c!["analyzerId"]) == target);
+        var target = S(cands["candidates"]!.AsArray().First(c => c!["available"]!.GetValue<bool>() && S(c["analyzerId"]) != from)!["analyzerId"]);
 
         Assert.Equal(HttpStatusCode.Forbidden, (await reg.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/reroute", new { analyzerId = target, reason = "тест" })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await tech.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/reroute", new { analyzerId = target, reason = "" })).StatusCode);
