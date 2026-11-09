@@ -116,10 +116,10 @@
 | S-08 | ВКЯ 8,28 при 7,2±0,3 → lockout → розблокування | ✔ | Qc_1_3s_creates_lockout… (lockout, L-J=LOCKOUT, 403, протокол); QcAndEucastTests (всі правила) | блок автоверифікації WBC — лише unit (Lockout_blocks) | lab.qc.add-point, lockout-resolve |
 | S-09 | Норми: 4 приклади, 400 на невалідні межі | ◐ | NormsCascadeResolverTests (13: вагітність, цикл, МКХ, вік) | 400 на normLow>normHigh та trace не тестуються | lab.nm.resolver, add-layer |
 | S-10 | Кабінет пацієнта: статуси без значень, тренд, PDF, 404 | ◐ | Full_happy_path (portal progress 100 % після release) | до release/404 чужого пацієнта/тренд/PDF не тестуються | — |
-| S-11 | Біобанк: розміщення, пошук, видача, списання | ✘ | немає жодного автотесту | код є (BiobankReagentService) | lab.bb.* |
+| S-11 | Біобанк: розміщення, пошук, видача, списання | ✔ | ApiTests: ReportArchiveBiobankImportTests.Biobank_cycle_place_retrieve_for_rerun_dispose_with_act (розміщення → пошук → видача на повтор → списання з актом) | код є (BiobankReagentService) | lab.bb.* |
 | S-12 | Коннектор: UI → ZIP → setup → ACTIVE → RELOAD_CONFIG → офлайн-буфер | ◐ | Full_happy_path (register/config/401); PipelineAndCliTests (конфіг, фабрика) | ZIP, setup, RELOAD_CONFIG, offline-буфер, heartbeat — без тестів; інсталятори не тестуються | lab.an.connector-create, connector-manage |
 | S-13 | Мікробіологія E. coli, CRE → паніка | ◐ | QcAndEucastTests.Cre_detected…, Mic_interpretation (unit) | API-потік культури/ізоляту/паніки не тестується | lab.mb.cre-case |
-| S-14 | Імпорт CSV dryRun | ✘ | немає жодного автотесту | ImportService існує | lab.im.csv-dryrun |
+| S-14 | Імпорт CSV dryRun | ✔ | ReportArchiveBiobankImportTests.Results_import_dry_run_reports_error_row_and_apply_saves_valid_rows; ліміт 5000 рядків — LimitsConnectorRerouteTests | ImportService існує | lab.im.csv-dryrun |
 | S-15 | TAT після S-01…S-06 | ◐ | RulesEngineTests.Stages_and_total, Median_and_p90 (unit) | ендпоінт /analytics/tat і SLA CITO не тестуються | lab.tat.read, sla |
 | S-21 | Інтервенція ЗАК → статус «Готово» | ◐ | Service_matrix_card_and_catalog_for_mis (NO_EQUIPMENT для DEMO-LAB-TM) | READY для ЗАК явно не асертиться | lab.mis.interventions |
 | S-22 | Амбулаторне е-направлення, показники HGB/WBC/PLT | ✔ | Referral_validates_indicators…; Distribution_change_auto_and_confirm_enqueue_tests | — | lab.mis.ambulatory-ehealth |
@@ -152,7 +152,7 @@
 | S-53 | Лаборант змінює прилад, routed_by=MANUAL | ◐ | Distribution_change_auto_and_confirm… (зміна/кандидати/відмова) | routed_by=MANUAL явно не асертиться | lab.mis.change-analyzer |
 | S-54 | Авторозподіл при offline та lockout | ◐ | Cito_routing… (offline Respons); авторозподіл | lockout FIB і резерв Zonci не тестуються | lab.mis.auto-distribute |
 | S-55 | Онкомаркер без обладнання → send-out/ручне/відхилити | ◐ | Distribution_change… (CA125 → send-out) | ручне/відхилення не тестуються | lab.mis.no-equipment |
-| S-56 | Перенаправлення на інший прилад з причиною | ✘ | немає тесту (/analyzers/{id}/reroute, /order-tests/{id}/analyzer) | код є | lab.mis.reroute-queue |
+| S-56 | Перенаправлення на інший прилад з причиною | ✔ | LimitsConnectorRerouteTests.Order_can_be_rerouted_to_another_analyzer_with_reason_audit_and_roles; екран у картці замовлення | код є | lab.mis.reroute-queue |
 | S-57 | Розріз «За пацієнтом» | ◐ | Work_views_reports… (виклик without перевірки вмісту) | вміст не асертиться | lab.mis.work-patients |
 | S-58 | Розріз «За дослідженням»: матриця «·» | ◐ | Work_views_reports… (виклик) | вміст не асертиться | lab.mis.work-studies |
 | S-59 | Кумулятивний звіт: HGB 62 з BC-20S, стрілки | ✔ | Work_views_reports_and_cumulative_export | — | lab.rp.cumulative |
@@ -368,8 +368,8 @@ Guide: у `src/MedLink.Guide/Seed/*.json` 296 сценаріїв з кодами
 | FR-CON-004 | Команди: `RELOAD_CONFIG` → `GET /connector/config`, перезапуск змінених сесій без зупинки  | OfflineBuffer, BufferRetryService, HeartbeatService, ConfigStore | AstmSessionE2ETests (без буфера/heartbeat); окремого тесту буфера немає | lab.an.connect* | ◐ (T) | — |
 | FR-CON-005 | Якщо сервер недоступний при старті — завантажити `config.cache.json` і працювати офлайн; я | OfflineBuffer, BufferRetryService, HeartbeatService, ConfigStore | AstmSessionE2ETests (без буфера/heartbeat); окремого тесту буфера немає | lab.an.connect* | ◐ (T) | — |
 | FR-CON-006 | Усі часи — UTC; локальний час ПК не використовується для `measuredAt`, якщо прилад дав вла | OfflineBuffer, BufferRetryService, HeartbeatService, ConfigStore | AstmSessionE2ETests (без буфера/heartbeat); окремого тесту буфера немає | lab.an.connect* | ◐ (T) | — |
-| FR-CON-007 | Один запущений екземпляр на ПК (mutex); спроба другого — помилка та вихід | mutex одного екземпляра в коді не знайдено | — | lab.an.connect* | ✘ | — |
-| FR-CON-008 | Версія коннектора передається у heartbeat; сервер показує попередження, якщо вона старша з | перевірка мінімальної версії коннектора на сервері не знайдена | — | lab.an.connect* | ✘ | — |
+| FR-CON-007 | Один запущений екземпляр на ПК (mutex); спроба другого — помилка та вихід | SingleInstanceGuard: mutex Windows + блокувальний файл + перевірка порту; тест Single_instance_guard_blocks_second_instance | — | lab.an.connect* | ✔ | — |
+| FR-CON-008 | Версія коннектора передається у heartbeat; сервер показує попередження, якщо вона старша з | heartbeat повертає minVersion/versionOutdated/warning (Lab:MinConnectorVersion), UI аналізаторів і сторінка коннектора показують попередження; тест Connector_heartbeat_warns_about_outdated_version | — | lab.an.connect* | ✔ | — |
 | FR-CYT-001 | Види матеріалу: гінекологічний мазок, рідинна цитологія, пунктат/аспірат, виділення і змив | цитологія (prepare/screening/sign/analytics) | S120, S121, S122 | lab.cyto.* | ✔ | — |
 | FR-CYT-002 | Прийом: сканування кожного скельця/флакона, перевірка маркування (як 22.3); для гінекологі | частково через PAT-механізми | S120 (частково) | lab.cyto.* | ◐ (T) | — |
 | FR-CYT-003 | Приготування препарату: мазок або рідинна цитологія → скельце(а) з кодом `C{yy}-NNNNN-n`;  | цитологія (prepare/screening/sign/analytics) | S120, S121, S122 | lab.cyto.* | ✔ | — |
@@ -415,14 +415,14 @@ Guide: у `src/MedLink.Guide/Seed/*.json` 296 сценаріїв з кодами
 | FR-EQP-006 | Показник можна ввімкнути на приладі, лише якщо в нього є `analyzer_test_code`; інакше — по | /analyzers/{id}/services | Service_matrix_card_and_catalog_for_mis (dryRun, analyzer-code-missing) | lab.mis.disable-service | ✔ | — |
 | FR-EQP-007 | Вимкнення послуги/показника на приладі або вимкнення самого приладу запускає переназначенн | /analyzers/{id}/services | Service_matrix_card_and_catalog_for_mis (dryRun, analyzer-code-missing) | lab.mis.disable-service | ✔ | — |
 | FR-EQP-008 | На картці послуги вкладка «Обладнання» — зворотний вигляд: які прилади, у якому порядку пр | /analyzers/{id}/services | Service_matrix_card_and_catalog_for_mis (dryRun, analyzer-code-missing) | lab.mis.disable-service | ✔ | — |
-| FR-GAP-001 | Пошук дублікатів пацієнта при реєстрації (ПІБ+дата народження+телефон/ІПН), об'єднання кар | дублікатів/merge пацієнтів немає | — | — | ✘ | — |
+| FR-GAP-001 | Пошук дублікатів пацієнта при реєстрації (ПІБ+дата народження+телефон/ІПН), об'єднання кар | пошук дублікатів реалізовано (ІПН, ПІБ+дата народження, телефон; тест); об'єднання карток (merge) — НЕ зроблено | — | — | ◐ | — |
 | FR-GAP-002 | Ідентифікація пацієнта при заборі за двома ідентифікаторами (ISO 15189 7.2.6): ПІБ + дата  | чек-лист idVerified є; другий ідентифікатор не вимагається | — | — | ◐ (C) | — |
-| FR-GAP-003 | Згода пацієнта на обробку даних та на отримання результатів каналами зв'язку (телефон/e-ma | згод немає | — | — | ✘ | — |
+| FR-GAP-003 | Згода пацієнта на обробку даних та на отримання результатів каналами зв'язку (телефон/e-ma | згоди обробка даних / результати телефон·SMS·e-mail·Viber: GET/PUT patients/{id}/consents, аудит; тест Consents_grant_revoke_and_validate. Блокування розсилки за відсутності згоди — підключає агент notify через HasConsentAsync | — | — | ✔ | — |
 | FR-GAP-004 | Анонімізовані/кодовані дослідження (ВІЛ, генетика): видача лише за кодом, обмежений доступ | кодованих досліджень немає | — | — | ✘ | — |
 | FR-GAP-005 | Журнал доступу до результатів (хто і коли переглядав), експорт для перевірок / Should / Ча | аудит мутацій є, журналу переглядів немає | — | — | ◐ (C) | — |
-| FR-GAP-010 | Виправлений результат після видачі → новий бланк із позначкою «ВИПРАВЛЕНО» (amended report | «ВИПРАВЛЕНО»/amended-бланка немає | — | — | ✘ | — |
+| FR-GAP-010 | Виправлений результат після видачі → новий бланк із позначкою «ВИПРАВЛЕНО» (amended report | після reopen+повторної видачі архівується версія AMENDED, бланк із позначкою «ВИПРАВЛЕНО» і посиланням на попередню версію; тест Release_archives_report_amend… | — | — | ✔ | — |
 | FR-GAP-011 | Анулювання результату (помилковий зразок) із відкликанням бланка та записом у ЕМК / Must / | reject/reopen/annul ЕСОЗ-звіту; відкликання бланка і запис в ЕМК — ні | — | — | ◐ (C) | — |
-| FR-GAP-012 | Архів виданих бланків PDF (незмінні копії з хешем), повторний друк копії з позначкою «ДУБЛ | архіву незмінних PDF із хешем немає | — | — | ✘ | — |
+| FR-GAP-012 | Архів виданих бланків PDF (незмінні копії з хешем), повторний друк копії з позначкою «ДУБЛ | lab_report_archive: PDF+HTML із SHA-256, дублікат із позначкою «ДУБЛІКАТ», перевірка цілісності; тест Release_archives_report_amend… (PDF-дублікат із водяним знаком — ні, лише HTML) | — | — | ✔ | — |
 | FR-GAP-013 | Коментарі та інтерпретація лікаря до результату, шаблони інтерпретацій (текстові блоки) /  | інтерпретацій лікаря немає (окрім мікробіології) | — | — | ✘ | — |
 | FR-GAP-020 | Ланцюг ескалації: якщо лікар не підтвердив критичний результат за N хв → старша медсестра  | журнал дзвінків є; таймерів і ланцюга ескалації немає | — | — | ◐ (C) | — |
 | FR-GAP-021 | Довідник критичних значень окремо від референсів (список панічних значень лабораторії, зат | crit у шарах норм; окремого довідника панічних значень немає | — | — | ◐ (C) | — |
@@ -431,8 +431,8 @@ Guide: у `src/MedLink.Guide/Seed/*.json` 296 сценаріїв з кодами
 | FR-GAP-032 | Журнал технічного обслуговування та інцидентів обладнання (ТО, ремонти, простої), статус « | статус приладу MAINTENANCE враховує маршрутизація; журналу ТО немає | — | — | ◐ (C) | — |
 | FR-GAP-033 | Верифікація/валідація методик: записи про валідацію нової методики або лоту реагентів пере | валідації методик немає | — | — | ✘ | — |
 | FR-GAP-034 | Невідповідності та коригувальні дії (CAPA): реєстр інцидентів (помилки преаналітики, поруш | протокол lockout ВКЯ; реєстру CAPA немає | — | — | ◐ (C) | — |
-| FR-GAP-040 | Компетентність персоналу: допуски співробітника до методик/приладів, дата оцінки компетент | допусків персоналу немає | — | — | ✘ | — |
-| FR-GAP-041 | Реєстр СОП (стандартних операційних процедур) із версіями, посиланням із екранів процесів  | реєстру СОП немає | — | — | ✘ | — |
+| FR-GAP-040 | Компетентність персоналу: допуски співробітника до методик/приладів, дата оцінки компетент | реєстр допусків (персонал × показник/прилад/розділ, строк, скасування з причиною, /competencies/check) + тест; блокування верифікації без допуску — НЕ підключено | — | — | ◐ | — |
+| FR-GAP-041 | Реєстр СОП (стандартних операційних процедур) із версіями, посиланням із екранів процесів  | реєстр СОП із версіями (одна активна на код, посилання на об'єкт) + тест; прив'язка кнопок «СОП» на екранах процесів — НЕ зроблено | — | — | ◐ | — |
 | FR-GAP-042 | Електронні підписи співробітників у протоколах ВКЯ, журналах відділень (ПІБ, посада, час — | виконавець фіксується (ПІБ/час) у протоколах | — | — | ◐ (C) | — |
 | FR-GAP-050 | Політика зберігання зразків за підрозділом (термін, температура) з автоматичним списком «д | біобанк, «до утилізації», стадія DISPOSED; політики за підрозділом немає | — | — | ◐ (C) | — |
 | FR-GAP-051 | Довідник одиниць вимірювання з коефіцієнтами перерахунку SI ↔ традиційні (ммоль/л ↔ мг/дл) | коефіцієнтів SI↔традиційні немає | — | — | ✘ | — |
@@ -632,7 +632,7 @@ Guide: у `src/MedLink.Guide/Seed/*.json` 296 сценаріїв з кодами
 | FR-PRE-006 | Налаштування схеми ідентифікації: «унікальний на пробірку» (типово) або «штрихкод замовлен | немає | — | lab.orders.tube-plan | ✘ | — |
 | FR-PRE-007 | Маршрут кур'єра: контрольні точки сканування, час у дорозі, звіт порушень; статистика відб | немає | — | lab.orders.tube-plan | ✘ | — |
 | FR-PRN-001 | Бланк результатів A4 (HTML → PDF): шапка з реквізитами й логотипом, № замовлення, дати заб | ReportService, QuestPDF/HTML fallback | Full_happy_path (HTML+PDF) | lab.orders.card-report | ✔ | — |
-| FR-PRN-002 | Мова бланка обирається окремо (uk за замовчуванням; en — назви тестів із `shortName`/LOINC | бланк лише uk (html lang="uk"), перемикача en немає | — | lab.orders.card-report | ✘ | — |
+| FR-PRN-002 | Мова бланка обирається окремо (uk за замовчуванням; en — назви тестів із `shortName`/LOINC | бланк uk/en/both (?lang=, налаштування reportLanguage), NameEn у показників і послуг із запасним варіантом; тест Report_english_and_bilingual_use_name_en_with_fallback. Мова за карткою пацієнта — ні (поле в evomis) | — | lab.orders.card-report | ✔ | — |
 | FR-PRN-003 | Етикетка 40×25 мм ZPL: `^XA^FO50,30^BY2^BCN,60,Y,N,N^FD{barcode}^FS^FO50,110^A0N,24,24^FD{ | ZplLabelBuilder | BarcodeTests.Zpl_label_contains_code128_and_fields | lab.orders.card-report | ✔ | — |
 | FR-PRN-004 | Робочий лист батчу A4: номер, аналізатор, дата, таблиця (№, штрихкод, пацієнт, тести, поле | worklist batch print, протокол розблокування | Qc_1_3s (текст протоколу) | lab.orders.card-report | ◐ (T) | — |
 | FR-PRN-005 | Протокол розблокування ВКЯ, акт утилізації біобанку, маніфест логістики, бланк мікробіолог | worklist batch print, протокол розблокування | Qc_1_3s (текст протоколу) | lab.orders.card-report | ◐ (T) | — |
