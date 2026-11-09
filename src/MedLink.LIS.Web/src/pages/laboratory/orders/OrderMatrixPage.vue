@@ -6,7 +6,7 @@
 
     <div class="medlink-card q-pa-sm q-mb-sm row q-col-gutter-sm items-center">
       <div class="col-12 col-md-6"><patient-select v-model="patient" :allow-create="false" /></div>
-      <div class="col-6 col-md-3"><q-select v-model="doctorId" dense outlined clearable label="Лікар" :options="doctorOptions" emit-value map-options /></div>
+      <div class="col-6 col-md-3"><q-select v-model="doctorId" data-testid="mxDoctor" dense outlined clearable label="Лікар" :options="doctorOptions" emit-value map-options /></div>
       <div class="col-6 col-md-3"><q-select v-model="departmentId" dense outlined clearable label="Відділення" :options="departmentOptions" emit-value map-options /></div>
     </div>
 

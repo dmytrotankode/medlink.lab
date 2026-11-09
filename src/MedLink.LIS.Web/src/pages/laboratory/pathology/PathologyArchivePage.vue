@@ -41,10 +41,10 @@
     </div>
 
     <q-dialog v-model="issueOpen">
-      <q-card style="min-width: 460px">
+      <q-card style="min-width: 460px" data-testid="archiveIssueDialog">
         <q-card-section class="text-h6">Видача {{ issueRow && issueRow.kind === 'CYTO' ? 'препарата' : 'блока' }} {{ issueRow && issueRow.code }} ({{ issueRow && issueRow.caseNo }})</q-card-section>
         <q-card-section class="q-gutter-sm">
-          <q-btn-toggle v-model="issue.scope" dense unelevated toggle-color="primary" color="grey-2" text-color="grey-9" :options="[{ label: 'Зовнішня', value: 'EXTERNAL' }, { label: 'Внутрішня (підрозділ)', value: 'INTERNAL' }]" />
+          <q-btn-toggle v-model="issue.scope" data-testid="archiveIssueScope" dense unelevated toggle-color="primary" color="grey-2" text-color="grey-9" :options="[{ label: 'Зовнішня', value: 'EXTERNAL' }, { label: 'Внутрішня (підрозділ)', value: 'INTERNAL' }]" />
           <q-input v-if="issue.scope === 'INTERNAL'" v-model="issue.recipientUnit" dense outlined autofocus label="Підрозділ закладу *" data-testid="issueUnit" />
           <q-input v-model="issue.recipient" dense outlined :autofocus="issue.scope !== 'INTERNAL'" label="Отримувач (ПІБ / заклад) *" @keyup.enter="issueValid && doIssue()" />
           <q-input v-model="issue.document" dense outlined label="Документ (акт, довіреність)" />
@@ -59,7 +59,7 @@
     </q-dialog>
 
     <q-dialog v-model="placeOpen">
-      <q-card style="min-width: 400px">
+      <q-card style="min-width: 400px" data-testid="archivePlaceDialog">
         <q-card-section class="text-h6">Місце зберігання {{ placeRow && placeRow.kind === 'CYTO' ? 'препарата' : 'блока' }} {{ placeRow && placeRow.code }} ({{ placeRow && placeRow.caseNo }})</q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-select v-model="place.roomId" dense outlined clearable emit-value map-options :options="roomOptions" label="Приміщення" />

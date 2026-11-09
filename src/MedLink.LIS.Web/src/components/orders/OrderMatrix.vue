@@ -27,7 +27,7 @@
               <tr v-if="cat.name" :key="'c' + section.name + cat.name" class="matrix-category"><td colspan="8">{{ cat.name }}</td></tr>
               <tr v-for="row in cat.rows" :key="row.key" :class="{ 'matrix-row--selected': isSelected(row), 'matrix-row--profile': row.kind === 'PROFILE' }" class="cursor-pointer" :data-testid="`matrix-${row.code}`" @click="toggle(row)">
                 <td @click.stop><q-checkbox :value="isSelected(row)" dense @input="toggle(row)" /></td>
-                <td @click.stop><q-icon :name="isFavorite(row) ? 'star' : 'star_border'" :color="isFavorite(row) ? 'amber-7' : 'grey-4'" size="18px" class="cursor-pointer" @click="toggleFavorite(row)" /></td>
+                <td @click.stop><q-icon data-testid="mxFavorite" :name="isFavorite(row) ? 'star' : 'star_border'" :color="isFavorite(row) ? 'amber-7' : 'grey-4'" size="18px" class="cursor-pointer" @click="toggleFavorite(row)" /></td>
                 <td class="mono text-caption">{{ row.code }}<q-badge v-if="row.kind === 'PROFILE'" color="primary" label="профіль" class="q-ml-xs" /></td>
                 <td><div>{{ row.name }}</div><div v-if="row.kind === 'PROFILE'" class="text-caption text-grey-6">{{ (row.memberTestCodes || []).map(testName).join(', ') }}</div></td>
                 <td class="text-caption">{{ row.biomaterialName || '—' }}</td>

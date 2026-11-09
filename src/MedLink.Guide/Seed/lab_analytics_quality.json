@@ -2312,14 +2312,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Аналізатори",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"wkTabAnalyzers\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "div"
-            },
             "parentLevels": 0
           },
           "sortOrder": 10
@@ -2423,15 +2420,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Активні",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"wkStatusToggle\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "button",
-              "text": "Активні"
-            },
             "parentLevels": 0
           },
           "sortOrder": 50
@@ -2474,14 +2467,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "css",
-                "value": ".an-tile--none",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"wkTileNoEquipment\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "div"
-            },
             "parentLevels": 0
           },
           "sortOrder": 10
@@ -2610,15 +2600,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Переназначити чергу",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"wkReroute\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "button",
-              "text": "Переназначити чергу"
-            },
             "parentLevels": 0
           },
           "sortOrder": 30
@@ -2694,14 +2680,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Пацієнти",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"wkTabPatients\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "div"
-            },
             "parentLevels": 0
           },
           "sortOrder": 10
@@ -2856,14 +2839,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Дослідження",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"wkTabServices\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "div"
-            },
             "parentLevels": 0
           },
           "sortOrder": 10
@@ -3038,9 +3018,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|№ замовлення, штрихкод, пацієнт",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"wkSearch\"]",
+                "weight": 100
               }
             ],
             "parentLevels": 3
@@ -3201,15 +3181,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|XLSX",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"wkExport\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "button",
-              "text": "XLSX"
-            },
             "parentLevels": 0
           },
           "sortOrder": 30
@@ -3443,14 +3419,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Для критичних значень коментар лікаря обов’язковий.",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"validationRulesHint\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "div"
-            },
             "parentLevels": 0
           },
           "sortOrder": 10
@@ -9285,15 +9258,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Диск-дифузія (зона, мм)",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"suscMethodToggle\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "button",
-              "text": "Диск-дифузія (зона, мм)"
-            },
             "parentLevels": 0
           },
           "sortOrder": 50
@@ -9316,15 +9285,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|МІК (мг/л)",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"suscMethodToggle\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "button",
-              "text": "МІК (мг/л)"
-            },
             "parentLevels": 0
           },
           "sortOrder": 60
@@ -12640,14 +12605,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Медіана часу виконання",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"tatMedian\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "div"
-            },
             "parentLevels": 1
           },
           "sortOrder": 10
@@ -13332,15 +13294,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|За дослідженням",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"reportGroupToggle\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "button",
-              "text": "За дослідженням"
-            },
             "parentLevels": 0
           },
           "sortOrder": 40
@@ -13395,15 +13353,11 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|За аналізатором",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"reportGroupToggle\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "button",
-              "text": "За аналізатором"
-            },
             "parentLevels": 0
           },
           "sortOrder": 60

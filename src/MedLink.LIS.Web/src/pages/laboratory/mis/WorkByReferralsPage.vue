@@ -5,7 +5,7 @@
 <template>
   <div data-testid="workByReferralsPage">
     <page-header title="Робота за направленнями" icon="fas fa-tasks" subtitle="Черги аналізаторів, пацієнти й дослідження: що в черзі, в аналізі, з результатом, без обладнання" :breadcrumbs="[{ label: 'Робота за направленнями' }]">
-      <q-btn flat dense color="primary" icon="download" label="Завантажити в Excel" type="a" :href="exportUrl" class="q-mr-sm" />
+      <q-btn flat dense color="primary" icon="download" label="Завантажити в Excel" data-testid="wkExport" type="a" :href="exportUrl" class="q-mr-sm" />
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
     </page-header>
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />
@@ -13,17 +13,17 @@
     <div class="medlink-card q-pa-sm q-mb-sm row q-gutter-sm items-center">
       <q-select v-model="f.source" dense outlined clearable emit-value map-options :options="sourceOptions" label="Джерело" style="min-width: 180px" />
       <q-input v-model="f.department" dense outlined clearable label="Відділення" placeholder="Назва відділення" style="min-width: 180px" />
-      <q-input v-model="f.q" dense outlined clearable label="№ замовлення, штрихкод, пацієнт" style="min-width: 300px" @keyup.enter="load" />
+      <q-input v-model="f.q" dense outlined clearable label="№ замовлення, штрихкод, пацієнт" data-testid="wkSearch" style="min-width: 300px" @keyup.enter="load" />
       <q-toggle v-model="f.packagesOnly" label="Лише пакети" dense class="q-mr-sm" />
       <q-toggle v-model="citoOnly" label="Лише CITO" dense color="deep-orange-6" class="q-mr-sm" />
       <span class="text-caption text-grey-7">Показати направлення:</span>
-      <q-btn-toggle v-model="f.status" dense unelevated toggle-color="primary" color="grey-2" text-color="grey-9" :options="[{ label: 'Активні', value: 'active' }, { label: 'Усі', value: 'all' }]" />
+      <q-btn-toggle v-model="f.status" data-testid="wkStatusToggle" dense unelevated toggle-color="primary" color="grey-2" text-color="grey-9" :options="[{ label: 'Активні', value: 'active' }, { label: 'Усі', value: 'all' }]" />
     </div>
 
     <q-tabs v-model="tab" dense align="left" active-color="primary" indicator-color="primary" class="text-grey-8 q-mb-sm">
-      <q-tab name="analyzers" icon="fas fa-server" label="Аналізатори" />
-      <q-tab name="patients" icon="people" label="Пацієнти" />
-      <q-tab name="services" icon="fas fa-vials" label="Дослідження" />
+      <q-tab name="analyzers" icon="fas fa-server" label="Аналізатори" data-testid="wkTabAnalyzers" />
+      <q-tab name="patients" icon="people" label="Пацієнти" data-testid="wkTabPatients" />
+      <q-tab name="services" icon="fas fa-vials" label="Дослідження" data-testid="wkTabServices" />
     </q-tabs>
 
     <!-- Аналізатори -->
@@ -46,7 +46,7 @@
           </q-card>
         </div>
         <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-          <q-card flat bordered class="cursor-pointer an-tile an-tile--none" :class="{ 'an-tile--active': analyzerId === 'none' }" @click="openAnalyzer('none')">
+          <q-card flat bordered class="cursor-pointer an-tile an-tile--none" data-testid="wkTileNoEquipment" :class="{ 'an-tile--active': analyzerId === 'none' }" @click="openAnalyzer('none')">
             <q-card-section class="q-pa-sm">
               <div class="text-weight-bold">Без аналізатора</div>
               <div class="text-caption text-grey-7">зовнішня лабораторія / вручну / відхилено</div>
@@ -60,7 +60,7 @@
           <div class="text-subtitle1 text-weight-bold">{{ analyzerView.analyzer }}</div>
           <span class="text-caption text-grey-7 q-ml-sm">{{ analyzerView.location }} · позицій {{ analyzerView.total }}</span>
           <q-space />
-          <q-btn v-if="currentTile && currentTile.longOffline && analyzerView.total > 0" outline dense color="negative" icon="alt_route" label="Переназначити чергу" @click="reroute" />
+          <q-btn v-if="currentTile && currentTile.longOffline && analyzerView.total > 0" outline dense color="negative" icon="alt_route" label="Переназначити чергу" data-testid="wkReroute" @click="reroute" />
         </div>
         <q-table :data="analyzerView.items" :columns="rowColumns" row-key="orderTestId" dense flat :pagination="{ rowsPerPage: 50 }" no-data-label="У черзі нічого немає">
           <template v-slot:body-cell-order="props">

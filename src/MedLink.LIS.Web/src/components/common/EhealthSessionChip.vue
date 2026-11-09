@@ -24,8 +24,8 @@
         <q-card-section v-else-if="level === 'L1'" class="q-pt-none">
           <div class="text-caption q-mb-sm">Підтвердіть особу: КЕП (кваліфікований електронний підпис) або код із додатка автентифікації (двофакторний вхід).</div>
           <q-tabs v-model="method" dense align="left" active-color="primary" class="text-grey-8">
-            <q-tab name="KEP" label="КЕП" />
-            <q-tab name="TOTP" label="Код з додатка" />
+            <q-tab name="KEP" label="КЕП" data-testid="ehealthTabKep" />
+            <q-tab name="TOTP" label="Код з додатка" data-testid="ehealthTabTotp" />
           </q-tabs>
           <div v-if="method === 'KEP'" class="q-pt-sm">
             <div v-if="status.testCertificate" class="text-caption bg-grey-2 q-pa-sm rounded-borders">
@@ -34,8 +34,8 @@
             <div class="text-caption text-grey-7 q-mt-xs">Приватний ключ не залишає пристрій; ЛІС отримує лише підпис і дані сертифіката.</div>
           </div>
           <div v-else class="q-pt-sm q-gutter-sm">
-            <q-input v-model="code" dense outlined label="Код з додатка" mask="######" @keyup.enter="doConfirm" />
-            <div v-if="!status.totpEnabled" class="text-caption text-orange-9">Двофакторний вхід вимкнено для облікового запису. <a href="#" @click.prevent="enableTotp">Увімкнути</a></div>
+            <q-input v-model="code" dense outlined label="Код з додатка" data-testid="ehealthTotpCode" mask="######" @keyup.enter="doConfirm" />
+            <div v-if="!status.totpEnabled" class="text-caption text-orange-9">Двофакторний вхід вимкнено для облікового запису. <a href="#" data-testid="ehealthEnableTotp" @click.prevent="enableTotp">Увімкнути</a></div>
             <div v-if="status.demoTotpCode" class="text-caption text-grey-7">Тестовий режим: код {{ status.demoTotpCode }}</div>
           </div>
         </q-card-section>
@@ -52,7 +52,7 @@
           <q-btn v-if="level === 'L0'" unelevated color="primary" label="Увійти" :loading="busy" :disable="!login || !password" @click="doLogin">
             <q-tooltip v-if="!login || !password">Введіть логін і пароль</q-tooltip>
           </q-btn>
-          <q-btn v-if="level === 'L1'" unelevated color="primary" :label="method === 'KEP' ? 'Підписати КЕП' : 'Підтвердити'" :loading="busy" @click="doConfirm" />
+          <q-btn v-if="level === 'L1'" unelevated color="primary" :label="method === 'KEP' ? 'Підписати КЕП' : 'Підтвердити'" data-testid="ehealthConfirm" :loading="busy" @click="doConfirm" />
         </q-card-actions>
       </q-card>
     </q-dialog>

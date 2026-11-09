@@ -117,12 +117,19 @@ export function describe (el) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-function queryStrategy (st, doc) {
+const TEXT_TAGS = 'button, a, label, span, div, li, td, th, p, b, strong, h1, h2, h3, h4, h5, h6, summary';
+function queryStrategy (st, doc, fp) {
   const out = [];
   try {
     if (st.type === 'text') {
-      const idx = st.value.indexOf('|'); const tag = st.value.slice(0, idx); const text = st.value.slice(idx + 1).toLowerCase();
-      Array.prototype.forEach.call(doc.querySelectorAll(tag), el => { if (ownText(el).toLowerCase() === text) out.push(el); });
+      // формат «тег|текст»; без тегу («текст») — шукаємо серед будь-яких текстових елементів (тег з відбитку, якщо є)
+      const idx = st.value.indexOf('|');
+      const tag = idx >= 0 ? st.value.slice(0, idx) : ((fp && fp.tag) || TEXT_TAGS);
+      const text = (idx >= 0 ? st.value.slice(idx + 1) : st.value).toLowerCase();
+      const scan = sel => Array.prototype.forEach.call(doc.querySelectorAll(sel), el => { if (ownText(el).toLowerCase() === text) out.push(el); });
+      scan(tag);
+      // тег змінився після оновлення інтерфейсу (span → div тощо): той самий текст шукаємо серед будь-яких текстових елементів
+      if (!out.length && idx >= 0) scan(TEXT_TAGS);
     } else {
       Array.prototype.forEach.call(doc.querySelectorAll(st.value), el => out.push(el));
     }
@@ -170,7 +177,7 @@ export function resolveAnchor (anchor, doc, noFuzzy) {
   const strategies = (anchor.strategies || []).slice().sort((a, b) => b.weight - a.weight);
   for (let i = 0; i < strategies.length; i++) {
     const st = strategies[i];
-    let c = queryStrategy(st, doc).filter(isVisible);
+    let c = queryStrategy(st, doc, anchor.fingerprint).filter(isVisible);
     if (!c.length) continue;
     if (c.length > 1 && anchor.fingerprint) {
       c = c.map(el => ({ el: el, s: score(el, anchor.fingerprint) })).sort((a, b) => b.s - a.s).map(x => x.el);

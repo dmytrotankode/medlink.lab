@@ -2484,14 +2484,11 @@
             "routePattern": "/laboratory/pathology/cases/:id",
             "strategies": [
               {
-                "type": "css",
-                "value": "[data-testid=\"blocksTab\"] button.text-teal-7",
-                "weight": 40
+                "type": "testid",
+                "value": "[data-testid^=\"cover-\"]",
+                "weight": 95
               }
-            ],
-            "fingerprint": {
-              "tag": "button"
-            }
+            ]
           }
         },
         {
@@ -4139,9 +4136,9 @@
             "routePattern": "/laboratory/pathology/cases/:id",
             "strategies": [
               {
-                "type": "text",
-                "value": "Змінює діагноз або стадію",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"addendumChangesDx\"]",
+                "weight": 100
               }
             ]
           }
@@ -5103,14 +5100,11 @@
             "routePattern": "/laboratory/pathology/archive",
             "strategies": [
               {
-                "type": "text",
-                "value": "Місце зберігання блока",
-                "weight": 80
+                "type": "testid",
+                "value": "[data-testid=\"archivePlaceDialog\"]",
+                "weight": 100
               }
-            ],
-            "fingerprint": {
-              "tag": "div"
-            }
+            ]
           }
         },
         {
@@ -5271,14 +5265,11 @@
             "routePattern": "/laboratory/pathology/archive",
             "strategies": [
               {
-                "type": "text",
-                "value": "Видача блока",
-                "weight": 80
+                "type": "testid",
+                "value": "[data-testid=\"archiveIssueDialog\"]",
+                "weight": 100
               }
-            ],
-            "fingerprint": {
-              "tag": "div"
-            }
+            ]
           }
         },
         {
@@ -5300,14 +5291,9 @@
             "routePattern": "/laboratory/pathology/archive",
             "strategies": [
               {
-                "type": "text",
-                "value": "Внутрішня (підрозділ)",
-                "weight": 60
-              },
-              {
-                "type": "text",
-                "value": "Зовнішня",
-                "weight": 50
+                "type": "testid",
+                "value": "[data-testid=\"archiveIssueScope\"]",
+                "weight": 100
               }
             ]
           }

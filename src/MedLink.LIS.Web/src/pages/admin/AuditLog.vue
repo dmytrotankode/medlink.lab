@@ -7,7 +7,7 @@
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />
 
     <div class="medlink-card q-pa-sm q-mb-sm row q-col-gutter-sm items-center">
-      <div class="col-6 col-md-2"><q-select v-model="filters.entity" dense outlined clearable label="Об’єкт" :options="entityOptions" emit-value map-options @input="apply" /></div>
+      <div class="col-6 col-md-2"><q-select v-model="filters.entity" data-testid="auditEntity" dense outlined clearable label="Об’єкт" :options="entityOptions" emit-value map-options @input="apply" /></div>
       <div class="col-6 col-md-3"><q-input v-model="filters.entityId" dense outlined clearable label="ID об’єкта" @keyup.enter="apply" @clear="apply" /></div>
       <div class="col-6 col-md-3"><q-select v-model="filters.userId" dense outlined clearable label="Користувач" :options="employeeOptions" emit-value map-options @input="apply" /></div>
       <div class="col-6 col-md-2"><q-input v-model="filters.from" dense outlined type="date" stack-label label="Дата з" @input="apply" /></div>

@@ -98,7 +98,7 @@ public sealed partial class GuideService
             while (fid != null && byId.TryGetValue(fid, out var f) && keep.Add(f.Id)) fid = f.ParentId;
         }
 
-        var setData = await BuildCatalogSetsAsync(app.Id, scenarios, folders, user);
+        var setData = await BuildCatalogSetsAsync(app.Id, scenarios, folders, user, all.Where(s => TenantVisible(s.TenantId, user)).ToList());
         var noSets = Array.Empty<SetRef>();
 
         return new

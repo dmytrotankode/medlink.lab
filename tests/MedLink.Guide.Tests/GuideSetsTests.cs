@@ -77,6 +77,34 @@ public class GuideSetsTests
     }
 
     [Fact]
+    public async Task Catalog_set_counts_available_and_unavailable_by_role_including_folder_items()
+    {
+        await using var h = await GuideHost.StartAsync();
+        var app = await h.CreateApp();
+        var f = await h.CreateFolder(app, "Розділ");
+        async Task<string> PublishedFor(string caption, string[]? roles)
+        {
+            var id = await h.CreateScenario(app, caption, f, roles: roles);
+            await h.Json(await h.Put($"/scenarios/{id}/steps", new[] { GuideHost.Step("s1", "a-" + id[..6]) }));
+            await h.Json(await h.Post($"/scenarios/{id}/publish"));
+            return id;
+        }
+        await PublishedFor("Для всіх", null);
+        await PublishedFor("Лише лікар", new[] { "LAB_DOCTOR" });
+        await PublishedFor("Лише адмін", new[] { "LAB_ADMIN" });
+        await NewSet(h, app, "Огляд", new object[] { new { folderId = f } }, code: "overview");
+
+        var tech = (await h.Json(await h.Get($"/apps/{app}/catalog", roles: "LAB_TECHNICIAN")))["sets"]![0]!;
+        Assert.Equal(1, tech["scenarioCount"]!.GetValue<int>());
+        Assert.Equal(3, tech["totalCount"]!.GetValue<int>());
+        Assert.Equal(2, tech["unavailableCount"]!.GetValue<int>());
+
+        var admin = (await h.Json(await h.Get($"/apps/{app}/catalog", roles: "LAB_ADMIN,LAB_DOCTOR")))["sets"]![0]!;
+        Assert.Equal(3, admin["scenarioCount"]!.GetValue<int>());
+        Assert.Equal(0, admin["unavailableCount"]!.GetValue<int>());
+    }
+
+    [Fact]
     public async Task Catalog_marks_folders_and_scenarios_with_set_codes_and_colors()
     {
         await using var h = await GuideHost.StartAsync();

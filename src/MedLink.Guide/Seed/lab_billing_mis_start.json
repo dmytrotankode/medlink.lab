@@ -858,9 +858,9 @@
           "title": "Що змінюється",
           "body": "Усі нові запити йдуть від обраного співробітника, аудит записує його роль. Розділи меню й кнопки, недоступні цій ролі, приховуються.",
           "transcript": "Що змінюється. Усі нові запити йдуть від обраного співробітника, аудит записує його роль. Розділи меню й кнопки, недоступні цій ролі, приховуються.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1011,9 +1011,9 @@
           "title": "Картка замовлення",
           "body": "Якщо пробірку знайдено, відкриється картка її замовлення. Поле очиститься.",
           "transcript": "Картка замовлення. Якщо пробірку знайдено, відкриється картка її замовлення. Поле очиститься.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1024,9 +1024,9 @@
           "title": "Нічого не знайдено",
           "body": "Якщо з’явилось повідомлення, що пробірку чи замовлення не знайдено, поле підсвітиться червоним. Перевірте цифри або введіть номер замовлення.",
           "transcript": "Нічого не знайдено. Якщо з’явилось повідомлення, що пробірку чи замовлення не знайдено, поле підсвітиться червоним. Перевірте цифри або введіть номер замовлення.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1454,9 +1454,9 @@
           "title": "Оберіть інструкцію",
           "body": "Клікніть назву інструкції. Якщо потрібний екран інший, плеєр відкриє його сам.",
           "transcript": "Оберіть інструкцію. Клікніть назву інструкції. Якщо потрібний екран інший, плеєр відкриє його сам.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1467,9 +1467,9 @@
           "title": "Підсвічений елемент",
           "body": "Плеєр затемнює екран і підсвічує потрібний елемент. Кнопка «Далі» переходить до наступного кроку.",
           "transcript": "Підсвічений елемент. Плеєр затемнює екран і підсвічує потрібний елемент. Кнопка Далі переходить до наступного кроку.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1480,9 +1480,9 @@
           "title": "Автоматичний перехід",
           "body": "Якщо крок вимагає кліку чи введення, виконайте дію — крок завершиться сам.",
           "transcript": "Автоматичний перехід. Якщо крок вимагає кліку чи введення, виконайте дію — крок завершиться сам.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1493,9 +1493,9 @@
           "title": "«Зроби за мене»",
           "body": "Кнопка виконає крок замість вас. Підходить, коли треба швидко дійти до потрібного екрана.",
           "transcript": "Зроби за мене. Кнопка виконає крок замість вас. Підходить, коли треба швидко дійти до потрібного екрана.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1506,9 +1506,9 @@
           "title": "«Пропустити крок»",
           "body": "Якщо елемент не знайдено (змінився інтерфейс), крок можна пропустити.",
           "transcript": "Пропустити крок. Якщо елемент не знайдено (змінився інтерфейс), крок можна пропустити.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1519,9 +1519,9 @@
           "title": "Завершення",
           "body": "Кнопка «Завершити» закриває плеєр, а пройдена інструкція зберігається у вашому прогресі.",
           "transcript": "Завершення. Кнопка Завершити закриває плеєр, а пройдена інструкція зберігається у вашому прогресі.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1578,9 +1578,9 @@
           "title": "Блок «Для цієї сторінки»",
           "body": "Угорі панелі показано інструкції, прив'язані до екрана, на якому ви зараз. Це найшвидший шлях.",
           "transcript": "Блок Для цієї сторінки. Угорі панелі показано інструкції, прив'язані до екрана, на якому ви зараз. Це найшвидший шлях.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1591,9 +1591,9 @@
           "title": "Розділи",
           "body": "Інструкції згруповані у розділи за темами: старт, преаналітика, аналітика, валідація, МІС, якість та інші. Розділ відкривається кліком.",
           "transcript": "Розділи. Інструкції згруповані у розділи за темами: старт, преаналітика, аналітика, валідація, МІС, якість та інші. Розділ відкривається кліком.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1604,9 +1604,9 @@
           "title": "Пошук",
           "body": "У полі «Пошук інструкції…» введіть частину назви — дерево відфільтрується.",
           "transcript": "Пошук. У полі Пошук інструкції введіть частину назви — дерево відфільтрується.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1617,9 +1617,9 @@
           "title": "Усі інструкції",
           "body": "Розділ «Усі інструкції» показує повне дерево, а не лише підказки для поточної сторінки.",
           "transcript": "Усі інструкції. Розділ Усі інструкції показує повне дерево, а не лише підказки для поточної сторінки.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1660,9 +1660,9 @@
           "title": "Чернетки",
           "body": "Позначка «чернетка» означає, що інструкцію ще не опубліковано. Проходити можна лише опубліковані.",
           "transcript": "Чернетки. Позначка чернетка означає, що інструкцію ще не опубліковано. Проходити можна лише опубліковані.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1718,9 +1718,9 @@
           "title": "Кнопка «＋ Конструктор»",
           "body": "У панелі натисніть «Конструктор» — відкриється редактор інструкції.",
           "transcript": "Кнопка ＋ Конструктор. У панелі натисніть Конструктор — відкриється редактор інструкції.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1731,9 +1731,9 @@
           "title": "Вибір елемента",
           "body": "Режим «Вибрати елемент»: наведіть курсор, клікніть потрібне місце на екрані. Стрілки вгору й вниз обирають батьківський блок.",
           "transcript": "Вибір елемента. Режим Вибрати елемент: наведіть курсор, клікніть потрібне місце на екрані. Стрілки вгору й вниз обирають батьківський блок.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1744,9 +1744,9 @@
           "title": "Запис дій",
           "body": "Режим «Записати дії»: ваші кліки й введення самі стають кроками. Паролі не записуються.",
           "transcript": "Запис дій. Режим Записати дії: ваші кліки й введення самі стають кроками. Паролі не записуються.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1757,9 +1757,9 @@
           "title": "Текст пояснення",
           "body": "Напишіть коротке пояснення до кроку або надиктуйте його кнопкою мікрофона.",
           "transcript": "Текст пояснення. Напишіть коротке пояснення до кроку або надиктуйте його кнопкою мікрофона.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1770,9 +1770,9 @@
           "title": "Перевірка якоря",
           "body": "Кнопка «Показати елемент» підсвічує знайдений елемент. Якщо не знайдено, оберіть його знову.",
           "transcript": "Перевірка якоря. Кнопка Показати елемент підсвічує знайдений елемент. Якщо не знайдено, оберіть його знову.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1783,9 +1783,9 @@
           "title": "Чернетка",
           "body": "Збережіть чернетку, перегляньте її з потрібного кроку кнопкою відтворення.",
           "transcript": "Чернетка. Збережіть чернетку, перегляньте її з потрібного кроку кнопкою відтворення.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1796,9 +1796,9 @@
           "title": "Публікація",
           "body": "Опублікуйте знімок версії. Інші користувачі проходять лише опубліковану версію.",
           "transcript": "Публікація. Опублікуйте знімок версії. Інші користувачі проходять лише опубліковану версію.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -1867,9 +1867,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Очікують",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"dashTile-pending\"]",
+                "weight": 100
               }
             ]
           }
@@ -1892,9 +1892,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Критичні",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"dashTile-panic\"]",
+                "weight": 100
               }
             ]
           }
@@ -1917,9 +1917,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Розподіл",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"dashTile-dist\"]",
+                "weight": 100
               }
             ]
           }
@@ -1942,9 +1942,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Без обладнання",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"dashTile-noeq\"]",
+                "weight": 100
               }
             ]
           }
@@ -2063,9 +2063,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|TAT сьогодні",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"dashTatCard\"]",
+                "weight": 100
               }
             ]
           }
@@ -2088,9 +2088,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Медіана",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"dashTatMedian\"]",
+                "weight": 100
               }
             ]
           }
@@ -2132,7 +2132,10 @@
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
-          "optional": false
+          "optional": false,
+          "anchor": {
+            "code": "aq.tat.k-median"
+          }
         }
       ]
     },
@@ -2216,7 +2219,10 @@
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
-          "optional": false
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.co.dialog"
+          }
         }
       ]
     },
@@ -2401,9 +2407,9 @@
           "title": "Ціна окремого показника",
           "body": "Ціну показника також видно в довіднику «Показники», у колонці ціни.",
           "transcript": "Ціна окремого показника. Ціну показника також видно в довіднику Показники, у колонці ціни.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -2680,9 +2686,9 @@
           "title": "Перевірка",
           "body": "Нові ціни діятимуть для нових замовлень. Вже створені замовлення зберігають свою вартість.",
           "transcript": "Перевірка. Нові ціни діятимуть для нових замовлень. Вже створені замовлення зберігають свою вартість.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -3249,9 +3255,9 @@
           "title": "Спосіб оплати",
           "body": "У вікні оберіть готівку, картку чи переказ і підтвердьте.",
           "transcript": "Спосіб оплати. У вікні оберіть готівку, картку чи переказ і підтвердьте.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -3262,9 +3268,9 @@
           "title": "Сума оплати",
           "body": "У наступному вікні підтвердьте суму або змініть її, якщо платите частину.",
           "transcript": "Сума оплати. У наступному вікні підтвердьте суму або змініть її, якщо платите частину.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -3490,9 +3496,9 @@
           "title": "Оберіть платника",
           "body": "У вікні оберіть платника зі списку активних і підтвердьте.",
           "transcript": "Оберіть платника. У вікні оберіть платника зі списку активних і підтвердьте.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -3503,9 +3509,9 @@
           "title": "Гарантійний лист",
           "body": "Якщо платник вимагає гарантійний лист, система попросить його номер.",
           "transcript": "Гарантійний лист. Якщо платник вимагає гарантійний лист, система попросить його номер.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -3870,9 +3876,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Очікують",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"irStateToggle\"]",
+                "weight": 100
               }
             ]
           }
@@ -4463,9 +4469,9 @@
           "title": "Перелік показників",
           "body": "Позначте потрібні показники. Обов'язкові не знімаються: система відхилить таку спробу.",
           "transcript": "Перелік показників. Позначте потрібні показники. Обов'язкові не знімаються: система відхилить таку спробу.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -4671,9 +4677,9 @@
           "title": "Де потім шукати",
           "body": "Такі показники видно на плитці «Без обладнання» в роботі за направленнями.",
           "transcript": "Де потім шукати. Такі показники видно на плитці Без обладнання в роботі за направленнями.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -4804,9 +4810,9 @@
           "title": "Попередження",
           "body": "Якщо система показала попередження, прочитайте їх: вони пояснюють нестандартні рішення.",
           "transcript": "Попередження. Якщо система показала попередження, прочитайте їх: вони пояснюють нестандартні рішення.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -5217,9 +5223,9 @@
           "title": "Після видачі",
           "body": "Коли результати видано, призначення в МІС отримує стан «Виконано».",
           "transcript": "Після видачі. Коли результати видано, призначення в МІС отримує стан Виконано.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -5781,9 +5787,9 @@
           "title": "Причина",
           "body": "Введіть причину скасування й підтвердьте.",
           "transcript": "Причина. Введіть причину скасування й підтвердьте.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -6475,9 +6481,9 @@
         },
         {
           "stepType": "click",
-          "title": "Синхронізувати словник",
-          "body": "Натисніть кнопку. Нові інтервенції з'являться в списку зі станом «Не співставлено».",
-          "transcript": "Синхронізувати словник. Натисніть кнопку. Нові інтервенції з'являться в списку зі станом Не співставлено.",
+          "title": "Оновити довідник інтервенцій",
+          "body": "Натисніть «Оновити довідник інтервенцій з ЕСОЗ» і підтвердьте. Нові інтервенції з'являться в списку зі станом «Не співставлено».",
+          "transcript": "Оновити довідник інтервенцій. Натисніть «Оновити довідник інтервенцій з ЕСОЗ» і підтвердьте. Нові інтервенції з'являться в списку зі станом «Не співставлено».",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "left",
@@ -6491,9 +6497,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Синхронізувати словник",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"syncInterventions\"]",
+                "weight": 100
               }
             ]
           }
@@ -6503,9 +6509,9 @@
           "title": "Далі",
           "body": "Нові інтервенції треба співставити з послугою ЛІС. Доки цього не зроблено, направлення з ними створюють задачу адміністратору.",
           "transcript": "Далі. Нові інтервенції треба співставити з послугою ЛІС. Доки цього не зроблено, направлення з ними створюють задачу адміністратору.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -6645,9 +6651,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|CSV",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"serviceMatrixCsv\"]",
+                "weight": 100
               }
             ]
           }
@@ -6670,9 +6676,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|CSV",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"serviceMatrixCsv\"]",
+                "weight": 100
               }
             ]
           }
@@ -6771,9 +6777,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Аналізатори",
-                "weight": 75
+                "type": "testid",
+                "value": "[data-testid=\"wkTabAnalyzers\"]",
+                "weight": 100
               }
             ]
           }
@@ -6796,9 +6802,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Без обладнання",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"wkTileNoEquipment\"]",
+                "weight": 100
               }
             ]
           }
@@ -6821,9 +6827,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Переназначити чергу",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"wkReroute\"]",
+                "weight": 100
               }
             ]
           }
@@ -6891,9 +6897,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Аналізатори",
-                "weight": 75
+                "type": "testid",
+                "value": "[data-testid=\"wkTabAnalyzers\"]",
+                "weight": 100
               }
             ]
           }
@@ -6916,9 +6922,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Переназначити чергу",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"wkReroute\"]",
+                "weight": 100
               }
             ]
           }
@@ -6928,9 +6934,9 @@
           "title": "Причина",
           "body": "Введіть причину переназначення й підтвердьте.",
           "transcript": "Причина. Введіть причину переназначення й підтвердьте.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -6941,9 +6947,9 @@
           "title": "Результат",
           "body": "Тести з'являться в чергах інших приладів, а облік піде за новим приладом.",
           "transcript": "Результат. Тести з'являться в чергах інших приладів, а облік піде за новим приладом.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -6987,9 +6993,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Пацієнти",
-                "weight": 75
+                "type": "testid",
+                "value": "[data-testid=\"wkTabPatients\"]",
+                "weight": 100
               }
             ]
           }
@@ -7012,9 +7018,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Пошук: № замовлення, штрихкод, пацієнт, код",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"wkSearch\"]",
+                "weight": 100
               }
             ]
           }
@@ -7037,9 +7043,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Пацієнти",
-                "weight": 75
+                "type": "testid",
+                "value": "[data-testid=\"wkTabPatients\"]",
+                "weight": 100
               }
             ]
           }
@@ -7107,9 +7113,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Дослідження",
-                "weight": 75
+                "type": "testid",
+                "value": "[data-testid=\"wkTabServices\"]",
+                "weight": 100
               }
             ]
           }
@@ -7132,9 +7138,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Дослідження",
-                "weight": 75
+                "type": "testid",
+                "value": "[data-testid=\"wkTabServices\"]",
+                "weight": 100
               }
             ]
           }
@@ -7157,9 +7163,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Дослідження",
-                "weight": 75
+                "type": "testid",
+                "value": "[data-testid=\"wkTabServices\"]",
+                "weight": 100
               }
             ]
           }
@@ -7227,9 +7233,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Пошук: № замовлення, штрихкод, пацієнт, код",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"wkSearch\"]",
+                "weight": 100
               }
             ]
           }
@@ -7277,9 +7283,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|XLSX",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"wkExport\"]",
+                "weight": 100
               }
             ]
           }
@@ -7467,9 +7473,9 @@
           "title": "Далі в ЕСОЗ",
           "body": "Для е-направлень підпишіть і відправте звіт у ЕСОЗ — див. інструкції розділу ЕСОЗ і КЕП.",
           "transcript": "Далі в ЕСОЗ. Для е-направлень підпишіть і відправте звіт у ЕСОЗ — див. інструкції розділу ЕСОЗ і КЕП.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -7974,9 +7980,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|КЕП",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"ehealthTabKep\"]",
+                "weight": 100
               }
             ]
           }
@@ -8024,9 +8030,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Підписати КЕП",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"ehealthConfirm\"]",
+                "weight": 100
               }
             ]
           }
@@ -8036,9 +8042,9 @@
           "title": "Перевірка підписувача",
           "body": "Якщо ІПН у сертифікаті не збігається з вашим, система відхилить вхід з помилкою про розбіжність.",
           "transcript": "Перевірка підписувача. Якщо ІПН у сертифікаті не збігається з вашим, система відхилить вхід з помилкою про розбіжність.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -8132,9 +8138,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|2FA (TOTP)",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"ehealthTabTotp\"]",
+                "weight": 100
               }
             ]
           }
@@ -8157,9 +8163,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "a|Увімкнути 2FA",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"ehealthEnableTotp\"]",
+                "weight": 100
               }
             ]
           }
@@ -8182,9 +8188,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Код з додатка",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"ehealthTotpCode\"]",
+                "weight": 100
               }
             ]
           }
@@ -8207,9 +8213,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Підтвердити",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"ehealthConfirm\"]",
+                "weight": 100
               }
             ]
           }
@@ -8264,9 +8270,9 @@
           "title": "Якщо пропустити другий крок",
           "body": "Спроба підписати звіт після одного лише пароля завершується відмовою, а система відкриває вікно входу.",
           "transcript": "Якщо пропустити другий крок. Спроба підписати звіт після одного лише пароля завершується відмовою, а система відкриває вікно входу.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -9034,9 +9040,9 @@
           "title": "Причина",
           "body": "Введіть причину. Анулювання підписується КЕП, тому потрібна підтверджена сесія ЕСОЗ: вхід і підтвердження особи.",
           "transcript": "Причина. Введіть причину. Анулювання підписується КЕП, тому потрібна підтверджена сесія ЕСОЗ: вхід і підтвердження особи.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -9192,9 +9198,9 @@
           "title": "Погашення",
           "body": "Після видачі результатів направлення гаситься в ЕСОЗ через відправку звіту.",
           "transcript": "Погашення. Після видачі результатів направлення гаситься в ЕСОЗ через відправку звіту.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -10889,9 +10895,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Файл JSON або CSV",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"dictImportFile\"]",
+                "weight": 100
               }
             ]
           }
@@ -10914,9 +10920,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Попередній перегляд (dryRun)",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"dictImportDry\"]",
+                "weight": 100
               }
             ]
           }
@@ -10926,9 +10932,9 @@
           "title": "Перевірте результат",
           "body": "Виправте файл, якщо є помилкові рядки.",
           "transcript": "Перевірте результат. Виправте файл, якщо є помилкові рядки.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -10952,9 +10958,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Імпортувати",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"dictImportRun\"]",
+                "weight": 100
               }
             ]
           }
@@ -11266,9 +11272,9 @@
           "title": "Пороги EUCAST",
           "body": "У довіднику порогів задаються зони й МІК для пари організм і антибіотик та версія EUCAST.",
           "transcript": "Пороги EUCAST. У довіднику порогів задаються зони й МІК для пари організм і антибіотик та версія EUCAST.",
-          "highlight": "element",
+          "highlight": "none",
           "parentLevels": 0,
-          "placement": "auto",
+          "placement": "center",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
@@ -12275,9 +12281,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|PNG / SVG / JPG до 300 КБ",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"settingsLogoFile\"]",
+                "weight": 100
               }
             ]
           }
@@ -12956,9 +12962,9 @@
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Сутність",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"auditEntity\"]",
+                "weight": 100
               }
             ]
           }

@@ -91,7 +91,7 @@
         <q-card-section class="row items-center bg-primary text-white q-py-sm"><q-icon name="science" class="q-mr-sm" /><div class="text-subtitle1 text-weight-bold">Антибіотикограма — {{ activeIsolate && (activeIsolate.organismName || organismName(activeIsolate.organismId)) }}</div><q-space /><q-btn flat round dense icon="close" v-close-popup /></q-card-section>
         <q-card-section class="q-gutter-y-sm">
           <q-select v-model="suscForm.antibioticId" outlined dense label="Антибіотик *" :options="antibioticOptions" emit-value map-options use-input input-debounce="0" @filter="filterAntibiotics" data-testid="antibioticSelect" :error="!!suscError && !suscForm.antibioticId" hide-bottom-space />
-          <q-btn-toggle v-model="suscForm.method" spread no-caps toggle-color="primary" :options="[{ value: 'DISK', label: 'Диск-дифузія (зона, мм)' }, { value: 'MIC', label: 'МІК (мг/л)' }]" />
+          <q-btn-toggle v-model="suscForm.method" data-testid="suscMethodToggle" spread no-caps toggle-color="primary" :options="[{ value: 'DISK', label: 'Диск-дифузія (зона, мм)' }, { value: 'MIC', label: 'МІК (мг/л)' }]" />
           <q-input v-if="suscForm.method === 'DISK'" v-model="suscForm.zoneMm" outlined dense label="Зона затримки росту, мм *" inputmode="decimal" autofocus data-testid="zoneInput" @keyup.enter="saveSusc" />
           <q-input v-else v-model="suscForm.mic" outlined dense label="МІК, мг/л *" inputmode="decimal" autofocus data-testid="micInput" @keyup.enter="saveSusc" />
           <template v-if="needManual">

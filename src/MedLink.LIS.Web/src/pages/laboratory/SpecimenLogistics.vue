@@ -64,7 +64,7 @@
         </q-card-section>
         <q-card-section class="q-gutter-y-sm">
           <div class="row q-col-gutter-sm">
-            <div class="col-6"><q-select v-model="form.originDepartmentId" outlined dense label="Звідки (відділення / пункт забору) *" :options="depOptions" emit-value map-options /></div>
+            <div class="col-6"><q-select v-model="form.originDepartmentId" data-testid="lgOrigin" outlined dense label="Звідки (відділення / пункт забору) *" :options="depOptions" emit-value map-options /></div>
             <div class="col-6"><q-select v-model="form.destinationDepartmentId" outlined dense label="Куди (лабораторія) *" :options="destinationOptions" emit-value map-options :error="sameRoute" error-message="Відправник і отримувач мають бути різними" /></div>
             <div class="col-6"><q-input v-model="form.courierName" outlined dense label="Кур’єр *" data-testid="courierName" /></div>
             <div class="col-3"><q-input v-model="form.courierPhone" outlined dense label="Телефон" /></div>
