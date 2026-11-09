@@ -89,7 +89,7 @@ export default {
       filters: { from: daysAgoIso(30), to: todayIso(), profileId: null, cito: false },
       vw: 600, vh: 220,
       profileColumns: [
-        { name: 'name', label: 'Послуга', field: r => r.profileName || r.name || r.profileCode, align: 'left', sortable: true },
+        { name: 'name', label: 'Послуга', field: r => this.profileLabel(r), align: 'left', sortable: true },
         { name: 'count', label: 'Замовлень', field: r => r.n || 0, align: 'right', sortable: true },
         { name: 'medianMin', label: 'Медіана', field: 'medianMin', align: 'right', sortable: true },
         { name: 'p90Min', label: '90-й процентиль', field: 'p90Min', align: 'right', sortable: true },
@@ -119,6 +119,12 @@ export default {
   },
   created () { this.$store.dispatch('dictionaries/load', 'profiles'); this.load(); },
   methods: {
+    /** Назва послуги; якщо така сама назва є в кількох рядках (термінові й планові мають різну норму часу) — додаємо норму */
+    profileLabel (r) {
+      const name = r.profileName || r.name || r.profileCode;
+      const same = this.byProfile.filter(x => (x.profileName || x.name || x.profileCode) === name).length > 1;
+      return same && r.slaHours ? `${name} · норма ${r.slaHours} год` : name;
+    },
     stageLabel (n) { return STAGE_LABELS[n] || n; },
     stageColor (i) { return COLORS[i % COLORS.length]; },
     widthPct (s) { return this.totalStages ? Math.max(4, (Number(s.medianMin) || 0) / this.totalStages * 100) : 0; },
