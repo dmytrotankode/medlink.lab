@@ -21,6 +21,10 @@ public sealed class TransportContainersController : LisControllerBase
     [HttpPut("logistics/container-types/{id}")]
     public async Task<IActionResult> UpdateType(string id, [FromBody] ContainerTypeRequest req) => Ok(await _logistics.UpdateContainerTypeAsync(id, req));
 
+    /// <summary>Тип тари у архів (є контейнери цього типу) або видалення.</summary>
+    [HttpDelete("logistics/container-types/{id}")]
+    public async Task<IActionResult> DeleteType(string id) => Ok(await _logistics.DeleteContainerTypeAsync(id));
+
     // ---------- контейнери ----------
 
     [HttpGet("logistics/containers")]

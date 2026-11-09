@@ -91,7 +91,7 @@ export default {
     employeeId () { return this.$store.state.context.employeeId; },
     filteredRows () {
       const s = (this.search || '').toLowerCase();
-      return this.rows.filter(r => !s || `${r.code} ${r.name} ${r.biomaterialName || ''} ${(r.memberTestCodes || []).join(' ')}`.toLowerCase().includes(s));
+      return this.rows.filter(r => !s || `${r.code} ${r.name} ${r.biomaterialName || ''} ${(r.memberTestCodes || []).join(' ')} ${(r.synonyms || []).join(' ')}`.toLowerCase().includes(s));
     },
     groupedRows () {
       const bySection = {};

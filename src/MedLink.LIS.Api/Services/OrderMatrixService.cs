@@ -34,9 +34,11 @@ public sealed class OrderMatrixService
         var bm = await _db.BiomaterialTypes.AsNoTracking().ToDictionaryAsync(b => b.Id, b => b.Name);
         var tubes = await _db.TubeTypes.AsNoTracking().ToDictionaryAsync(t => t.Id, t => t);
 
+        var synonyms = (await _db.TestSynonyms.AsNoTracking().Where(y => y.IsActive && y.RecordState != RecordStates.Deleted).ToListAsync()).GroupBy(y => y.TestCode).ToDictionary(g => g.Key, g => g.Select(y => y.Synonym).ToArray());
+
         object Col(LabTestDefinition t) => new
         {
-            id = t.Id, code = t.Code, name = t.Name, shortName = t.ShortName, isProfile = false, category = t.Category, labSectionId = t.LabSectionId, labSectionName = t.LabSection?.Name,
+            id = t.Id, code = t.Code, name = t.Name, shortName = t.ShortName, synonyms = synonyms.TryGetValue(t.Code, out var syn) ? syn : Array.Empty<string>(), isProfile = false, category = t.Category, labSectionId = t.LabSectionId, labSectionName = t.LabSection?.Name,
             biomaterial = t.BiomaterialType?.Name, tubeColor = t.TubeType?.ColorCode, tubeName = t.TubeType?.Name, price = t.Price, tatHours = (int?)null, unit = t.Unit, resultType = t.ResultType,
             memberTestCodes = Array.Empty<string>(), isActive = t.IsActive
         };

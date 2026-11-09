@@ -11,9 +11,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MedLink.LIS.Api.Services;
 
-public sealed class DictionaryService
+public sealed partial class DictionaryService
 {
-    public static readonly string[] Names = { "biomaterials", "tube-types", "method-types", "analyzer-types", "tests", "profiles", "reflex-rules", "organisms", "antibiotics", "eucast-breakpoints", "departments", "employees" };
+    private static readonly string[] CoreNames = { "biomaterials", "tube-types", "method-types", "analyzer-types", "tests", "profiles", "reflex-rules", "organisms", "antibiotics", "eucast-breakpoints", "departments", "employees" };
+    /// <summary>Усі універсальні довідники: основні + реєстр простих (патоморфологія, синоніми, календар, номенклатура реагентів).</summary>
+    public static readonly string[] Names = CoreNames.Concat(DictionaryAdapters.All.Keys).ToArray();
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true, ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles };
 
@@ -24,7 +26,9 @@ public sealed class DictionaryService
 
     public DictionaryService(LisDbContext db, IRolePolicy policy, IAuditService audit, OrgDictionaryService org) { _db = db; _policy = policy; _audit = audit; _org = org; }
 
-    private static string Table(string name) => name switch
+    private static IDictAdapter? Adapter(string name) => DictionaryAdapters.All.TryGetValue(name, out var a) ? a : null;
+
+    private static string Table(string name) => Adapter(name)?.Table ?? name switch
     {
         "biomaterials" => "lab_biomaterial_type", "tube-types" => "lab_tube_type", "method-types" => "lab_method_type", "analyzer-types" => "lab_analyzer_type",
         "tests" => "lab_test_definition", "profiles" => "lab_test_profile", "reflex-rules" => "lab_reflex_rule", "organisms" => "lab_micro_organism",
@@ -33,39 +37,54 @@ public sealed class DictionaryService
     };
 
     // ------------------------------------------------------------------ list / get
-    public async Task<object> ListAsync(string name, string? search, bool? isActive, PagingQuery paging)
+    public async Task<object> ListAsync(string name, string? search, bool? isActive, PagingQuery paging) =>
+        (await FilteredAsync(name, search, isActive)).ToPaged(paging);
+
+    /// <summary>Усі записи довідника за фільтрами (без пагінації) — для списку й експорту.</summary>
+    public async Task<List<object>> FilteredAsync(string name, string? search, bool? isActive)
     {
         Table(name);
         var s = search?.Trim().ToLowerInvariant();
+        var adapter = Adapter(name);
+        if (adapter != null) return Filter(await adapter.ListAsync(_db), adapter.Search, x => IsActiveOf(x), s, isActive);
         switch (name)
         {
-            case "biomaterials": return Page(await _db.BiomaterialTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive, paging);
-            case "tube-types": return Page(await _db.TubeTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.OrderOfDrawIndex).ThenBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive, paging);
-            case "method-types": return Page(await _db.MethodTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive, paging);
-            case "analyzer-types": return Page(await _db.AnalyzerTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.Manufacturer} {x.ExchType}", x => x.IsActive, s, isActive, paging);
-            case "tests": return Page(await _db.Tests.AsNoTracking().Include(x => x.BiomaterialType).Include(x => x.TubeType).Include(x => x.Method).Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Category).ThenBy(x => x.Code).ToListAsync(), x => $"{x.Code} {x.Name} {x.ShortName} {x.LoincCode} {x.Category}", x => x.IsActive, s, isActive, paging);
-            case "profiles": return Page(await _db.Profiles.AsNoTracking().Include(x => x.Items).ThenInclude(i => i.Test).Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Code).ToListAsync(), x => $"{x.Code} {x.Name} {x.Category}", x => x.IsActive, s, isActive, paging);
-            case "reflex-rules": return Page(await _db.ReflexRules.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.TriggerTestCode).ToListAsync(), x => $"{x.TriggerTestCode} {x.ReflexTestCode} {x.Description}", x => x.IsActive, s, isActive, paging);
-            case "organisms": return Page(await _db.Organisms.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.LatinName} {x.CommonName}", x => x.IsActive, s, isActive, paging);
-            case "antibiotics": return Page(await _db.Antibiotics.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.GroupName}", x => x.IsActive, s, isActive, paging);
-            case "eucast-breakpoints": return Page(await _db.EucastBreakpoints.AsNoTracking().Include(x => x.Organism).Include(x => x.Antibiotic).Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.OrganismId).ThenBy(x => x.AntibioticId).ToListAsync(), x => $"{x.Organism?.Code} {x.Organism?.LatinName} {x.Antibiotic?.Code} {x.Antibiotic?.Name}", x => true, s, isActive, paging);
-            case "departments": return Page(await _org.DepartmentsAsync(), x => $"{x.Code} {x.Name} {x.Address}", x => x.IsActive, s, isActive, paging);
-            case "employees": return Page(await _org.EmployeesAsync(), x => $"{x.FullName} {x.Position} {x.LabRole} {x.DepartmentName}", x => x.IsActive, s, isActive, paging);
+            case "biomaterials": return Filter(await _db.BiomaterialTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive);
+            case "tube-types": return Filter(await _db.TubeTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.OrderOfDrawIndex).ThenBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive);
+            case "method-types": return Filter(await _db.MethodTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive);
+            case "analyzer-types": return Filter(await _db.AnalyzerTypes.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.Manufacturer} {x.ExchType}", x => x.IsActive, s, isActive);
+            case "tests":
+            {
+                // пошук і за синонімами (FR-GAP-052): «глікований гемоглобін» знаходить HBA1C
+                var syn = (await _db.TestSynonyms.AsNoTracking().Where(y => y.IsActive && y.RecordState != RecordStates.Deleted).ToListAsync()).GroupBy(y => y.TestCode).ToDictionary(g => g.Key, g => string.Join(" ", g.Select(y => y.Synonym)));
+                return Filter(await _db.Tests.AsNoTracking().Include(x => x.BiomaterialType).Include(x => x.TubeType).Include(x => x.Method).Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Category).ThenBy(x => x.Code).ToListAsync(),
+                    x => $"{x.Code} {x.Name} {x.ShortName} {x.LoincCode} {x.Category} {(syn.TryGetValue(x.Code, out var sy) ? sy : "")}", x => x.IsActive, s, isActive);
+            }
+            case "profiles": return Filter(await _db.Profiles.AsNoTracking().Include(x => x.Items).ThenInclude(i => i.Test).Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Code).ToListAsync(), x => $"{x.Code} {x.Name} {x.Category}", x => x.IsActive, s, isActive);
+            case "reflex-rules": return Filter(await _db.ReflexRules.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.TriggerTestCode).ToListAsync(), x => $"{x.TriggerTestCode} {x.ReflexTestCode} {x.Description}", x => x.IsActive, s, isActive);
+            case "organisms": return Filter(await _db.Organisms.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.LatinName} {x.CommonName}", x => x.IsActive, s, isActive);
+            case "antibiotics": return Filter(await _db.Antibiotics.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.GroupName}", x => x.IsActive, s, isActive);
+            case "eucast-breakpoints": return Filter(await _db.EucastBreakpoints.AsNoTracking().Include(x => x.Organism).Include(x => x.Antibiotic).Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.OrganismId).ThenBy(x => x.AntibioticId).ToListAsync(), x => $"{x.Organism?.Code} {x.Organism?.LatinName} {x.Antibiotic?.Code} {x.Antibiotic?.Name} {x.EucastVersion}", x => x.IsActive, s, isActive);
+            case "departments": return Filter(await _org.DepartmentsAsync(), x => $"{x.Code} {x.Name} {x.Address}", x => x.IsActive, s, isActive);
+            case "employees": return Filter(await _org.EmployeesAsync(), x => $"{x.FullName} {x.Position} {x.LabRole} {x.DepartmentName} {x.Email}", x => x.IsActive, s, isActive);
         }
         throw new NotFoundException($"Довідник '{name}' не існує");
     }
 
-    private static PagedResult<T> Page<T>(List<T> items, Func<T, string> text, Func<T, bool> active, string? search, bool? isActive, PagingQuery paging)
+    private static bool IsActiveOf(object x) => x.GetType().GetProperty("IsActive")?.GetValue(x) is not bool b || b;
+
+    private static List<object> Filter<T>(List<T> items, Func<T, string> text, Func<T, bool> active, string? search, bool? isActive)
     {
         IEnumerable<T> q = items;
         if (!string.IsNullOrEmpty(search)) q = q.Where(x => text(x).ToLowerInvariant().Contains(search));
         if (isActive.HasValue) q = q.Where(x => active(x) == isActive.Value);
-        return q.ToPaged(paging);
+        return q.Cast<object>().ToList();
     }
 
     public async Task<object> GetAsync(string name, string id)
     {
         Table(name);
+        if (Adapter(name) is { } ad) return await ad.FindAsync(_db, id, false) ?? throw NotFoundException.For($"Запис довідника {name}", id);
         object? item = name switch
         {
             "biomaterials" => await _db.BiomaterialTypes.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
@@ -91,6 +110,16 @@ public sealed class DictionaryService
         _policy.Require($"Створення запису довідника {name}", LabRoles.Admin, LabRoles.Doctor);
         var table = Table(name);
         object entity;
+        if (Adapter(name) is { } ad)
+        {
+            var e = ad.FromJson(body, Json);
+            await ad.ValidateAsync(_db, e, true);
+            ad.Add(_db, e);
+            _audit.Log("CREATE", table, IdOf(e), null, e);
+            await _db.SaveChangesAsync();
+            await ad.OnChangedAsync(_db);
+            return await GetAsync(name, IdOf(e));
+        }
         switch (name)
         {
             case "biomaterials": { var e = Deserialize<LabBiomaterialType>(body); if (e.Id == 0) e.Id = await NextIntId(_db.BiomaterialTypes.Select(x => x.Id)); await EnsureUniqueCode(_db.BiomaterialTypes.AnyAsync(x => x.Code == e.Code), e.Code); _db.BiomaterialTypes.Add(e); entity = e; break; }
@@ -120,7 +149,7 @@ public sealed class DictionaryService
             case "reflex-rules":
             {
                 var e = Deserialize<LabReflexRule>(body);
-                if (!await _db.Tests.AnyAsync(t => t.Code == e.TriggerTestCode) || !await _db.Tests.AnyAsync(t => t.Code == e.ReflexTestCode)) throw new ValidationException("Коди тестів тригера/reflex мають існувати у довіднику тестів");
+                await ValidateReflexAsync(e);
                 _db.ReflexRules.Add(e); entity = e; break;
             }
             case "organisms": { var e = Deserialize<LabMicroOrganism>(body); if (e.Id == 0) e.Id = await NextIntId(_db.Organisms.Select(x => x.Id)); await EnsureUniqueCode(_db.Organisms.AnyAsync(x => x.Code == e.Code), e.Code); _db.Organisms.Add(e); entity = e; break; }
@@ -129,7 +158,7 @@ public sealed class DictionaryService
             {
                 var e = Deserialize<LabEucastBreakpoint>(body);
                 if (!await _db.Organisms.AnyAsync(o => o.Id == e.OrganismId) || !await _db.Antibiotics.AnyAsync(a => a.Id == e.AntibioticId)) throw new ValidationException("Збудник/антибіотик не знайдено");
-                if (await _db.EucastBreakpoints.AnyAsync(b => b.OrganismId == e.OrganismId && b.AntibioticId == e.AntibioticId && b.EucastVersion == e.EucastVersion)) throw new ConflictException("Breakpoint для цієї пари вже існує");
+                if (await _db.EucastBreakpoints.AnyAsync(b => b.OrganismId == e.OrganismId && b.AntibioticId == e.AntibioticId && b.EucastVersion == e.EucastVersion && b.RecordState != RecordStates.Deleted)) throw new ConflictException("Контрольне значення для цієї пари збудник–антибіотик у цій версії EUCAST вже існує");
                 e.Organism = null; e.Antibiotic = null;
                 _db.EucastBreakpoints.Add(e); entity = e; break;
             }
@@ -160,6 +189,10 @@ public sealed class DictionaryService
         foreach (var prop in existing.GetType().GetProperties().Where(p => p.CanWrite && p.Name is not ("Id" or "Items" or "CreatedOn" or "CreatedBy" or "BiomaterialType" or "TubeType" or "Method" or "Organism" or "Antibiotic" or "Department" or "DropdownOptions")))
             if (node.ContainsKey(char.ToLowerInvariant(prop.Name[0]) + prop.Name.Substring(1))) prop.SetValue(existing, prop.GetValue(merged));
 
+        if (existing is LabReflexRule rr) await ValidateReflexAsync(rr);
+        if (existing is LabEucastBreakpoint eb && await _db.EucastBreakpoints.AnyAsync(b => b.Id != eb.Id && b.OrganismId == eb.OrganismId && b.AntibioticId == eb.AntibioticId && b.EucastVersion == eb.EucastVersion && b.RecordState != RecordStates.Deleted))
+            throw new ConflictException("Контрольне значення для цієї пари збудник–антибіотик у цій версії EUCAST вже існує");
+        if (Adapter(name) is { } uad) await uad.ValidateAsync(_db, existing, false);
         if (existing is LabTestDefinition td && body.TryGetProperty("dropdownOptions", out var opts) && opts.ValueKind == JsonValueKind.Array) td.DropdownOptions = opts.EnumerateArray().Select(o => o.GetString() ?? "").ToList();
         if (existing is LabTestProfile profile && body.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array)
         {
@@ -175,6 +208,7 @@ public sealed class DictionaryService
         }
         _audit.Log("UPDATE", table, id, before, existing);
         await _db.SaveChangesAsync();
+        if (Adapter(name) is { } cad) await cad.OnChangedAsync(_db);
         return await GetAsync(name, IdOf(existing));
     }
 
@@ -185,8 +219,9 @@ public sealed class DictionaryService
         var table = Table(name);
         var existing = await GetTrackedAsync(name, id);
         var realId = IdOf(existing);
-        var deps = await DependencyCountAsync(name, existing);
-        if (deps > 0)
+        var adapter = Adapter(name);
+        var deps = adapter != null ? await adapter.DependenciesAsync(_db, existing) : await DependencyCountAsync(name, existing);
+        if (deps > 0 || adapter is { ArchiveOnly: true })
         {
             // Soft delete: isActive=false (та is_deleted для прихованих довідників)
             var isActiveProp = existing.GetType().GetProperty("IsActive");
@@ -194,11 +229,13 @@ public sealed class DictionaryService
             isActiveProp.SetValue(existing, false);
             _audit.Log("SOFT_DELETE", table, realId, null, new { isActive = false, dependencies = deps });
             await _db.SaveChangesAsync();
-            return new { id = realId, deleted = false, deactivated = true, dependencies = deps, message = $"Запис використовується ({deps}) — деактивовано (isActive=false)" };
+            if (adapter != null) await adapter.OnChangedAsync(_db);
+            return new { id = realId, deleted = false, deactivated = true, dependencies = deps, message = deps > 0 ? $"Запис використовується ({deps}) — переведено в архів" : "Запис переведено в архів" };
         }
         _db.Remove(existing);
         _audit.Log("DELETE", table, realId, existing, null);
         await _db.SaveChangesAsync();
+        if (adapter != null) await adapter.OnChangedAsync(_db);
         return new { id = realId, deleted = true };
     }
 
@@ -236,6 +273,7 @@ public sealed class DictionaryService
 
     private async Task<object> GetTrackedAsync(string name, string id)
     {
+        if (Adapter(name) is { } ad) return await ad.FindAsync(_db, id, true) ?? throw NotFoundException.For($"Запис довідника {name}", id);
         object? item = name switch
         {
             "biomaterials" => await _db.BiomaterialTypes.FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
@@ -294,64 +332,43 @@ public sealed class DictionaryService
         return new { testCode = test.Code, testName = test.Name, profiles };
     }
 
-    /// <summary>Імпорт довідника (JSON-масив або CSV) з попереднім переглядом.</summary>
-    public async Task<object> ImportAsync(string name, string content, bool dryRun)
+    /// <summary>
+    /// Правило повторного тесту: тести існують, тригер ≠ додаваний тест, немає дубля (тригер + умова + поріг + тест) і циклу
+    /// (A → B → … → A): цикл зациклив би автододавання тестів.
+    /// </summary>
+    private async Task ValidateReflexAsync(LabReflexRule e)
     {
-        _policy.Require($"Імпорт довідника {name}", LabRoles.Admin);
-        Table(name);
-        List<JsonElement> rows;
-        var trimmed = content.TrimStart();
-        if (trimmed.StartsWith("["))
-            rows = JsonSerializer.Deserialize<List<JsonElement>>(content, Json) ?? new();
-        else
+        e.TriggerTestCode = (e.TriggerTestCode ?? "").Trim().ToUpperInvariant(); e.ReflexTestCode = (e.ReflexTestCode ?? "").Trim().ToUpperInvariant();
+        if (!await _db.Tests.AnyAsync(t => t.Code == e.TriggerTestCode) || !await _db.Tests.AnyAsync(t => t.Code == e.ReflexTestCode)) throw new ValidationException("Коди тестів тригера/reflex мають існувати у довіднику тестів");
+        var ops = new[] { "<", "<=", ">", ">=", "==", "OUT_OF_RANGE", "CRITICAL" };
+        if (!ops.Contains(e.ConditionOperator)) throw ValidationException.Field("conditionOperator", "Умова: " + string.Join(", ", ops));
+        if (e.ConditionOperator is "<" or "<=" or ">" or ">=" or "==" && e.ThresholdValue == null) throw ValidationException.Field("thresholdValue", "Для цієї умови вкажіть поріг");
+        if (e.TriggerTestCode == e.ReflexTestCode) throw new ValidationException("Тест не може додавати сам себе: оберіть інший тест для повторного визначення");
+        var others = await _db.ReflexRules.AsNoTracking().Where(r => r.Id != e.Id && r.RecordState != RecordStates.Deleted).ToListAsync();
+        if (others.Any(r => r.TriggerTestCode == e.TriggerTestCode && r.ConditionOperator == e.ConditionOperator && r.ThresholdValue == e.ThresholdValue && r.ReflexTestCode == e.ReflexTestCode))
+            throw new ConflictException($"Таке правило вже існує: {e.TriggerTestCode} {e.ConditionOperator} {e.ThresholdValue} → {e.ReflexTestCode}");
+        if (!e.IsActive) return;
+        // цикл: чи досяжний тригер із додаваного тесту через активні правила
+        var graph = others.Where(r => r.IsActive).GroupBy(r => r.TriggerTestCode).ToDictionary(g => g.Key, g => g.Select(r => r.ReflexTestCode).Distinct().ToList());
+        var parent = new Dictionary<string, string?> { [e.ReflexTestCode] = null };
+        var queue = new Queue<string>(); queue.Enqueue(e.ReflexTestCode);
+        while (queue.Count > 0)
         {
-            var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(l => l.TrimEnd('\r')).ToList();
-            if (lines.Count < 2) throw new ValidationException("CSV має містити заголовок і хоча б один рядок");
-            var sep = lines[0].Contains(';') ? ';' : ',';
-            var header = lines[0].Split(sep).Select(h => h.Trim()).ToList();
-            rows = lines.Skip(1).Select(l =>
+            var cur = queue.Dequeue();
+            if (!graph.TryGetValue(cur, out var next)) continue;
+            foreach (var n in next)
             {
-                var cells = l.Split(sep);
-                var obj = new JsonObject();
-                for (var i = 0; i < header.Count && i < cells.Length; i++)
+                if (parent.ContainsKey(n)) continue;
+                parent[n] = cur;
+                if (n == e.TriggerTestCode)
                 {
-                    var v = cells[i].Trim();
-                    obj[header[i]] = double.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) && !header[i].Equals("code", StringComparison.OrdinalIgnoreCase) ? JsonValue.Create(d) : bool.TryParse(v, out var b) ? JsonValue.Create(b) : JsonValue.Create(v);
+                    var chain = new List<string>();
+                    for (string? p = n; p != null; p = parent[p]) chain.Add(p);
+                    chain.Reverse();
+                    throw new ConflictException($"Правило створює цикл повторних тестів: {e.TriggerTestCode} → " + string.Join(" → ", chain));
                 }
-                return JsonSerializer.Deserialize<JsonElement>(obj.ToJsonString());
-            }).ToList();
-        }
-        var preview = new List<object>();
-        var created = 0; var updated = 0; var errors = 0;
-        foreach (var row in rows)
-        {
-            string? code = row.TryGetProperty("code", out var c) ? c.GetString() : null;
-            try
-            {
-                var exists = code != null && await ExistsByCodeAsync(name, code);
-                preview.Add(new { code, action = exists ? "UPDATE" : "CREATE", row });
-                if (!dryRun)
-                {
-                    if (exists) { await UpdateAsync(name, code!, row); updated++; }
-                    else { await CreateAsync(name, row); created++; }
-                }
+                queue.Enqueue(n);
             }
-            catch (LisException ex) { errors++; preview.Add(new { code, action = "ERROR", error = ex.Message }); }
         }
-        return new { dryRun, total = rows.Count, created, updated, errors, rows = preview };
     }
-
-    private async Task<bool> ExistsByCodeAsync(string name, string code) => name switch
-    {
-        "biomaterials" => await _db.BiomaterialTypes.AnyAsync(x => x.Code == code),
-        "tube-types" => await _db.TubeTypes.AnyAsync(x => x.Code == code),
-        "method-types" => await _db.MethodTypes.AnyAsync(x => x.Code == code),
-        "analyzer-types" => await _db.AnalyzerTypes.AnyAsync(x => x.Code == code),
-        "tests" => await _db.Tests.AnyAsync(x => x.Code == code),
-        "profiles" => await _db.Profiles.AnyAsync(x => x.Code == code),
-        "organisms" => await _db.Organisms.AnyAsync(x => x.Code == code),
-        "antibiotics" => await _db.Antibiotics.AnyAsync(x => x.Code == code),
-        "departments" => await _db.Departments.AnyAsync(x => x.Code == code),
-        _ => false
-    };
 }

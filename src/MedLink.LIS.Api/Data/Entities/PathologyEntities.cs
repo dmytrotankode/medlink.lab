@@ -26,11 +26,30 @@ public static class PathKinds
     };
 }
 
-/// <summary>Тарифи за замовчуванням (прайс розд. 20.7 може перевизначити): вирізка — перший блок + кожен наступний, ІГХ, консультація за скельце.</summary>
+/// <summary>
+/// Тарифи патоморфології: вирізка — перший блок + кожен наступний, ІГХ, консультація за скельце, CITO, цитологія.
+/// Значення за замовчуванням нижче; фактичні беруться з довідника lab_path_price (екран «Довідники патоморфології»).
+/// Прайс розд. 20.7 може перевизначити. Кеш оновлюється при старті та після зміни довідника.
+/// </summary>
 public static class PathPrices
 {
-    public const decimal FirstBlock = 420m, NextBlock = 140m, Ihc = 650m, ConsultSlide = 210m, Cito = 900m, CytoSlide = 160m;
-    public const int IhcExtraWorkdays = 3;
+    public static readonly (string Code, string Name, decimal Default)[] Defaults =
+    {
+        ("FIRST_BLOCK", "Вирізка: перший блок", 420m), ("NEXT_BLOCK", "Вирізка: кожен наступний блок", 140m), ("IHC", "ІГХ-маркер (типова ціна)", 650m),
+        ("CONSULT_SLIDE", "Консультація готових препаратів: за скельце", 210m), ("CITO", "Надбавка за термінове (CITO)", 900m),
+        ("CYTO_SLIDE", "Цитологія: скельце (типова ціна)", 160m), ("IHC_EXTRA_DAYS", "ІГХ: додаткові робочі дні до терміну", 3m)
+    };
+    private static volatile Dictionary<string, decimal> _values = new();
+    private static decimal Get(string code) => _values.TryGetValue(code, out var v) ? v : Defaults.First(d => d.Code == code).Default;
+    public static decimal FirstBlock => Get("FIRST_BLOCK");
+    public static decimal NextBlock => Get("NEXT_BLOCK");
+    public static decimal Ihc => Get("IHC");
+    public static decimal ConsultSlide => Get("CONSULT_SLIDE");
+    public static decimal Cito => Get("CITO");
+    public static decimal CytoSlide => Get("CYTO_SLIDE");
+    public static int IhcExtraWorkdays => (int)Get("IHC_EXTRA_DAYS");
+    /// <summary>Підставляє значення з довідника (лише активні рядки).</summary>
+    public static void Apply(IEnumerable<LabPathPrice> rows) => _values = rows.Where(r => r.IsActive && r.RecordState != RecordStates.Deleted).GroupBy(r => r.Code).ToDictionary(g => g.Key, g => g.First().Amount);
 }
 
 /// <summary>Етапи справи (FR-PAT-023): прийнято → вирізка → проводка → заливка → мікротомія → фарбування → мікроскопія й опис → підписано.</summary>
@@ -54,34 +73,69 @@ public static class PathStages
     public static string? Next(string stage) { var i = Array.IndexOf(All, stage); return i >= 0 && i < All.Length - 1 ? All[i + 1] : null; }
 }
 
-/// <summary>Довідники цитології (FR-CYT-001, 006): види матеріалу, адекватність, категорії висновку, оцінка скринера.</summary>
+/// <summary>
+/// Довідники цитології (FR-CYT-001, 006): види матеріалу, адекватність, категорії висновку, оцінка скринера.
+/// Значення за замовчуванням нижче; фактичні беруться з довідника lab_path_cyto_item (екран «Довідники патоморфології»).
+/// </summary>
 public static class PathCytology
 {
-    public static readonly (string Code, string Name)[] Materials =
+    public sealed record CategoryDef(string Code, string Name, bool High, bool Normal, string[] Materials);
+
+    public static readonly (string Code, string Name)[] DefaultMaterials =
     {
         ("GYN", "Гінекологічний мазок"), ("LIQUID", "Рідинна цитологія"), ("ASPIRATE", "Пунктат / аспірат"),
         ("DISCHARGE", "Виділення і змиви"), ("SEROUS", "Серозна рідина")
     };
-    public static readonly (string Code, string Name)[] Adequacy =
+    public static readonly (string Code, string Name)[] DefaultAdequacy =
     {
         ("SATISFACTORY", "Задовільний для оцінки"), ("LIMITED", "Обмежено придатний"), ("UNSATISFACTORY", "Непридатний для оцінки")
     };
-    /// <summary>Категорії висновку; High — випадки, що потребують повідомлення направнику (FR-CYT-008).</summary>
-    public static readonly (string Code, string Name, bool High)[] Categories =
+    /// <summary>Категорії висновку; High — випадки, що потребують повідомлення направнику (FR-CYT-008). Materials порожній — для всіх видів; рідинна цитологія й матеріал не вказано допускають усі категорії.</summary>
+    public static readonly CategoryDef[] DefaultCategories =
     {
-        ("NILM", "Без інтраепітеліальних уражень і злоякісності", false), ("ASC-US", "Атипові клітини плоского епітелію невизначеного значення", false),
-        ("LSIL", "Плоскоклітинне інтраепітеліальне ураження низького ступеня", false), ("ASC-H", "Атипові клітини, не виключено ураження високого ступеня", true),
-        ("HSIL", "Плоскоклітинне інтраепітеліальне ураження високого ступеня", true), ("AGC", "Атипові залозисті клітини", true),
-        ("BENIGN", "Доброякісні зміни", false), ("ATYPICAL", "Атипові клітини", false), ("SUSPICIOUS", "Підозра на злоякісність", true), ("MALIGNANT", "Злоякісні клітини", true)
+        new("NILM", "Без інтраепітеліальних уражень і злоякісності", false, true, new[] { "GYN" }),
+        new("ASC-US", "Атипові клітини плоского епітелію невизначеного значення", false, false, new[] { "GYN" }),
+        new("LSIL", "Плоскоклітинне інтраепітеліальне ураження низького ступеня", false, false, new[] { "GYN" }),
+        new("ASC-H", "Атипові клітини, не виключено ураження високого ступеня", true, false, new[] { "GYN" }),
+        new("HSIL", "Плоскоклітинне інтраепітеліальне ураження високого ступеня", true, false, new[] { "GYN" }),
+        new("AGC", "Атипові залозисті клітини", true, false, new[] { "GYN" }),
+        new("BENIGN", "Доброякісні зміни", false, true, new[] { "ASPIRATE", "DISCHARGE", "SEROUS" }),
+        new("ATYPICAL", "Атипові клітини", false, false, new[] { "ASPIRATE", "DISCHARGE", "SEROUS" }),
+        new("SUSPICIOUS", "Підозра на злоякісність", true, false, new[] { "ASPIRATE", "DISCHARGE", "SEROUS" }),
+        new("MALIGNANT", "Злоякісні клітини", true, false, Array.Empty<string>())
     };
-    /// <summary>Категорії за видом матеріалу: гінекологічний мазок — шкала шийки матки + карцинома; пунктат, виділення, серозна рідина — загальні; рідинна цитологія — усі.</summary>
-    private static readonly string[] GynCategories = { "NILM", "ASC-US", "LSIL", "ASC-H", "HSIL", "AGC", "MALIGNANT" };
-    private static readonly string[] GeneralCategories = { "BENIGN", "ATYPICAL", "SUSPICIOUS", "MALIGNANT" };
-    public static bool CategoryAllowed(string? material, string? category) =>
-        category == null || material switch { null or "" or "LIQUID" => true, "GYN" => GynCategories.Contains(category), _ => GeneralCategories.Contains(category) };
+
+    private static volatile (string Code, string Name)[] _materials = DefaultMaterials;
+    private static volatile (string Code, string Name)[] _adequacy = DefaultAdequacy;
+    private static volatile CategoryDef[] _categories = DefaultCategories;
+
+    public static (string Code, string Name)[] Materials => _materials;
+    public static (string Code, string Name)[] Adequacy => _adequacy;
+    public static (string Code, string Name, bool High)[] Categories => _categories.Select(c => (c.Code, c.Name, c.High)).ToArray();
     public static readonly string[] Assessments = { "NORMAL", "SUSPECT" };
-    public static bool IsHigh(string? c) => Categories.Any(x => x.High && x.Code == c);
-    public static bool IsNormal(string? c) => c is "NILM" or "BENIGN";
+
+    public static bool CategoryAllowed(string? material, string? category)
+    {
+        if (category == null) return true;
+        var def = _categories.FirstOrDefault(c => c.Code == category);
+        if (def == null) return false;
+        if (string.IsNullOrEmpty(material) || material == "LIQUID") return true;
+        return def.Materials.Length == 0 || def.Materials.Contains(material);
+    }
+    public static bool IsHigh(string? c) => _categories.Any(x => x.High && x.Code == c);
+    public static bool IsNormal(string? c) => _categories.Any(x => x.Normal && x.Code == c);
+
+    /// <summary>Підставляє довідник (лише активні позиції); порожній набір виду — типові значення.</summary>
+    public static void Apply(IEnumerable<LabPathCytoItem> rows)
+    {
+        var list = rows.Where(r => r.IsActive && r.RecordState != RecordStates.Deleted).OrderBy(r => r.SortOrder).ThenBy(r => r.Code).ToList();
+        var mats = list.Where(r => r.Kind == CytoItemKinds.Material).Select(r => (r.Code, r.Name)).ToArray();
+        var adq = list.Where(r => r.Kind == CytoItemKinds.Adequacy).Select(r => (r.Code, r.Name)).ToArray();
+        var cats = list.Where(r => r.Kind == CytoItemKinds.Category).Select(r => new CategoryDef(r.Code, r.Name, r.IsHigh, r.IsNormal, (r.Materials ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))).ToArray();
+        _materials = mats.Length > 0 ? mats : DefaultMaterials;
+        _adequacy = adq.Length > 0 ? adq : DefaultAdequacy;
+        _categories = cats.Length > 0 ? cats : DefaultCategories;
+    }
 }
 
 /// <summary>Маршрут обробки блока (FR-PAT-110): стандартна проводка або з попередньою декальцинацією (кісткова та кальцинована тканина).</summary>
@@ -376,6 +430,7 @@ public class LabPathTemplate : GuidEntity
     [MaxLength(128)] public string Name { get; set; } = "";
     public string? Macro { get; set; }
     public string? Micro { get; set; }
+    public bool IsActive { get; set; } = true;
 }
 
 /// <summary>[ЛІС] Класифікатор МКХ-О: топографія (C00–C80) і морфологія (код/поведінка).</summary>
@@ -397,6 +452,7 @@ public class LabStainMethod : GuidEntity
     [MaxLength(128)] public string Name { get; set; } = "";
     public bool IsIhc { get; set; }
     public decimal Price { get; set; }
+    public bool IsActive { get; set; } = true;
 }
 
 /// <summary>[ЛІС] Reflex-правило ІГХ (FR-PAT-042): топографія (діапазон префіксів) + морфологія → панель маркерів.</summary>
@@ -408,6 +464,7 @@ public class LabIhcReflexRule : GuidEntity
     [MaxLength(128)] public string MorphCodes { get; set; } = "";
     [MaxLength(256)] public string Panel { get; set; } = "";
     [MaxLength(512)] public string? Why { get; set; }
+    public bool IsActive { get; set; } = true;
 }
 
 /// <summary>[ЛІС] Тип матеріалу: SLA (робочі дні), група послуг, ціни вирізки.</summary>
@@ -419,6 +476,7 @@ public class LabPathMaterialType : GuidEntity
     public int SlaDays { get; set; }
     [MaxLength(32)] public string? ServiceGroup { get; set; }
     public decimal BasePrice { get; set; }
+    public bool IsActive { get; set; } = true;
 }
 
 /// <summary>[ЛІС] Фіксатор з мінімальною й максимальною тривалістю фіксації.</summary>
@@ -428,6 +486,7 @@ public class LabFixative : GuidEntity
     [MaxLength(64)] public string Name { get; set; } = "";
     public int MinHours { get; set; }
     public int MaxHours { get; set; }
+    public bool IsActive { get; set; } = true;
 }
 
 /// <summary>[ЛІС] Причина відмови в прийомі матеріалу.</summary>
@@ -436,4 +495,5 @@ public class LabPathRejectReason : GuidEntity
 {
     [MaxLength(32)] public string Code { get; set; } = "";
     [MaxLength(256)] public string Name { get; set; } = "";
+    public bool IsActive { get; set; } = true;
 }

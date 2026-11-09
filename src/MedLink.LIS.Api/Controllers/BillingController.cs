@@ -14,10 +14,36 @@ public sealed class BillingController : LisControllerBase
     [HttpGet("payers")] public async Task<IActionResult> Payers() => Ok(await _svc.PayersAsync());
     [HttpPost("payers")] public async Task<IActionResult> CreatePayer([FromBody] LabPayer req) => StatusCode(201, await _svc.SavePayerAsync(null, req));
     [HttpPut("payers/{id}")] public async Task<IActionResult> UpdatePayer(string id, [FromBody] LabPayer req) => Ok(await _svc.SavePayerAsync(id, req));
+    /// <summary>Платник у архів (якщо використовується) або видалення. «Пацієнт» не видаляється.</summary>
+    [HttpDelete("payers/{id}")] public async Task<IActionResult> DeletePayer(string id) => Ok(await _svc.DeletePayerAsync(id));
 
     [HttpGet("price-lists")] public async Task<IActionResult> PriceLists() => Ok(await _svc.PriceListsAsync());
     [HttpPost("price-lists")] public async Task<IActionResult> CreatePriceList([FromBody] PriceListRequest req) => StatusCode(201, await _svc.SavePriceListAsync(null, req));
     [HttpPut("price-lists/{id}")] public async Task<IActionResult> UpdatePriceList(string id, [FromBody] PriceListRequest req) => Ok(await _svc.SavePriceListAsync(id, req));
+    /// <summary>Прайс-лист у архів (якщо використовується платниками/нарахуваннями) або видалення.</summary>
+    [HttpDelete("price-lists/{id}")] public async Task<IActionResult> DeletePriceList(string id) => Ok(await _svc.DeletePriceListAsync(id));
+    /// <summary>Пакети послуг прайс-листа: створення, зміна, архів/видалення.</summary>
+    [HttpPost("price-lists/{id}/packages")] public async Task<IActionResult> CreatePackage(string id, [FromBody] PackageSaveRequest req) => StatusCode(201, await _svc.SavePackageAsync(id, null, req));
+    [HttpPut("price-lists/{id}/packages/{packageId}")] public async Task<IActionResult> UpdatePackage(string id, string packageId, [FromBody] PackageSaveRequest req) => Ok(await _svc.SavePackageAsync(id, packageId, req));
+    [HttpDelete("price-lists/{id}/packages/{packageId}")] public async Task<IActionResult> DeletePackage(string id, string packageId) => Ok(await _svc.DeletePackageAsync(id, packageId));
+    /// <summary>Масове оновлення цін файлом CSV (code;price) у тілі як text; ?dryRun=true — звіт без запису.</summary>
+    [HttpPost("price-lists/{id}/import-prices")]
+    [Consumes("text/plain", "text/csv", "application/json", "multipart/form-data")]
+    [RequestSizeLimit(20_000_000)]
+    public async Task<IActionResult> ImportPrices(string id, [FromQuery] bool dryRun = true)
+    {
+        string content;
+        if (Request.HasFormContentType)
+        {
+            var form = await Request.ReadFormAsync();
+            var file = form.Files.FirstOrDefault() ?? throw new MedLink.LIS.Api.Infrastructure.ValidationException("Файл не передано (поле form-data «file»)");
+            using var fr = new StreamReader(file.OpenReadStream());
+            content = await fr.ReadToEndAsync();
+        }
+        else { using var reader = new StreamReader(Request.Body); content = await reader.ReadToEndAsync(); }
+        if (string.IsNullOrWhiteSpace(content)) throw new MedLink.LIS.Api.Infrastructure.ValidationException("Порожнє тіло запиту");
+        return Ok(await _svc.ImportPricesAsync(id, content, dryRun));
+    }
 
     /// <summary>Страхові поліси пацієнта ([MedLink-new] mis_patient_insurance).</summary>
     [HttpGet("patients/{patientId}/insurances")] public async Task<IActionResult> Insurances(string patientId) => Ok(await _svc.PatientInsurancesAsync(patientId));

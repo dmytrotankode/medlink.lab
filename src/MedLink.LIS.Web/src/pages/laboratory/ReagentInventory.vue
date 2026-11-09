@@ -60,6 +60,7 @@
         <q-card-section class="row items-center bg-primary text-white q-py-sm"><q-icon name="inventory" class="q-mr-sm" /><div class="text-subtitle1 text-weight-bold">{{ form.id ? 'Партія реагенту' : 'Новий лот реагенту' }}</div><q-space /><q-btn flat round dense icon="close" v-close-popup /></q-card-section>
         <q-card-section>
           <div class="row q-col-gutter-sm">
+            <div class="col-12"><q-select v-model="form.reagentItemId" outlined dense clearable emit-value map-options label="Реагент із номенклатури" :options="itemOptions" hint="Назву, виробника та показник буде взято з довідника «Реагенти»" data-testid="lotItem" @input="onItem" /></div>
             <div class="col-8"><q-input v-model="form.reagentName" outlined dense label="Назва реагенту *" data-testid="lotName" :error="touched && !form.reagentName" hide-bottom-space /></div>
             <div class="col-4"><q-input v-model="form.lotNumber" outlined dense label="Номер лота *" data-testid="lotNumber" :error="touched && !form.lotNumber" hide-bottom-space /></div>
             <div class="col-12"><q-input v-model="form.manufacturer" outlined dense label="Виробник" /></div>
@@ -152,7 +153,7 @@ export default {
     return {
       touched: false, remainingEdited: false, lots: [], alerts: [], search: '', onlyProblems: false, testFilter: '',
       lotOpen: false, consumeOpen: false, cardOpen: false, deleteOpen: false,
-      form: {}, formError: '', saving: false, reportOpen: false, reportLoading: false, report: null, reportFrom: '', reportTo: '', active: null, consumeTests: 1, consumeError: '',
+      reagentItems: [], form: {}, formError: '', saving: false, reportOpen: false, reportLoading: false, report: null, reportFrom: '', reportTo: '', active: null, consumeTests: 1, consumeError: '',
       columns: [
         { name: 'name', label: 'Реагент', field: 'reagentName', align: 'left', sortable: true },
         { name: 'lotNumber', label: 'Лот', field: 'lotNumber', align: 'left' },
@@ -167,6 +168,7 @@ export default {
     };
   },
   computed: {
+    itemOptions () { return this.reagentItems.map(x => ({ value: x.id, label: x.name + (x.manufacturer ? ' · ' + x.manufacturer : '') })); },
     analyzers () { return this.$store.state.laboratory.analyzers; },
     analyzerOptions () { return this.analyzers.map(a => ({ value: a.id, label: a.name })); },
     // Дозволи збігаються з серверною політикою: лоти ведуть адміністратор, лікар-лаборант, лаборант; видаляють — адміністратор і лікар-лаборант
@@ -201,13 +203,18 @@ export default {
       if (results[1].status === 'fulfilled') this.alerts = this.asList(results[1].value);
       const failed = results.find(r => r.status === 'rejected');
       this.apiError = failed && !this.apiOffline ? failed.reason.userMessage : null;
+      this.$api.dictList('reagent-items', { isActive: true }).then(r => { this.reagentItems = this.asList(r); }).catch(() => {});
       this.$store.dispatch('laboratory/refreshStatus');
+    },
+    onItem (id) {
+      const it = this.reagentItems.find(x => x.id === id);
+      if (it) { this.form.reagentName = it.name; this.form.manufacturer = it.manufacturer || ''; if (it.testCode) this.form.testCode = it.testCode; }
     },
     filterTests (val, update) { update(() => { this.testFilter = val || ''; }); },
     openLot (l) {
       // Поля форми збігаються з контрактом API: reagentName, testsInitial, testsRemaining, testCode
-      this.form = l ? { id: l.id, reagentName: l.reagentName, lotNumber: l.lotNumber, manufacturer: l.manufacturer || '', analyzerId: l.analyzerId, testCode: l.testCode, testsInitial: this.initial(l), testsRemaining: this.remaining(l), minimumTests: l.minimumTests, expiryDate: (l.expiryDate || '').slice(0, 10), openedAt: (l.openedAt || '').slice(0, 10), onboardStabilityDays: l.onboardStabilityDays, unitsPerTest: l.unitsPerTest || 1, isActive: l.isActive !== false }
-        : { id: null, reagentName: '', lotNumber: '', manufacturer: '', analyzerId: null, testCode: null, testsInitial: 100, testsRemaining: 100, minimumTests: 50, expiryDate: '', openedAt: '', onboardStabilityDays: null, unitsPerTest: 1, isActive: true };
+      this.form = l ? { id: l.id, reagentItemId: l.reagentItemId || null, reagentName: l.reagentName, lotNumber: l.lotNumber, manufacturer: l.manufacturer || '', analyzerId: l.analyzerId, testCode: l.testCode, testsInitial: this.initial(l), testsRemaining: this.remaining(l), minimumTests: l.minimumTests, expiryDate: (l.expiryDate || '').slice(0, 10), openedAt: (l.openedAt || '').slice(0, 10), onboardStabilityDays: l.onboardStabilityDays, unitsPerTest: l.unitsPerTest || 1, isActive: l.isActive !== false }
+        : { id: null, reagentItemId: null, reagentName: '', lotNumber: '', manufacturer: '', analyzerId: null, testCode: null, testsInitial: 100, testsRemaining: 100, minimumTests: 50, expiryDate: '', openedAt: '', onboardStabilityDays: null, unitsPerTest: 1, isActive: true };
       this.formError = ''; this.touched = false; this.remainingEdited = false; this.lotOpen = true;
     },
     async saveLot () {
@@ -218,7 +225,7 @@ export default {
       if (!f.expiryDate) { this.formError = 'Вкажіть, до якої дати придатний лот'; return; }
       this.saving = true;
       const num = v => { const n = parseDecimal(v); return n === null ? null : Math.round(n); };
-      const body = { reagentName: f.reagentName, lotNumber: f.lotNumber, manufacturer: f.manufacturer || null, analyzerId: f.analyzerId || null, testCode: f.testCode || null, testsInitial: num(f.testsInitial) || 0, testsRemaining: num(f.testsRemaining), minimumTests: num(f.minimumTests) || 0, expiryDate: f.expiryDate, openedAt: f.openedAt || null, onboardStabilityDays: num(f.onboardStabilityDays), unitsPerTest: num(f.unitsPerTest) || 1, isActive: f.isActive !== false };
+      const body = { reagentItemId: f.reagentItemId || null, reagentName: f.reagentName, lotNumber: f.lotNumber, manufacturer: f.manufacturer || null, analyzerId: f.analyzerId || null, testCode: f.testCode || null, testsInitial: num(f.testsInitial) || 0, testsRemaining: num(f.testsRemaining), minimumTests: num(f.minimumTests) || 0, expiryDate: f.expiryDate, openedAt: f.openedAt || null, onboardStabilityDays: num(f.onboardStabilityDays), unitsPerTest: num(f.unitsPerTest) || 1, isActive: f.isActive !== false };
       try {
         if (this.form.id) await this.$api.updateReagentLot(this.form.id, body); else await this.$api.createReagentLot(body);
         this.notifyOk('Лот збережено'); this.lotOpen = false; this.load();

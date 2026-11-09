@@ -1,0 +1,514 @@
+{
+  "format": "medlink-guide-bundle",
+  "version": 1,
+  "app": {
+    "code": "lab",
+    "caption": "MedLink LIS"
+  },
+  "folders": [
+    {
+      "code": "dict-maint",
+      "caption": "Ведення довідників",
+      "icon": "menu_book",
+      "sortOrder": 190
+    }
+  ],
+  "scenarios": [
+    {
+      "code": "lab.dict.add",
+      "folderCode": "dict-maint",
+      "caption": "Як додати запис до довідника",
+      "description": "Відкрити довідник, створити запис і зберегти.",
+      "icon": "add_circle",
+      "startRoute": "/laboratory/dictionaries/biomaterials",
+      "requiredRoles": [],
+      "tags": [
+        "довідники",
+        "створення"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Кнопка «Створити»",
+          "body": "Натисніть «Створити» над таблицею довідника.",
+          "route": "/laboratory/dictionaries/biomaterials",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Створити» над таблицею довідника.",
+          "anchor": {
+            "code": "lab.dict.create",
+            "caption": "Кнопка створення",
+            "routePattern": "/laboratory/dictionaries/biomaterials",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictCreate\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictCreate"
+              },
+              "label": "Кнопка створення"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Збереження",
+          "body": "Заповніть поля та натисніть «Зберегти».",
+          "route": "/laboratory/dictionaries/biomaterials",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Заповніть поля та натисніть «Зберегти».",
+          "anchor": {
+            "code": "lab.dict.save",
+            "caption": "Кнопка збереження",
+            "routePattern": "/laboratory/dictionaries/biomaterials",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictSave\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictSave"
+              },
+              "label": "Кнопка збереження"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.dict.import",
+      "folderCode": "dict-maint",
+      "caption": "Як завантажити довідник файлом",
+      "description": "Імпорт CSV або JSON з попереднім переглядом: що буде створено, оновлено чи пропущено.",
+      "icon": "upload_file",
+      "startRoute": "/laboratory/dictionaries/tests",
+      "requiredRoles": [],
+      "tags": [
+        "довідники",
+        "імпорт"
+      ],
+      "estMinutes": 4,
+      "sortOrder": 20,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Кнопка «Імпорт»",
+          "body": "Натисніть «Імпорт» (доступно адміністратору).",
+          "route": "/laboratory/dictionaries/tests",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Імпорт» (доступно адміністратору).",
+          "anchor": {
+            "code": "lab.dict.import",
+            "caption": "Кнопка імпорту",
+            "routePattern": "/laboratory/dictionaries/tests",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictImport\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictImport"
+              },
+              "label": "Кнопка імпорту"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Попередній перегляд",
+          "body": "Оберіть файл і натисніть «Попередній перегляд» — дані ще не змінюються.",
+          "route": "/laboratory/dictionaries/tests",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Оберіть файл і натисніть «Попередній перегляд» — дані ще не змінюються.",
+          "anchor": {
+            "code": "lab.dict.import-preview",
+            "caption": "Попередній перегляд",
+            "routePattern": "/laboratory/dictionaries/tests",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictImportPreview\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictImportPreview"
+              },
+              "label": "Попередній перегляд"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Імпортувати",
+          "body": "Якщо звіт влаштовує, натисніть «Імпортувати».",
+          "route": "/laboratory/dictionaries/tests",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Якщо звіт влаштовує, натисніть «Імпортувати».",
+          "anchor": {
+            "code": "lab.dict.import-run",
+            "caption": "Кнопка імпорту файлу",
+            "routePattern": "/laboratory/dictionaries/tests",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictImportRun\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictImportRun"
+              },
+              "label": "Кнопка імпорту файлу"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.dict.export",
+      "folderCode": "dict-maint",
+      "caption": "Як вивантажити довідник",
+      "description": "Експорт довідника в таблицю CSV (Excel) або JSON.",
+      "icon": "download",
+      "startRoute": "/laboratory/dictionaries/tests",
+      "requiredRoles": [],
+      "tags": [
+        "довідники",
+        "експорт"
+      ],
+      "estMinutes": 1,
+      "sortOrder": 30,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Кнопка «Експорт»",
+          "body": "Оберіть формат вивантаження.",
+          "route": "/laboratory/dictionaries/tests",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Оберіть формат вивантаження.",
+          "anchor": {
+            "code": "lab.dict.export",
+            "caption": "Кнопка експорту",
+            "routePattern": "/laboratory/dictionaries/tests",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictExport\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictExport"
+              },
+              "label": "Кнопка експорту"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.dict.archive",
+      "folderCode": "dict-maint",
+      "caption": "Як прибрати запис в архів",
+      "description": "Запис, що вже використовується, не видаляється, а стає неактивним; його можна повернути.",
+      "icon": "archive",
+      "startRoute": "/laboratory/dictionaries/biomaterials",
+      "requiredRoles": [],
+      "tags": [
+        "довідники",
+        "архів"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 40,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Пошук запису",
+          "body": "Знайдіть запис у таблиці.",
+          "route": "/laboratory/dictionaries/biomaterials",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Знайдіть запис у таблиці.",
+          "anchor": {
+            "code": "lab.dict.search",
+            "caption": "Пошук у довіднику",
+            "routePattern": "/laboratory/dictionaries/biomaterials",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictSearch\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictSearch"
+              },
+              "label": "Пошук у довіднику"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.dict.synonyms",
+      "folderCode": "dict-maint",
+      "caption": "Як додати синонім назви аналізу",
+      "description": "Синоніми допомагають знаходити показник у пошуку та матриці призначень.",
+      "icon": "translate",
+      "startRoute": "/laboratory/dictionaries/test-synonyms",
+      "requiredRoles": [],
+      "tags": [
+        "синоніми",
+        "пошук"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 50,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Створити синонім",
+          "body": "Натисніть «Створити», оберіть показник і впишіть синонім.",
+          "route": "/laboratory/dictionaries/test-synonyms",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Створити», оберіть показник і впишіть синонім.",
+          "anchor": {
+            "code": "lab.dict.syn-create",
+            "caption": "Кнопка створення",
+            "routePattern": "/laboratory/dictionaries/test-synonyms",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictCreate\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictCreate"
+              },
+              "label": "Кнопка створення"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.dict.calendar",
+      "folderCode": "dict-maint",
+      "caption": "Як внести святковий день",
+      "description": "Виробничий календар впливає на строки патогістологічних досліджень.",
+      "icon": "event",
+      "startRoute": "/laboratory/dictionaries/work-calendar",
+      "requiredRoles": [],
+      "tags": [
+        "календар",
+        "строки"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 60,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Додати день",
+          "body": "Натисніть «Створити», оберіть дату й тип дня (святковий або робочий).",
+          "route": "/laboratory/dictionaries/work-calendar",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Створити», оберіть дату й тип дня (святковий або робочий).",
+          "anchor": {
+            "code": "lab.dict.cal-create",
+            "caption": "Кнопка створення",
+            "routePattern": "/laboratory/dictionaries/work-calendar",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictCreate\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictCreate"
+              },
+              "label": "Кнопка створення"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.dict.templates",
+      "folderCode": "dict-maint",
+      "caption": "Як змінити шапку й підвал бланка",
+      "description": "Версії бланків: правка заголовка, примітки, підвалу та мов без дизайнера.",
+      "icon": "description",
+      "startRoute": "/laboratory/report-templates",
+      "requiredRoles": [],
+      "tags": [
+        "бланки",
+        "шаблони"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 70,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Нова версія",
+          "body": "Натисніть «Нова версія» біля потрібного варіанта бланка.",
+          "route": "/laboratory/report-templates",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Нова версія» біля потрібного варіанта бланка.",
+          "anchor": {
+            "code": "lab.dict.tpl-new",
+            "caption": "Нова версія бланка",
+            "routePattern": "/laboratory/report-templates",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"tplNew-final\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "tplNew-final"
+              },
+              "label": "Нова версія бланка"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Збереження",
+          "body": "Змініть реквізити та збережіть; потім зробіть версію діючою.",
+          "route": "/laboratory/report-templates",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Змініть реквізити та збережіть; потім зробіть версію діючою.",
+          "anchor": {
+            "code": "lab.dict.tpl-save",
+            "caption": "Збереження бланка",
+            "routePattern": "/laboratory/report-templates",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"tplSave\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "tplSave"
+              },
+              "label": "Збереження бланка"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    }
+  ]
+}

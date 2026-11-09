@@ -135,7 +135,13 @@ public static class SchemaUpgrader
     private static string DefaultLiteral(IProperty prop, bool pg)
     {
         var clr = Nullable.GetUnderlyingType(prop.ClrType) ?? prop.ClrType;
-        var value = prop.GetDefaultValue() ?? (clr.IsValueType ? Activator.CreateInstance(clr) : null);
+        var value = prop.GetDefaultValue();
+        // Початкове значення з ініціалізатора властивості (наприклад, IsActive = true): інакше нова колонка у наявній БД стала б «неактивною» для всіх записів
+        if (value == null && prop.PropertyInfo != null && !prop.DeclaringType.ClrType.IsAbstract && prop.DeclaringType.ClrType.GetConstructor(Type.EmptyTypes) != null)
+        {
+            try { value = prop.PropertyInfo.GetValue(Activator.CreateInstance(prop.DeclaringType.ClrType)); } catch { value = null; }
+        }
+        value ??= clr.IsValueType ? Activator.CreateInstance(clr) : null;
         return value switch
         {
             null => "''",

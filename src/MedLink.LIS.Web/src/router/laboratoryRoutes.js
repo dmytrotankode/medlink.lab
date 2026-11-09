@@ -55,6 +55,7 @@ export default [
       lab('analytics-tat', 'lab-analytics-tat', 'Аналітика термінів виконання', () => import('pages/laboratory/LabAnalyticsTat.vue')),
 
       // ----- Довідники -----
+      lab('report-templates', 'lab-report-templates', 'Шаблони бланків результатів', () => import('pages/laboratory/ReportTemplatesPage.vue')),
       lab('pricing', 'lab-pricing', 'Прайси та платники', () => import('pages/laboratory/PricingPage.vue')),
       lab('norms', 'lab-norms', 'Послуги та норми', () => import('pages/laboratory/norms/NormsCatalog.vue')),
       lab('dictionaries', 'lab-dictionaries', 'Довідники', () => import('pages/dictionaries/DictionariesHome.vue')),

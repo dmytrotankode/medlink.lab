@@ -38,6 +38,12 @@ const labApi = {
   dictImport: (formData, dryRun) => data(http.post('/dictionaries/import', formData, {
     params: { dryRun: !!dryRun }, headers: { 'Content-Type': 'multipart/form-data' }
   })),
+  /** Імпорт довідника текстом файлу (JSON/CSV): dryRun=true — звіт без запису. Ліміт — 5000 рядків. */
+  dictImportText: (name, text, dryRun) => data(http.post('/dictionaries/import', text, {
+    params: { name, dryRun: !!dryRun }, headers: { 'Content-Type': 'text/plain' }
+  })),
+  /** Експорт довідника файлом: format = csv | json. Повертає Blob. */
+  dictExport: (name, format, params = {}) => http.get(`/dictionaries/${name}/export`, { params: clean({ format, ...params }), responseType: 'blob' }).then(r => r.data),
 
   // ---------- Матриця призначень (PO-1) ----------
   orderMatrix: () => data(http.get('/dictionaries/order-matrix')),
@@ -271,7 +277,20 @@ const labApi = {
   // ---------- Оплата (FR-GAP-060) ----------
   payers: () => data(http.get('/payers')),
   savePayer: (id, body) => data(id ? http.put(`/payers/${id}`, body) : http.post('/payers', body)),
+  deletePayer: id => data(http.delete(`/payers/${id}`)),
   priceLists: () => data(http.get('/price-lists')),
+  deletePriceList: id => data(http.delete(`/price-lists/${id}`)),
+  savePricePackage: (listId, id, body) => data(id ? http.put(`/price-lists/${listId}/packages/${id}`, body) : http.post(`/price-lists/${listId}/packages`, body)),
+  deletePricePackage: (listId, id) => data(http.delete(`/price-lists/${listId}/packages/${id}`)),
+  /** Масове оновлення цін файлом CSV (code;price): dryRun=true — звіт без запису. */
+  importPriceList: (listId, text, dryRun) => data(http.post(`/price-lists/${listId}/import-prices`, text, { params: { dryRun: !!dryRun }, headers: { 'Content-Type': 'text/plain' } })),
+  saveClient: (id, body) => data(id ? http.put(`/clients/${id}`, body) : http.post('/clients', body)),
+  deleteClient: id => data(http.delete(`/clients/${id}`)),
+  deleteContainerType: id => data(http.delete(`/logistics/container-types/${id}`)),
+  reportTemplates: variant => data(http.get('/report-templates', { params: clean({ variant }) })),
+  saveReportTemplate: (id, body) => data(id ? http.put(`/report-templates/${id}`, body) : http.post('/report-templates', body)),
+  activateReportTemplate: id => data(http.post(`/report-templates/${id}/activate`)),
+  deleteReportTemplate: id => data(http.delete(`/report-templates/${id}`)),
   savePriceList: (id, body) => data(id ? http.put(`/price-lists/${id}`, body) : http.post('/price-lists', body)),
   patientInsurances: patientId => data(http.get(`/patients/${patientId}/insurances`)),
   addPatientInsurance: (patientId, body) => data(http.post(`/patients/${patientId}/insurances`, body)),
