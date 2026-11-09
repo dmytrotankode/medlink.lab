@@ -1,0 +1,286 @@
+{
+  "format": "medlink-guide-bundle",
+  "version": 1,
+  "app": {
+    "code": "lab",
+    "caption": "MedLink LIS"
+  },
+  "folders": [
+    {
+      "code": "notifications",
+      "caption": "Сповіщення пацієнтів і подій для МІС",
+      "icon": "notifications",
+      "sortOrder": 430
+    }
+  ],
+  "scenarios": [
+    {
+      "code": "lab.notify.queue",
+      "folderCode": "notifications",
+      "caption": "Сповіщення пацієнтам: черга, статуси, повтор",
+      "description": "Повідомлення про готові результати йдуть пацієнту в обраний канал. Тут видно, що відправлено, що пропущено й чому, а що не надіслано через помилку чи неналаштований канал.",
+      "icon": "notifications",
+      "startRoute": "/laboratory/notifications",
+      "requiredRoles": [],
+      "tags": [
+        "сповіщення",
+        "пацієнти",
+        "черга"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Сторінка «Сповіщення»",
+          "body": "Тут зібрано всі повідомлення пацієнтам про готові результати та події для МІС.",
+          "transcript": "Сторінка «Сповіщення». Тут зібрано всі повідомлення пацієнтам про готові результати та події для МІС.",
+          "route": "/laboratory/notifications",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.nt.page",
+            "caption": "Сторінка «Сповіщення»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"notificationsPage\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Підсумок за статусами",
+          "body": "Картки показують, скільки повідомлень у черзі, надіслано, з помилкою, пропущено або не налаштовано. Клік по картці вмикає фільтр.",
+          "transcript": "Підсумок за статусами. Картки показують, скільки повідомлень у черзі, надіслано, з помилкою, пропущено або не налаштовано. Клік по картці вмикає фільтр.",
+          "route": "/laboratory/notifications",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.nt.summary",
+            "caption": "Підсумок за статусами",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"notifySummary\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Фільтри",
+          "body": "Відберіть повідомлення за статусом, каналом, датою, пацієнтом або номером замовлення.",
+          "transcript": "Фільтри. Відберіть повідомлення за статусом, каналом, датою, пацієнтом або номером замовлення.",
+          "route": "/laboratory/notifications",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.nt.filters",
+            "caption": "Фільтри черги",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"notifyFilters\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Таблиця і повтор",
+          "body": "«Пропущено» — немає згоди пацієнта або контакту; «Не налаштовано» — канал не підключено, повідомлення не надсилалось; «Помилка» — шлюз відхилив або не відповів після кількох спроб. Для помилки, пропуску й неналаштованого каналу доступна кнопка «Повторити».",
+          "transcript": "Таблиця і повтор. «Пропущено» — немає згоди пацієнта або контакту; «Не налаштовано» — канал не підключено, повідомлення не надсилалось; «Помилка» — шлюз відхилив або не відповів після кількох спроб. Для помилки, пропуску й неналаштованого каналу доступна кнопка «Повторити».",
+          "route": "/laboratory/notifications",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.nt.table",
+            "caption": "Таблиця сповіщень",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"notifyTable\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.notify.channels",
+      "folderCode": "notifications",
+      "caption": "Канали сповіщень: що працює",
+      "description": "Показує, які канали (пошта, SMS, Viber, Telegram) підключено, і дає адміністратору вимкнути канал. Паролі й ключі на екрані не показуються.",
+      "icon": "notifications",
+      "startRoute": "/laboratory/notifications",
+      "requiredRoles": [],
+      "tags": [
+        "сповіщення",
+        "канали",
+        "адміністрування"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 20,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Вкладки",
+          "body": "Перейдіть на вкладку «Канали».",
+          "transcript": "Вкладки. Перейдіть на вкладку «Канали».",
+          "route": "/laboratory/notifications",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.nt.tabs",
+            "caption": "Вкладки сторінки",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"notifyTabs\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Стан каналів",
+          "body": "Кожен канал має стан: «Працює», «Вимкнено адміністратором» або «Не налаштовано». Параметри підключення задає адміністратор сервера в конфігурації; без них повідомлення чесно позначаються як ненадіслані.",
+          "transcript": "Стан каналів. Кожен канал має стан: «Працює», «Вимкнено адміністратором» або «Не налаштовано». Параметри підключення задає адміністратор сервера в конфігурації; без них повідомлення чесно позначаються як ненадіслані.",
+          "route": "/laboratory/notifications",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.x.nt.channels",
+            "caption": "Канали сповіщень",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"notifyChannels\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.notify.mis",
+      "folderCode": "notifications",
+      "caption": "Події для МІС: доставка і повтори",
+      "description": "Кожна подія лабораторії для МІС (результат готовий, виконано, скасовано) надсилається окремим підписаним запитом із повторами. Тут видно статус кожної події.",
+      "icon": "notifications",
+      "startRoute": "/laboratory/notifications",
+      "requiredRoles": [],
+      "tags": [
+        "МІС",
+        "події",
+        "доставка"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 30,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Вкладка «Події для МІС»",
+          "body": "Відкрийте вкладку «Події для МІС».",
+          "transcript": "Вкладка «Події для МІС». Відкрийте вкладку «Події для МІС».",
+          "route": "/laboratory/notifications",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.nt.tabs2",
+            "caption": "Вкладки сторінки",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"notifyTabs\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Таблиця подій",
+          "body": "Статус «Доставлено» означає, що МІС підтвердив отримання. «Не налаштовано» — доставку ще не підключено, події чекають і підуть автоматично. «Помилка» можна повторити вручну.",
+          "transcript": "Таблиця подій. Статус «Доставлено» означає, що МІС підтвердив отримання. «Не налаштовано» — доставку ще не підключено, події чекають і підуть автоматично. «Помилка» можна повторити вручну.",
+          "route": "/laboratory/notifications",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.x.nt.mis",
+            "caption": "Таблиця подій для МІС",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"misTable\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

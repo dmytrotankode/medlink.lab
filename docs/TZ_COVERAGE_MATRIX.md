@@ -91,7 +91,7 @@
 | 17 | Реагенти і лоти (облік, терміни, алерти) | ◐ | `/reagents/lots*`, `/reagents/alerts` | **жодного тесту** | Списання лише ручне; автоперемикання лота ✘; 409 при нестачі суперечить ТЗ; зв'язку «результат ↔ лот» немає (FR-GAP-030) | lab.rg.* |
 | 18 | Калібрування приладів | ✘ | — (є лише слово «калібрування» як причина розблокування ВКЯ) | — | FR-GAP-031: журналу калібрувань, нагадувань, зв'язку з результатом немає | — |
 | 19 | Бланки результатів (HTML/PDF, QR-перевірка) | ◐ | `/orders/{id}/report[.pdf]`, `/verify/{token}`, `ReportService` | Full_happy_path (HTML, PDF, valid=true); QR unit | Лише uk; «ВИПРАВЛЕНО»/дублікат/архів PDF із хешем ✘ (FR-GAP-010/012); PDF-fallback у HTML; `VerifySecret="change-me…"` | lab.orders.card-report |
-| 20 | Видача пацієнту, поетапна видача, сповіщення | ◐ | `POST /orders/{id}/release`, `ProgressiveReleaseService`, `/portal/*` | Full_happy_path (release, portal 100 %) | Сповіщення `QUEUED` без відправника; портал без автентифікації; чужий/до-release випадки не тестуються | — |
+| 20 | Видача пацієнту, поетапна видача, сповіщення | ✔ | `POST /orders/{id}/release`, `ProgressiveReleaseService`, `/portal/*` | Full_happy_path (release, portal 100 %); NotificationDeliveryTests | Відправник сповіщень (NotificationDispatcher) з провайдерами каналів, повторами, згодою; портал без автентифікації; чужий/до-release випадки не тестуються | — |
 | 21 | Звіт в ЕСОЗ (КЕП, outbox) | ◐ | `EhealthSignController`, `EhealthOutbox` | MisIntegrationApiTests.Ehealth_session…, EhealthOutboxApiTests (10), EhealthContractTests (18) | Режим Mock/Replay; Live OAuth ✘; віджета КЕП немає | lab.esoz.* |
 | 22 | Архів проб (біобанк, утилізація) | ◐ | `/biobank/*`; `/laboratory/biobank` | **жодного тесту** (S-11 ✘) | Політика зберігання за підрозділом (FR-GAP-050) ◐ | lab.bb.* |
 | 23 | Рахунки, ціни, оплата, страхові, НСЗУ | ✔ | `/payers`, `/price-lists`, `/billing/quote`, `/orders/{id}/payments|invoice` | BillingApiTests (5), PriceCalculatorTests (4), ClientApiTests | Фіскалізація/РРО/каса МІС ✘ (FR-BIL-002…004), НСЗУ-звітність ✘ | lab.bill.* |
@@ -617,12 +617,12 @@ Guide: у `src/MedLink.Guide/Seed/*.json` 296 сценаріїв з кодами
 | FR-PORT-004 | Межі норми на графіку — ті, що були застосовані для кожної точки (`normLow/normHigh` із ре | trend endpoint, UI | — | — (сценаріїв порталу немає) | ◐ (T) | — |
 | FR-PORT-005 | Кольори точок повторюють схему ЛІС (зелений/жовтий/червоний) | trend endpoint, UI | — | — (сценаріїв порталу немає) | ◐ (T) | — |
 | FR-PORT-006 | PDF-бланк ідентичний бланку лабораторії (той самий шаблон і QR) | GET /portal/.../report.pdf | — | — (сценаріїв порталу немає) | ◐ (T) | — |
-| FR-PORT-007 | Сповіщення про готовність створюється при `release` із каналом за даними пацієнта (телефон | LabPatientNotification Status=QUEUED | — | — (сценаріїв порталу немає) | ◐ (M) | відправника SMS/E-mail/Viber немає |
+| FR-PORT-007 | Сповіщення про готовність створюється при `release` із каналом за даними пацієнта (телефон | LabPatientNotification Status=QUEUED | NotificationDeliveryTests | lab.notify.* | ✔ | Канал не налаштовано → статус «Не налаштовано», не імітація; див. розд. 26 ТЗ |
 | FR-PORT-008 | Мобільна верстка: одна колонка до 600 px, степер вертикальний | trend endpoint, UI | — | — (сценаріїв порталу немає) | ◐ (T) | — |
 | FR-PORT-020 | Для кожного `LabOrderTest` ведеться `released_at`; заповнюється автоматично при переході р | ProgressiveReleaseService.ReleaseVerifiedTestAsync | Full_happy_path (releasedAt) | — (сценаріїв порталу немає) | ✔ | — |
 | FR-PORT-021 | Замовлення, у якого частина тестів видана, має статус `PARTIALLY_COMPLETED`; `COMPLETED` — | статуси/прогрес | Full_happy_path (progress 100%) | — (сценаріїв порталу немає) | ◐ (T) | — |
 | FR-PORT-022 | Кабінет пацієнта показує лише видані тести, лічильник «готово N з M», для невиданих — «очі | статуси/прогрес | Full_happy_path (progress 100%) | — (сценаріїв порталу немає) | ◐ (T) | — |
-| FR-PORT-023 | Сповіщення пацієнту формуються пакетно: не частіше одного на замовлення за 10 хвилин, із п | NotificationDebounce 10 хв | — | — (сценаріїв порталу немає) | ◐ (M) | відправлення немає |
+| FR-PORT-023 | Сповіщення пацієнту формуються пакетно: не частіше одного на замовлення за 10 хвилин, із п | NotificationDebounce 10 хв | NotificationDeliveryTests | lab.notify.* | ✔ | Канал не налаштовано → статус «Не налаштовано», не імітація; див. розд. 26 ТЗ |
 | FR-PORT-024 | Лікар-замовник бачить у картці замовлення ту саму поетапну картину з позначкою, який підро | статуси/прогрес | Full_happy_path (progress 100%) | — (сценаріїв порталу немає) | ◐ (T) | — |
 | FR-PRE-001 | Довідник пунктів забору: код, назва, адреса, графік, відповідальна медсестра, кур'єрський  | пункт забору = org_department; графіка/маршруту/типового набору тари немає | — | lab.orders.tube-plan | ◐ (C) | — |
 | FR-PRE-002 | Біоматеріал: локалізація забору, мінімальний об'єм, інструкція підготовки пацієнта (натщес | частково поля біоматеріалу/тари | — | lab.orders.tube-plan | ◐ (C) | — |
@@ -823,3 +823,21 @@ Guide: у `src/MedLink.Guide/Seed/*.json` 296 сценаріїв з кодами
 | FR-WS-014 | НОВЕДля рядка доступна дія «Перенаправити на інший прилад» (лише приладів, що вміють цей п | POST /analyzers/{id}/reroute | — (reroute не тестується) | lab.ws.* | ◐ (T) | — |
 
 Метод: FR-ідентифікатори витягнуто з таблиць і тексту ТЗ (діапазони `FR-XXX-001…010` розгорнуто); оцінку виставлено за прочитаним кодом (контролери, сервіси, Core, коннектор), переліком тестів, розділами «Стан реалізації» ТЗ та реєстром задач. Тести не запускались, тому «✔» означає наявність тесту з релевантними асертами, а не його проходження. Назви сторонніх систем-джерел у документі не наводяться.
+
+
+---
+
+## Доповнення: сповіщення, доставка подій у МІС, конфігурація, автентифікація (розд. 26 ТЗ)
+
+| ID | Вимога | Реалізація | Автотест | Guide | Статус | Примітка |
+|----|--------|-----------|----------|-------|--------|----------|
+| FR-NTF-001 | Фонова служба відправляє сповіщення пацієнтам із черги, статуси QUEUED→SENDING→SENT/FAILED/SKIPPED/NOT_CONFIGURED | NotificationDispatcher, NotificationWorker | NotificationDeliveryTests | lab.notify.queue | ✔ | Реальні шлюзи потребують налаштування замовником |
+| FR-NTF-002 | Провайдер каналу: Email (SMTP), SMS/Viber/Telegram (HTTP-шлюз); без налаштувань — «Не налаштовано», а не успіх | SmtpEmailProvider, HttpNotifyProvider | Unconfigured_channel_is_honest…, Default_config_marks_everything_not_configured… | lab.notify.channels | ✔ | Живі SMTP/шлюзи не перевірялись (фейки) |
+| FR-NTF-003 | Повтори з експоненційною паузою, межа спроб, ручний повтор | NotifyOptions.RetryDelay, POST /notifications/{id}/retry | Transient_errors_retry…, Permanent_error_fails… | lab.notify.queue | ✔ | |
+| FR-NTF-004 | Ідемпотентність постановки та відправки | унікальний IdempotencyKey, атомарне блокування запису | Queueing_is_idempotent… | — | ✔ | |
+| FR-NTF-005 | Згода пацієнта й наявність контакту; без них SKIPPED з причиною | CmnPerson.SubscribedToNotifications | No_consent_or_no_contact_is_skipped… | lab.notify.queue | ✔ | |
+| FR-NTF-006 | Шаблони без медичних даних (лише посилання) | NotifyTemplates | Mask_and_templates_do_not_leak, Sms_text_has_link_only… | — | ✔ | |
+| FR-NTF-007 | Екран «Сповіщення» з фільтрами, повтором і станом каналів без показу секретів | NotificationsPage, NotificationsController | Admin_can_switch_channel_off…, List_filters_and_summary | lab.notify.* | ✔ | Скріншота немає (фронт не збирався) |
+| FR-MIS-026a | Доставка подій МІС: outbox + webhook із HMAC, повтори, ідемпотентний ключ, статуси | MisDeliveryEngine, MisDeliveryWorker | Mis_event_is_delivered_with_valid_hmac…, Mis_delivery_retries… | lab.notify.mis | ✔ | Режим Disabled за замовчуванням |
+| FR-CFG-001 | Гучне попередження про заглушки Lab:VerifySecret / PublicBaseUrl поза Development (лог + /health) | StartupConfigCheck | StartupConfigCheckTests, Default_config_… | — | ✔ | Система не падає |
+| FR-AUTH-001 | Перемикач Auth:Mode (None за замовчуванням, Header) і попередження в /health | AuthModes, CurrentEmployeeMiddleware | Auth_mode_none_ignores_employee_header | — | ✔ | Вхід не реалізовано: docs/AUTH_PLAN.md |
