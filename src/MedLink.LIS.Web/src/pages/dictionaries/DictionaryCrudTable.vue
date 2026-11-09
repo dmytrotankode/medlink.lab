@@ -5,10 +5,25 @@
       <div class="col-6 col-md-3"><q-toggle v-model="onlyActive" label="Тільки активні" color="primary"><q-tooltip>Лише активні записи; вимкніть, щоб побачити й неактивні</q-tooltip></q-toggle></div>
       <div class="col-6 col-md-5 row justify-end q-gutter-xs">
         <q-btn flat dense color="primary" icon="refresh" :loading="loading" @click="load" />
-        <q-btn v-if="allowImport" outline dense color="grey-8" icon="upload_file" label="Імпорт" @click="importOpen = true" />
-        <q-btn unelevated dense color="primary" icon="add" label="Створити" data-testid="dictCreate" @click="openForm(null)" />
+        <q-btn-dropdown outline dense color="grey-8" icon="download" label="Експорт" no-caps data-testid="dictExport">
+          <q-list dense>
+            <q-item clickable v-close-popup data-testid="dictExportCsv" @click="doExport('csv')"><q-item-section>Таблиця CSV (Excel)</q-item-section></q-item>
+            <q-item clickable v-close-popup data-testid="dictExportJson" @click="doExport('json')"><q-item-section>Файл JSON</q-item-section></q-item>
+          </q-list>
+        </q-btn-dropdown>
+        <span v-if="allowImport">
+          <q-btn outline dense color="grey-8" icon="upload_file" label="Імпорт" :disable="!canImport" data-testid="dictImport" @click="openImport"><q-tooltip v-if="!canImport">{{ roleHint() }}</q-tooltip></q-btn>
+        </span>
+        <span>
+          <q-btn unelevated dense color="primary" icon="add" label="Створити" :disable="!canWrite" data-testid="dictCreate" @click="openForm(null)"><q-tooltip v-if="!canWrite">{{ readOnlyHint }}</q-tooltip></q-btn>
+        </span>
       </div>
     </div>
+
+    <q-banner v-if="!canWrite" dense rounded class="bg-blue-1 text-grey-9 q-mb-sm" data-testid="dictReadOnly">
+      <template v-slot:avatar><q-icon name="visibility" color="primary" /></template>
+      Режим перегляду: роль «{{ roleLabel(currentLabRole) }}» може переглядати та експортувати довідники, але не змінювати їх. Зміни вносять лікар-лаборант або адміністратор лабораторії.
+    </q-banner>
 
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />
 
@@ -24,6 +39,7 @@
             <template v-else-if="typeof props.value === 'boolean'"><q-icon :name="props.value ? 'check_circle' : 'radio_button_unchecked'" :color="props.value ? 'positive' : 'grey-5'" /></template>
             <template v-else-if="props.col.name.endsWith('Id')">{{ refLabel(props.col.name, props.value) }}</template>
             <template v-else-if="props.col.name === 'itemsCount'">{{ (props.row.items || []).length }}</template>
+            <template v-else-if="props.col.name === 'day'">{{ dayLabel(props.value) }}</template>
             <template v-else-if="selectField(props.col.name)">{{ displayValue(selectField(props.col.name), props.value) }}</template>
             <template v-else>{{ props.value === null || props.value === undefined ? '—' : props.value }}</template>
           </q-td>
@@ -31,8 +47,9 @@
         <template v-slot:body-cell-actions="props">
           <q-td :props="props" class="text-right no-wrap" @click.stop>
             <q-btn flat dense round size="sm" icon="visibility" color="grey-8" @click="openView(props.row)"><q-tooltip>Картка</q-tooltip></q-btn>
-            <q-btn flat dense round size="sm" icon="edit" color="primary" :data-testid="`edit-${props.row.code || props.row.id}`" @click="openForm(props.row)"><q-tooltip>Редагувати</q-tooltip></q-btn>
-            <q-btn flat dense round size="sm" icon="delete" color="grey-7" :data-testid="`delete-${props.row.code || props.row.id}`" @click="askDelete(props.row)"><q-tooltip>Зробити неактивним</q-tooltip></q-btn>
+            <q-btn flat dense round size="sm" icon="edit" color="primary" :disable="!canWrite" :data-testid="`edit-${props.row.code || props.row.id}`" @click="openForm(props.row)"><q-tooltip>{{ canWrite ? 'Редагувати' : readOnlyHint }}</q-tooltip></q-btn>
+            <q-btn v-if="props.row.isActive === false" flat dense round size="sm" icon="restore_from_trash" color="positive" :disable="!canWrite" :data-testid="`restore-${props.row.code || props.row.id}`" @click="restore(props.row)"><q-tooltip>{{ canWrite ? 'Повернути з архіву' : readOnlyHint }}</q-tooltip></q-btn>
+            <q-btn v-else flat dense round size="sm" icon="delete" color="grey-7" :disable="!canDelete" :data-testid="`delete-${props.row.code || props.row.id}`" @click="askDelete(props.row)"><q-tooltip>{{ canDelete ? 'В архів (зробити неактивним)' : roleHint() }}</q-tooltip></q-btn>
           </q-td>
         </template>
       </q-table>
@@ -57,12 +74,37 @@
     </q-dialog>
 
     <q-dialog v-model="importOpen">
-      <q-card style="min-width: 520px">
-        <q-card-section class="row items-center bg-primary text-white q-py-sm"><div class="text-subtitle1 text-weight-bold">Імпорт довідника «{{ schema.title }}» (JSON/CSV)</div><q-space /><q-btn flat round dense icon="close" v-close-popup /></q-card-section>
+      <q-card style="min-width: 640px; max-width: 96vw" data-testid="dictImportDialog">
+        <q-card-section class="row items-center bg-primary text-white q-py-sm"><div class="text-subtitle1 text-weight-bold">Імпорт довідника «{{ schema.title }}»</div><q-space /><q-btn flat round dense icon="close" v-close-popup /></q-card-section>
         <q-card-section class="q-gutter-y-sm">
-          <q-file v-model="importFile" outlined dense label="Файл JSON або CSV" accept=".json,.csv" />
-          <div class="row q-gutter-sm"><q-btn outline color="primary" label="Попередній перегляд" :disable="!importFile" :loading="importing" @click="runImport(true)" /><q-btn color="primary" label="Імпортувати" :disable="!importFile || !importPreview" :loading="importing" @click="runImport(false)" /></div>
-          <pre v-if="importPreview" class="mono bg-grey-2 q-pa-sm" style="max-height: 240px; overflow: auto; font-size: 11px">{{ JSON.stringify(importPreview, null, 2) }}</pre>
+          <div class="text-caption text-grey-8">
+            Файл CSV (роздільник «;» або «,», перший рядок — назви колонок) або JSON-масив, до {{ importLimit }} рядків.
+            Записи, що вже є в довіднику, оновлюються; порожні клітинки не змінюють значення. Зразок файлу — кнопка «Експорт».
+          </div>
+          <q-file v-model="importFile" outlined dense label="Файл CSV або JSON" accept=".json,.csv,.txt" data-testid="dictImportFile" @input="importPreview = null"><template v-slot:prepend><q-icon name="attach_file" /></template></q-file>
+          <div class="row q-gutter-sm">
+            <q-btn outline color="primary" label="Попередній перегляд" :disable="!importFile" :loading="importing" data-testid="dictImportPreview" @click="runImport(true)" />
+            <q-btn color="primary" label="Імпортувати" :disable="!importFile || !importPreview || !importPreview.dryRun || (importPreview.create + importPreview.update) === 0" :loading="importing" data-testid="dictImportRun" @click="runImport(false)" />
+          </div>
+          <div v-if="importPreview" data-testid="dictImportReport">
+            <div class="row q-gutter-xs q-mb-xs">
+              <q-badge color="positive" :label="`Буде створено: ${importPreview.create}`" />
+              <q-badge color="primary" :label="`Буде оновлено: ${importPreview.update}`" />
+              <q-badge color="grey-7" :label="`Пропущено: ${importPreview.skip}`" />
+              <q-badge :color="importPreview.error ? 'negative' : 'grey-5'" :label="`З помилками: ${importPreview.error}`" />
+            </div>
+            <div v-if="importPreview.error" class="text-caption text-negative q-mb-xs">Рядки з помилками не будуть імпортовані; решту можна завантажити.</div>
+            <q-markup-table dense flat bordered style="max-height: 280px; overflow: auto">
+              <thead><tr><th class="text-left">Рядок</th><th class="text-left">Запис</th><th class="text-left">Дія</th><th class="text-left">Пояснення</th></tr></thead>
+              <tbody>
+                <tr v-for="(r, i) in importPreview.rows" :key="i" v-show="importShowAll || r.action !== 'SKIP' || i < 50">
+                  <td>{{ r.line }}</td><td>{{ r.key || '—' }}</td>
+                  <td><q-badge :color="actionColor(r.action)" :label="actionLabel(r.action)" /></td>
+                  <td class="text-caption">{{ r.reason || '' }}</td>
+                </tr>
+              </tbody>
+            </q-markup-table>
+          </div>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -73,19 +115,26 @@
 
 <script>
 import apiMixin from '../../mixins/apiMixin';
+import roleMixin from '../../mixins/roleMixin';
 import DictionaryFormDialog from './DictionaryFormDialog.vue';
 import { DICTIONARIES, columnLabel } from './dictionarySchemas';
 import { ROLE, ANALYZER_CATEGORIES } from '../../utils/statuses';
 
 export default {
   name: 'DictionaryCrudTable',
-  mixins: [apiMixin],
+  mixins: [apiMixin, roleMixin],
   components: { DictionaryFormDialog },
   props: { name: { type: String, required: true }, allowImport: { type: Boolean, default: true } },
   data () {
-    return { items: [], search: '', onlyActive: true, formOpen: false, viewOpen: false, deleteOpen: false, importOpen: false, active: null, usedIn: [], importFile: null, importPreview: null, importing: false, pagination: { rowsPerPage: 25, sortBy: 'code' } };
+    return { items: [], search: '', onlyActive: true, formOpen: false, viewOpen: false, deleteOpen: false, importOpen: false, active: null, usedIn: [], importFile: null, importPreview: null, importing: false, importShowAll: false, importLimit: 5000, pagination: { rowsPerPage: 25, sortBy: 'code' } };
   },
   computed: {
+    /** Створення/правка: лікар-лаборант і адміністратор (серверна політика). Лаборант та інші ролі — лише перегляд. */
+    canWrite () { return this.canDo('LAB_DOCTOR'); },
+    /** Архів/видалення й імпорт: лише адміністратор лабораторії. */
+    canDelete () { return this.canDo(); },
+    canImport () { return this.canDo(); },
+    readOnlyHint () { return this.roleHint('LAB_DOCTOR'); },
     schema () { return DICTIONARIES[this.name] || { title: this.name, fields: [], columns: ['code', 'name'], icon: 'list' }; },
     columns () {
       return [...this.schema.columns.map(c => ({ name: c, label: columnLabel(this.schema, c), field: c === 'itemsCount' ? r => (r.items || []).length : c, align: 'left', sortable: true })), { name: 'actions', label: '', align: 'right' }];
@@ -102,10 +151,10 @@ export default {
     categoryLabel (c) { const x = ANALYZER_CATEGORIES.find(a => a.value === c); return x ? x.label : c; },
     refLabel (col, id) {
       if (id === null || id === undefined) return '—';
-      const map = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', antibioticId: 'antibiotics', testId: 'tests', analyzerTypeId: 'analyzer-types' };
+      const map = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', antibioticId: 'antibiotics', organismId: 'organisms', testId: 'tests', analyzerTypeId: 'analyzer-types' };
       const d = map[col]; if (!d) return id;
       const it = this.$store.getters['dictionaries/byId'](d, id);
-      return it ? (it.name || it.fullName || it.code) : id;
+      return it ? (it.name || it.fullName || it.latinName || it.code) : id;
     },
     selectField (col) { return (this.schema.fields || []).find(f => f.name === col && f.type === 'select' && Array.isArray(f.options) && typeof f.options[0] === 'object'); },
     displayValue (f, v) {
@@ -120,7 +169,7 @@ export default {
     async load () {
       const res = await this.callApi(() => this.$api.dictList(this.name));
       if (res !== undefined) { this.items = this.asList(res); this.$emit('loaded', this.items); }
-      const refs = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', antibioticId: 'antibiotics', testId: 'tests' };
+      const refs = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', antibioticId: 'antibiotics', organismId: 'organisms', testId: 'tests' };
       const needed = new Set();
       this.schema.columns.forEach(c => { if (refs[c]) needed.add(refs[c]); });
       if (this.name === 'profiles') needed.add('tests');
@@ -133,15 +182,49 @@ export default {
     },
     askDelete (item) { this.active = item; this.deleteOpen = true; },
     async doDelete () {
-      try { await this.$api.dictDelete(this.name, this.active.id); this.notifyOk('Запис зроблено неактивним'); this.$store.dispatch('dictionaries/invalidate', this.name); this.load(); } catch (e) {
-        if (e && e.apiStatus === 409) this.$q.notify({ type: 'negative', message: 'Запис використовується в замовленнях і не може бути видалений', timeout: 4000 });
+      try {
+        const res = await this.$api.dictDelete(this.name, this.active.id);
+        this.notifyOk((res && res.message) || (res && res.deleted ? 'Запис видалено' : 'Запис зроблено неактивним'));
+        this.$store.dispatch('dictionaries/invalidate', this.name); this.load();
+      } catch (e) {
+        if (e && e.apiStatus === 409) this.$q.notify({ type: 'negative', message: (e.userMessage || 'Запис використовується й не може бути видалений'), timeout: 4000 });
         else this.notifyError(e);
       }
     },
+    async restore (item) {
+      try { await this.$api.dictUpdate(this.name, item.id, { isActive: true }); this.notifyOk('Запис повернуто з архіву'); this.$store.dispatch('dictionaries/invalidate', this.name); this.load(); } catch (e) { this.notifyError(e); }
+    },
+    dayLabel (v) { if (!v) return '—'; const d = String(v).slice(0, 10).split('-'); return d.length === 3 ? `${d[2]}.${d[1]}.${d[0]}` : v; },
+    actionLabel (a) { return { CREATE: 'Створити', UPDATE: 'Оновити', SKIP: 'Пропустити', ERROR: 'Помилка' }[a] || a; },
+    actionColor (a) { return { CREATE: 'positive', UPDATE: 'primary', SKIP: 'grey-6', ERROR: 'negative' }[a] || 'grey'; },
+    openImport () { this.importFile = null; this.importPreview = null; this.importOpen = true; },
+    async doExport (format) {
+      try {
+        const blob = await this.$api.dictExport(this.name, format);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `${this.name}.${format}`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch (e) { this.notifyError(e); }
+    },
     async runImport (dryRun) {
       this.importing = true;
-      const fd = new FormData(); fd.append('file', this.importFile); fd.append('dictionary', this.name);
-      try { const res = await this.$api.dictImport(fd, dryRun); if (dryRun) this.importPreview = res; else { this.notifyOk('Імпорт виконано'); this.importOpen = false; this.importPreview = null; this.load(); } } catch (e) { this.notifyError(e); } finally { this.importing = false; }
+      try {
+        const text = await this.readFile(this.importFile);
+        const res = await this.$api.dictImportText(this.name, text, dryRun);
+        if (dryRun) this.importPreview = res;
+        else {
+          this.notifyOk(`Імпорт виконано: створено ${res.created}, оновлено ${res.updated}, пропущено ${res.skipped}, з помилками ${res.errors}`);
+          this.importOpen = false; this.importPreview = null; this.$store.dispatch('dictionaries/invalidate', this.name); this.load();
+        }
+      } catch (e) { this.notifyError(e); } finally { this.importing = false; }
+    },
+    readFile (file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result || ''));
+        r.onerror = () => reject(new Error('Не вдалося прочитати файл'));
+        r.readAsText(file, 'utf-8');
+      });
     }
   }
 };

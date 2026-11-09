@@ -294,6 +294,7 @@
         <q-card-actions align="right" class="bg-grey-1">
           <q-btn flat label="Закрити" v-close-popup />
           <q-btn v-if="typeForm.id" flat label="Новий тип" @click="resetTypeForm" />
+          <q-btn v-if="typeForm.id" flat color="grey-8" icon="delete" label="В архів / вилучити" data-testid="typeDelete" @click="removeType" />
           <q-btn color="primary" icon="save" label="Зберегти" :loading="saving" :disable="!typeForm.code || !typeForm.name || !typeForm.capacity" data-testid="typeSave" @click="saveType" />
         </q-card-actions>
       </q-card>
@@ -615,6 +616,18 @@ export default {
         isReusable: t.isReusable, isActive: t.isActive
       };
       this.typeError = '';
+    },
+    removeType () {
+      const f = this.typeForm;
+      this.$q.dialog({ title: 'Прибрати тип тари?', message: `«${f.name}»: якщо за типом є контейнери, він піде в архів; інакше буде вилучений.`, cancel: 'Скасувати', ok: 'Підтвердити' })
+        .onOk(async () => {
+          try {
+            const res = await this.$api.deleteContainerType(f.id);
+            this.notifyOk((res && res.message) || 'Тип тари прибрано');
+            this.resetTypeForm();
+            await this.reloadTypes();
+          } catch (e) { this.typeError = e.userMessage || 'Не вдалося прибрати тип'; }
+        });
     },
     async saveType () {
       this.saving = true; this.typeError = '';

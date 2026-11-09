@@ -60,8 +60,8 @@ for (const d of DICTS) {
     const row2 = page.locator('[data-testid="dictTable"] tbody tr').filter({ hasText: searchValue }).first();
     await expect(row2).toBeVisible();
     await row2.locator('[data-testid^="delete-"]').click();
-    await page.locator('.q-dialog').getByRole('button', { name: /Видалити/ }).click();
-    await expectNotify(page, /видалено/i);
+    await page.locator('.q-dialog').getByRole('button', { name: /Видалити|Підтвердити|Так|Ок/i }).click();
+    await expectNotify(page, /видалено|неактивн|архів/i);
   });
 }
 
@@ -78,4 +78,32 @@ test('картка послуги: вкладки Головна / Показн�
   await page.getByTestId('rpResolve').click();
   await expect(page.getByTestId('rpResult')).toBeVisible();
   await expect(page.getByTestId('rpTrace')).toBeVisible();
+});
+
+test('довідник: експорт і імпорт із попереднім переглядом', async ({ page }) => {
+  await page.goto('/laboratory/dictionaries/biomaterials');
+  await waitIdle(page);
+  await expect(page.getByTestId('dictExport')).toBeVisible();
+  await page.getByTestId('dictImport').click();
+  await expect(page.getByTestId('dictImportDialog')).toBeVisible();
+  await expect(page.getByTestId('dictImportPreview')).toBeDisabled();
+});
+
+test('нові довідники відкриваються: синоніми, календар, реагенти, довідники ПГД', async ({ page }) => {
+  for (const name of ['test-synonyms', 'work-calendar', 'reagent-items']) {
+    await page.goto(`/laboratory/dictionaries/${name}`);
+    await waitIdle(page);
+    await expect(page.getByTestId('dictCreate')).toBeVisible();
+  }
+  await page.goto('/laboratory/pathology/dictionaries');
+  await waitIdle(page);
+  await expect(page.getByTestId('pathologyDictionariesPage')).toBeVisible();
+});
+
+test('шаблони бланків: версії та форма реквізитів', async ({ page }) => {
+  await page.goto('/laboratory/report-templates');
+  await waitIdle(page);
+  await expect(page.getByTestId('reportTemplatesPage')).toBeVisible();
+  await page.getByTestId('tplNew-final').click();
+  await expect(page.getByTestId('tplForm')).toBeVisible();
 });

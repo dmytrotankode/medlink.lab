@@ -85,6 +85,10 @@
 Шаблон: `GET /dictionaries/{name}` (список, `?search=&isActive=`), `GET /{name}/{id}`, `POST /{name}` (створити), `PUT /{name}/{id}`, `DELETE /{name}/{id}` (soft delete → `isActive=false`; 409 якщо є залежності).
 `GET /dictionaries/tests/{code}/profiles` — у яких профілях використовується.
 `POST /dictionaries/import` — імпорт JSON/CSV довідника з попереднім переглядом `?dryRun=true`.
+Імпорт «за кодом» (для правил рефлексу, EUCAST і співробітників — за природним ключем), ліміт 5000 рядків, звіт `{create, update, skip, error, rows[{line,key,action,reason}]}`.
+`GET /dictionaries/{name}/export?format=csv|json` — вивантаження довідника. Нові довідники: `test-synonyms`, `work-calendar`, `reagent-items`, `path-methods|material-types|fixatives|reject-reasons|templates|rooms|ihc-rules|cytology|prices` (архів замість видалення).
+`GET/POST/PUT/DELETE /report-templates`, `POST /report-templates/{id}/activate` — версії бланків результатів (зміни — LAB_ADMIN).
+`DELETE /billing/payers/{id}`, `DELETE /billing/price-lists/{id}`, пакети `/billing/price-lists/{id}/packages`, `POST /billing/price-lists/{id}/import-prices`; `POST/PUT/DELETE /clients`; `DELETE /logistics/container-types/{id}` (за наявності залежностей — архівація).
 
 ### 2.3. Норми `/norms`
 | Метод | Шлях | Опис |

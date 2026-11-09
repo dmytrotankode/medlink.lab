@@ -45,6 +45,11 @@ public sealed class ReportService
         public string Variant { get; set; } = "final";
         public bool ShowCitoBadge { get; set; }
         public Dictionary<string, bool> Templates { get; set; } = new();
+        /// <summary>Активна версія шаблону бланка для варіанта (реквізити шапки/підвалу, мови); null — стандартні.</summary>
+        public LabReportTemplate? Tpl { get; set; }
+        public string Title => string.IsNullOrWhiteSpace(Tpl?.Title) ? "РЕЗУЛЬТАТИ ЛАБОРАТОРНИХ ДОСЛІДЖЕНЬ" : Tpl!.Title!;
+        public string? TitleEn => string.IsNullOrWhiteSpace(Tpl?.Title) && (Tpl?.Languages ?? "uk").Split(',').Contains("en") ? "LABORATORY TEST RESULTS" : null;
+        public string? FooterText => string.IsNullOrWhiteSpace(Tpl?.FooterText) ? Lab.ReportFooter : Tpl!.FooterText;
     }
 
     public static string NormalizeVariant(string? variant) => (variant ?? "final").Trim().ToLowerInvariant() switch
@@ -83,6 +88,7 @@ public sealed class ReportService
         var url = $"{baseUrl}/verify/{token}";
         var v = NormalizeVariant(variant);
         var templates = lab.ReportTemplates;
+        var tpl = await _db.ReportTemplates.AsNoTracking().FirstOrDefaultAsync(x => x.Variant == v && x.IsActive && x.RecordState != RecordStates.Deleted);
         if (templates.TryGetValue(v, out var enabled) && !enabled) throw new ConflictException($"Шаблон бланка «{v}» вимкнено в налаштуваннях лабораторії");
         var allVerified = order.Tests.Where(t => t.Status != OrderTestStatuses.Rejected).All(t => OrderTestStatuses.VerifiedAny.Contains(t.Status));
         // «ПОПЕРЕДНІЙ»: явний варіант preliminary або не всі тести верифіковано / замовлення не видано
@@ -90,7 +96,7 @@ public sealed class ReportService
         return new ReportModel
         {
             Order = order, Lab = lab, Employees = employees, VerifyUrl = url, QrSvg = templates.TryGetValue("showQr", out var qr) && !qr ? "" : QrSvg.Render(url, 3, 2),
-            IsPreliminary = isPreliminary, Variant = v, ShowCitoBadge = v == "cito" || order.IsUrgentCito, Templates = templates
+            IsPreliminary = isPreliminary, Variant = v, ShowCitoBadge = v == "cito" || order.IsUrgentCito, Templates = templates, Tpl = tpl
         };
     }
 
@@ -120,7 +126,9 @@ public sealed class ReportService
         sb.Append($"<div class=\"hdr\"><div><h1>{H(lab.Name)}</h1><div class=\"req\">{H(lab.Address)}<br>Тел.: {H(lab.Phone)} · {H(lab.Email)}<br>{H(lab.LicenseNumber)} · ЄДРПОУ {H(lab.Edrpou)}</div></div>");
         if (!string.IsNullOrEmpty(lab.LogoBase64)) sb.Append($"<img src=\"data:image/png;base64,{lab.LogoBase64}\" style=\"height:48px\">");
         sb.Append("</div>");
-        sb.Append($"<h2 style=\"text-align:center;margin:10px 0 4px;font-size:14pt\">РЕЗУЛЬТАТИ ЛАБОРАТОРНИХ ДОСЛІДЖЕНЬ № {H(o.OrderNumber)}{(m.ShowCitoBadge ? "<span class=\"cito\">CITO</span>" : "")}</h2>");
+        sb.Append($"<h2 style=\"text-align:center;margin:10px 0 4px;font-size:14pt\">{H(m.Title)} № {H(o.OrderNumber)}{(m.ShowCitoBadge ? "<span class=\"cito\">CITO</span>" : "")}</h2>");
+        if (m.TitleEn != null) sb.Append($"<div style=\"text-align:center;color:#555;margin-bottom:4px\">{H(m.TitleEn)} № {H(o.OrderNumber)}</div>");
+        if (!string.IsNullOrWhiteSpace(m.Tpl?.HeaderNote)) sb.Append($"<div style=\"text-align:center\" class=\"small\">{H(m.Tpl!.HeaderNote)}</div>");
         if (m.IsPreliminary) sb.Append("<div style=\"text-align:center\"><span class=\"prelim\">ПОПЕРЕДНІЙ БЛАНК — результати не видано</span></div>");
         var p = o.Patient;
         sb.Append("<div class=\"meta\"><table>");
@@ -159,7 +167,7 @@ public sealed class ReportService
         var autoCount = o.Tests.Count(t => t.Result?.IsAutoVerified == true);
         sb.Append("<div class=\"foot\"><div>");
         sb.Append($"<b>Лікар-лаборант:</b> {H(doctors.Count > 0 ? string.Join(", ", doctors) : "—")}{(autoCount > 0 ? $"<br><span class=\"small\">Автоматична верифікація: {autoCount} показник(ів) за правилами ЛІС</span>" : "")}");
-        sb.Append($"<br><b>Керівник лабораторії:</b> {H(lab.DirectorName)}<br><span class=\"small\">{H(lab.ReportFooter)}</span></div>");
+        sb.Append($"<br><b>Керівник лабораторії:</b> {H(lab.DirectorName)}<br><span class=\"small\">{H(m.FooterText)}</span></div>");
         sb.Append($"<div style=\"text-align:center\">{m.QrSvg}<div class=\"small\">Перевірка автентичності:<br>{H(m.VerifyUrl)}</div></div></div>");
         sb.Append("</body></html>");
         return sb.ToString();
@@ -208,7 +216,9 @@ public sealed class ReportService
                 });
                 if (!string.IsNullOrEmpty(m.QrSvg)) r.ConstantItem(70).Svg(m.QrSvg);
             });
-            col.Item().PaddingTop(6).AlignCenter().Text(t => { t.Span($"РЕЗУЛЬТАТИ ЛАБОРАТОРНИХ ДОСЛІДЖЕНЬ № {o.OrderNumber}").FontSize(12).Bold(); if (m.ShowCitoBadge) t.Span("   CITO").FontSize(12).Bold().FontColor("#b91c1c"); });
+            col.Item().PaddingTop(6).AlignCenter().Text(t => { t.Span($"{m.Title} № {o.OrderNumber}").FontSize(12).Bold(); if (m.ShowCitoBadge) t.Span("   CITO").FontSize(12).Bold().FontColor("#b91c1c"); });
+            if (m.TitleEn != null) col.Item().AlignCenter().Text($"{m.TitleEn} № {o.OrderNumber}").FontSize(9).FontColor("#555");
+            if (!string.IsNullOrWhiteSpace(m.Tpl?.HeaderNote)) col.Item().AlignCenter().Text(m.Tpl!.HeaderNote).FontSize(8).FontColor("#555");
             if (m.IsPreliminary) col.Item().AlignCenter().Text("ПОПЕРЕДНІЙ БЛАНК — результати не видано").FontColor("#b91c1c").Bold();
         });
     }
@@ -272,7 +282,7 @@ public sealed class ReportService
             col.Item().PaddingTop(12).Text(t => { t.Span("Лікар-лаборант: ").Bold(); t.Span(doctors.Count > 0 ? string.Join(", ", doctors) : "—"); });
             if (autoCount > 0) col.Item().Text($"Автоматична верифікація: {autoCount} показник(ів) за правилами ЛІС").FontSize(8).FontColor("#555");
             col.Item().Text(t => { t.Span("Керівник лабораторії: ").Bold(); t.Span(m.Lab.DirectorName ?? ""); });
-            col.Item().PaddingTop(6).Text(m.Lab.ReportFooter ?? "").FontSize(8).FontColor("#555");
+            col.Item().PaddingTop(6).Text(m.FooterText ?? "").FontSize(8).FontColor("#555");
             col.Item().PaddingTop(4).Text($"Перевірка автентичності бланка: {m.VerifyUrl}").FontSize(8).FontColor("#555");
         });
     }

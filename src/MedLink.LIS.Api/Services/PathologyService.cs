@@ -1537,14 +1537,14 @@ public sealed class PathologyService
         await EnsureCytoMethodsAsync();
         return new
     {
-        templates = await _db.PathTemplates.AsNoTracking().OrderBy(t => t.Name).Select(t => new { t.Id, t.Name, t.Macro, t.Micro }).ToListAsync(),
+        templates = await _db.PathTemplates.AsNoTracking().Where(t => t.IsActive).OrderBy(t => t.Name).Select(t => new { t.Id, t.Name, t.Macro, t.Micro }).ToListAsync(),
         topo = await _db.Icdo.AsNoTracking().Where(i => i.Axis == "TOPO").OrderBy(i => i.Code).Select(i => new { i.Code, i.Name }).ToListAsync(),
         morph = await _db.Icdo.AsNoTracking().Where(i => i.Axis == "MORPH").OrderBy(i => i.Code).Select(i => new { i.Code, i.Name }).ToListAsync(),
-        stains = await _db.StainMethods.AsNoTracking().OrderBy(s => s.IsIhc).ThenBy(s => s.Code).Select(s => new { s.Code, s.Name, s.IsIhc, s.Price }).ToListAsync(),
-        reflex = await _db.IhcReflexRules.AsNoTracking().Select(r => new { r.TopoFrom, r.TopoTo, r.MorphCodes, r.Panel, r.Why }).ToListAsync(),
-        materialTypes = await _db.PathMaterialTypes.AsNoTracking().Select(t => new { t.Code, t.Name, t.SlaDays, t.ServiceGroup, t.BasePrice }).ToListAsync(),
-        fixatives = await _db.Fixatives.AsNoTracking().Select(f => new { f.Name, f.MinHours, f.MaxHours }).ToListAsync(),
-        rejectReasons = await _db.PathRejectReasons.AsNoTracking().Select(r => new { r.Code, r.Name }).ToListAsync(),
+        stains = await _db.StainMethods.AsNoTracking().Where(s => s.IsActive).OrderBy(s => s.IsIhc).ThenBy(s => s.Code).Select(s => new { s.Code, s.Name, s.IsIhc, s.Price }).ToListAsync(),
+        reflex = await _db.IhcReflexRules.AsNoTracking().Where(r => r.IsActive).Select(r => new { r.TopoFrom, r.TopoTo, r.MorphCodes, r.Panel, r.Why }).ToListAsync(),
+        materialTypes = await _db.PathMaterialTypes.AsNoTracking().Where(t => t.IsActive).Select(t => new { t.Code, t.Name, t.SlaDays, t.ServiceGroup, t.BasePrice }).ToListAsync(),
+        fixatives = await _db.Fixatives.AsNoTracking().Where(f => f.IsActive).Select(f => new { f.Name, f.MinHours, f.MaxHours }).ToListAsync(),
+        rejectReasons = await _db.PathRejectReasons.AsNoTracking().Where(r => r.IsActive).Select(r => new { r.Code, r.Name }).ToListAsync(),
         rooms = await _db.PathStorageRooms.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.Code).Select(x => new { x.Id, x.Code, x.Name }).ToListAsync(),
         tracks = PathTracks.All.Select(t => new { code = t, name = PathTracks.Label(t) }),
         maxMethodsPerBlock = PathLimits.MaxMethodsPerBlock,
@@ -1554,7 +1554,7 @@ public sealed class PathologyService
         {
             materials = PathCytology.Materials.Select(m => new { code = m.Code, name = m.Name }),
             adequacy = PathCytology.Adequacy.Select(a => new { code = a.Code, name = a.Name }),
-            categories = PathCytology.Categories.Select(c => new { code = c.Code, name = c.Name, high = c.High, materials = PathCytology.Materials.Where(m => PathCytology.CategoryAllowed(m.Code, c.Code)).Select(m => m.Code) }),
+            categories = PathCytology.Categories.Select(c => new { code = c.Code, name = c.Name, high = c.High, normal = PathCytology.IsNormal(c.Code), materials = PathCytology.Materials.Where(m => PathCytology.CategoryAllowed(m.Code, c.Code)).Select(m => m.Code) }),
             slidePrice = PathPrices.CytoSlide // типова; фактична — з довідника методик (stains[].price)
         },
         prices = new { firstBlock = PathPrices.FirstBlock, nextBlock = PathPrices.NextBlock, ihc = PathPrices.Ihc, consultSlide = PathPrices.ConsultSlide, cito = PathPrices.Cito, ihcExtraDays = PathPrices.IhcExtraWorkdays }

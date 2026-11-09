@@ -35,6 +35,8 @@ public sealed class ReagentLotRequest
     public string? AnalyzerId { get; set; }
     public string? TestCode { get; set; }
     public string ReagentName { get; set; } = "";
+    /// <summary>Позиція номенклатури реагентів (lab_reagent_item): назва, виробник і показник підставляються з неї, якщо не вказані.</summary>
+    public string? ReagentItemId { get; set; }
     public string LotNumber { get; set; } = "";
     public string? Manufacturer { get; set; }
     public int TestsInitial { get; set; }
@@ -239,12 +241,14 @@ public sealed class ReagentService
     public async Task<LabReagentLot> CreateAsync(ReagentLotRequest req)
     {
         _policy.Require("Створення лоту реагенту", Roles);
+        var item = await ResolveItemAsync(req.ReagentItemId);
+        if (item != null) { if (string.IsNullOrWhiteSpace(req.ReagentName)) req.ReagentName = item.Name; req.Manufacturer ??= item.Manufacturer; req.TestCode ??= item.TestCode; }
         if (string.IsNullOrWhiteSpace(req.ReagentName) || string.IsNullOrWhiteSpace(req.LotNumber)) throw new ValidationException("Вкажіть назву реагенту та номер лоту");
         if (req.TestsInitial <= 0) throw ValidationException.Field("testsInitial", "Кількість тестів має бути > 0");
         if (req.AnalyzerId != null && !await _db.Analyzers.AnyAsync(a => a.Id == req.AnalyzerId)) throw ValidationException.Field("analyzerId", "Аналізатор не знайдено");
         var lot = new LabReagentLot
         {
-            AnalyzerId = req.AnalyzerId, TestCode = req.TestCode, ReagentName = req.ReagentName, LotNumber = req.LotNumber, Manufacturer = req.Manufacturer, TestsInitial = req.TestsInitial,
+            AnalyzerId = req.AnalyzerId, ReagentItemId = item?.Id, TestCode = req.TestCode, ReagentName = req.ReagentName, LotNumber = req.LotNumber, Manufacturer = req.Manufacturer, TestsInitial = req.TestsInitial,
             TestsRemaining = req.TestsRemaining ?? req.TestsInitial, MinimumTests = req.MinimumTests, ExpiryDate = req.ExpiryDate, OpenedAt = req.OpenedAt, OnboardStabilityDays = req.OnboardStabilityDays, IsActive = req.IsActive
         };
         _db.ReagentLots.Add(lot);
@@ -253,11 +257,24 @@ public sealed class ReagentService
         return lot;
     }
 
+    private async Task<LabReagentItem?> ResolveItemAsync(string? itemId)
+    {
+        if (string.IsNullOrWhiteSpace(itemId)) return null;
+        return await _db.ReagentItems.AsNoTracking().FirstOrDefaultAsync(i => (i.Id == itemId || i.Code == itemId) && i.RecordState != RecordStates.Deleted)
+            ?? throw ValidationException.Field("reagentItemId", "Позицію номенклатури реагентів не знайдено");
+    }
+
     public async Task<LabReagentLot> UpdateAsync(string id, ReagentLotRequest req)
     {
         _policy.Require("Редагування лоту реагенту", Roles);
         var lot = await _db.ReagentLots.FirstOrDefaultAsync(l => l.Id == id && l.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Лот реагенту", id);
         var before = new { lot.ReagentName, lot.LotNumber, lot.TestsRemaining, lot.MinimumTests, lot.ExpiryDate, lot.IsActive };
+        if (req.ReagentItemId != null)
+        {
+            var item = await ResolveItemAsync(req.ReagentItemId);
+            lot.ReagentItemId = item?.Id;
+            if (item != null && string.IsNullOrWhiteSpace(req.ReagentName)) lot.ReagentName = item.Name;
+        }
         if (!string.IsNullOrWhiteSpace(req.ReagentName)) lot.ReagentName = req.ReagentName;
         if (!string.IsNullOrWhiteSpace(req.LotNumber)) lot.LotNumber = req.LotNumber;
         lot.AnalyzerId = req.AnalyzerId ?? lot.AnalyzerId; lot.TestCode = req.TestCode ?? lot.TestCode; lot.Manufacturer = req.Manufacturer ?? lot.Manufacturer;

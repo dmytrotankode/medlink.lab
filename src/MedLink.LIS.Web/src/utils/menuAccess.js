@@ -65,6 +65,7 @@ export const ROUTE_ROLES = {
   // ----- Довідники -----
   'lab-pricing': [...CASHIERS, DOCTOR],
   'lab-norms': LAB_STAFF,
+  'lab-report-templates': LAB_STAFF, // перегляд для персоналу, зміни — лише адміністратор
   'lab-dictionaries': LAB_STAFF,
   'lab-dictionary': LAB_STAFF,
   'lab-sections': LAB_STAFF,

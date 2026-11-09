@@ -78,7 +78,7 @@ public sealed partial class ClientService
             var inv = invoiced.FirstOrDefault(x => x.Key == c.Id)?.Amount ?? 0;
             return (object)new
             {
-                c.Id, c.Code, c.Name, c.OrganizationName, c.Edrpou, c.ContractNumber, c.ContractValidTo, priceListName = c.PriceList?.Name, c.ContactPerson, c.Phone, c.Email, c.IsActive,
+                c.Id, c.Code, c.Name, c.OrganizationName, c.Edrpou, c.ContractNumber, c.ContractDate, c.ContractValidTo, c.PriceListId, c.CoveragePct, c.FranchiseAmount, priceListName = c.PriceList?.Name, c.ContactPerson, c.Phone, c.Email, c.IsActive,
                 orders = s?.Orders ?? 0, openOrders = s?.Open ?? 0, amount = s?.Amount ?? 0, invoiced = inv, notInvoiced = (s?.Amount ?? 0) - inv
             };
         }).ToList();

@@ -16,6 +16,8 @@
               <q-input v-else-if="f.type === 'textarea'" v-model="form[f.name]" outlined dense autogrow :label="f.label" :readonly="isReadonly(f)" :data-testid="`f-${f.name}`" />
               <q-input v-else-if="f.type === 'number'" v-model.number="form[f.name]" outlined dense type="number" :label="f.label" :readonly="isReadonly(f)" :data-testid="`f-${f.name}`" />
               <q-input v-else-if="f.type === 'decimal'" v-model="form[f.name]" outlined dense inputmode="decimal" :label="f.label" :readonly="isReadonly(f)" :bg-color="isReadonly(f) ? 'grey-2' : undefined" :data-testid="`f-${f.name}`" />
+              <!-- date -->
+              <q-input v-else-if="f.type === 'date'" v-model="form[f.name]" outlined dense type="date" :label="f.label + (f.required ? ' *' : '')" :error="fieldInvalid(f)" :error-message="`Вкажіть: ${f.label.toLowerCase()}`" :data-testid="`f-${f.name}`" />
               <!-- toggle -->
               <q-toggle v-else-if="f.type === 'toggle'" v-model="form[f.name]" :label="f.label" color="positive" :data-testid="`f-${f.name}`" />
               <!-- color -->
@@ -95,6 +97,7 @@ export default {
         this.schema.fields.forEach(f => { base[f.name] = f.default !== undefined ? f.default : (f.type === 'toggle' ? false : (f.type === 'chips' ? [] : (f.type === 'profileItems' ? [] : null))); });
         const src = this.item ? JSON.parse(JSON.stringify(this.item)) : {};
         this.form = { ...base, ...src };
+        this.schema.fields.filter(f => f.type === 'date').forEach(f => { if (this.form[f.name]) this.form[f.name] = String(this.form[f.name]).slice(0, 10); });
         this.schema.fields.filter(f => f.type === 'decimal').forEach(f => { if (this.form[f.name] !== null && this.form[f.name] !== undefined) this.form[f.name] = String(this.form[f.name]).replace('.', ','); });
         if (this.schema.fields.some(f => f.type === 'profileItems')) { this.$store.dispatch('dictionaries/load', 'tests'); if (!Array.isArray(this.form.items)) this.$set(this.form, 'items', []); }
         this.schema.fields.filter(f => f.type === 'dict').forEach(f => this.$store.dispatch('dictionaries/load', f.dict));
@@ -109,7 +112,7 @@ export default {
     dictOptions (f) {
       const items = this.$store.getters['dictionaries/items'](f.dict);
       const q = (this.dictFilters[f.name] || '').toLowerCase();
-      return items.filter(i => i.isActive !== false || i.id === this.form[f.name]).map(i => ({ value: i[f.valueField || 'id'], label: f.labelField ? (f.labelField === 'code' ? `${i.code} — ${i.name}` : i[f.labelField]) : (i.name || i.fullName || i.code) }))
+      return items.filter(i => i.isActive !== false || i.id === this.form[f.name]).map(i => ({ value: i[f.valueField || 'id'], label: f.labelField ? (f.labelField === 'code' ? `${i.code} — ${i.name}` : i[f.labelField]) : (i.name || i.fullName || i.latinName || i.code) }))
         .filter(o => !q || String(o.label).toLowerCase().includes(q));
     },
     filterDict (f, val, update) { update(() => { this.$set(this.dictFilters, f.name, val || ''); }); },
