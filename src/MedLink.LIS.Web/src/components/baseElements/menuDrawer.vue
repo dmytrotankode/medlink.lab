@@ -136,6 +136,7 @@ export default {
         {
           title: 'Довідники',
           items: [
+            { name: 'dictionaries', label: 'Усі довідники', icon: 'fas fa-book', to: { name: 'lab-dictionaries' }, exact: true },
             { name: 'pricing', label: 'Прайси та платники', icon: 'fas fa-file-invoice-dollar', to: { name: 'lab-pricing' } },
             { name: 'report-templates', label: 'Шаблони бланків', icon: 'fas fa-file-alt', to: { name: 'lab-report-templates' } },
             { name: 'norms', label: 'Послуги та норми', icon: 'fas fa-sliders-h', to: { name: 'lab-norms' } },

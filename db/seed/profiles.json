@@ -2,6 +2,7 @@
  {
   "code": "PROF_CBC",
   "name": "Загальний аналіз крові розгорнутий (ЗАК + ШОЕ)",
+  "nameEn": "Complete blood count with differential and ESR",
   "category": "Гематологія",
   "turnaroundHours": 3,
   "fastingRequired": false,
@@ -69,6 +70,7 @@
  {
   "code": "PROF_BIOCHEM_BASE",
   "name": "Базовий біохімічний профіль (ниркові + печінкові проби + глюкоза)",
+  "nameEn": "Basic biochemistry panel (renal and liver tests, glucose)",
   "category": "Клінічна біохімія",
   "turnaroundHours": 4,
   "fastingRequired": true,
@@ -116,6 +118,7 @@
  {
   "code": "PROF_COAG",
   "name": "Коагулограма (скринінг гемостазу)",
+  "nameEn": "Coagulation panel (hemostasis screening)",
   "category": "Гемостаз",
   "turnaroundHours": 3,
   "fastingRequired": true,
@@ -148,6 +151,7 @@
  {
   "code": "PROF_THYROID",
   "name": "Тиреоїдна панель (ТТГ + Т4 вільний)",
+  "nameEn": "Thyroid panel (TSH + free T4)",
   "category": "Імунохімія та гормони",
   "turnaroundHours": 6,
   "fastingRequired": true,
@@ -170,6 +174,7 @@
  {
   "code": "PROF_URINE",
   "name": "Загальний аналіз сечі (тест-смужка + фізичні властивості)",
+  "nameEn": "Urinalysis (dipstick + physical properties)",
   "category": "Клінічні дослідження сечі",
   "turnaroundHours": 2,
   "fastingRequired": false,
@@ -232,6 +237,7 @@
  {
   "code": "PROF_LIPID",
   "name": "Ліпідограма (холестерин, ЛПВЩ, ЛПНЩ, тригліцериди)",
+  "nameEn": "Lipid panel (cholesterol, HDL, LDL, triglycerides)",
   "category": "Клінічна біохімія",
   "turnaroundHours": 4,
   "fastingRequired": true,

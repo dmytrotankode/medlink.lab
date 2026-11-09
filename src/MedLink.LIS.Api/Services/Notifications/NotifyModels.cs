@@ -33,11 +33,11 @@ public static class NotifyStatuses
 
 public static class NotifyReasons
 {
-    public const string NotConfigured = "NOT_CONFIGURED", ChannelOff = "CHANNEL_OFF", NoConsent = "NO_CONSENT", NoContact = "NO_CONTACT", PatientMissing = "PATIENT_MISSING", Unsupported = "UNSUPPORTED_CHANNEL";
+    public const string NotConfigured = "NOT_CONFIGURED", ChannelOff = "CHANNEL_OFF", NoConsent = "NO_CONSENT", NoContact = "NO_CONTACT", PatientMissing = "PATIENT_MISSING", Unsupported = "UNSUPPORTED_CHANNEL", Superseded = "SUPERSEDED";
     public static string Label(string? r) => r switch
     {
         NotConfigured => "Канал не налаштовано", ChannelOff => "Канал вимкнено адміністратором", NoConsent => "Немає згоди пацієнта на сповіщення",
-        NoContact => "У пацієнта немає контакту для цього каналу", PatientMissing => "Пацієнта не знайдено", Unsupported => "Канал не підтримується", _ => ""
+        NoContact => "У пацієнта немає контакту для цього каналу", PatientMissing => "Пацієнта не знайдено", Unsupported => "Канал не підтримується", Superseded => "Замінено підсумковим сповіщенням", _ => ""
     };
 }
 

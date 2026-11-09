@@ -224,7 +224,9 @@ public sealed partial class ResultPipelineService
         var decision = AutoVerificationEngine.Evaluate(new AutoVerificationInput
         {
             Flag = flag, AnalyzerFlags = entry.AnalyzerFlags, DeltaAlert = delta.IsAlert,
-            RequiresManualVerification = def.RequiresManualVerification || (entry.PerformerId ?? test.PerformerId) != null, HasActiveLockout = locked, HasValue = numeric.HasValue || !string.IsNullOrEmpty(text),
+            RequiresManualVerification = def.RequiresManualVerification || (entry.PerformerId ?? test.PerformerId) != null,
+            ManualVerificationReason = def.RequiresManualVerification ? "Показник у довіднику вимагає ручної верифікації лікарем" : "Призначено виконавця (спеціаліста) — результат верифікує лікар",
+            HasActiveLockout = locked, HasValue = numeric.HasValue || !string.IsNullOrEmpty(text),
             ImplausibleReason = implausible ?? calibWarning
         });
 
@@ -616,11 +618,22 @@ public sealed partial class ResultPipelineService
             var r = t.Result!;
             var locked = await IsLockedOutAsync(r.AnalyzerId ?? t.AssignedAnalyzerId, t.TestCode);
             var calib = await CalibrationService.CheckAsync(_db, r.AnalyzerId ?? t.AssignedAnalyzerId, t.TestCode);
+            // Ті самі перевірки, що й при введенні результату: виконавець і правдоподібність щодо інших результатів замовлення
+            string? implausible = null;
+            if (r.NumericValue.HasValue && t.Test != null)
+            {
+                var siblings = await _db.Results.AsNoTracking().Where(x => x.OrderTest!.OrderId == t.OrderId && x.OrderTestId != t.Id && x.NumericValue != null && x.OrderTest.Status != OrderTestStatuses.Rejected)
+                    .Select(x => new { x.OrderTest!.TestCode, x.NumericValue }).ToListAsync();
+                var check = PlausibilityChecker.Check(t.Test.Code, r.NumericValue.Value, siblings.GroupBy(x => x.TestCode).ToDictionary(g => g.Key, g => g.First().NumericValue!.Value));
+                if (!check.IsPlausible) implausible = check.Summary;
+            }
+            var hasPerformer = (r.PerformerId ?? t.PerformerId) != null;
             var decision = AutoVerificationEngine.Evaluate(new AutoVerificationInput
             {
-                Flag = r.Flag, AnalyzerFlags = r.AnalyzerFlags, DeltaAlert = r.DeltaAlert, RequiresManualVerification = t.Test?.RequiresManualVerification ?? false,
+                Flag = r.Flag, AnalyzerFlags = r.AnalyzerFlags, DeltaAlert = r.DeltaAlert, RequiresManualVerification = (t.Test?.RequiresManualVerification ?? false) || hasPerformer,
+                ManualVerificationReason = (t.Test?.RequiresManualVerification ?? false) ? "Показник у довіднику вимагає ручної верифікації лікарем" : "Призначено виконавця (спеціаліста) — результат верифікує лікар",
                 HasActiveLockout = locked, HasValue = r.NumericValue.HasValue || !string.IsNullOrEmpty(r.StringValue),
-                ImplausibleReason = calib.IsProblem ? calib.Message : null
+                ImplausibleReason = implausible ?? (calib.IsProblem ? calib.Message : null)
             });
             if (decision.Approved)
             {

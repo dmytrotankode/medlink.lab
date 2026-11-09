@@ -64,11 +64,11 @@
 
     <!-- ===== Події для МІС ===== -->
     <div v-show="tab === 'mis'">
-      <q-banner v-if="mis && !mis.configured" dense rounded class="bg-orange-1 text-orange-10 q-mb-sm" data-testid="misNotConfigured">
+      <q-banner v-if="mis && !mis.configured && !misDelivered" dense rounded class="bg-orange-1 text-orange-10 q-mb-sm" data-testid="misNotConfigured">
         <template v-slot:avatar><q-icon name="info" color="orange" /></template>
         Доставку подій у МІС не налаштовано: події накопичуються зі статусом «Не налаштовано» і підуть автоматично після підключення.
       </q-banner>
-      <q-banner v-else-if="mis" dense rounded class="bg-green-1 text-green-10 q-mb-sm" data-testid="misReady">
+      <q-banner v-else-if="mis && mis.configured" dense rounded class="bg-green-1 text-green-10 q-mb-sm" data-testid="misReady">
         Доставка працює{{ mis.host ? ` · ${mis.host}` : '' }}{{ mis.signed ? ' · з підписом' : '' }}.
       </q-banner>
       <div class="medlink-card q-pa-sm q-mb-sm row q-col-gutter-sm items-center">
@@ -172,6 +172,8 @@ export default {
     };
   },
   computed: {
+    /** Є вже доставлені події — банер «доставку не налаштовано» тоді суперечить даним */
+    misDelivered () { return !!(this.mis && (this.mis.byStatus || []).some(s => s.status === 'DELIVERED' && s.count > 0)); },
     canRetry () { return this.canDo(...ACTION_ROLES.notificationRetry); },
     canChannels () { return this.canDo(...ACTION_ROLES.notificationChannels); }
   },

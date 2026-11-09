@@ -31,7 +31,7 @@
                 <td class="mono text-caption">{{ row.code }}<q-badge v-if="row.kind === 'PROFILE'" color="primary" label="профіль" class="q-ml-xs" /></td>
                 <td><div>{{ row.name }}</div><div v-if="row.kind === 'PROFILE'" class="text-caption text-grey-6">{{ (row.memberTestCodes || []).map(testName).join(', ') }}</div></td>
                 <td class="text-caption">{{ row.biomaterialName || '—' }}</td>
-                <td class="text-center"><div v-if="row.tubeColor" :style="{ background: row.tubeColor, width: '14px', height: '22px', borderRadius: '3px 3px 7px 7px', border: '1px solid #999', margin: '0 auto' }" :title="row.tubeName || 'Пробірка'" /><span v-else-if="row.tubeName" class="text-caption">{{ tubeTitle(row.tubeName) }}</span><span v-else class="text-grey-5">—</span></td>
+                <td class="text-center"><div v-if="row.tubeColor" :style="{ background: row.tubeColor, width: '14px', height: '22px', borderRadius: '3px 3px 7px 7px', border: '1px solid #999', margin: '0 auto' }" :title="row.tubeName ? tubeTitle(row.tubeName) : 'Пробірка'" :aria-label="row.tubeName ? tubeTitle(row.tubeName) : 'Пробірка'" /><span v-else-if="row.tubeName" class="text-caption">{{ tubeTitle(row.tubeName) }}</span><span v-else class="text-grey-5">—</span></td>
                 <td class="text-right">{{ row.price | money }}</td>
                 <td class="text-center text-caption">{{ row.turnaroundHours ? row.turnaroundHours + ' год' : '—' }}</td>
               </tr>

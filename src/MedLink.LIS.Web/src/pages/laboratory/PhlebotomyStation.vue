@@ -22,7 +22,7 @@
             @keyup.enter="scan"
           >
             <template v-slot:prepend><q-icon name="qr_code_scanner" /></template>
-            <template v-slot:append><q-btn flat dense icon="search" @click="scan" /></template>
+            <template v-slot:append><q-btn flat dense icon="search" aria-label="Знайти пробу" @click="scan"><q-tooltip>Знайти пробу</q-tooltip></q-btn></template>
           </q-input>
           <div class="text-caption text-grey-6 q-mt-xs">Відскануйте штрихкод або введіть 8 цифр і натисніть Enter.</div>
         </div>
@@ -118,9 +118,9 @@
             </template>
             <template v-slot:body-cell-actions="props">
               <q-td :props="props" class="text-right no-wrap">
-                <q-btn v-if="props.row.status === 'PENDING'" flat dense round size="sm" icon="colorize" color="teal-6" @click="quickCollect(props.row)"><q-tooltip>Забрати пробу</q-tooltip></q-btn>
-                <q-btn flat dense round size="sm" icon="print" color="primary" @click="printSampleLabel(props.row.barcode, { patientName: props.row.patientName, orderNumber: props.row.orderNumber })"><q-tooltip>Друк етикетки</q-tooltip></q-btn>
-                <q-btn flat dense round size="sm" icon="open_in_new" color="primary" :disable="!props.row.orderId" @click="$router.push({ name: 'lab-order-card', params: { id: props.row.orderId } })"><q-tooltip>Картка направлення</q-tooltip></q-btn>
+                <q-btn v-if="props.row.status === 'PENDING'" flat dense round size="sm" icon="colorize" color="teal-6" aria-label="Забрати пробу" @click="quickCollect(props.row)"><q-tooltip>Забрати пробу</q-tooltip></q-btn>
+                <q-btn flat dense round size="sm" icon="print" color="primary" aria-label="Друк етикетки" @click="printSampleLabel(props.row.barcode, { patientName: props.row.patientName, orderNumber: props.row.orderNumber })"><q-tooltip>Друк етикетки</q-tooltip></q-btn>
+                <q-btn flat dense round size="sm" icon="open_in_new" color="primary" aria-label="Картка направлення" :disable="!props.row.orderId" @click="$router.push({ name: 'lab-order-card', params: { id: props.row.orderId } })"><q-tooltip>Картка направлення</q-tooltip></q-btn>
               </q-td>
             </template>
           </q-table>

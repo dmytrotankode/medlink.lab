@@ -268,7 +268,27 @@ export default {
     height 40px
   .q-field__native
     padding 0
+// Вузьке вікно (1024 px): шапка не виходить за межі екрана — поля стискаються, підпис лабораторії ховається
+@media (max-width: 1280px)
+  #main-header .q-toolbar
+    flex-wrap nowrap
+    min-width 0
+  #main-header .q-toolbar > *
+    min-width 0
+  .header-barcode
+    flex 0 1 190px
+    width auto
+    min-width 120px
+  .header-employee
+    flex 0 1 220px
+    min-width 150px
+    .ellipsis
+      max-width 130px !important
+  #main-header .q-toolbar .header-chip
+    flex 0 0 auto
 @media (max-width: 1100px)
   .header-barcode
-    width 190px
+    flex-basis 150px
+  #main-header .q-toolbar .text-caption.ellipsis
+    display none
 </style>

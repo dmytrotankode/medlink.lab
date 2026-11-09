@@ -268,6 +268,7 @@
     <reject-sample-dialog v-model="rejectOpen" :samples="dialogSamples" @rejected="load" />
     <sample-edit-dialog v-model="sampleEditOpen" :sample="activeSample || {}" @saved="load" />
     <result-editor-dialog v-model="resultOpen" :row="activeRow" @saved="load" />
+    <rerun-dialog v-model="rerunOpen" :row="activeRow" @done="afterRerun" @failed="notifyError" />
     <verify-result-dialog v-model="verifyOpen" :row="activeRow" @verified="load" />
     <edit-order-dialog v-model="editOpen" :order="order || {}" @saved="load" />
     <confirm-dialog v-model="cancelOpen" title="Скасувати направлення" :message="`Направлення ${order && order.orderNumber} буде скасовано. Вкажіть причину.`" ok-label="Скасувати направлення" color="grey-8" icon="cancel" with-reason reason-required :reason-options="cancelReasonNames" @confirm="doCancel" />
@@ -396,7 +397,7 @@ export default {
       labelsOpen: false, labels: [], labelsLoading: false,
       reportOpen: false, reportHtml: '', reportLoading: false, reportError: '',
       collectOpen: false, receiveOpen: false, rejectOpen: false, sampleEditOpen: false,
-      resultOpen: false, verifyOpen: false, editOpen: false, cancelOpen: false, deleteOpen: false,
+      resultOpen: false, verifyOpen: false, rerunOpen: false, editOpen: false, cancelOpen: false, deleteOpen: false,
       deleteSampleOpen: false, deleteResultOpen: false, rejectResultOpen: false, releaseOpen: false,
       historyOpen: false, history: [],
       arOpen: false, arTest: null, arAnalyzerId: null, arReason: '', arOptions: [], arLoading: false,
@@ -630,7 +631,8 @@ export default {
     verifyResult (t) { this.activeRow = this.rowForTest(t); this.verifyOpen = true; },
     rejectResult (t) { this.activeRow = this.rowForTest(t); this.rejectResultOpen = true; },
     doRejectResult (reason) { this.runAction(() => this.$api.rejectResult(this.activeRow.orderTestId, reason), 'Результат відхилено'); },
-    rerun (t) { this.runAction(() => this.$api.rerunResult(t.id), `Показник ${t.testName || t.testCode} поставлено на повтор`); },
+    rerun (t) { if (this.rerunOpen) return; this.activeRow = this.rowForTest(t); this.rerunOpen = true; },
+    afterRerun ({ row, factor }) { this.notifyOk(`Показник ${row.testName || row.testCode} поставлено на повтор${factor ? ' з розведенням 1:' + factor : ''}`); this.load(); },
     askDeleteResult (t) { this.activeRow = this.rowForTest(t); this.deleteResultOpen = true; },
     doDeleteResult () { this.runAction(() => this.$api.deleteResult(this.activeRow.orderTestId), 'Результат видалено'); },
     // зміна виконавця доступна до відправки/виконання (серверна політика: адмін, лікар, лаборант, реєстратор)

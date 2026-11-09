@@ -45,6 +45,7 @@
           </div>
         </div>
         <q-banner v-if="row.isLockedOut" dense rounded class="bg-purple-1 text-purple-9 q-mt-sm"><q-icon name="lock" /> Аналізатор заблоковано контролем якості: автоверифікація недоступна, верифікація можлива лише з підтвердженням винятку.</q-banner>
+        <q-banner v-if="row.autoVerifyBlockReason && ['NEEDS_REVIEW', 'RESULTED'].includes(row.status)" dense rounded class="bg-grey-2 text-grey-9 q-mt-sm" data-testid="autoVerifyReasonBanner"><q-icon name="help_outline" /> Чому не автоверифіковано: {{ row.autoVerifyBlockReason }}. Автоверифікація недоступна, доки причина не усунена; результат верифікує лікар.</q-banner>
         <q-banner v-if="row.deltaAlert && row.previousValue != null" dense rounded class="bg-orange-1 text-orange-9 q-mt-sm"><q-icon name="trending_up" /> Різка зміна відносно попереднього результату — потрібна перевірка лікарем.</q-banner>
         <div v-if="row.operatorComment || row.verificationComment" class="q-mt-sm text-caption">
           <div v-if="row.operatorComment"><b>Оператор:</b> {{ row.operatorComment }}</div>

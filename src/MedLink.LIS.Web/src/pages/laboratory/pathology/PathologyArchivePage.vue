@@ -22,7 +22,7 @@
           <q-td :props="p"><b>{{ p.row.code }}</b> <q-badge v-if="p.row.isExternal" outline color="indigo-6" label="зовнішній" /><span v-if="p.row.kind === 'CYTO'" class="text-caption text-grey-7"> препарат</span><div class="text-caption"><code>{{ p.row.barcode }}</code></div></q-td>
         </template>
         <template v-slot:body-cell-status="p">
-          <q-td :props="p">
+          <q-td :props="p" class="status-cell">
             <q-badge :color="p.row.status === 'ISSUED' ? 'orange-8' : 'positive'" :label="p.row.statusLabel" />
             <div v-if="p.row.issue" class="text-caption"><q-badge v-if="p.row.issue.scope === 'INTERNAL'" outline color="teal-7" :label="`внутрішня · ${p.row.issue.recipientUnit}`" class="q-mr-xs" />{{ p.row.issue.recipient }} · {{ p.row.issue.purpose }}<br>видано {{ p.row.issue.issuedAt | date }}, повернути до
               <b :class="p.row.issue.overdue ? 'text-negative' : ''">{{ p.row.issue.dueBack | date }}</b></div>
@@ -140,6 +140,7 @@ export default {
 </script>
 
 <style scoped>
+.status-cell { white-space: normal !important; min-width: 220px; max-width: 360px; }
 .status-toggle { border: 1px solid #c5ccd6; }
 /* Колонка дій завжди на екрані: на вузьких вікнах таблиця прокручується, а кнопки лишаються праворуч */
 .archive-table >>> th:last-child, .archive-table >>> td:last-child { white-space: nowrap; min-width: 210px; padding-right: 12px; position: sticky; right: 0; background: #fff; box-shadow: -4px 0 4px -4px rgba(0, 0, 0, 0.15); }

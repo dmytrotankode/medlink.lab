@@ -81,11 +81,11 @@ export class SetsEditor {
       items.forEach((it, i) => {
         const mv = d => { const j = i + d; const t = items[i]; items[i] = items[j]; items[j] = t; this.saveItems(items); };
         list.appendChild(h('div', { class: 'st' },
-          h('span', { text: it.folderId ? '📁' : '▶' }),
+          h('span', { text: it.folderId ? 'Розділ' : '▶' }),
           h('span', { class: 't' }, h('b', { text: this.name(it) }), h('i', { text: it.folderId ? 'розділ — усі його опубліковані інструкції' : 'інструкція' })),
           h('button', { class: 'btn sm', text: '↑', disabled: i === 0, onclick: () => mv(-1) }),
           h('button', { class: 'btn sm', text: '↓', disabled: i === items.length - 1, onclick: () => mv(1) }),
-          h('button', { class: 'btn sm dng', text: '🗑', onclick: () => { items.splice(i, 1); this.saveItems(items); } })));
+          h('button', { class: 'btn sm dng', text: '✕', title: 'Прибрати з набору', onclick: () => { items.splice(i, 1); this.saveItems(items); } })));
       });
       body.push(h('div', null, h('label', { text: 'Склад набору (порядок = порядок показу)' }), list));
 
@@ -110,7 +110,7 @@ export class SetsEditor {
       body.push(h('div', { style: { fontSize: '11.5px', color: '#6b7280' }, text: 'У панелі допомоги набір з’явиться, коли в ньому є хоча б одна опублікована інструкція. Розділи й інструкції набору підсвічуються його кольором.' }));
     }
 
-    const head = h('div', { class: 'bh' }, h('b', { text: '🎞 Набори інструкцій' }), h('button', { text: '✕', title: 'Закрити', onclick: () => this.close() }));
+    const head = h('div', { class: 'bh' }, h('b', { text: 'Набори інструкцій' }), h('button', { text: '✕', title: 'Закрити', onclick: () => this.close() }));
     this.el = h('div', { class: 'bld' }, head, h('div', { class: 'bb' }, body));
     this.el.style.left = 'auto'; this.el.style.right = '14px';
     if (this.pos) { this.el.style.left = this.pos.x + 'px'; this.el.style.right = 'auto'; this.el.style.top = this.pos.y + 'px'; this.el.style.bottom = 'auto'; }

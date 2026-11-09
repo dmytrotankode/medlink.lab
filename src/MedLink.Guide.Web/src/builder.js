@@ -335,11 +335,11 @@ export class Builder {
     const statusTxt = sc.id ? (sc.status === 'published' ? 'Опубліковано v' + (sc.publishedVersion || 1) : 'Чернетка') : 'Нова';
     bodyEls.push(h('div', { class: 'row' },
       h('button', { class: 'btn', text: '▶ З вибраного', disabled: !this.steps.length, onclick: () => this.preview(Math.max(0, this.sel)) }),
-      h('button', { class: 'btn', text: '🎞 Набори', title: 'Керування наборами інструкцій', onclick: () => this.openSets() }),
+      h('button', { class: 'btn', text: 'Набори', title: 'Керування наборами інструкцій', onclick: () => this.openSets() }),
       h('span', { class: 'sp' }),
       h('span', { text: statusTxt + (this.dirty ? ' • не збережено' : ''), style: { fontSize: '12px', color: '#6b7280' } }),
       h('button', { class: 'btn', text: '💾 Зберегти', onclick: () => this.save() }),
-      h('button', { class: 'btn pri', text: '🚀 Опублікувати', onclick: () => this.publish() })));
+      h('button', { class: 'btn pri', text: 'Опублікувати', onclick: () => this.publish() })));
 
     const head = h('div', { class: 'bh' }, h('b', { text: '🛠 Конструктор інструкцій' }),
       h('button', { text: this.minimized ? '▢' : '—', title: 'Згорнути', onclick: () => { this.minimized = !this.minimized; this.render(); } }),

@@ -32,7 +32,7 @@
     </div>
 
     <div class="medlink-card">
-      <q-table :data="items" :columns="columns" row-key="id" flat dense :pagination="{ rowsPerPage: 50 }" :loading="loading" no-data-label="Справ немає"
+      <q-table :data="items" :columns="columns" row-key="id" flat dense :pagination="{ rowsPerPage: 50 }" :loading="loading" no-data-label="Справ немає" data-testid="pathCasesTable"
         @row-click="(e, r) => openCase(r)">
         <template v-slot:no-data>
           <div class="full-width row flex-center q-pa-md text-grey-7 q-gutter-sm" data-testid="noCases">

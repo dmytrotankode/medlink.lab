@@ -29,10 +29,11 @@ public sealed class ConnectorService
     private readonly ResultPipelineService _pipeline;
     private readonly QcService _qc;
     private readonly IConfiguration _config;
+    private readonly IHttpContextAccessor? _http;
 
-    public ConnectorService(LisDbContext db, IAuditService audit, IRolePolicy policy, ResultPipelineService pipeline, QcService qc, IConfiguration config)
+    public ConnectorService(LisDbContext db, IAuditService audit, IRolePolicy policy, ResultPipelineService pipeline, QcService qc, IConfiguration config, IHttpContextAccessor? http = null)
     {
-        _db = db; _audit = audit; _policy = policy; _pipeline = pipeline; _qc = qc; _config = config;
+        _db = db; _audit = audit; _policy = policy; _pipeline = pipeline; _qc = qc; _config = config; _http = http;
     }
 
     public static string Hash(string apiKey) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(apiKey))).ToLowerInvariant();
@@ -96,7 +97,19 @@ public sealed class ConnectorService
         return Version.TryParse(core, out v!);
     }
 
-    private string PublicBaseUrl() => (_config["Lab:PublicBaseUrl"] ?? "http://localhost:5055").TrimEnd('/');
+    // Публічна адреса: Lab:PublicBaseUrl, інакше origin поточного запиту (з урахуванням /lab/ за проксі), localhost — лише якщо запиту немає.
+    private string PublicBaseUrl()
+    {
+        var cfg = _config["Lab:PublicBaseUrl"];
+        if (!string.IsNullOrWhiteSpace(cfg)) return cfg.TrimEnd('/');
+        var req = _http?.HttpContext?.Request;
+        if (req != null && req.Host.HasValue)
+        {
+            var prefix = req.Headers["X-Forwarded-Prefix"].FirstOrDefault() ?? req.PathBase.Value ?? "";
+            return $"{req.Scheme}://{req.Host}{prefix}".TrimEnd('/');
+        }
+        return "http://localhost:5055";
+    }
     private string SetupCommand(LabConnectorInstallation c) => $"MedLink.LabConnector setup --server {PublicBaseUrl()} --install-key {c.InstallKey} --name \"{c.Name}\"";
 
     public async Task<object> CreateAsync(ConnectorCreateRequest req)

@@ -186,17 +186,42 @@ public sealed partial class DictionaryService
                 e.FromUnit = null; e.ToUnit = null;
                 _db.UnitConversions.Add(e); entity = e; break;
             }
-            case "age-groups": { var e = Deserialize<LabAgeGroup>(body); if (e.Id == 0) e.Id = await NextIntId(_db.AgeGroups.Select(x => x.Id)); e.Code = (e.Code ?? "").Trim().ToUpperInvariant(); await EnsureUniqueCode(_db.AgeGroups.AnyAsync(x => x.Code == e.Code), e.Code); if (e.AgeFrom > e.AgeTo) throw new ValidationException("Вік «від» не може перевищувати «до»"); if (!new[] { "DAYS", "MONTHS", "YEARS" }.Contains(e.AgeUnit)) throw ValidationException.Field("ageUnit", "DAYS|MONTHS|YEARS"); _db.AgeGroups.Add(e); entity = e; break; }
-            case "rejection-reasons": { var e = Deserialize<LabRejectionReason>(body); if (e.Id == 0) e.Id = await NextIntId(_db.RejectionReasons.Select(x => x.Id)); e.Code = (e.Code ?? "").Trim().ToUpperInvariant(); await EnsureUniqueCode(_db.RejectionReasons.AnyAsync(x => x.Code == e.Code), e.Code); if (string.IsNullOrWhiteSpace(e.Name)) throw ValidationException.Field("name", "Назва обов'язкова"); _db.RejectionReasons.Add(e); entity = e; break; }
+            case "age-groups": { var e = Deserialize<LabAgeGroup>(body); if (e.Id == 0) e.Id = await NextIntId(_db.AgeGroups.Select(x => x.Id)); e.Code = (e.Code ?? "").Trim().ToUpperInvariant(); await EnsureUniqueCode(_db.AgeGroups.AnyAsync(x => x.Code == e.Code), e.Code); ValidateAgeGroup(e); _db.AgeGroups.Add(e); entity = e; break; }
+            case "rejection-reasons": { var e = Deserialize<LabRejectionReason>(body); if (e.Id == 0) e.Id = await NextIntId(_db.RejectionReasons.Select(x => x.Id)); e.Code = (e.Code ?? "").Trim().ToUpperInvariant(); await EnsureUniqueCode(_db.RejectionReasons.AnyAsync(x => x.Code == e.Code), e.Code); if (string.IsNullOrWhiteSpace(e.Name)) throw ValidationException.Field("name", "Назва обов'язкова"); ValidateRejectionReason(e); _db.RejectionReasons.Add(e); entity = e; break; }
             case "cancel-reasons": { var e = Deserialize<LabCancelReason>(body); if (e.Id == 0) e.Id = await NextIntId(_db.CancelReasons.Select(x => x.Id)); e.Code = (e.Code ?? "").Trim().ToUpperInvariant(); await EnsureUniqueCode(_db.CancelReasons.AnyAsync(x => x.Code == e.Code), e.Code); if (string.IsNullOrWhiteSpace(e.Name)) throw ValidationException.Field("name", "Назва обов'язкова"); _db.CancelReasons.Add(e); entity = e; break; }
             case "departments": return await _org.SaveDepartmentAsync(null, body);
             case "employees": return await _org.SaveEmployeeAsync(null, body);
             default: throw new NotFoundException($"Довідник '{name}' не існує");
         }
+        RequireName(entity);
         var id = IdOf(entity);
         _audit.Log("CREATE", table, id, null, entity);
         await _db.SaveChangesAsync();
         return await GetAsync(name, id);
+    }
+
+    private static readonly string[] RejectionCategories = { "COLLECTION", "SAMPLE_QUALITY", "IDENTIFICATION", "TRANSPORT", "ANALYTIC", "OTHER" };
+
+    private static void ValidateAgeGroup(LabAgeGroup e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Name)) throw ValidationException.Field("name", "Назва обов'язкова");
+        if (e.AgeFrom < 0 || e.AgeTo < 0) throw ValidationException.Field("ageFrom", "Вік не може бути від'ємним");
+        if (e.AgeFrom > e.AgeTo) throw new ValidationException("Вік «від» не може перевищувати «до»");
+        if (!new[] { "DAYS", "MONTHS", "YEARS" }.Contains(e.AgeUnit)) throw ValidationException.Field("ageUnit", "Одиниця віку: дні, місяці або роки");
+    }
+
+    private static void ValidateRejectionReason(LabRejectionReason e)
+    {
+        e.Category = (e.Category ?? "").Trim().ToUpperInvariant();
+        if (!RejectionCategories.Contains(e.Category)) throw ValidationException.Field("category", "Категорія причини: забір, якість матеріалу, ідентифікація, транспортування, аналітика або інше");
+    }
+
+    /// <summary>Обов'язкова назва для будь-якого запису довідника, що її має (імпорт не повинен обходити форму).</summary>
+    private static void RequireName(object entity)
+    {
+        var p = entity.GetType().GetProperty("Name");
+        if (p?.PropertyType == typeof(string) && string.IsNullOrWhiteSpace((string?)p.GetValue(entity)))
+            throw ValidationException.Field("name", "Назва обов'язкова");
     }
 
     public async Task<object> UpdateAsync(string name, string id, JsonElement body)
@@ -217,6 +242,9 @@ public sealed partial class DictionaryService
         foreach (var prop in existing.GetType().GetProperties().Where(p => p.CanWrite && p.Name is not ("Id" or "Items" or "CreatedOn" or "CreatedBy" or "BiomaterialType" or "TubeType" or "Method" or "Organism" or "Antibiotic" or "Department" or "DropdownOptions" or "FromUnit" or "ToUnit")))
             if (node.ContainsKey(char.ToLowerInvariant(prop.Name[0]) + prop.Name.Substring(1))) prop.SetValue(existing, prop.GetValue(merged));
 
+        if (existing is LabAgeGroup agu) ValidateAgeGroup(agu);
+        if (existing is LabRejectionReason rju) ValidateRejectionReason(rju);
+        RequireName(existing);
         if (existing is LabReflexRule rr) await ValidateReflexAsync(rr);
         if (existing is LabEucastBreakpoint eb && await _db.EucastBreakpoints.AnyAsync(b => b.Id != eb.Id && b.OrganismId == eb.OrganismId && b.AntibioticId == eb.AntibioticId && b.EucastVersion == eb.EucastVersion && b.RecordState != RecordStates.Deleted))
             throw new ConflictException("Контрольне значення для цієї пари збудник–антибіотик у цій версії EUCAST вже існує");

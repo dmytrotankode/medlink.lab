@@ -31,7 +31,8 @@ const actions = {
   async load ({ commit, state: s }, payload) {
     const name = typeof payload === 'string' ? payload : payload.name;
     const force = typeof payload === 'object' && payload.force;
-    const params = (typeof payload === 'object' && payload.params) || {};
+    // Сервер за замовчуванням віддає лише 50 записів — для кешу селектів беремо максимум (500), інакше частина назв губиться
+    const params = { pageSize: 500, ...((typeof payload === 'object' && payload.params) || {}) };
     const cached = s.cache[name];
     if (!force && cached && Date.now() - cached.loadedAt < TTL_MS) return cached.items;
     const items = await labApi.dictList(name, params);

@@ -6,6 +6,8 @@ import labApi from '../../services/labApiService';
 
 const POLL_MS = 30000;
 let pollTimer = null;
+let lastRefreshStart = 0;
+const MIN_GAP_MS = 5000;
 
 const state = {
   summary: { pending: 0, needsReview: 0, panic: 0, cito: 0, autoVerifiedToday: 0 },
@@ -40,7 +42,12 @@ const mutations = {
 };
 
 const actions = {
-  async refreshStatus ({ commit }) {
+  // Не частіше разу на 5 с (сторінки викликають оновлення після кожної дії), без паралельних запусків;
+  // force — примусово (кнопка «Оновити», перша загрузка)
+  async refreshStatus ({ commit, state: st }, force) {
+    const now = Date.now();
+    if (st.refreshing || (!force && now - lastRefreshStart < MIN_GAP_MS)) return;
+    lastRefreshStart = now;
     commit('SET_REFRESHING', true);
     const results = await Promise.allSettled([
       labApi.worklistSummary(),
@@ -58,8 +65,9 @@ const actions = {
 
   startPolling ({ dispatch }) {
     if (pollTimer) return;
-    dispatch('refreshStatus');
-    pollTimer = setInterval(() => dispatch('refreshStatus'), POLL_MS);
+    dispatch('refreshStatus', true);
+    // у фоновій вкладці не опитуємо
+    pollTimer = setInterval(() => { if (!document.hidden) dispatch('refreshStatus', true); }, POLL_MS);
   },
 
   stopPolling () {

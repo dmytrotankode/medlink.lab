@@ -315,7 +315,7 @@ export const DICTIONARIES = {
     group: 'basic',
     title: 'Одиниці виміру', icon: 'fas fa-ruler', description: 'Одиниці результатів показників і норм: ммоль/л, мг/дл, Од/л; величина та система (SI / традиційна)',
     columns: ['code', 'name', 'fullName', 'dimension', 'systemKind', 'sortOrder', 'isActive'],
-    fields: [...codeName,
+    fields: [{ name: 'code', label: 'Код', type: 'text', required: true, col: 4, readonlyIf: f => !!f.id, hint: 'Код не змінюється після створення' }, codeName[1],
       { name: 'fullName', label: 'Повна назва', type: 'text', col: 6 },
       { name: 'dimension', label: 'Величина', type: 'select', col: 3, default: 'OTHER', options: [
         { value: 'CONC_SUBSTANCE', label: 'Кількість речовини' }, { value: 'CONC_MASS', label: 'Маса' }, { value: 'ENZYME', label: 'Активність ферменту' }, { value: 'CELLS', label: 'Клітини' },

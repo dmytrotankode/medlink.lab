@@ -53,7 +53,7 @@
         <template v-slot:body-cell-type="props"><q-td :props="props">{{ typeName(props.row.analyzerTypeId) }} <q-badge color="teal-7" :label="protocolOf(props.row)" class="q-ml-xs" /></q-td></template>
         <template v-slot:body-cell-connection="props"><q-td :props="props" class="text-caption">{{ connectionText(props.row) }}</q-td></template>
         <template v-slot:body-cell-connector="props"><q-td :props="props">{{ connectorName(props.row.connectorId) }}</q-td></template>
-        <template v-slot:body-cell-lastMessageAt="props"><q-td :props="props">{{ props.row.lastMessageAt | datetime }}<div v-if="props.row.lastError" class="text-caption text-negative ellipsis" style="max-width: 200px">{{ props.row.lastError }}<q-tooltip max-width="320px">{{ props.row.lastError }}</q-tooltip></div></q-td></template>
+        <template v-slot:body-cell-lastMessageAt="props"><q-td :props="props">{{ props.row.lastMessageAt | datetime }}<div v-if="props.row.lastError" class="text-caption text-negative ellipsis" style="max-width: 200px">{{ errorText(props.row) }}<q-tooltip max-width="320px">{{ errorText(props.row) }}</q-tooltip></div></q-td></template>
         <template v-slot:body-cell-actions="props">
           <q-td :props="props" class="text-right no-wrap" @click.stop>
             <q-btn flat dense round size="sm" icon="science" color="teal-7" aria-label="Симулятор повідомлення" @click="openSimulator(props.row)"><q-tooltip>Симулятор повідомлення</q-tooltip></q-btn>
@@ -214,6 +214,7 @@ export default {
   components: { AnalyzerFormDialog },
   data () {
     return {
+      nowTick: Date.now(), tickTimer: null,
       connectors: [], analyzers: [], connectorLogs: [],
       connectorOpen: false, connectorEditOpen: false, connectorCardOpen: false, analyzerOpen: false, analyzerCardOpen: false, simulatorOpen: false, previewOpen: false, deleteAnalyzerOpen: false, deleteConnectorOpen: false,
       newConnectorName: '', connectorError: '', created: null, connectorForm: {}, saving: false,
@@ -257,8 +258,18 @@ export default {
     lockedAnalyzers () { return new Set(this.$store.state.laboratory.activeLockouts.map(l => l.analyzerId)); },
     origin () { return window.location.origin; }
   },
-  created () { this.$store.dispatch('dictionaries/load', 'analyzer-types'); this.load(); },
+  created () { this.$store.dispatch('dictionaries/load', 'analyzer-types'); this.load(); this.tickTimer = setInterval(() => { this.nowTick = Date.now(); }, 30000); },
+  beforeDestroy () { if (this.tickTimer) clearInterval(this.tickTimer); },
   methods: {
+    /** «Немає зв’язку … N хв»: тривалість рахуємо від часу останнього повідомлення, а не з тексту, збереженого раніше */
+    errorText (a) {
+      const e = String(a.lastError || '');
+      if (!/^Немає зв.язку/i.test(e) || !a.lastMessageAt) return e;
+      const min = Math.max(0, Math.round((this.nowTick - new Date(a.lastMessageAt).getTime()) / 60000));
+      const base = e.replace(/\s+\d+\s*(хв|год).*$/i, '');
+      const dur = min >= 120 ? `${Math.floor(min / 60)} год` : `${min} хв`;
+      return `${base} ${dur}`;
+    },
     // Модель з довідника типів; якщо типу немає — «Не вказано» (числовий ідентифікатор типу на екран не виводимо)
     typeName (id) { const t = this.types.find(x => x.id === id); return t && t.name ? t.name : 'Не вказано'; },
     // Протокол без внутрішніх суфіксів: ASTM_ASK → ASTM

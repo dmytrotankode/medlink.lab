@@ -27,6 +27,9 @@ public sealed class ImportRow
 
 public sealed class ImportService
 {
+    /// <summary>Початок службового коментаря імпорту; на бланк пацієнта не друкується.</summary>
+    public const string ImportCommentPrefix = "Імпорт із файлу";
+
     private readonly LisDbContext _db;
     private readonly IRolePolicy _policy;
     private readonly IAuditService _audit;
@@ -82,7 +85,7 @@ public sealed class ImportService
             try
             {
                 double? numeric = double.TryParse(r.Value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : null;
-                await _pipeline.ApplyAsync(new ResultEntry { OrderTestId = r.OrderTestId!, NumericValue = numeric, StringValue = numeric.HasValue ? null : r.Value, Unit = r.Unit, AnalyzerFlags = r.Flags, AnalyzerId = analyzerId, Comment = $"Імпорт із файлу {fileName}" });
+                await _pipeline.ApplyAsync(new ResultEntry { OrderTestId = r.OrderTestId!, NumericValue = numeric, StringValue = numeric.HasValue ? null : r.Value, Unit = r.Unit, AnalyzerFlags = r.Flags, AnalyzerId = analyzerId, Comment = $"{ImportCommentPrefix} {fileName}" });
                 r.Status = "APPLIED"; applied++;
             }
             catch (LisException ex) { r.Status = "ERROR"; r.Message = ex.Message; }
