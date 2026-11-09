@@ -20,6 +20,7 @@ export default [
 
       // ----- Процеси -----
       lab('dashboard', 'lab-dashboard', 'Дашборд лабораторії', () => import('pages/laboratory/LabDashboard.vue')),
+      lab('ehealth-callback', 'lab-ehealth-callback', 'Вхід в ЄСОЗ', () => import('pages/laboratory/EhealthCallback.vue')),
       lab('orders', 'lab-orders', 'Реєстрація направлень', () => import('pages/laboratory/orders/OrdersQueue.vue')),
       lab('referrals', 'lab-referrals', 'Журнал направлень', () => import('pages/laboratory/orders/ReferralJournal.vue')),
       lab('refs', 'lab-incoming-referrals', 'Вхідні направлення', () => import('pages/laboratory/mis/IncomingReferralsPage.vue')),
