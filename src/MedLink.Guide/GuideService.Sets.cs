@@ -25,7 +25,7 @@ public sealed partial class GuideService
     }
 
     /// <summary>Розкриває набори у списки опублікованих (та видимих користувачу) інструкцій; розділ → усі його інструкції разом з підрозділами.</summary>
-    private async Task<CatalogSets> BuildCatalogSetsAsync(string appId, List<GuideScenario> scenarios, List<GuideFolder> folders, GuideUser user)
+    private async Task<CatalogSets> BuildCatalogSetsAsync(string appId, List<GuideScenario> scenarios, List<GuideFolder> folders, GuideUser user, List<GuideScenario>? allVisible = null)
     {
         var res = new CatalogSets();
         var sets = (await _db.Sets.AsNoTracking().Where(x => x.AppId == appId).OrderBy(x => x.SortOrder).ThenBy(x => x.Caption).ToListAsync())
@@ -73,13 +73,30 @@ public sealed partial class GuideService
                 }
             }
             if (ordered.Count == 0) continue;
+            // скільки інструкцій набору існує загалом (опублікованих, видимих у системі), незалежно від ролі користувача
+            var total = ordered.Count;
+            if (allVisible != null)
+            {
+                var ids = new HashSet<string>();
+                foreach (var it in items.Where(i => i.SetId == set.Id))
+                {
+                    if (it.ScenarioId != null) { if (allVisible.Any(x => x.Id == it.ScenarioId)) ids.Add(it.ScenarioId); }
+                    else if (it.FolderId != null && folderById.ContainsKey(it.FolderId))
+                    {
+                        var fids = Subtree(it.FolderId);
+                        foreach (var x in allVisible.Where(x => x.FolderId != null && fids.Contains(x.FolderId))) ids.Add(x.Id);
+                    }
+                }
+                total = Math.Max(total, ids.Count);
+            }
             res.Sets.Add(new
             {
                 set.Id, Code = code, set.Caption, set.Description, set.Color, set.Icon, set.SortOrder,
                 estMinutes = ordered.Sum(s => s.EstMinutes ?? 0),
                 scenarioCount = ordered.Count,
-                // інструкції набору, які не потрапили в каталог (недоступні ролі, чернетки): панель показує «Недоступні вашій ролі»
-                unavailableCount = items.Count(i => i.SetId == set.Id && i.ScenarioId != null && !scById.ContainsKey(i.ScenarioId)),
+                // totalCount — усі інструкції набору, unavailableCount — ті з них, що не показуються цій ролі: панель пише «45 з 56 доступні для вашої ролі»
+                totalCount = total,
+                unavailableCount = total - ordered.Count,
                 scenarios = ordered.Select(s => new
                 {
                     s.Id, s.Code, s.Caption, s.EstMinutes,

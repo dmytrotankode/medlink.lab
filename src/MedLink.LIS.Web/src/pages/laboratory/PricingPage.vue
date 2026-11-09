@@ -12,7 +12,7 @@
       </q-tabs>
       <q-separator />
       <div v-show="tab === 'payers'" class="q-pa-sm">
-        <div class="text-caption text-grey-7 q-mb-xs">Створення й зміна платників та прайс-листів на цьому екрані поки недоступні — зверніться до адміністратора системи.</div>
+        <div class="text-caption text-grey-7 q-mb-xs">Створення й зміна платників та прайс-листів на цьому екрані поки недоступні — {{ canEditPrices ? 'зверніться до служби підтримки MedLink.' : 'зверніться до адміністратора лабораторії.' }}</div>
         <q-table :data="payers" :columns="payerColumns" row-key="id" dense flat :pagination="{ rowsPerPage: 50 }">
           <template v-slot:body-cell-kind="props"><q-td :props="props"><q-badge :color="kindColor(props.row.kind)" :label="props.row.kindName" /></q-td></template>
           <template v-slot:body-cell-terms="props">

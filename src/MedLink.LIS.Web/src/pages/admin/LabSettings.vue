@@ -94,8 +94,12 @@
 
         <div class="medlink-card q-pa-md">
           <div class="section-title">Поточний контекст</div>
-          <div class="text-caption">Працюю як: <b>{{ me ? (me.fullName || me.name) : '—' }}</b> · роль {{ roleLabel }} · заголовок <code>X-MedLink-Employee-Id: {{ employeeId || '(не задано — сервер використає Lab:DefaultEmployeeId)' }}</code></div>
-          <div class="text-caption q-mt-xs">API: <code>{{ apiBase }}</code> · <a :href="apiBase.replace(/\/api\/v1\/lab$/, '') + '/swagger'" target="_blank" class="text-primary">Swagger</a> · <a :href="apiBase.replace(/\/api\/v1\/lab$/, '') + '/health'" target="_blank" class="text-primary">/health</a></div>
+          <div class="text-caption">Працюю як: <b>{{ me ? (me.fullName || me.name) : '—' }}</b> · роль {{ roleLabel }}</div>
+          <!-- Технічні відомості (ідентифікатор, адреса API) — лише адміністратору і згорнуто: звичайному користувачеві вони не потрібні -->
+          <q-expansion-item v-if="isAdmin" dense dense-toggle switch-toggle-side expand-separator class="q-mt-xs" label="Для адміністратора: технічні відомості" header-class="text-caption text-grey-7" data-testid="settingsTechInfo">
+            <div class="text-caption q-pa-sm">Ідентифікатор співробітника у запитах: <code>{{ employeeId || '(не задано — сервер використає співробітника за замовчуванням)' }}</code></div>
+            <div class="text-caption q-px-sm q-pb-sm">API: <code>{{ apiBase }}</code> · <a :href="apiBase.replace(/\/api\/v1\/lab$/, '') + '/swagger'" target="_blank" class="text-primary">Опис API (Swagger)</a> · <a :href="apiBase.replace(/\/api\/v1\/lab$/, '') + '/health'" target="_blank" class="text-primary">Стан сервера</a></div>
+          </q-expansion-item>
         </div>
       </div>
     </div>
@@ -121,6 +125,7 @@ export default {
     me () { return this.$store.getters['context/currentEmployee']; },
     roleLabel () { return ROLE[this.$store.getters['context/currentRole']] || '—'; },
     employeeId () { return this.$store.state.context.employeeId; },
+    isAdmin () { const r = this.$store.getters['context/currentRole']; return !r || r === 'LAB_ADMIN' || r === 'Admin'; },
     apiBase () { return API_BASE.startsWith('http') ? API_BASE : window.location.origin + API_BASE; },
     logoSrc () { const b = this.form.logoBase64 || ''; return b.startsWith('data:') ? b : `data:image/png;base64,${b}`; }
   },
