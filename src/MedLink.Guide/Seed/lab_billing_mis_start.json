@@ -7581,15 +7581,15 @@
     {
       "code": "lab.esoz.chip-status",
       "folderCode": "esoz-session",
-      "caption": "Чип ЕСОЗ у шапці: стани сесії",
-      "description": "Що означають написи чипа й коли потрібно входити в ЕСОЗ.",
+      "caption": "Які бувають стани сесії ЄСОЗ у шапці",
+      "description": "Що означають стани чипа «Сесія ЄСОЗ»: немає сесії, активна, сервіс недоступний, не налаштовано.",
       "icon": "shield",
       "startRoute": "/laboratory/dashboard",
       "requiredRoles": [],
       "tags": [
         "ЕСОЗ",
-        "КЕП",
-        "сесія"
+        "сесія",
+        "чип"
       ],
       "estMinutes": 1,
       "sortOrder": 10,
@@ -7598,9 +7598,9 @@
       "steps": [
         {
           "stepType": "info",
-          "title": "Чип сесії ЕСОЗ",
-          "body": "Чип показує стан вашої сесії в ЕСОЗ. Він потрібен лише для підпису й відправки звітів.",
-          "transcript": "Чип сесії ЕСОЗ. Чип показує стан вашої сесії в ЕСОЗ. Він потрібен лише для підпису й відправки звітів.",
+          "title": "Чип сесії ЄСОЗ",
+          "body": "Чип показує стан вашої сесії в ЄСОЗ; колір і значок змінюються разом зі станом. Сесія потрібна лише для відправки звітів.",
+          "transcript": "Чип сесії ЄСОЗ. Чип показує стан вашої сесії в ЄСОЗ; колір і значок змінюються разом зі станом. Сесія потрібна лише для відправки звітів.",
           "route": "/laboratory/dashboard",
           "highlight": "element",
           "parentLevels": 0,
@@ -7624,9 +7624,9 @@
         },
         {
           "stepType": "info",
-          "title": "Не підключено",
-          "body": "Сірий чип «ЕСОЗ: не підключено» — сесії немає. Треба виконати вхід.",
-          "transcript": "Не підключено. Сірий чип ЕСОЗ: не підключено — сесії немає. Треба виконати вхід.",
+          "title": "Немає сесії",
+          "body": "Сірий чип зі значком входу — сесії немає (за замовчуванням «ЄСОЗ: не підключено»). Клік відкриває вікно з кнопкою «Увійти в ЄСОЗ».",
+          "transcript": "Немає сесії. Сірий чип зі значком входу — сесії немає (за замовчуванням «ЄСОЗ: не підключено»). Клік відкриває вікно з кнопкою «Увійти в ЄСОЗ».",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
@@ -7649,9 +7649,9 @@
         },
         {
           "stepType": "info",
-          "title": "Пароль введено",
-          "body": "Жовтий чип — пароль прийнято, але особу ще не підтверджено КЕП чи кодом 2FA.",
-          "transcript": "Пароль введено. Жовтий чип — пароль прийнято, але особу ще не підтверджено КЕП чи кодом 2FA.",
+          "title": "Сесія активна",
+          "body": "Зелений чип зі значком підтвердженого щита — ви увійшли в ЄСОЗ, звіти можна відправляти.",
+          "transcript": "Сесія активна. Зелений чип зі значком підтвердженого щита — ви увійшли в ЄСОЗ, звіти можна відправляти.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
@@ -7674,9 +7674,325 @@
         },
         {
           "stepType": "info",
-          "title": "Підтверджено",
-          "body": "Зелений чип із часом «підтверджено до» — можна підписувати й відправляти звіти.",
-          "transcript": "Підтверджено. Зелений чип із часом підтверджено до — можна підписувати й відправляти звіти.",
+          "title": "Сервіс недоступний",
+          "body": "Жовтий чип зі значком щита — eHealth-сервіс MedLink не відповідає. У вікні видно причину; зачекайте або зверніться до адміністратора.",
+          "transcript": "Сервіс недоступний. Жовтий чип зі значком щита — eHealth-сервіс MedLink не відповідає. У вікні видно причину; зачекайте або зверніться до адміністратора.",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.h.esoz",
+            "caption": "Чип сесії ЕСОЗ",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthChip\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Не налаштовано",
+          "body": "Жовтий чип також показується, якщо вхід ще не налаштовано (не задано адресу сторінки авторизації ЄСОЗ). Кнопка «Увійти в ЄСОЗ» тоді недоступна — зверніться до адміністратора.",
+          "transcript": "Не налаштовано. Жовтий чип також показується, якщо вхід ще не налаштовано (не задано адресу сторінки авторизації ЄСОЗ). Кнопка «Увійти в ЄСОЗ» тоді недоступна — зверніться до адміністратора.",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.h.esoz",
+            "caption": "Чип сесії ЕСОЗ",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthChip\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Відкрийте вікно сесії",
+          "body": "Клікніть чип, щоб побачити деталі стану.",
+          "transcript": "Відкрийте вікно сесії. Клікніть чип, щоб побачити деталі стану.",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.h.esoz",
+            "caption": "Чип сесії ЕСОЗ",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthChip\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Оновити сесію",
+          "body": "Коли сесія активна, у вікні є кнопка «Оновити сесію» — вона подовжує сесію без повторного входу.",
+          "transcript": "Оновити сесію. Коли сесія активна, у вікні є кнопка «Оновити сесію» — вона подовжує сесію без повторного входу.",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.es.btn-refresh",
+            "caption": "Кнопка «Оновити сесію»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthRefresh\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Вийти з ЄСОЗ",
+          "body": "Кнопка «Вийти з ЄСОЗ» завершує сесію; чип знову стає сірим.",
+          "transcript": "Вийти з ЄСОЗ. Кнопка «Вийти з ЄСОЗ» завершує сесію; чип знову стає сірим.",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.es.btn-signout",
+            "caption": "Кнопка «Вийти з ЄСОЗ»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthSignOut\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Тестовий режим",
+          "body": "У тестовому режимі до підказки чипа додається позначка «проксі імітується», а вхід виконується автоматично.",
+          "transcript": "Тестовий режим. У тестовому режимі до підказки чипа додається позначка «проксі імітується», а вхід виконується автоматично.",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.h.esoz",
+            "caption": "Чип сесії ЕСОЗ",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthChip\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.esoz.login",
+      "folderCode": "esoz-session",
+      "caption": "Вхід у ЄСОЗ через сервіс MedLink",
+      "description": "Увійдіть у ЄСОЗ на порталі входу й поверніться в ЛІС: сервіс MedLink збереже сесію, а ЛІС токена не бачить.",
+      "icon": "login",
+      "startRoute": "/laboratory/dashboard",
+      "requiredRoles": [],
+      "tags": [
+        "ЕСОЗ",
+        "вхід"
+      ],
+      "estMinutes": 1,
+      "sortOrder": 20,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Відкрийте вікно сесії",
+          "body": "Клікніть чип «Сесія ЄСОЗ» у шапці.",
+          "transcript": "Відкрийте вікно сесії. Клікніть чип «Сесія ЄСОЗ» у шапці.",
+          "route": "/laboratory/dashboard",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.h.esoz",
+            "caption": "Чип сесії ЕСОЗ",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthChip\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Стани сесії",
+          "body": "«Не підключено» — треба увійти. «Сесія активна» — можна підписувати й відправляти звіти. «Недоступний» — сервіс MedLink тимчасово не відповідає. Якщо вхід ще не налаштовано, кнопка входу неактивна — зверніться до адміністратора.",
+          "transcript": "Стани сесії. «Не підключено» — треба увійти. «Сесія активна» — можна підписувати й відправляти звіти. «Недоступний» — сервіс MedLink тимчасово не відповідає. Якщо вхід ще не налаштовано, кнопка входу неактивна — зверніться до адміністратора.",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.es.dialog",
+            "caption": "Діалог «Сесія ЄСОЗ»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthLoginDialog\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Увійти в ЄСОЗ",
+          "body": "Натисніть «Увійти в ЄСОЗ». Відкриється портал входу ЄСОЗ — завершіть вхід там.",
+          "transcript": "Увійти в ЄСОЗ. Натисніть «Увійти в ЄСОЗ». Відкриється портал входу ЄСОЗ — завершіть вхід там.",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.x.es.btn-signin",
+            "caption": "Кнопка «Увійти в ЄСОЗ»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthSignIn\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Повернення в ЛІС",
+          "body": "Після входу ви повертаєтесь на сторінку «Вхід в ЄСОЗ». Дочекайтеся повідомлення про успішний вхід і натисніть «Продовжити».",
+          "transcript": "Повернення в ЛІС. Після входу ви повертаєтесь на сторінку «Вхід в ЄСОЗ». Дочекайтеся повідомлення про успішний вхід і натисніть «Продовжити».",
+          "route": "/laboratory/ehealth-callback",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.x.es.callback",
+            "caption": "Результат входу в ЄСОЗ",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthCallbackText\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Перевірте стан",
+          "body": "Чип у шапці має показувати «Сесія активна». Якщо ні — відкрийте чип і повторіть вхід.",
+          "transcript": "Перевірте стан. Чип у шапці має показувати «Сесія активна». Якщо ні — відкрийте чип і повторіть вхід.",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.h.esoz",
+            "caption": "Чип сесії ЕСОЗ",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthChip\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.esoz.strong-auth",
+      "folderCode": "esoz-session",
+      "caption": "Як працює вхід у ЄСОЗ і навіщо він потрібен для відправки звітів",
+      "description": "Вхід у ЄСОЗ виконується через сервіс MedLink: портал входу, повернення в ЛІС і активна сесія для відправки звітів.",
+      "icon": "login",
+      "startRoute": "/laboratory/dashboard",
+      "requiredRoles": [],
+      "tags": [
+        "ЕСОЗ",
+        "вхід"
+      ],
+      "estMinutes": 1,
+      "sortOrder": 50,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Для чого потрібен вхід у ЄСОЗ",
+          "body": "Щоб відправити звіт у ЄСОЗ, потрібна активна сесія вашого облікового запису в ЄСОЗ. Її показує чип «Сесія ЄСОЗ» у шапці.",
+          "transcript": "Для чого потрібен вхід у ЄСОЗ. Щоб відправити звіт у ЄСОЗ, потрібна активна сесія вашого облікового запису в ЄСОЗ. Її показує чип «Сесія ЄСОЗ» у шапці.",
+          "route": "/laboratory/dashboard",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
@@ -7700,8 +8016,8 @@
         {
           "stepType": "click",
           "title": "Відкрийте вікно входу",
-          "body": "Клікніть чип, щоб відкрити вікно входу в ЕСОЗ.",
-          "transcript": "Відкрийте вікно входу. Клікніть чип, щоб відкрити вікно входу в ЕСОЗ.",
+          "body": "Клікніть чип, щоб відкрити вікно «Сесія ЄСОЗ».",
+          "transcript": "Відкрийте вікно входу. Клікніть чип, щоб відкрити вікно «Сесія ЄСОЗ».",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
@@ -7724,89 +8040,19 @@
         },
         {
           "stepType": "info",
-          "title": "Тестовий режим",
-          "body": "У тестовому режимі до підказки чипа додається позначка про тестове середовище.",
-          "transcript": "Тестовий режим. У тестовому режимі до підказки чипа додається позначка про тестове середовище.",
+          "title": "Вхід через сервіс MedLink",
+          "body": "Вхід виконує eHealth-сервіс MedLink. Він зберігає токен доступу, а ЛІС токена не бачить і не зберігає.",
+          "transcript": "Вхід через сервіс MedLink. Вхід виконує eHealth-сервіс MedLink. Він зберігає токен доступу, а ЛІС токена не бачить і не зберігає.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
-          "expect": "next",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": false,
-          "anchor": {
-            "code": "lab.x.h.esoz",
-            "caption": "Чип сесії ЕСОЗ",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthChip\"]",
-                "weight": 100
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "code": "lab.esoz.login-password",
-      "folderCode": "esoz-session",
-      "caption": "Вхід в ЕСОЗ: логін і пароль (рівень L1)",
-      "description": "Перший крок входу: логін і пароль ЕСОЗ. Після нього обов'язково підтвердіть особу.",
-      "icon": "login",
-      "startRoute": "/laboratory/dashboard",
-      "requiredRoles": [],
-      "tags": [
-        "ЕСОЗ",
-        "вхід"
-      ],
-      "estMinutes": 1,
-      "sortOrder": 20,
-      "publish": true,
-      "variables": [],
-      "steps": [
-        {
-          "stepType": "click",
-          "title": "Відкрийте вікно",
-          "body": "Клікніть чип ЕСОЗ у шапці.",
-          "transcript": "Відкрийте вікно. Клікніть чип ЕСОЗ у шапці.",
-          "route": "/laboratory/dashboard",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "bottom",
-          "expect": "click",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": false,
-          "anchor": {
-            "code": "lab.x.h.esoz",
-            "caption": "Чип сесії ЕСОЗ",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthChip\"]",
-                "weight": 100
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "info",
-          "title": "Вікно входу",
-          "body": "Вікно «Вхід в ЕСОЗ» відкривається, коли сесії ще немає.",
-          "transcript": "Вікно входу. Вікно Вхід в ЕСОЗ відкривається, коли сесії ще немає.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "left",
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
           "anchor": {
             "code": "lab.x.es.dialog",
-            "caption": "Діалог «Вхід в ЕСОЗ»",
+            "caption": "Діалог входу ЄСОЗ",
             "routePattern": "*",
             "strategies": [
               {
@@ -7819,84 +8065,9 @@
         },
         {
           "stepType": "info",
-          "title": "Логін",
-          "body": "Введіть ел. пошту або логін ЕСОЗ.",
-          "transcript": "Логін. Введіть ел. пошту або логін ЕСОЗ.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "left",
-          "expect": "next",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": true,
-          "anchor": {
-            "code": "lab.x.es.login",
-            "caption": "Поле логіна ЕСОЗ",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "css",
-                "value": "[data-testid=\"ehealthLoginDialog\"] input[autocomplete=\"username\"]",
-                "weight": 80
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "info",
-          "title": "Пароль",
-          "body": "Введіть пароль ЕСОЗ самостійно. Пароль передається лише шлюзу ЕСОЗ і не зберігається в ЛІС.",
-          "transcript": "Пароль. Введіть пароль ЕСОЗ самостійно. Пароль передається лише шлюзу ЕСОЗ і не зберігається в ЛІС.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "left",
-          "expect": "next",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": true,
-          "anchor": {
-            "code": "lab.x.es.password",
-            "caption": "Поле пароля ЕСОЗ",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "css",
-                "value": "[data-testid=\"ehealthLoginDialog\"] input[autocomplete=\"current-password\"]",
-                "weight": 80
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "click",
-          "title": "Увійти",
-          "body": "Натисніть «Увійти». З'явиться повідомлення, що пароль прийнято і треба підтвердити особу.",
-          "transcript": "Увійти. Натисніть Увійти. З'явиться повідомлення, що пароль прийнято і треба підтвердити особу.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "top",
-          "expect": "click",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": true,
-          "anchor": {
-            "code": "lab.x.es.btn-login",
-            "caption": "Кнопка «Увійти»",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "text",
-                "value": "span|Увійти",
-                "weight": 65
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "info",
-          "title": "Далі",
-          "body": "Чип стане жовтим. Підтвердіть особу КЕП або кодом 2FA, інакше підпис звіту буде заборонено.",
-          "transcript": "Далі. Чип стане жовтим. Підтвердіть особу КЕП або кодом 2FA, інакше підпис звіту буде заборонено.",
+          "title": "Увійти в ЄСОЗ",
+          "body": "Натисніть «Увійти в ЄСОЗ»: відкриється портал входу ЄСОЗ, де ви проходите авторизацію.",
+          "transcript": "Увійти в ЄСОЗ. Натисніть «Увійти в ЄСОЗ»: відкриється портал входу ЄСОЗ, де ви проходите авторизацію.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
@@ -7905,83 +8076,13 @@
           "inputMode": "show",
           "optional": false,
           "anchor": {
-            "code": "lab.x.h.esoz",
-            "caption": "Чип сесії ЕСОЗ",
+            "code": "lab.x.es.btn-signin",
+            "caption": "Кнопка «Увійти в ЄСОЗ»",
             "routePattern": "*",
             "strategies": [
               {
                 "type": "testid",
-                "value": "[data-testid=\"ehealthChip\"]",
-                "weight": 100
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "code": "lab.esoz.confirm-kep",
-      "folderCode": "esoz-session",
-      "caption": "Підтвердити особу КЕП (рівень L2)",
-      "description": "Підтвердіть особу особистим ключем КЕП: система перевірить, що підписувач збігається з користувачем.",
-      "icon": "badge",
-      "startRoute": "/laboratory/dashboard",
-      "requiredRoles": [],
-      "tags": [
-        "ЕСОЗ",
-        "КЕП"
-      ],
-      "estMinutes": 2,
-      "sortOrder": 30,
-      "publish": true,
-      "variables": [],
-      "steps": [
-        {
-          "stepType": "click",
-          "title": "Відкрийте вікно",
-          "body": "Клікніть жовтий чип ЕСОЗ у шапці.",
-          "transcript": "Відкрийте вікно. Клікніть жовтий чип ЕСОЗ у шапці.",
-          "route": "/laboratory/dashboard",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "bottom",
-          "expect": "click",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": false,
-          "anchor": {
-            "code": "lab.x.h.esoz",
-            "caption": "Чип сесії ЕСОЗ",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthChip\"]",
-                "weight": 100
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "click",
-          "title": "Вкладка «КЕП»",
-          "body": "Оберіть підтвердження через КЕП.",
-          "transcript": "Вкладка КЕП. Оберіть підтвердження через КЕП.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "bottom",
-          "expect": "click",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": true,
-          "anchor": {
-            "code": "lab.x.es.tab-kep",
-            "caption": "Вкладка «КЕП»",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthTabKep\"]",
+                "value": "[data-testid=\"ehealthSignIn\"]",
                 "weight": 100
               }
             ]
@@ -7989,59 +8090,10 @@
         },
         {
           "stepType": "info",
-          "title": "Особистий ключ",
-          "body": "Приватний ключ не залишає ваш пристрій: в ЛІС передається лише підпис і дані сертифіката.",
-          "transcript": "Особистий ключ. Приватний ключ не залишає ваш пристрій: в ЛІС передається лише підпис і дані сертифіката.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "left",
-          "expect": "next",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": true,
-          "anchor": {
-            "code": "lab.x.es.dialog",
-            "caption": "Діалог «Вхід в ЕСОЗ»",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthLoginDialog\"]",
-                "weight": 100
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "click",
-          "title": "Підписати КЕП",
-          "body": "Натисніть «Підписати КЕП». З'явиться повідомлення «Особу підтверджено».",
-          "transcript": "Підписати КЕП. Натисніть Підписати КЕП. З'явиться повідомлення Особу підтверджено.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "top",
-          "expect": "click",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": true,
-          "anchor": {
-            "code": "lab.x.es.btn-sign",
-            "caption": "Кнопка «Підписати КЕП»",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthConfirm\"]",
-                "weight": 100
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "info",
-          "title": "Перевірка підписувача",
-          "body": "Якщо ІПН у сертифікаті не збігається з вашим, система відхилить вхід з помилкою про розбіжність.",
-          "transcript": "Перевірка підписувача. Якщо ІПН у сертифікаті не збігається з вашим, система відхилить вхід з помилкою про розбіжність.",
+          "title": "Повернення в ЛІС",
+          "body": "Після входу портал повертає вас на сторінку ЛІС /laboratory/ehealth-callback. Там код обмінюється на сесію, і чип переходить у стан «активна».",
+          "transcript": "Повернення в ЛІС. Після входу портал повертає вас на сторінку ЛІС /laboratory/ehealth-callback. Там код обмінюється на сесію, і чип переходить у стан «активна».",
+          "route": "/laboratory/ehealth-callback",
           "highlight": "none",
           "parentLevels": 0,
           "placement": "center",
@@ -8052,237 +8104,10 @@
         },
         {
           "stepType": "info",
-          "title": "Результат",
-          "body": "Чип стане зеленим із часом, до якого сесія підтверджена.",
-          "transcript": "Результат. Чип стане зеленим із часом, до якого сесія підтверджена.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "bottom",
-          "expect": "next",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": false,
-          "anchor": {
-            "code": "lab.x.h.esoz",
-            "caption": "Чип сесії ЕСОЗ",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthChip\"]",
-                "weight": 100
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "code": "lab.esoz.confirm-totp",
-      "folderCode": "esoz-session",
-      "caption": "Підтвердити особу кодом 2FA (TOTP)",
-      "description": "Підтвердіть особу кодом із додатка-автентифікатора, а за потреби увімкніть 2FA.",
-      "icon": "pin",
-      "startRoute": "/laboratory/dashboard",
-      "requiredRoles": [],
-      "tags": [
-        "ЕСОЗ",
-        "2FA"
-      ],
-      "estMinutes": 1,
-      "sortOrder": 40,
-      "publish": true,
-      "variables": [],
-      "steps": [
-        {
-          "stepType": "click",
-          "title": "Відкрийте вікно",
-          "body": "Клікніть жовтий чип ЕСОЗ у шапці.",
-          "transcript": "Відкрийте вікно. Клікніть жовтий чип ЕСОЗ у шапці.",
+          "title": "Навіщо це для звітів",
+          "body": "Поки сесія активна, звіти можна відправляти в ЄСОЗ. Підпис звіту КЕП виконується окремо; без активної сесії відправка недоступна.",
+          "transcript": "Навіщо це для звітів. Поки сесія активна, звіти можна відправляти в ЄСОЗ. Підпис звіту КЕП виконується окремо; без активної сесії відправка недоступна.",
           "route": "/laboratory/dashboard",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "bottom",
-          "expect": "click",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": false,
-          "anchor": {
-            "code": "lab.x.h.esoz",
-            "caption": "Чип сесії ЕСОЗ",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthChip\"]",
-                "weight": 100
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "click",
-          "title": "Вкладка «2FA (TOTP)»",
-          "body": "Оберіть підтвердження кодом.",
-          "transcript": "Вкладка 2FA (TOTP). Оберіть підтвердження кодом.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "bottom",
-          "expect": "click",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": true,
-          "anchor": {
-            "code": "lab.x.es.tab-totp",
-            "caption": "Вкладка «2FA (TOTP)»",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthTabTotp\"]",
-                "weight": 100
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "info",
-          "title": "Увімкнути 2FA",
-          "body": "Якщо 2FA вимкнена для вашого облікового запису, з'явиться посилання «Увімкнути 2FA». Автоматично вона не вмикається.",
-          "transcript": "Увімкнути 2FA. Якщо 2FA вимкнена для вашого облікового запису, з'явиться посилання Увімкнути 2FA. Автоматично вона не вмикається.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "left",
-          "expect": "next",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": true,
-          "anchor": {
-            "code": "lab.x.es.enable2fa",
-            "caption": "Посилання «Увімкнути 2FA»",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthEnableTotp\"]",
-                "weight": 100
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "info",
-          "title": "Код із додатка",
-          "body": "Введіть шестизначний код із додатка. У тестовому режимі код показано підказкою.",
-          "transcript": "Код із додатка. Введіть шестизначний код із додатка. У тестовому режимі код показано підказкою.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "left",
-          "expect": "next",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": true,
-          "anchor": {
-            "code": "lab.x.es.code",
-            "caption": "Поле «Код з додатка»",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthTotpCode\"]",
-                "weight": 100
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "click",
-          "title": "Підтвердити",
-          "body": "Натисніть «Підтвердити». З'явиться повідомлення «Особу підтверджено».",
-          "transcript": "Підтвердити. Натисніть Підтвердити. З'явиться повідомлення Особу підтверджено.",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "top",
-          "expect": "click",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": true,
-          "anchor": {
-            "code": "lab.x.es.btn-confirm",
-            "caption": "Кнопка «Підтвердити»",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthConfirm\"]",
-                "weight": 100
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "code": "lab.esoz.strong-auth",
-      "folderCode": "esoz-session",
-      "caption": "Чому підпис вимагає двофакторного входу",
-      "description": "Пояснення помилки: після пароля без підтвердження особи підпис звіту заборонено.",
-      "icon": "gpp_maybe",
-      "startRoute": "/laboratory/dashboard",
-      "requiredRoles": [],
-      "tags": [
-        "ЕСОЗ",
-        "підпис"
-      ],
-      "estMinutes": 1,
-      "sortOrder": 50,
-      "publish": true,
-      "variables": [],
-      "steps": [
-        {
-          "stepType": "info",
-          "title": "Дві ступені входу",
-          "body": "Підпис КЕП і відправка в ЕСОЗ вимагають обох кроків: пароль (L1) і підтвердження особи КЕП або 2FA (L2).",
-          "transcript": "Дві ступені входу. Підпис КЕП і відправка в ЕСОЗ вимагають обох кроків: пароль (L1) і підтвердження особи КЕП або 2FA (L2).",
-          "route": "/laboratory/dashboard",
-          "highlight": "element",
-          "parentLevels": 0,
-          "placement": "bottom",
-          "expect": "next",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": false,
-          "anchor": {
-            "code": "lab.x.h.esoz",
-            "caption": "Чип сесії ЕСОЗ",
-            "routePattern": "*",
-            "strategies": [
-              {
-                "type": "testid",
-                "value": "[data-testid=\"ehealthChip\"]",
-                "weight": 100
-              }
-            ]
-          }
-        },
-        {
-          "stepType": "info",
-          "title": "Якщо пропустити другий крок",
-          "body": "Спроба підписати звіт після одного лише пароля завершується відмовою, а система відкриває вікно входу.",
-          "transcript": "Якщо пропустити другий крок. Спроба підписати звіт після одного лише пароля завершується відмовою, а система відкриває вікно входу.",
-          "highlight": "none",
-          "parentLevels": 0,
-          "placement": "center",
-          "expect": "next",
-          "inputValue": "",
-          "inputMode": "show",
-          "optional": false
-        },
-        {
-          "stepType": "info",
-          "title": "Як виправити",
-          "body": "Клікніть чип ЕСОЗ і підтвердіть особу КЕП чи кодом 2FA. Потім повторіть підпис.",
-          "transcript": "Як виправити. Клікніть чип ЕСОЗ і підтвердіть особу КЕП чи кодом 2FA. Потім повторіть підпис.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
@@ -8308,8 +8133,8 @@
     {
       "code": "lab.esoz.logout",
       "folderCode": "esoz-session",
-      "caption": "Вийти з ЕСОЗ",
-      "description": "Завершіть сесію ЕСОЗ наприкінці роботи або при зміні співробітника.",
+      "caption": "Завершення сесії ЄСОЗ",
+      "description": "Завершіть сесію ЄСОЗ наприкінці роботи або при зміні співробітника.",
       "icon": "logout",
       "startRoute": "/laboratory/dashboard",
       "requiredRoles": [],
@@ -8324,9 +8149,9 @@
       "steps": [
         {
           "stepType": "click",
-          "title": "Відкрийте вікно",
-          "body": "Клікніть зелений чип ЕСОЗ.",
-          "transcript": "Відкрийте вікно. Клікніть зелений чип ЕСОЗ.",
+          "title": "Відкрийте вікно сесії",
+          "body": "Клікніть чип «Сесія ЄСОЗ» у шапці (коли сесія активна).",
+          "transcript": "Відкрийте вікно сесії. Клікніть чип «Сесія ЄСОЗ» у шапці (коли сесія активна).",
           "route": "/laboratory/dashboard",
           "highlight": "element",
           "parentLevels": 0,
@@ -8350,9 +8175,9 @@
         },
         {
           "stepType": "info",
-          "title": "Дані сесії",
-          "body": "У вікні видно логін, спосіб підтвердження та ім'я підписувача.",
-          "transcript": "Дані сесії. У вікні видно логін, спосіб підтвердження та ім'я підписувача.",
+          "title": "Керування сесією",
+          "body": "Коли сесія активна, у вікні є кнопки «Оновити сесію» (продовжує поточну сесію) та «Вийти з ЄСОЗ».",
+          "transcript": "Керування сесією. Коли сесія активна, у вікні є кнопки «Оновити сесію» (продовжує поточну сесію) та «Вийти з ЄСОЗ».",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "left",
@@ -8362,7 +8187,7 @@
           "optional": true,
           "anchor": {
             "code": "lab.x.es.dialog",
-            "caption": "Діалог «Вхід в ЕСОЗ»",
+            "caption": "Діалог «Сесія ЄСОЗ»",
             "routePattern": "*",
             "strategies": [
               {
@@ -8375,9 +8200,9 @@
         },
         {
           "stepType": "click",
-          "title": "Вийти з ЕСОЗ",
-          "body": "Натисніть «Вийти з ЕСОЗ». З'явиться повідомлення, що сесію завершено.",
-          "transcript": "Вийти з ЕСОЗ. Натисніть Вийти з ЕСОЗ. З'явиться повідомлення, що сесію завершено.",
+          "title": "Вийти з ЄСОЗ",
+          "body": "Натисніть «Вийти з ЄСОЗ». З'явиться повідомлення, що ви вийшли, а чип покаже «не підключено».",
+          "transcript": "Вийти з ЄСОЗ. Натисніть «Вийти з ЄСОЗ». З'явиться повідомлення, що ви вийшли, а чип покаже «не підключено».",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "top",
@@ -8386,14 +8211,14 @@
           "inputMode": "show",
           "optional": true,
           "anchor": {
-            "code": "lab.x.es.btn-logout",
-            "caption": "Кнопка «Вийти з ЕСОЗ»",
+            "code": "lab.x.es.btn-signout",
+            "caption": "Кнопка «Вийти з ЄСОЗ»",
             "routePattern": "*",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Вийти з ЕСОЗ",
-                "weight": 65
+                "type": "testid",
+                "value": "[data-testid=\"ehealthSignOut\"]",
+                "weight": 100
               }
             ]
           }
@@ -8472,8 +8297,8 @@
         {
           "stepType": "click",
           "title": "Вхід в ЕСОЗ",
-          "body": "Якщо сесії немає, натисніть «Вхід в ЕСОЗ» і підтвердіть особу КЕП чи 2FA.",
-          "transcript": "Вхід в ЕСОЗ. Якщо сесії немає, натисніть Вхід в ЕСОЗ і підтвердіть особу КЕП чи 2FA.",
+          "body": "Якщо сесії немає, натисніть «Увійти в ЄСОЗ» у вікні сесії та пройдіть вхід на порталі ЄСОЗ.",
+          "transcript": "Вхід в ЕСОЗ. Якщо сесії немає, натисніть Увійти в ЄСОЗ у вікні сесії та пройдіть вхід на порталі ЄСОЗ.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "top",

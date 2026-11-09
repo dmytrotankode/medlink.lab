@@ -137,9 +137,9 @@
 | S-28 | Показник без обладнання → NO_EQUIPMENT | ✔ | Demo_inbox… (CA125), Distribution_change… (send-out) | — | lab.mis.no-equipment |
 | S-29 | Вимкнення послуги на приладі: кількість зачеплених тестів | ◐ | Service_matrix_card… (dryRun) | підтвердження і переназначення тестів PENDING не тестуються | lab.mis.disable-service |
 | S-30 | Скасування в МІС при IN_ANALYSIS → 409 | ◐ | Referral_validates… (скасування до початку роботи) | 409 при IN_ANALYSIS не тестується | lab.mis.cancel-referral |
-| S-31 | Відправка в ЕСОЗ: потрібен вхід | ✔ | Ehealth_session_two_factor_sign_submit_retry_and_annul (401 ehealth-auth-required) | Mock-режим | lab.esoz.login-password |
-| S-32 | Вхід через КЕП, збіг підписувача | ✔ | те саме (signer-mismatch, власний тестовий сертифікат) | сертифікат тестовий | lab.esoz.confirm-kep |
-| S-33 | 2FA вимкнена → увімкнути | ✔ | те саме (ehealth-totp-disabled, ehealth-invalid-code) | код 123456 захардкоджено | lab.esoz.confirm-totp |
+| S-31 | Відправка в ЕСОЗ: потрібен вхід | ✔ | Ehealth_session_two_factor_sign_submit_retry_and_annul (401 ehealth-auth-required) | Mock-режим | lab.esoz.login |
+| S-32 | Вхід через КЕП, збіг підписувача | ✔ | те саме (signer-mismatch, власний тестовий сертифікат) | сертифікат тестовий | lab.esoz.login |
+| S-33 | 2FA вимкнена → увімкнути | ✔ | те саме (ehealth-totp-disabled, ehealth-invalid-code) | код 123456 захардкоджено | lab.esoz.login |
 | S-34 | L2 + КЕП → SIGNED→…→COMPLETED | ✔ | те саме; EhealthOutboxApiTests.Full_cycle_registers_report_then_completes_referral… | Mock | lab.esoz.submit-report |
 | S-35 | Мережева помилка → повтор; закінчення сесії → AUTH_REQUIRED | ✔ | те саме (503, backoff, 401 на retry); EhealthOutboxApiTests.Transient_errors_back_off… | Mock | lab.esoz.retry |
 | S-36 | Анулювання звіту (КЕП) → новий звіт | ✔ | те саме (entered_in_error, ANNULLED); Failed_completion_is_fixed_by_cancelling… | Mock | lab.esoz.annul |

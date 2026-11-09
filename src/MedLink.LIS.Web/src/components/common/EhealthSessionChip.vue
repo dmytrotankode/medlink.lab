@@ -37,10 +37,10 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn v-if="state === 'active'" flat color="negative" label="Вийти з ЄСОЗ" :loading="busy" @click="doLogout" />
-          <q-btn v-if="state === 'active'" flat label="Оновити сесію" :loading="busy" @click="doRefresh" />
+          <q-btn v-if="state === 'active'" flat color="negative" label="Вийти з ЄСОЗ" :loading="busy" data-testid="ehealthSignOut" @click="doLogout" />
+          <q-btn v-if="state === 'active'" flat label="Оновити сесію" :loading="busy" data-testid="ehealthRefresh" @click="doRefresh" />
           <q-space />
-          <q-btn flat label="Закрити" v-close-popup />
+          <q-btn flat label="Закрити" v-close-popup data-testid="ehealthClose" />
           <q-btn v-if="state === 'none'" unelevated color="primary" icon="login" label="Увійти в ЄСОЗ" :loading="busy" :disable="status.loginAvailable === false" data-testid="ehealthSignIn" @click="doLogin" />
         </q-card-actions>
       </q-card>
