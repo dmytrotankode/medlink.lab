@@ -26,7 +26,30 @@ public sealed class NumeratorService : INumeratorService
     private readonly LisDbContext _db;
     public NumeratorService(LisDbContext db) => _db = db;
 
-    public Task<string> NextOrderNumberAsync(DateTime at, CancellationToken ct = default) => NextFormattedAsync(OrderNumerator, "{yyMM}-{000000}", at, ct);
+    /// <summary>
+    /// Номер замовлення. Замовлення з датою іншого місяця (заднім числом, імпорт, перехід місяця) скидає лічильник періоду;
+    /// щоб наступний номер поточного місяця не повторив уже виданий, перевіряємо унікальність і підтягуємо лічильник до максимуму.
+    /// </summary>
+    public async Task<string> NextOrderNumberAsync(DateTime at, CancellationToken ct = default)
+    {
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            var number = await NextFormattedAsync(OrderNumerator, "{yyMM}-{000000}", at, ct);
+            if (!await _db.Orders.AsNoTracking().AnyAsync(o => o.OrderNumber == number, ct)) return number;
+            await ResyncOrderCounterAsync(number, ct);
+        }
+        throw new InvalidOperationException("Не вдалося видати унікальний номер замовлення");
+    }
+
+    private async Task ResyncOrderCounterAsync(string collided, CancellationToken ct)
+    {
+        var digits = collided.Length - collided.TrimEnd().Reverse().TakeWhile(char.IsDigit).Count();
+        var prefix = collided[..digits];
+        var tails = await _db.Orders.AsNoTracking().Where(o => o.OrderNumber.StartsWith(prefix) && o.OrderNumber.Length == collided.Length).Select(o => o.OrderNumber).ToListAsync(ct);
+        long max = 0;
+        foreach (var n in tails) if (long.TryParse(n[digits..], out var v) && v > max) max = v;
+        await _db.Database.ExecuteSqlInterpolatedAsync($"UPDATE lab_numerator SET current_value = {max} WHERE code = {OrderNumerator} AND current_value < {max}", ct);
+    }
     public Task<string> NextManifestNumberAsync(DateTime at, CancellationToken ct = default) => NextFormattedAsync(ManifestNumerator, "MAN-{yyMMdd}-{0000}", at, ct);
     public Task<string> NextBatchCodeAsync(DateTime at, CancellationToken ct = default) => NextFormattedAsync(BatchNumerator, "WL-{yyMMdd}-{000}", at, ct);
 

@@ -13,6 +13,17 @@ public sealed class AnalyticsService
     private readonly LisDbContext _db;
     public AnalyticsService(LisDbContext db) => _db = db;
 
+    /// <summary>Період звіту: «Від» — початок, «До» без часу (так надсилає вебінтерфейс) — кінець цього дня включно; значення за замовчуванням — останні 30 діб.</summary>
+    internal static (DateTime From, DateTime To) Period(DateTime? from, DateTime? to)
+    {
+        var f = from ?? DateTime.UtcNow.AddDays(-30);
+        var t = to ?? DateTime.UtcNow;
+        if (to.HasValue && t.TimeOfDay == TimeSpan.Zero) t = t.Date.AddDays(1).AddTicks(-1);
+        if (f.Kind == DateTimeKind.Unspecified) f = DateTime.SpecifyKind(f, DateTimeKind.Utc);
+        if (t.Kind == DateTimeKind.Unspecified) t = DateTime.SpecifyKind(t, DateTimeKind.Utc);
+        return (f, t);
+    }
+
     private sealed record OrderTat(string OrderId, string OrderNumber, bool Cito, string? ProfileId, string? ProfileName, int SlaHours, TatBreakdown Tat);
 
     private async Task<List<OrderTat>> CollectAsync(DateTime from, DateTime to, string? profileId, bool? cito)
@@ -44,7 +55,7 @@ public sealed class AnalyticsService
 
     public async Task<object> TatAsync(DateTime? from, DateTime? to, string? profileId, bool? cito)
     {
-        var f = from ?? DateTime.UtcNow.AddDays(-30); var t = to ?? DateTime.UtcNow;
+        var (f, t) = Period(from, to);
         var data = await CollectAsync(f, t, profileId, cito);
         var totals = data.Where(d => d.Tat.TotalMinutes.HasValue).Select(d => d.Tat.TotalMinutes!.Value).ToList();
         var stages = TatCalculator.StageNames.Select(name =>
@@ -75,7 +86,7 @@ public sealed class AnalyticsService
 
     public async Task<object> VolumeAsync(DateTime? from, DateTime? to, string groupBy)
     {
-        var f = from ?? DateTime.UtcNow.AddDays(-30); var t = to ?? DateTime.UtcNow;
+        var (f, t) = Period(from, to);
         var tests = await _db.OrderTests.AsNoTracking().Include(x => x.Order).Include(x => x.Profile).Include(x => x.Result).ThenInclude(r => r!.Analyzer)
             .Where(x => x.Order!.OrderDatetime >= f && x.Order.OrderDatetime <= t && x.Order.Status != OrderStatuses.Cancelled).ToListAsync();
         var employees = await _db.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => e.Caption ?? "");
@@ -95,13 +106,14 @@ public sealed class AnalyticsService
             critical = g.Count(x => x.Result != null && ResultFlags.IsCritical(x.Result.Flag)), abnormal = g.Count(x => x.Result != null && ResultFlags.IsAbnormal(x.Result.Flag)),
             cito = g.Count(x => x.Order!.IsUrgentCito), revenue = g.Where(x => x.ProfileId == null).Sum(x => (decimal?)0) ?? 0
         }).OrderByDescending(r => r.tests).ToList();
-        var revenue = await _db.Orders.AsNoTracking().Where(o => o.OrderDatetime >= f && o.OrderDatetime <= t && o.Status != OrderStatuses.Cancelled).SumAsync(o => o.TotalPrice);
+        // сума — на стороні клієнта: SQLite не вміє агрегувати decimal
+        var revenue = (await _db.Orders.AsNoTracking().Where(o => o.OrderDatetime >= f && o.OrderDatetime <= t && o.Status != OrderStatuses.Cancelled).Select(o => o.TotalPrice).ToListAsync()).Sum();
         return new { from = f, to = t, groupBy, totalTests = tests.Count, totalOrders = tests.Select(x => x.OrderId).Distinct().Count(), totalRevenue = revenue, rows };
     }
 
     public async Task<byte[]> ExportXlsxAsync(string report, DateTime? from, DateTime? to)
     {
-        var f = from ?? DateTime.UtcNow.AddDays(-30); var t = to ?? DateTime.UtcNow;
+        var (f, t) = Period(from, to);
         using var wb = new XLWorkbook();
         switch (report.ToLowerInvariant())
         {
@@ -188,8 +200,8 @@ public sealed class AnalyticsService
         if (!string.IsNullOrWhiteSpace(entityId)) q = q.Where(a => a.EntityId == entityId);
         if (!string.IsNullOrWhiteSpace(userId)) q = q.Where(a => a.UserId == userId);
         if (!string.IsNullOrWhiteSpace(action)) q = q.Where(a => a.Action == action);
-        if (from.HasValue) q = q.Where(a => a.At >= from.Value);
-        if (to.HasValue) q = q.Where(a => a.At <= to.Value);
+        if (from.HasValue) { var start = Period(from, null).From; q = q.Where(a => a.At >= start); }
+        if (to.HasValue) { var end = Period(null, to).To; q = q.Where(a => a.At <= end); }
         return await q.OrderByDescending(a => a.At).ToPagedAsync(paging);
     }
 }
