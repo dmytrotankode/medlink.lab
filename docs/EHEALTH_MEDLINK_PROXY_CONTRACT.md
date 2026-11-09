@@ -45,9 +45,9 @@
 |---|---|---|---|
 | Пошук | `GET patients/service_requests?requisition={номер}` (+ `status`, `page_size` **[?]**) | — | `{data:[…], paging}` |
 | Деталі | `GET patients/service_requests/{id}` | — | `{data:{…}}` |
-| Use (прийняти в роботу) | `POST patients/service_requests/{id}/actions/use` | `{used_by_legal_entity?, program?}` **[?]**; `used_by_division` не надсилається | job (3.4) |
-| Complete (погасити) | `POST patients/service_requests/{id}/actions/complete` | `{completed_with:{identifier:{type:{coding:[…]},value:<id звіту>}}}` | job |
-| Release | `POST patients/service_requests/{id}/actions/release` | `{status_reason?}` — у режимі проксі `status_reason` не надсилається | job |
+| Use (прийняти в роботу) | `PATCH patients/service_requests/{id}/actions/use` | `{used_by_employee, used_by_legal_entity, program}`; `used_by_division` не надсилається | job (3.3) |
+| Complete (погасити) | `PATCH patients/service_requests/{id}/actions/complete` | `{completed_with[, program_service]}` (посилання на звіт) | job |
+| Release | `PATCH patients/service_requests/{id}/actions/release` | без тіла (`status_reason` не надсилається) | job |
 
 Use без програми, значення `status_reason` та точні обов'язкові поля — **[?]**, див. `ESOZ_LAB_INTERACTIONS.md` розд. 5.
 
@@ -56,7 +56,8 @@ Use без програми, значення `status_reason` та точні о
 | Операція | Метод і шлях | Тіло | Відповідь |
 |---|---|---|---|
 | Пакет звіту | `POST patients/{patientId}/diagnostic_report_package` | `{signed_data: base64 CAdES, …}`; всередині підписаного пакета `diagnostic_report` (з `effective_period{start,end}`, `paper_referral.note`) та `observations[]` — будує `EhealthPackageBuilder` | job |
-| Скасування звіту | `POST patients/{patientId}/diagnostic_report_package/cancel` **[?]** — повторне надсилання пакета зі статусом скасування | підписаний пакет | job |
+| Скасування звіту | `PATCH patients/{patientId}/diagnostic_report_package` | `{signed_data}` (підписаний пакет скасування) | job |
+| Перевірка звіту перед повтором | `GET patients/{patientId}/diagnostic_reports/{id}` | — | дані звіту або 404 |
 
 Порядок: пакет → job `processed` → **окремий** `complete` ЕН (окрема задача outbox). Помилка → скасування звіту й новий пакет з новими id.
 
@@ -85,8 +86,8 @@ Use без програми, значення `status_reason` та точні о
 | 2. Вхід користувача | браузер відкриває `{AuthPortalUrl}?client_id=…&redirect_uri=…&scope=…` | ЄСОЗ повертає на `RedirectUri` (сторінка ЛІС `/laboratory/ehealth-callback`) з `?code=…` |
 | 3. Обмін | `POST auth` `{code, role_name}` | проксі міняє код на токен і зберігає під (`ClientId`,`UserId`) |
 | 4. Перевірка | `GET auth/hasAccessToken` | текст `true`/`false` (приймаються також JSON-форми) |
-| 5. Оновлення | `GET/POST auth/update` **[?]** | оновлений токен на проксі |
-| 6. Вихід | `GET/POST auth/logout` **[?]** | токен видалено |
+| 5. Оновлення | `GET auth/update` | оновлений токен на проксі |
+| 6. Вихід | `GET auth/logout` | токен видалено |
 
 Ендпоїнти ЛІС: `POST /api/v1/lab/ehealth/session/link`, `…/session/callback`, `…/session/refresh`, `DELETE …/session`, `GET …/session`. Стани UI «Сесія ЄСОЗ»: `none` (кнопка «Увійти в ЄСОЗ»), `active`, `unavailable`, `notConfigured`.
 
@@ -129,7 +130,7 @@ Use без програми, значення `status_reason` та точні о
 3. **Перевірка наявності токена за конкретною роллю** й чітка помилка «токена немає» (зараз виводиться з `token_*`).
 4. **Метод пошуку працівника/ролі** для ідентифікатора працівника в ЄСОЗ.
 5. **Явний контракт** (OpenAPI/Swagger проксі) та знімки реальних відповідей: 200 чи 202, префікс `/api`, параметр `response_type`.
-6. Окремий шлях скасування пакета звіту та Use без програми (3.1, 3.2) — підтвердити.
+6. Use без програми та значення `status_reason` (3.1) — підтвердити.
 
 ## 7. Що потрібно від команди проксі та замовника
 

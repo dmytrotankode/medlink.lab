@@ -140,17 +140,17 @@ public class ReferralApiTests
         Assert.Equal(refId, report.EhealthIncomingMedicalReferralId);
         Assert.Equal("completed", _f.Mock().ServiceRequests[refId].Status);
 
-        // Порядок викликів: пакет звіту → complete; шляхи — як в OpenAPI (/api/service_requests…, без patients/service_requests)
+        // Порядок викликів: пакет звіту → complete; шляхи — як у проксі MedLink (patients/service_requests…, без /api)
         var calls = _f.Mock().Calls.ToList();
         var iPost = calls.FindIndex(c => c.StartsWith("POST") && c.EndsWith("/diagnostic_report_package"));
         var iDone = calls.FindIndex(c => c.StartsWith("PATCH") && c.Contains($"/service_requests/{refId}/actions/complete"));
         Assert.True(iPost >= 0 && iDone > iPost, "complete має йти після реєстрації звіту: " + string.Join(" | ", calls));
         var log = (await Json(await doctor.GetAsync("/api/v1/lab/ehealth/exchange-log?take=500")))["items"]!.AsArray();
-        Assert.Contains(log, l => S(l!["method"]) == "GET" && S(l["url"]).Contains($"service_requests?requisition={number}"));
+        Assert.Contains(log, l => S(l!["method"]) == "GET" && S(l["url"]).Contains($"patients/service_requests?requisition={number}"));
         var completeLog = log.First(l => S(l!["method"]) == "PATCH" && S(l["url"]).EndsWith($"/service_requests/{refId}/actions/complete"))!;
-        Assert.DoesNotContain(log, l => S(l!["url"]).Contains("patients/service_requests"));
+        Assert.DoesNotContain(log, l => S(l!["url"]).Contains("/api/"));
         Assert.Contains("completed_with", S(completeLog["requestJson"]));
-        Assert.Equal(202, completeLog["statusCode"]!.GetValue<int>());
+        Assert.Equal(200, completeLog["statusCode"]!.GetValue<int>());
         // Погашене направлення використати вже не можна
         var again = await Json(await reg.GetAsync($"/api/v1/lab/referrals/ehealth/lookup?number={number}"));
         Assert.False(again["canUse"]!.GetValue<bool>());
