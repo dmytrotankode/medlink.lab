@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Імітатор сервісу автентифікації (Identity) для стендів: код авторизації + PKCE, JWT RS256, JWKS, refresh_token. Див. docs/MEDLINK_INTEGRATION_PLAN.md. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>MedLink.IdentitySim</RootNamespace>
+    <AssemblyName>MedLink.IdentitySim</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.1.2" />
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+  </ItemGroup>
+
+</Project>

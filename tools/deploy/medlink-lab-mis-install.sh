@@ -139,6 +139,7 @@ umask 022
 cat > /etc/nginx/snippets/medlink-lab-mis.conf <<NGX
 location = /lab { return 301 /lab/; }
 location /lab/ {
+  auth_basic off;
   include snippets/medone-proxy.conf;
   proxy_set_header X-Forwarded-Proto https;
   client_max_body_size 20m;

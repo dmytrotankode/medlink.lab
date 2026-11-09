@@ -176,3 +176,37 @@ ssh -i ~/.ssh/medone_ed25519 root@94.130.180.117 'bash -s' < tools/deploy/medlin
 **Відкат:** застосунок — `systemctl stop medlink-lab-mis; rm -rf /srv/medlink-lab-mis/app; mv /srv/medlink-lab-mis/app.prev /srv/medlink-lab-mis/app; systemctl start medlink-lab-mis`. Повне зняття: `systemctl disable --now medlink-lab-mis`; прибрати рядок `include snippets/medlink-lab-mis.conf;` із сайту (копія до правки: `/root/mis.med-one.avowiz.com.bak.*`), `nginx -t && systemctl reload nginx`; БД — `DROP SCHEMA lab CASCADE; DROP ROLE lab_app; DROP ROLE lab_migrator;` (перед `DROP ROLE` — `REVOKE ... ` або `DROP OWNED BY`), або `pg_restore` з бекапу.
 
 **Перевірено [С]:** `/lab/health` 200 (db ok); `lab_app` у `public`: INSERT/UPDATE/DELETE/CREATE TABLE — `permission denied`, SELECT дозволено; у `lab` `lab_app` не може DDL; `medlink-api`, `/lab` на med-one.avowiz.com, :5190 — без змін (health до і після). **Не перевірено:** `/lab/` через nginx із basic-auth (пароль у власника; без нього 401), вхід у SPA, режим Oidc. **Увага для кроку Oidc:** `Authorization: Bearer` від SPA конфліктує з basic-auth сайту (той самий заголовок) — для `/lab/` потрібно або зняти basic-auth, або передавати токен іншим способом.
+
+
+## 9. Імітатор Identity і перемикання на реальний MedLink (10.11.2026, гілка cl/idsim)
+
+**Навіщо.** Справжній Identity (id-test.medlink.healthcare) недоступний для нашого клієнта (redirect URI `/lab/callback` не зареєстровано). Імітатор `tools/MedLink.IdentitySim` повторює його контракт, тож Lab API і SPA працюють у режимі `Oidc` вже зараз, а перехід на справжній — лише зміна адреси Authority.
+
+**Що реалізовано [К — 12 тестів `tests/MedLink.IdentitySim.Tests`, усі зелені].**
+- Ендпоінти: `/.well-known/openid-configuration`, `/.well-known/openid-configuration/jwks` і `/connect/jwks`, `/connect/authorize` (вхід українською: вибір користувача МІС + «пароль стенда», далі «Оберіть профіль», якщо профілів кілька), `/connect/token` (`authorization_code` із PKCE S256 і точною перевіркою `redirect_uri`; `refresh_token` з обертанням), `/connect/userinfo`, `/connect/endsession` (`post_logout_redirect_uri` лише зареєстрований).
+- Клієнт `MisFront` (публічний, без секрету), scope `openid MisFrontScope IdentityApiScope MisApiScope offline_access`. Redirect: `{origin}/lab/callback`, post-logout `{origin}/lab/` (`{origin}` = схема+хост із `Sim:Issuer`); збіг точний, інакше сторінка помилки без переадресації.
+- Токен: JWT RS256 (`typ=at+jwt`, ключ RSA у файлі поза репозиторієм, `kid` = відбиток), `sub` = `cmn_person.user_id`, `name` (ПІБ), `aud` = IdentityApiScope + MisApiScope, `scope`, `sid`, `auth_time`, `idp=local`, `amr=[pwd]`, `client_id`; доступ 1 год, refresh 8 год, код авторизації 60 с (одноразовий). Розширення імітатора: claim `profile_id` (профіль, обраний після входу; Lab API його не використовує — бере найвищу роль з усіх профілів працівника).
+- Користувачі: база МІС лише `SELECT` (`cmn_person` → `org_employee` → `sys_user_profile` → `sys_profile`, лише активні `record_state=2`, працівник не заблокований; ≈1142 особи) через `Sim:MedlinkConnectionString`; без рядка підключення — `Sim:Users` з конфігу. Сервіс не стартує без `Sim:Password` і `Sim:Issuer`. Пароль ніде не друкується; 15 невдалих спроб на хвилину — блокування входу.
+- Інтеграційний тест: токен імітатора → `/api/v1/lab/context/me` → 200, роль `REGISTRAR`; токен з ключем іншого екземпляра → 401.
+
+**Стенд [С].** Служба `medlink-idsim` (127.0.0.1:5210, `/srv/medlink-idsim`, ключ у `data/signing-key.pem`, секрети — `secrets.env` і drop-in `sim.conf`, 0600 root), встановлення `tools/deploy/medlink-idsim-install.sh` (ідемпотентно). nginx: `location /id/` → :5210 і `location /lab/` — обидва з `auth_basic off` (імітатор має власний вхід; `Authorization: Bearer` не конфліктує з basic-auth; решта сайту, зокрема `/api/`, під basic-auth). Copy конфіга: `/root/mis.med-one.avowiz.com.bak.idsim.*`. Lab API (`medlink-lab-mis`) перемкнуто на Oidc drop-in-ом `auth.conf` (`Auth__Mode=Oidc`, `Identity__Authority=https://mis.med-one.avowiz.com/id`, `Identity__JwtBearerAudience=IdentityApiScope;MisApiScope`, `Auth__Oidc__ClientId=MisFront`); попередній — `/root/lab-mis-auth.conf.bak.idsim` (Header). Пароль стенда для власника: `/srv/medlink-idsim/secrets.env` (на сервері).
+
+**Ролі.** `Medlink:ProfileRoles` взято із `appsettings.json` без змін: усі 12 назв збігаються з `sys_profile.caption` у БД стенда (перевірено порівнянням зі списком із 24 профілів). У середовищі не дублювалось (назви з кирилицею й пробілами в змінних середовища ненадійні). Профілів «лікар-лаборант» і «кур'єр» у МІС немає — ролі `LAB_DOCTOR` за окремим профілем і `LOGISTICS_COURIER` недосяжні, нічого не вигадувалось (лікар — через «Спеціаліст eHealth вторинки»/«Головний лікар»; профілі «Головний лікар eHealth вторинки», «Медичний координатор…», «Сімейний лікар…» без відповідності → 403 «немає доступу до Лабораторії»).
+
+**Виправлено попутно [С].** `index.html` у `/srv/medlink-lab-mis/app/wwwroot` посилався на неіснуючі `app.434b2eb2.js`/`vendor.d353be53.js`/`runtime.641ba959.js` (сторінка `/lab/` була порожньою); хеші замінено на наявні (`app.e62cc0d6`, `vendor.2957bc5c`, `runtime.e8c5903d`), копія — `/root/lab-mis-index.html.bak.idsim`. Причину (як збірка потрапила на сервер з індексом від іншої збірки) варто перевірити при наступному деплої `medlink-lab-mis-install.sh`.
+
+**Що змінити, щоб підхопив реальний id-test.**
+1. Узгодити з MedLink клієнта: `MisFront` (або окремий `LabFront`) з redirect URI `https://<хост ЛІС>/lab/callback` і post-logout `https://<хост ЛІС>/lab/`.
+2. У drop-in `auth.conf`: `Identity__Authority=https://id-test.medlink.healthcare`; `Auth__Oidc__ClientId=<клієнт>`; `Identity__JwtBearerAudience` без змін; перезапустити лише `medlink-lab-mis`.
+3. Прибрати `/id/`: `systemctl disable --now medlink-idsim`, видалити `include snippets/medlink-idsim.conf;` із сайту, `nginx -t && systemctl reload nginx`, видалити сніпет і `/srv/medlink-idsim` (ключ і секрети).
+4. `sub` справжніх токенів має бути `cmn_person.user_id` (так само, як в імітаторі) — міст до МІС не змінюється. Ролі за профілями лишаються; за потреби дописати профілі в `Medlink:ProfileRoles`.
+5. `/lab/` лишити без basic-auth (або передавати токен іншим способом).
+
+**Чим імітатор відрізняється від реального (не перевірено проти справжнього).**
+- Профіль: у реальному МІС після входу профіль підтверджується `POST /link/api/api/Account/authenticate` і в токені лише `sid, sub, auth_time, idp, amr`; в імітаторі вибір профілю — частина форми входу, а в токен додано `profile_id`.
+- Токени лише JWT: reference-токенів і introspection немає (`Identity:UseRefreshTokenFlow=false`); у реальному Identity вони можливі.
+- Немає сеансового cookie/SSO (кожен вхід — форма; `prompt=none` → `login_required`), немає 2FA, зовнішніх провайдерів, згоди, відкликання, front-channel logout; клієнти лише публічні; CORS не налаштовано (SPA й імітатор на одному origin).
+- Коди й refresh-токени — у пам'яті: перезапуск служби = повторний вхід (access-токени живуть до закінчення, ключ у файлі).
+- Вхід — спільний пароль стенда + вибір будь-кого з ≈1142 користувачів, тож це інструмент лише тестового стенду; не відкривати на промислових даних.
+- Не перевірено: повний вхід у браузері з паролем (його виконує власник); перевірено форму входу в Chrome (`/lab/` → `/id/connect/authorize`), discovery/JWKS/401 без токена через nginx.
+
