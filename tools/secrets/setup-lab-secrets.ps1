@@ -25,10 +25,17 @@
   Доступ к 192.168.255.1 — это частный адрес, нужен VPN/офисная сеть.
 #>
 param(
-  [ValidateSet('evomis', 'medlink', 'ehealth', 'hoco')]
   [string[]]$Only,
   [switch]$Status
 )
+
+# При запуске через -File список с запятыми приходит одной строкой: разбираем сами
+if ($Only) {
+  $Only = @($Only | ForEach-Object { $_ -split '[,;\s]+' } | Where-Object { $_ })
+  foreach ($o in $Only) {
+    if ($o -notin 'evomis', 'medlink', 'ehealth', 'hoco') { throw "Неизвестный раздел '$o'. Допустимо: evomis, medlink, ehealth, hoco." }
+  }
+}
 
 $ErrorActionPreference = 'Stop'
 $store = Join-Path $env:USERPROFILE '.medlink\lab_secrets.json.dpapi'
