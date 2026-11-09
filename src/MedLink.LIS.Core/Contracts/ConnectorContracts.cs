@@ -108,6 +108,12 @@ public sealed class ConnectorHeartbeatResponse
 {
     public DateTime ServerTimeUtc { get; set; }
     public int ConfigVersion { get; set; }
+    /// <summary>Мінімальна підтримувана версія коннектора (FR-CON-008).</summary>
+    public string? MinVersion { get; set; }
+    /// <summary>true — версія коннектора старіша за мінімально підтримувану.</summary>
+    public bool VersionOutdated { get; set; }
+    /// <summary>Попередження українською, якщо версія застаріла.</summary>
+    public string? Warning { get; set; }
     public List<ConnectorCommandDto> Commands { get; set; } = new();
 }
 

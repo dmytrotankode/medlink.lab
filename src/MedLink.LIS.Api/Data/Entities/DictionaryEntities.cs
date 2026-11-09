@@ -69,6 +69,8 @@ public class LabTestDefinition : GuidEntity
     [MaxLength(64)] public string Code { get; set; } = "";
     [MaxLength(256)] public string Name { get; set; } = "";
     [MaxLength(64)] public string? ShortName { get; set; }
+    /// <summary>Назва показника англійською для бланка en/двомовного (FR-PRN-002); порожньо — запасний варіант: основна назва.</summary>
+    [MaxLength(256)] public string? NameEn { get; set; }
     [MaxLength(32)] public string? LoincCode { get; set; }
     [MaxLength(64)] public string Unit { get; set; } = "";
     public int DecimalPlaces { get; set; } = 2;
@@ -118,6 +120,8 @@ public class LabTestProfile : GuidEntity
 {
     [MaxLength(64)] public string Code { get; set; } = "";
     [MaxLength(512)] public string Name { get; set; } = "";
+    /// <summary>Назва послуги англійською для заголовка групи в бланку en (FR-PRN-002).</summary>
+    [MaxLength(512)] public string? NameEn { get; set; }
     [MaxLength(128)] public string Category { get; set; } = "";
     public int TurnaroundHours { get; set; } = 24;
     public bool FastingRequired { get; set; } = true;

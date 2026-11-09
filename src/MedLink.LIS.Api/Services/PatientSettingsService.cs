@@ -114,6 +114,8 @@ public sealed class LabSettingsRequest
     public string? OrderNumberMask { get; set; }
     public string? BarcodePrefix { get; set; }
     public string? ReportFooter { get; set; }
+    /// <summary>uk | en | both</summary>
+    public string? ReportLanguage { get; set; }
     public string? PanicPhone { get; set; }
     public double? ColdChainMinC { get; set; }
     public double? ColdChainMaxC { get; set; }
@@ -152,6 +154,7 @@ public sealed class SettingsService
         if (req.Name != null) s.Name = req.Name; if (req.Edrpou != null) s.Edrpou = req.Edrpou; if (req.Address != null) s.Address = req.Address; if (req.Phone != null) s.Phone = req.Phone;
         if (req.Email != null) s.Email = req.Email; if (req.LicenseNumber != null) s.LicenseNumber = req.LicenseNumber; if (req.LogoBase64 != null) s.LogoBase64 = req.LogoBase64;
         if (req.DirectorName != null) s.DirectorName = req.DirectorName; if (req.WorkingHours != null) s.WorkingHours = req.WorkingHours; if (req.BarcodePrefix != null) s.BarcodePrefix = req.BarcodePrefix;
+        if (req.ReportLanguage != null) s.ReportLanguage = ReportService.NormalizeLang(req.ReportLanguage) ?? throw ValidationException.Field("reportLanguage", "Мова бланка: uk, en або both");
         if (req.ReportFooter != null) s.ReportFooter = req.ReportFooter; if (req.PanicPhone != null) s.PanicPhone = req.PanicPhone;
         if (req.ColdChainMinC.HasValue) s.ColdChainMinC = req.ColdChainMinC.Value; if (req.ColdChainMaxC.HasValue) s.ColdChainMaxC = req.ColdChainMaxC.Value;
         if (req.LabelPrinterHost != null) s.LabelPrinterHost = req.LabelPrinterHost; if (req.LabelPrinterPort.HasValue) s.LabelPrinterPort = req.LabelPrinterPort.Value; if (req.LabelPrinterName != null) s.LabelPrinterName = req.LabelPrinterName;

@@ -52,6 +52,7 @@ public sealed class StatusSnapshot
 {
     public string Product { get; set; } = "MedLink LIS Analyzer Connector";
     public string Version { get; set; } = "";
+    public string? VersionWarning { get; set; }
     public string ConnectorId { get; set; } = "";
     public string? ConnectorName { get; set; }
     public string HostName { get; set; } = "";
@@ -81,6 +82,8 @@ public sealed class StatusState
     public bool Online { get; set; }
     public string? LastServerError { get; set; }
     public int BufferedCount { get; set; }
+    /// <summary>Попередження сервера про застарілу версію коннектора (FR-CON-008).</summary>
+    public string? VersionWarning { get; set; }
 
     public IReadOnlyCollection<AnalyzerStatus> Analyzers => _analyzers.Values.Select(a => a.Clone()).OrderBy(a => a.Name).ToList();
 

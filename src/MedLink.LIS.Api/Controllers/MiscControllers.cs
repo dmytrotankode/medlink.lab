@@ -24,6 +24,10 @@ public sealed class BiobankController : LisControllerBase
     [HttpGet("biobank/racks/{id}/cells")] public async Task<IActionResult> Cells(string id) => Ok(await _biobank.CellsAsync(id));
     [HttpPost("biobank/cells/place")] public async Task<IActionResult> Place([FromBody] PlaceCellRequest req) => StatusCode(201, await _biobank.PlaceAsync(req));
     [HttpPost("biobank/cells/{id}/remove")] public async Task<IActionResult> Remove(string id, [FromBody] ReasonRequest req) => Ok(await _biobank.RemoveAsync(id, req.Reason));
+    /// <summary>Видача зразка на повторне дослідження (STORED → PROCESSING), причина обов'язкова.</summary>
+    [HttpPost("biobank/cells/{id}/retrieve")] public async Task<IActionResult> Retrieve(string id, [FromBody] ReasonRequest req) => Ok(await _biobank.RetrieveAsync(id, req.Reason));
+    /// <summary>Акт списання (HTML) для списаного зразка.</summary>
+    [HttpGet("biobank/cells/{id}/disposal-act")] [Produces("text/html")] public async Task<IActionResult> DisposalAct(string id) => Content(await _biobank.DisposalActAsync(id), "text/html; charset=utf-8");
     [HttpPut("biobank/cells/{id}")] public async Task<IActionResult> UpdateCell(string id, [FromBody] CellUpdateRequest req) => Ok(await _biobank.UpdateCellAsync(id, req.ExpiryAt));
     [HttpDelete("biobank/cells/{id}")] public async Task<IActionResult> DeleteCell(string id) { await _biobank.DeleteCellAsync(id); return NoContent(); }
     [HttpGet("biobank/search")] public async Task<IActionResult> Search([FromQuery] string barcode) => Ok(await _biobank.SearchAsync(barcode) ?? throw NotFoundException.For("Зразок у біобанку", barcode));

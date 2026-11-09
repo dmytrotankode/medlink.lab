@@ -151,6 +151,7 @@ builder.Services.AddScoped<ConnectorApiKeyFilter>();
 builder.Services.AddScoped<AnalyzerService>();
 builder.Services.AddScoped<LogisticsService>();
 builder.Services.AddScoped<BiobankService>();
+builder.Services.AddScoped<QualityRegistryService>();
 builder.Services.AddScoped<ReagentService>();
 builder.Services.AddScoped<ReagentConsumptionService>();
 builder.Services.AddScoped<MicrobiologyService>();

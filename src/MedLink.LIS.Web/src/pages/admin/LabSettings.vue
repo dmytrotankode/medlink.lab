@@ -83,6 +83,8 @@
             <q-item tag="label"><q-item-section avatar><q-toggle v-model="form.reportPreliminaryEnabled" color="orange-7" /></q-item-section><q-item-section><q-item-label>Попередній бланк</q-item-label><q-item-label caption>з водяним знаком «ПОПЕРЕДНІЙ», до верифікації</q-item-label></q-item-section></q-item>
             <q-item tag="label"><q-item-section avatar><q-toggle v-model="form.reportCitoEnabled" color="deep-orange-6" /></q-item-section><q-item-section><q-item-label>CITO-бланк</q-item-label><q-item-label caption>термінова форма з позначкою CITO</q-item-label></q-item-section></q-item>
           </q-list>
+          <q-select v-model="form.reportLanguage" outlined dense emit-value map-options class="q-mt-sm" label="Мова бланка за замовчуванням"
+            :options="[{ value: 'uk', label: 'Українська' }, { value: 'en', label: 'Англійська' }, { value: 'both', label: 'Двомовний (укр. / англ.)' }]" />
           <q-input v-model="form.reportFooter" outlined dense autogrow label="Нижній колонтитул бланка (підписи, застереження)" class="q-mt-sm" />
         </div>
 

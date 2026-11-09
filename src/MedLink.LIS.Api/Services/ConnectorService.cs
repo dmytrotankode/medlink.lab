@@ -68,11 +68,33 @@ public sealed class ConnectorService
     private object ToDto(LabConnectorInstallation c) => new
     {
         c.Id, c.Name, c.HostName, c.OsDescription, c.Version, c.Status, c.InstallKey, c.InstallKeyUsed, hasApiKey = c.ApiKeyHash != null,
+        minVersion = MinVersion(), versionOutdated = IsOutdated(c.Version), versionWarning = VersionWarning(c.Version),
         c.LastHeartbeatAt, c.RegisteredAt, c.BufferedCount, c.UptimeSec, c.ConfigVersion, c.PollIntervalSec, c.HeartbeatIntervalSec, c.CreatedOn,
         isOnline = c.LastHeartbeatAt.HasValue && (DateTime.UtcNow - c.LastHeartbeatAt.Value).TotalSeconds < c.HeartbeatIntervalSec * 3,
         setupCommand = SetupCommand(c), analyzers = c.Analyzers.Select(a => new { a.Id, a.Code, a.Name, a.IsOnline, a.LastMessageAt, a.LastError, typeCode = a.AnalyzerType?.Code }),
         allowedActions = _policy.AllowedActions(LisEntities.Connector, c.Status), stateMachine = LisStateMachine.Describe(LisEntities.Connector)
     };
+
+    /// <summary>Мінімальна підтримувана версія коннектора (налаштування Lab:MinConnectorVersion, типово 4.0.0).</summary>
+    public string MinVersion() => _config["Lab:MinConnectorVersion"] is { Length: > 0 } v ? v : "4.0.0";
+
+    /// <summary>Версія старіша за мінімальну (порівняння за числовими компонентами; невідома версія — не вважається застарілою).</summary>
+    public bool IsOutdated(string? version)
+    {
+        if (string.IsNullOrWhiteSpace(version)) return false;
+        return TryParseVersion(version, out var cur) && TryParseVersion(MinVersion(), out var min) && cur < min;
+    }
+
+    public string? VersionWarning(string? version) => IsOutdated(version)
+        ? $"Версія коннектора {version} застаріла. Мінімально підтримувана — {MinVersion()}. Оновіть коннектор на ПК лабораторії."
+        : null;
+
+    private static bool TryParseVersion(string s, out Version v)
+    {
+        var core = new string(s.Trim().TrimStart('v', 'V').TakeWhile(ch => char.IsDigit(ch) || ch == '.').ToArray()).Trim('.');
+        if (core.Length > 0 && !core.Contains('.')) core += ".0";
+        return Version.TryParse(core, out v!);
+    }
 
     private string PublicBaseUrl() => (_config["Lab:PublicBaseUrl"] ?? "http://localhost:5055").TrimEnd('/');
     private string SetupCommand(LabConnectorInstallation c) => $"MedLink.LabConnector setup --server {PublicBaseUrl()} --install-key {c.InstallKey} --name \"{c.Name}\"";
@@ -279,7 +301,7 @@ $@"MedLink LabConnector — інструкція з встановлення (і
         var commands = await _db.ConnectorCommands.Where(x => x.ConnectorId == c.Id && !x.IsDelivered).OrderBy(x => x.CreatedOn).ToListAsync();
         foreach (var cmd in commands) { cmd.IsDelivered = true; cmd.DeliveredAt = now; }
         await _db.SaveChangesAsync();
-        return new ConnectorHeartbeatResponse { ServerTimeUtc = now, ConfigVersion = c.ConfigVersion, Commands = commands.Select(x => new ConnectorCommandDto { Type = x.Type, Payload = x.Payload }).ToList() };
+        return new ConnectorHeartbeatResponse { ServerTimeUtc = now, ConfigVersion = c.ConfigVersion, MinVersion = MinVersion(), VersionOutdated = IsOutdated(c.Version), Warning = VersionWarning(c.Version), Commands = commands.Select(x => new ConnectorCommandDto { Type = x.Type, Payload = x.Payload }).ToList() };
     }
 
     public async Task<AnalyzerOrderDto?> OrderByBarcodeAsync(LabConnectorInstallation c, string barcode, string? analyzerId)

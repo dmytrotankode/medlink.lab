@@ -35,6 +35,8 @@ public class LabSettings : GuidEntity
     [MaxLength(64)] public string OrderNumberMask { get; set; } = "{yyMM}-{000000}";
     [MaxLength(16)] public string? BarcodePrefix { get; set; }
     public string? ReportFooter { get; set; }
+    /// <summary>Мова бланка результатів за замовчуванням: uk | en | both (FR-PRN-002).</summary>
+    [MaxLength(8)] public string ReportLanguage { get; set; } = "uk";
     [MaxLength(32)] public string? PanicPhone { get; set; }
     public double ColdChainMinC { get; set; } = 2.0;
     public double ColdChainMaxC { get; set; } = 8.0;

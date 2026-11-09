@@ -70,6 +70,12 @@ public static class Program
 
         var local = builder.Configuration.GetSection("Local").Get<LocalOptions>() ?? new LocalOptions();
         int port = int.TryParse(cli.Get("status-port"), out var p) ? p : local.StatusPort;
+        if (!SingleInstanceGuard.TryAcquire(paths.DataDir, port, out var instanceGuard, out var instanceError))
+        {
+            Console.Error.WriteLine("ПОМИЛКА: " + instanceError);
+            return 3;
+        }
+        using var _ = instanceGuard;
         builder.WebHost.UseUrls($"http://localhost:{port}", $"http://127.0.0.1:{port}");
         builder.WebHost.ConfigureKestrel(k => k.AddServerHeader = false);
 

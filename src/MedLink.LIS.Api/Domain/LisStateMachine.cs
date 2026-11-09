@@ -125,7 +125,7 @@ public static class LisStateMachine
         new(SampleActions.Uncollect, new[]{ SampleStatuses.Collected }, SampleStatuses.Pending, new[]{ LabRoles.Admin, LabRoles.Phlebotomist }, "Скасувати відмітку забору"),
         new(SampleActions.Dispatch, new[]{ SampleStatuses.Collected }, SampleStatuses.InTransit, Couriers, "Відправити"),
         new(SampleActions.Receive, new[]{ SampleStatuses.Collected, SampleStatuses.InTransit }, SampleStatuses.Received, Receivers, "Прийняти"),
-        new(SampleActions.Process, new[]{ SampleStatuses.Received }, SampleStatuses.Processing, AdminDoctorTech, "В обробці (центрифугування/аналіз)"),
+        new(SampleActions.Process, new[]{ SampleStatuses.Received, SampleStatuses.Stored }, SampleStatuses.Processing, AdminDoctorTech, "В обробці (центрифугування/аналіз)"),
         new(SampleActions.Store, new[]{ SampleStatuses.Received, SampleStatuses.Processing }, SampleStatuses.Stored, AdminDoctorTech, "Розмістити в біобанку"),
         new(SampleActions.Dispose, new[]{ SampleStatuses.Stored, SampleStatuses.Received, SampleStatuses.Processing, SampleStatuses.Rejected }, SampleStatuses.Disposed, AdminDoctorTech, "Утилізувати"),
         new(SampleActions.Reject, new[]{ SampleStatuses.Collected, SampleStatuses.InTransit, SampleStatuses.Received, SampleStatuses.Processing }, SampleStatuses.Rejected, AdminDoctorTech, "Відбракувати пробірку"),

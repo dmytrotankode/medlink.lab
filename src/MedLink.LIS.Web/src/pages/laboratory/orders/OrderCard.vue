@@ -19,7 +19,16 @@
             <q-item-section><q-item-label>{{ v.label }}</q-item-label><q-item-label caption>{{ v.caption }}</q-item-label></q-item-section>
           </q-item>
           <q-separator />
-          <q-item clickable v-close-popup tag="a" :href="order ? $api.orderReportPdfUrl(order.id, reportVariant) : '#'" target="_blank">
+          <q-item v-for="l in reportLangs" :key="l.value" clickable v-close-popup :active="reportLang === l.value" :data-testid="'reportLang-' + l.value" @click="reportLang = l.value; openReport()">
+            <q-item-section avatar><q-icon name="translate" /></q-item-section>
+            <q-item-section><q-item-label>Мова: {{ l.label }}</q-item-label></q-item-section>
+          </q-item>
+          <q-separator />
+          <q-item v-if="order && order.status === 'RELEASED'" clickable v-close-popup data-testid="reportArchive" @click="openArchive">
+            <q-item-section avatar><q-icon name="inventory_2" /></q-item-section>
+            <q-item-section><q-item-label>Архів виданих бланків</q-item-label><q-item-label caption>версії, дублікати, перевірка хешу</q-item-label></q-item-section>
+          </q-item>
+          <q-item clickable v-close-popup tag="a" :href="order ? $api.orderReportPdfUrl(order.id, reportVariant, reportLang) : '#'" target="_blank">
             <q-item-section avatar><q-icon name="picture_as_pdf" /></q-item-section>
             <q-item-section><q-item-label>Завантажити PDF</q-item-label><q-item-label caption>бланк «{{ variantLabel }}»</q-item-label></q-item-section>
           </q-item>
@@ -29,6 +38,7 @@
         <q-list dense>
           <q-item clickable v-close-popup @click="openLabels"><q-item-section avatar><q-icon name="label" /></q-item-section><q-item-section>Переглянути етикетки</q-item-section></q-item>
           <q-item v-if="canDo('REGISTRAR', 'LAB_DOCTOR')" clickable v-close-popup @click="editOpen = true" data-testid="orderEdit"><q-item-section avatar><q-icon name="edit" /></q-item-section><q-item-section>Редагувати направлення</q-item-section></q-item>
+          <q-item v-if="canDo('LAB_DOCTOR', 'LAB_TECHNICIAN') && movableTests.length" clickable v-close-popup @click="openAnalyzerReroute(null)" data-testid="orderReroute"><q-item-section avatar><q-icon name="alt_route" color="purple-6" /></q-item-section><q-item-section>Перенаправити на інший прилад</q-item-section></q-item>
           <q-item clickable v-close-popup @click="goWorkstation"><q-item-section avatar><q-icon name="fas fa-microscope" /></q-item-section><q-item-section>Відкрити на робочому столі</q-item-section></q-item>
           <q-item clickable v-close-popup @click="goPortal" :disable="!order || !order.patientId"><q-item-section avatar><q-icon name="person" /></q-item-section><q-item-section>Кабінет пацієнта</q-item-section></q-item>
           <template v-if="canDo('REGISTRAR')">
@@ -190,6 +200,7 @@
                     <q-btn v-if="testCan(props.row, 'VERIFY', 'LAB_DOCTOR')" flat dense round size="sm" icon="how_to_reg" color="green-8" @click="verifyResult(props.row)"><q-tooltip>Верифікувати</q-tooltip></q-btn>
                     <q-btn-dropdown flat dense round size="sm" dropdown-icon="more_vert" no-icon-animation color="grey-8">
                       <q-list dense>
+                        <q-item v-if="canDo('LAB_DOCTOR', 'LAB_TECHNICIAN') && ['PENDING', 'RERUN'].includes(props.row.status)" v-close-popup clickable data-testid="rerouteTest" @click="openAnalyzerReroute(props.row)"><q-item-section avatar><q-icon name="alt_route" color="purple-6" /></q-item-section><q-item-section>Перенаправити на інший прилад</q-item-section></q-item>
                         <q-item v-if="canRoute(props.row)" v-close-popup clickable data-testid="routeTest" @click="openRoute(props.row)"><q-item-section avatar><q-icon name="share" color="purple-6" /></q-item-section><q-item-section>Виконати в іншій лабораторії</q-item-section></q-item>
                         <q-item v-if="testCan(props.row, 'RERUN', 'LAB_DOCTOR', 'LAB_TECHNICIAN')" v-close-popup clickable @click="rerun(props.row)"><q-item-section avatar><q-icon name="replay" color="purple-6" /></q-item-section><q-item-section>Повторити дослідження</q-item-section></q-item>
                         <q-item v-if="testCan(props.row, 'REJECT', 'LAB_DOCTOR', 'LAB_TECHNICIAN')" v-close-popup clickable @click="rejectResult(props.row)"><q-item-section avatar><q-icon name="block" color="negative" /></q-item-section><q-item-section>Відхилити результат</q-item-section></q-item>
@@ -230,7 +241,28 @@
 
     <!-- Діалоги -->
     <labels-dialog v-model="labelsOpen" :labels="labels" :loading="labelsLoading" />
-    <html-preview-dialog v-model="reportOpen" :title="order ? `Бланк результатів ${order.orderNumber} — ${variantLabel}` : 'Бланк'" :html="reportHtml" :url="order ? $api.orderReportUrl(order.id, reportVariant) : ''" :pdf-url="order ? $api.orderReportPdfUrl(order.id, reportVariant) : ''" :loading="reportLoading" :error="reportError" @retry="openReport" />
+    <q-dialog v-model="archiveOpen">
+      <q-card style="width: 760px; max-width: 96vw" data-testid="archiveDialog">
+        <q-card-section class="row items-center bg-blue-grey-7 text-white q-py-sm">
+          <div class="text-subtitle1">Архів виданих бланків {{ order && order.orderNumber }}</div><q-space /><q-btn flat round dense icon="close" v-close-popup />
+        </q-card-section>
+        <q-card-section>
+          <q-table :data="archiveRows" :columns="archiveColumns" row-key="id" dense flat hide-pagination :pagination="{ rowsPerPage: 0 }" :loading="archiveLoading" no-data-label="Копій ще немає">
+            <template v-slot:body-cell-kind="props"><q-td :props="props"><q-badge :color="props.row.kind === 'AMENDED' ? 'orange-8' : 'positive'" :label="props.row.kind === 'AMENDED' ? 'Виправлений' : 'Перша видача'" /></q-td></template>
+            <template v-slot:body-cell-issuedAt="props"><q-td :props="props">{{ props.row.issuedAt | datetime }}</q-td></template>
+            <template v-slot:body-cell-hash="props"><q-td :props="props"><span class="text-caption">{{ String(props.row.contentHash).slice(0, 12) }}…</span></q-td></template>
+            <template v-slot:body-cell-actions="props">
+              <q-td :props="props" class="text-right no-wrap">
+                <q-btn v-if="props.row.hasPdf" flat dense size="sm" icon="picture_as_pdf" label="PDF" type="a" :href="$api.reportArchivePdfUrl(order.id, props.row.versionNo)" target="_blank" />
+                <q-btn flat dense size="sm" icon="content_copy" label="Дублікат" type="a" :href="$api.reportDuplicateUrl(order.id, props.row.versionNo)" target="_blank" />
+              </q-td>
+            </template>
+          </q-table>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <html-preview-dialog v-model="reportOpen" :title="order ? `Бланк результатів ${order.orderNumber} — ${variantLabel}` : 'Бланк'" :html="reportHtml" :url="order ? $api.orderReportUrl(order.id, reportVariant, reportLang) : ''" :pdf-url="order ? $api.orderReportPdfUrl(order.id, reportVariant, reportLang) : ''" :loading="reportLoading" :error="reportError" @retry="openReport" />
     <collect-sample-dialog v-model="collectOpen" :sample="activeSample" :patient-name="patientName" @collected="load" />
     <receive-sample-dialog v-model="receiveOpen" :samples="dialogSamples" @received="load" />
     <reject-sample-dialog v-model="rejectOpen" :samples="dialogSamples" @rejected="load" />
@@ -259,6 +291,23 @@
         <q-card-actions align="right">
           <q-btn flat label="Скасувати" v-close-popup />
           <q-btn unelevated color="primary" label="Зберегти" :loading="acting" :disable="routePerformerId === undefined" data-testid="routeSave" @click="doRoute" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="arOpen">
+      <q-card style="width: 480px; max-width: 96vw" data-testid="rerouteDialog">
+        <q-card-section class="row items-center bg-purple-6 text-white q-py-sm">
+          <div class="text-subtitle1">Перенаправити на інший прилад</div><q-space /><q-btn flat round dense icon="close" v-close-popup />
+        </q-card-section>
+        <q-card-section class="q-gutter-sm">
+          <div class="text-caption text-grey-7">{{ arTest ? `Показник: ${arTest.testName || arTest.testCode}` : 'Усі показники замовлення, що чекають на виконання' }}</div>
+          <q-select v-model="arAnalyzerId" outlined dense emit-value map-options :options="arOptions" label="Прилад *" :loading="arLoading" data-testid="rerouteAnalyzer" />
+          <q-input v-model="arReason" outlined dense autogrow label="Причина *" data-testid="rerouteReason" />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Скасувати" v-close-popup />
+          <q-btn unelevated color="primary" label="Перенаправити" :loading="acting" :disable="!arAnalyzerId || !arReason.trim()" data-testid="rerouteSave" @click="doAnalyzerReroute" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -311,6 +360,18 @@ export default {
       order: null,
       attachments: [],
       transitions: null,
+      reportLang: '',
+      reportLangs: [{ value: '', label: 'за замовчуванням' }, { value: 'uk', label: 'українська' }, { value: 'en', label: 'англійська' }, { value: 'both', label: 'двомовна' }],
+      archiveOpen: false, archiveLoading: false, archiveRows: [],
+      archiveColumns: [
+        { name: 'versionNo', label: 'Версія', field: 'versionNo', align: 'left' },
+        { name: 'kind', label: 'Тип', field: 'kind', align: 'left' },
+        { name: 'issuedAt', label: 'Видано', field: 'issuedAt', align: 'left' },
+        { name: 'issuedBy', label: 'Ким', field: r => r.issuedBy || '—', align: 'left' },
+        { name: 'amendReason', label: 'Причина виправлення', field: r => r.amendReason || '—', align: 'left' },
+        { name: 'hash', label: 'Хеш', align: 'left' },
+        { name: 'actions', label: '', align: 'right' }
+      ],
       reportVariant: 'final',
       reportVariants: [
         { value: 'final', label: 'Остаточний', caption: 'підписаний бланк із QR верифікації', icon: 'verified' },
@@ -337,6 +398,7 @@ export default {
       resultOpen: false, verifyOpen: false, editOpen: false, cancelOpen: false, deleteOpen: false,
       deleteSampleOpen: false, deleteResultOpen: false, rejectResultOpen: false, releaseOpen: false,
       historyOpen: false, history: [],
+      arOpen: false, arTest: null, arAnalyzerId: null, arReason: '', arOptions: [], arLoading: false,
       routeOpen: false, routeTest: null, routePerformerId: undefined, routeReason: '', routeOptions: [], routeLoading: false,
       activeSample: null, activeRow: {}, dialogSamples: [],
       sampleColumns: [
@@ -389,6 +451,7 @@ export default {
       if (!s || !this.order) return '';
       return `Пробу ${s.barcode} (${this.patientName}, направлення ${this.order.orderNumber}) буде видалено. Відновити її неможливо.`;
     },
+    movableTests () { return this.tests.filter(t => ['PENDING', 'RERUN'].includes(t.status) && !t.performerId); },
     resultedIds () { return this.tests.filter(t => ['RESULTED', 'NEEDS_REVIEW'].includes(t.status)).map(t => t.id); },
     currentEmployeeId () { return this.$store.state.context.employeeId; }
   },
@@ -552,10 +615,14 @@ export default {
         this.labels = this.asList(res).map(l => ({ patientName: this.patientName, orderNumber: this.order.orderNumber, ...l }));
       } catch (e) { this.notifyError(e); } finally { this.labelsLoading = false; }
     },
+    async openArchive () {
+      this.archiveOpen = true; this.archiveLoading = true;
+      try { this.archiveRows = this.asList(await this.$api.reportArchive(this.order.id)); } catch (e) { this.notifyError(e); } finally { this.archiveLoading = false; }
+    },
     async openReport () {
       this.reportOpen = true; this.reportLoading = true; this.reportError = ''; this.reportHtml = '';
       try {
-        this.reportHtml = await this.$api.orderReportHtml(this.order.id, this.reportVariant);
+        this.reportHtml = await this.$api.orderReportHtml(this.order.id, this.reportVariant, this.reportLang);
       } catch (e) { this.reportError = e.userMessage || 'Не вдалося отримати бланк'; } finally { this.reportLoading = false; }
     },
     editResult (t) { this.activeRow = this.rowForTest(t); this.resultOpen = true; },
@@ -580,6 +647,25 @@ export default {
       const t = this.routeTest;
       await this.runAction(() => this.$api.routeOrderTest(t.id, this.routePerformerId, this.routeReason || null), this.routePerformerId ? `Показник ${t.testName} передано в зовнішню лабораторію` : `Показник ${t.testName} виконується в нашій лабораторії`);
       this.routeOpen = false;
+    },
+    // перенаправлення на інший прилад (S-56): кандидати з сервера, причина обов'язкова
+    async openAnalyzerReroute (t) {
+      this.arTest = t; this.arAnalyzerId = null; this.arReason = ''; this.arOptions = []; this.arOpen = true; this.arLoading = true;
+      try {
+        const probe = t || this.movableTests[0];
+        const res = await this.$api.analyzerCandidates(probe.id);
+        this.arOptions = ((res && res.candidates) || []).filter(c => !c.current).map(c => ({ value: c.analyzerId, label: `${c.name} · черга ${c.queue}${c.available ? '' : ' · недоступний: ' + c.reason}`, disable: !c.available }));
+      } catch (e) { this.notifyError(e); } finally { this.arLoading = false; }
+    },
+    async doAnalyzerReroute () {
+      const ids = this.arTest ? [this.arTest.id] : null;
+      await this.runAction(async () => {
+        const res = await this.$api.rerouteOrder(this.order.id, this.arAnalyzerId, this.arReason.trim(), ids);
+        const sk = (res && res.skipped) || [];
+        if (sk.length) this.$q.notify({ type: 'warning', message: `Перенаправлено: ${(res.moved || []).length}; не перенесено: ${sk.map(s => s.testCode + ' — ' + s.reason).join('; ')}`, timeout: 7000 });
+        else this.notifyOk(`Перенаправлено на ${res.analyzer}: ${(res.moved || []).length}`);
+      });
+      this.arOpen = false;
     },
     async showHistory (t) {
       this.activeRow = this.rowForTest(t); this.historyOpen = true; this.history = [];

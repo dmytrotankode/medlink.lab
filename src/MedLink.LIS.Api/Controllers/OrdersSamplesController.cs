@@ -65,7 +65,14 @@ public sealed class OrdersController : LisControllerBase
 
     /// <summary>Видача: усі тести верифіковано → RELEASED, mis_diagnostic_report, сповіщення пацієнта.</summary>
     [HttpPost("orders/{id}/release")]
-    public async Task<IActionResult> Release(string id) => Ok(await _orders.ReleaseAsync(id));
+    public async Task<IActionResult> Release(string id)
+    {
+        var dto = await _orders.ReleaseAsync(id);
+        // Незмінна копія виданого бланка (версія 1 або «виправлена» після повторного відкриття) — збій архіву не скасовує видачу
+        try { await _reports.ArchiveAsync(id, Request.Host.Value); }
+        catch (Exception ex) { HttpContext.RequestServices.GetRequiredService<ILogger<OrdersController>>().LogWarning(ex, "Архівація бланка замовлення {OrderId} не вдалася", id); }
+        return Ok(dto);
+    }
 
     [HttpPost("orders/{id}/reopen")]
     public async Task<IActionResult> Reopen(string id, [FromBody] ReasonRequest? req) => Ok(await _orders.ReopenAsync(id, req?.Reason));
@@ -73,20 +80,51 @@ public sealed class OrdersController : LisControllerBase
     /// <summary>HTML-бланк A4. ?variant=final|preliminary|cito.</summary>
     [HttpGet("orders/{id}/report")]
     [Produces("text/html")]
-    public async Task<IActionResult> Report(string id, [FromQuery] string? variant) => Content(await _reports.HtmlAsync(id, Request.Host.Value, variant), "text/html; charset=utf-8");
+    public async Task<IActionResult> Report(string id, [FromQuery] string? variant, [FromQuery] string? lang) => Content(await _reports.HtmlAsync(id, Request.Host.Value, variant, lang), "text/html; charset=utf-8");
 
     /// <summary>PDF-бланк (QuestPDF). Якщо PDF недоступний — HTML із заголовком X-MedLink-Pdf-Fallback.</summary>
     [HttpGet("orders/{id}/report.pdf")]
-    public async Task<IActionResult> ReportPdf(string id, [FromQuery] string? variant)
+    public async Task<IActionResult> ReportPdf(string id, [FromQuery] string? variant, [FromQuery] string? lang)
     {
-        var pdf = await _reports.PdfAsync(id, Request.Host.Value, variant);
+        var pdf = await _reports.PdfAsync(id, Request.Host.Value, variant, lang);
         if (pdf == null)
         {
             Response.Headers["X-MedLink-Pdf-Fallback"] = "html";
-            return Content(await _reports.HtmlAsync(id, Request.Host.Value, variant), "text/html; charset=utf-8");
+            return Content(await _reports.HtmlAsync(id, Request.Host.Value, variant, lang), "text/html; charset=utf-8");
         }
         return File(pdf, "application/pdf", $"report-{id}.pdf");
     }
+
+    /// <summary>Архів виданих бланків: версії, хеші, причини виправлень (FR-GAP-010/012).</summary>
+    [HttpGet("orders/{id}/report/archive")]
+    public async Task<IActionResult> ReportArchive(string id) => Ok(await _reports.ArchiveListAsync(id));
+
+    /// <summary>Ручна фіксація копії виданого бланка (якщо автоматичної не було); для виправлення — ?reason=.</summary>
+    [HttpPost("orders/{id}/report/archive")]
+    public async Task<IActionResult> ArchiveReport(string id, [FromBody] ArchiveReportRequest? req)
+    {
+        HttpContext.RequestServices.GetRequiredService<Domain.IRolePolicy>().Require("Архівація бланка", Domain.LabRoles.Admin, Domain.LabRoles.Doctor, Domain.LabRoles.Technician);
+        var a = await _reports.ArchiveAsync(id, Request.Host.Value, req?.Reason, req?.Lang);
+        return StatusCode(201, new { a.Id, a.VersionNo, a.Kind, a.Language, a.ContentHash, a.AmendsVersionNo, a.AmendReason });
+    }
+
+    /// <summary>Дублікат збереженого бланка (HTML із позначкою «ДУБЛІКАТ»); друк фіксується в аудиті.</summary>
+    [HttpGet("orders/{id}/report/archive/{version:int}/duplicate")]
+    [Produces("text/html")]
+    public async Task<IActionResult> ReportDuplicate(string id, int version) => Content(await _reports.DuplicateHtmlAsync(id, version), "text/html; charset=utf-8");
+
+    /// <summary>Оригінальний PDF із архіву (байт у байт, заголовок X-MedLink-Content-Hash).</summary>
+    [HttpGet("orders/{id}/report/archive/{version:int}.pdf")]
+    public async Task<IActionResult> ReportArchivePdf(string id, int version)
+    {
+        var r = await _reports.ArchivePdfAsync(id, version) ?? throw new ConflictException("Для цієї версії PDF не збережено (було лише HTML)");
+        Response.Headers["X-MedLink-Content-Hash"] = r.Hash;
+        return File(r.Pdf, "application/pdf", $"report-{id}-v{version}.pdf");
+    }
+
+    /// <summary>Перевірка цілісності збереженої копії (перерахунок SHA-256).</summary>
+    [HttpGet("orders/{id}/report/archive/{version:int}/verify")]
+    public async Task<IActionResult> ReportArchiveVerify(string id, int version) => Ok(await _reports.ArchiveVerifyAsync(id, version));
 
     /// <summary>Етикетки всіх пробірок замовлення (ZPL + SVG).</summary>
     [HttpGet("orders/{id}/labels")]
@@ -249,4 +287,10 @@ public sealed class RenumberPreviewRequest
     public string? ResetPeriod { get; set; }
     public DateTime? At { get; set; }
     public int Count { get; set; } = 5;
+}
+
+public sealed class ArchiveReportRequest
+{
+    public string? Reason { get; set; }
+    public string? Lang { get; set; }
 }

@@ -47,6 +47,7 @@ public sealed class ImportService
             ".xml" => ParseXml(stream),
             _ => ParseCsv(stream)
         };
+        BatchLimits.CheckImportRows(rows.Count);
         if (rows.Count == 0) throw new ValidationException("Файл не містить рядків із даними (очікуються колонки barcode, testCode, value[, unit, flags])");
 
         foreach (var r in rows)
