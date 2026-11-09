@@ -43,7 +43,7 @@ export function describeApiError (error) {
   }
   if (error.request) {
     return {
-      message: 'API лабораторії недоступне. Перевірте, що сервіс MedLink.LIS.Api запущено.',
+      message: 'Сервер лабораторії недоступний. Перевірте з’єднання та повторіть спробу.',
       offline: true,
       status: 0,
       fields: {}

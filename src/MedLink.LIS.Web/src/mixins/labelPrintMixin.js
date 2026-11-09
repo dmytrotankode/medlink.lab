@@ -13,7 +13,7 @@ export default {
     async printLabelsViaAgent (labels) {
       const list = (labels || []).filter(l => l && l.zpl);
       if (!list.length) {
-        this.$q.notify({ type: 'warning', message: 'API не повернуло ZPL для етикетки — доступний лише друк SVG', actions: [{ label: 'Друк SVG', color: 'white', handler: () => printLabelsSvg(labels) }] });
+        this.$q.notify({ type: 'warning', group: 'print-agent', message: 'Сервер не повернув дані для принтера етикеток — доступний лише друк через браузер', actions: [{ label: 'Друк через браузер', color: 'white', handler: () => printLabelsSvg(labels) }] });
         return false;
       }
       try {
@@ -26,7 +26,8 @@ export default {
           icon: 'print_disabled',
           message: e.agentUnreachable ? AGENT_UNREACHABLE_MESSAGE : e.message,
           timeout: 8000,
-          actions: [{ label: 'Надрукувати SVG', color: 'white', handler: () => printLabelsSvg(labels) }]
+          group: 'print-agent',
+          actions: [{ label: 'Друк через браузер', color: 'white', handler: () => printLabelsSvg(labels) }]
         });
         return false;
       }

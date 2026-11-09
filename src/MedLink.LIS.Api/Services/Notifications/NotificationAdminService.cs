@@ -43,6 +43,9 @@ public sealed class NotificationAdminService
         var names = await _db.Patients.AsNoTracking().Where(p => pids.Contains(p.Id)).Select(p => new { p.Id, Name = p.Person != null ? p.Person.Caption : null }).ToDictionaryAsync(x => x.Id, x => x.Name);
         var oids = rows.Where(r => r.OrderId != null).Select(r => r.OrderId!).Distinct().ToList();
         var numbers = await _db.Orders.AsNoTracking().Where(o => oids.Contains(o.Id)).Select(o => new { o.Id, o.OrderNumber }).ToDictionaryAsync(x => x.Id, x => x.OrderNumber);
+        var chState = await _dispatcher.ChannelStateAsync(_db);
+        // «Повторити» має сенс, лише якщо канал налаштовано й увімкнено (інакше запис знову стане «Не налаштовано»)
+        bool Retryable(string channel, string status) => NotifyStatuses.CanRetry(status) && (status != NotifyStatuses.NotConfigured || (chState.TryGetValue(channel, out var cs) && cs.Configured && cs.Enabled));
         return new
         {
             items = rows.Select(n => new
@@ -50,7 +53,7 @@ public sealed class NotificationAdminService
                 n.Id, n.PatientId, patientName = names.GetValueOrDefault(n.PatientId), n.OrderId, orderNumber = n.OrderId != null ? numbers.GetValueOrDefault(n.OrderId) : null,
                 n.Channel, channelLabel = NotifyChannels.Label(n.Channel), n.Status, statusLabel = NotifyStatuses.Label(n.Status),
                 n.ReasonCode, reasonLabel = NotifyReasons.Label(n.ReasonCode), n.Attempts, n.NextAttemptAt, n.LastError, n.RecipientMasked, n.SentAt, n.CreatedOn,
-                canRetry = NotifyStatuses.CanRetry(n.Status)
+                canRetry = Retryable(n.Channel, n.Status)
             }),
             total, page, pageSize = size
         };
@@ -68,6 +71,12 @@ public sealed class NotificationAdminService
         _policy.Require("Повтор сповіщення", RetryRoles);
         var row = await _db.Notifications.FirstOrDefaultAsync(n => n.Id == id) ?? throw new NotFoundException("Сповіщення не знайдено");
         if (!NotifyStatuses.CanRetry(row.Status)) throw new ConflictException($"Повторити можна лише сповіщення зі статусом «Помилка», «Пропущено» або «Не налаштовано» (зараз: «{NotifyStatuses.Label(row.Status)}»)");
+        if (row.Status == NotifyStatuses.NotConfigured)
+        {
+            var st = await _dispatcher.ChannelStateAsync(_db);
+            if (!st.TryGetValue(row.Channel, out var cs) || !cs.Configured || !cs.Enabled) throw new ConflictException("Канал не налаштовано або вимкнено — повторити не можна. Спочатку налаштуйте канал.");
+        }
+            throw new ConflictException("Канал не налаштовано — повторити не можна");
         var now = DateTime.UtcNow;
         row.Status = NotifyStatuses.Queued; row.Attempts = 0; row.NextAttemptAt = now; row.LastError = null; row.ReasonCode = null; row.UpdatedAt = now;
         _audit.Log("NOTIFY_RETRY", "lab_patient_notification", row.Id, null, new { row.Channel });
@@ -142,7 +151,7 @@ public sealed class NotificationAdminService
             {
                 e.Id, e.OrderId, orderNumber = e.OrderId != null ? numbers.GetValueOrDefault(e.OrderId) : null, e.MisReferralId, e.Event, eventLabel = MisEvents.Label(e.Event),
                 e.Status, statusLabel = MisDeliveryStatuses.Label(e.Status), e.Attempts, e.NextAttemptAt, e.DeliveredAt, e.HttpStatus, e.LastError, e.At,
-                canRetry = MisDeliveryStatuses.CanRetry(e.Status)
+                canRetry = MisDeliveryStatuses.CanRetry(e.Status) && (e.Status != MisDeliveryStatuses.NotConfigured || _misOptions.IsConfigured)
             }),
             total, page, pageSize = size
         };
