@@ -42,3 +42,11 @@
 - **Фонові задачі** (воркери сповіщень, МІС, ЕСОЗ) працюють без користувача — не зачіпаються; їх аудит іде від системного GUID.
 - **Рольова політика в UI** (`roleMixin`) бере роль із контексту співробітника — після переходу на токен контекст повертається з сервера.
 - Допустимий компроміс до завершення: `Auth:Mode = Header` лише за проксі, що перезаписує заголовок; прямий доступ до порту ЛІС закритий мережево.
+
+## Дані тестового MedLink (зняті зі сторінки входу, 09.11.2026)
+
+- Сервер ідентифікації: `https://id-test.medlink.healthcare` (OIDC, код авторизації + PKCE S256).
+- Клієнт МІС: `MisFront`; scope: `openid MisFrontScope IdentityApiScope MisApiScope offline_access`; повернення: `https://mis-test.medlink.healthcare/link/#/callback#`.
+- Після входу користувач обирає профіль (посаду в організації, напр. «Адміністратор», «Спеціаліст …»); профіль підтверджує `POST /link/api/api/Account/authenticate`, далі `GET …/Account/info`.
+- У `ehealthInfo` МІС є поля: `organizationId`, `ehealthEmployeeId`, `roleName`, `typeCode`, `specialityCode`, `ehealthPositionCode`, `ehealthDivisionId`, `employeeStatus`, `currentUserId`, `canUseTerraLab`, `terraLabId`. У токені профіль містить лише `sid, sub, auth_time, idp, amr` — ролі й організація беруться з `Account/info`, а не з токена.
+- Для модуля «Лабораторія» потрібні: окремий клієнт OIDC (або дозвіл використати `MisFront`), redirect URI під `/lab/`, джерело ролей (вирішити: `Account/info` через проксі МІС чи claims в окремому scope), відповідність `roleName`/`typeCode` ролям лабораторії.
