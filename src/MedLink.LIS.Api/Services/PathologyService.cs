@@ -308,13 +308,8 @@ public sealed class PathologyService
     }, detail);
 
     // ------------------------------------------------------------------ допоміжне
-    /// <summary>Додавання робочих днів (SLA, FR-PAT-090): субота й неділя не враховуються.</summary>
-    public static DateTime AddWorkdays(DateTime from, int days)
-    {
-        var d = from;
-        while (days > 0) { d = d.AddDays(1); if (d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday)) days--; }
-        return d;
-    }
+    /// <summary>Додавання робочих днів (SLA, FR-PAT-090): вихідні, свята й перенесення — за виробничим календарем.</summary>
+    public static DateTime AddWorkdays(DateTime from, int days) => WorkCalendar.AddWorkdays(from, days);
 
     /// <summary>Вартість вирізки (FR-PAT-022): перший блок + кожен наступний.</summary>
     public static decimal GrossPrice(int blocks) => blocks <= 0 ? 0 : PathPrices.FirstBlock + PathPrices.NextBlock * (blocks - 1);

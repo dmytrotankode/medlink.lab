@@ -140,6 +140,13 @@ public class LisDbContext : DbContext
     public DbSet<LabPathStorageRoom> PathStorageRooms => Set<LabPathStorageRoom>();
 
     // --- оплата (FR-GAP-060) ---
+    // --- довідники: синоніми, календар, номенклатура реагентів, цитологія/тарифи ПГД, версії бланків ---
+    public DbSet<LabTestSynonym> TestSynonyms => Set<LabTestSynonym>();
+    public DbSet<LabWorkCalendarDay> WorkCalendar => Set<LabWorkCalendarDay>();
+    public DbSet<LabReagentItem> ReagentItems => Set<LabReagentItem>();
+    public DbSet<LabPathCytoItem> PathCytoItems => Set<LabPathCytoItem>();
+    public DbSet<LabPathPrice> PathPriceItems => Set<LabPathPrice>();
+    public DbSet<LabReportTemplate> ReportTemplates => Set<LabReportTemplate>();
     public DbSet<LabPriceList> PriceLists => Set<LabPriceList>();
     public DbSet<LabPriceListItem> PriceListItems => Set<LabPriceListItem>();
     public DbSet<LabPricePackage> PricePackages => Set<LabPricePackage>();
@@ -210,6 +217,12 @@ public class LisDbContext : DbContext
         mb.Entity<LabPriceList>().HasIndex(p => p.Code).IsUnique();
         mb.Entity<LabPriceListItem>().HasIndex(i => new { i.PriceListId, i.ProfileId, i.TestId });
         mb.Entity<LabPayer>().HasIndex(p => p.Code).IsUnique();
+        mb.Entity<LabTestSynonym>().HasIndex(x => new { x.TestCode, x.Synonym });
+        mb.Entity<LabWorkCalendarDay>().HasIndex(x => x.Day).IsUnique();
+        mb.Entity<LabReagentItem>().HasIndex(x => x.Code).IsUnique();
+        mb.Entity<LabPathCytoItem>().HasIndex(x => new { x.Kind, x.Code }).IsUnique();
+        mb.Entity<LabPathPrice>().HasIndex(x => x.Code).IsUnique();
+        mb.Entity<LabReportTemplate>().HasIndex(x => new { x.Variant, x.Version }).IsUnique();
         mb.Entity<MisPatientInsurance>().HasIndex(p => p.PatientCardId);
         mb.Entity<LabOrderCharge>().HasIndex(c => c.OrderId);
         mb.Entity<LabPayment>().HasIndex(p => p.OrderId);

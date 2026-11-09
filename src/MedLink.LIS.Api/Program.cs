@@ -174,6 +174,7 @@ using (var scope = app.Services.CreateScope())
     foreach (var change in await SchemaUpgrader.UpgradeAsync(db)) app.Logger.LogWarning("Оновлення схеми БД: {Sql}", change);
     if (db.Database.IsSqlite()) await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
     await scope.ServiceProvider.GetRequiredService<SeedService>().SeedAsync();
+    await DictionaryRuntime.SeedAndApplyAsync(db);
     await scope.ServiceProvider.GetRequiredService<MisCatalogSeeder>().SeedAsync();
     await scope.ServiceProvider.GetRequiredService<MisCatalogService>().RecomputeReadinessAsync();
     if (app.Configuration.GetValue<bool?>("Lab:SeedDemoData") ?? true)

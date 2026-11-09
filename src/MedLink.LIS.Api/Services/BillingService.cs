@@ -71,7 +71,7 @@ public sealed class PackageRequest
     public List<string> Members { get; set; } = new();
 }
 
-public sealed class BillingService
+public sealed partial class BillingService
 {
     public const string PatientPayerCode = "PATIENT";
     private readonly LisDbContext _db;

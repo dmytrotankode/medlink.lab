@@ -44,6 +44,7 @@ public class LabEucastBreakpoint : GuidEntity
     public double? ZoneResistantLt { get; set; }
     public bool IntrinsicResistance { get; set; }
     public string? GuidanceNotes { get; set; }
+    public bool IsActive { get; set; } = true;
 
     [ForeignKey(nameof(OrganismId))] public LabMicroOrganism? Organism { get; set; }
     [ForeignKey(nameof(AntibioticId))] public LabAntibiotic? Antibiotic { get; set; }

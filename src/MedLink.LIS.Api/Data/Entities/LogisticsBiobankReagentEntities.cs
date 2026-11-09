@@ -93,6 +93,8 @@ public class LabReagentLot : GuidEntity
     public DateTime ExpiryDate { get; set; }
     public DateTime? OpenedAt { get; set; }
     public int? OnboardStabilityDays { get; set; }
+    /// <summary>Позиція номенклатури реагентів (lab_reagent_item); порожньо — вільний текст у ReagentName.</summary>
+    [MaxLength(64)] public string? ReagentItemId { get; set; }
     public bool IsActive { get; set; } = true;
 
     [ForeignKey(nameof(AnalyzerId))] public LabAnalyzer? Analyzer { get; set; }

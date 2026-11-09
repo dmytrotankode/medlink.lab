@@ -70,15 +70,40 @@ public sealed class DictionariesController : LisControllerBase
     [HttpDelete("dictionaries/order-matrix/favorites/{id}")]
     public async Task<IActionResult> DeleteFavorite(string id) { await _matrix.DeleteFavoriteAsync(id); return NoContent(); }
 
-    /// <summary>Імпорт довідника (JSON-масив або CSV у тілі як text) з попереднім переглядом ?dryRun=true.</summary>
+    /// <summary>
+    /// Імпорт довідника (JSON-масив або CSV у тілі як text, або файл у multipart) з перевіркою без запису ?dryRun=true.
+    /// Ліміт — 5000 рядків; звіт: скільки створиться/оновиться/пропуститься (з причинами) і які рядки відхилено.
+    /// </summary>
     [HttpPost("dictionaries/import")]
-    [Consumes("application/json", "text/plain", "text/csv")]
-    public async Task<IActionResult> Import([FromQuery] string name, [FromQuery] bool dryRun = true)
+    [Consumes("application/json", "text/plain", "text/csv", "multipart/form-data")]
+    [RequestSizeLimit(20_000_000)]
+    public async Task<IActionResult> Import([FromQuery] string? name, [FromQuery] bool dryRun = true)
     {
-        using var reader = new StreamReader(Request.Body);
-        var content = await reader.ReadToEndAsync();
+        string content;
+        if (Request.HasFormContentType)
+        {
+            var form = await Request.ReadFormAsync();
+            name ??= form["dictionary"].ToString();
+            var file = form.Files.FirstOrDefault() ?? throw new ValidationException("Файл не передано (поле form-data «file»)");
+            using var fr = new StreamReader(file.OpenReadStream());
+            content = await fr.ReadToEndAsync();
+        }
+        else
+        {
+            using var reader = new StreamReader(Request.Body);
+            content = await reader.ReadToEndAsync();
+        }
+        if (string.IsNullOrWhiteSpace(name)) throw ValidationException.Field("name", "Вкажіть довідник (параметр name)");
         if (string.IsNullOrWhiteSpace(content)) throw new ValidationException("Порожнє тіло запиту");
         return Ok(await _dict.ImportAsync(name, content, dryRun));
+    }
+
+    /// <summary>Експорт довідника файлом: ?format=csv|json (CSV — «;», UTF-8 з BOM), ?isActive=true|false, ?search=. Доступний усім ролям.</summary>
+    [HttpGet("dictionaries/{name}/export")]
+    public async Task<IActionResult> Export(string name, [FromQuery] string format = "csv", [FromQuery] bool? isActive = null, [FromQuery] string? search = null)
+    {
+        var (bytes, type, file) = await _dict.ExportAsync(name, format, isActive, search);
+        return File(bytes, type, file);
     }
 
     /// <summary>У яких профілях використовується тест.</summary>

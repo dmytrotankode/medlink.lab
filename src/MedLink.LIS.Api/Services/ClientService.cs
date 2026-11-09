@@ -47,7 +47,7 @@ public sealed class PeriodInvoiceRequest
     public DateTime To { get; set; }
 }
 
-public sealed class ClientService
+public sealed partial class ClientService
 {
     private readonly LisDbContext _db;
     private readonly OrderService _orders;
