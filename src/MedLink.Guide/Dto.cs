@@ -152,6 +152,30 @@ public sealed class PublishDto
     public string? Note { get; set; }
 }
 
+public sealed class SetItemDto
+{
+    public string? ScenarioId { get; set; }
+    public string? FolderId { get; set; }
+    /// <summary>Імпорт/експорт: код інструкції (замість ScenarioId).</summary>
+    public string? ScenarioCode { get; set; }
+    /// <summary>Імпорт/експорт: код розділу (замість FolderId).</summary>
+    public string? FolderCode { get; set; }
+}
+
+public sealed class SetDto
+{
+    public string? Id { get; set; }
+    public string? AppCode { get; set; }
+    public string? TenantId { get; set; }
+    public string? Code { get; set; }
+    public string Caption { get; set; } = "";
+    public string? Description { get; set; }
+    public string? Color { get; set; }
+    public string? Icon { get; set; }
+    public int SortOrder { get; set; }
+    public List<SetItemDto> Items { get; set; } = new();
+}
+
 public sealed class GuideBundle
 {
     public string Format { get; set; } = "medlink-guide-bundle";
@@ -159,6 +183,8 @@ public sealed class GuideBundle
     public AppDto? App { get; set; }
     public List<FolderDto> Folders { get; set; } = new();
     public List<ScenarioDto> Scenarios { get; set; } = new();
+    /// <summary>Необов'язково: набори інструкцій (ідемпотентно за code).</summary>
+    public List<SetDto> Sets { get; set; } = new();
 }
 
 public sealed class ImportResult
@@ -168,6 +194,8 @@ public sealed class ImportResult
     public int ScenariosCreated { get; set; }
     public int ScenariosUpdated { get; set; }
     public int ScenariosPublished { get; set; }
+    public int SetsCreated { get; set; }
+    public int SetsUpdated { get; set; }
 }
 
 public sealed class AnchorReportDto

@@ -229,27 +229,46 @@ public class MisIntegrationApiTests
         var prepared = await Json(await doc.PostAsync($"/api/v1/lab/orders/{orderId}/ehealth/prepare", null));
         Assert.Equal(EhealthSubmitStatuses.ReadyToSign, S(prepared["ehealthStatus"]));
         Assert.Equal(HttpStatusCode.BadRequest, (await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/submit", new { })).StatusCode);
+        var cert = (await Json(await doc.GetAsync("/api/v1/lab/ehealth/session")))["testCertificate"]!;
+        // Підпис довільного вмісту (не пакета) і не-CMS рядок структурно відхиляються до постановки в чергу
+        Assert.Equal("signature-invalid", await Problem(await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/submit", new { signedData = "MIIDEMO==", signer = cert }), HttpStatusCode.UnprocessableEntity));
 
-        // Мережева помилка → ERROR, підписаний пакет збережено; без сесії повтор → AUTH_REQUIRED
-        var status = await Json(await doc.GetAsync("/api/v1/lab/ehealth/session"));
-        var cert = status["testCertificate"]!;
-        var failed = await Json(await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/submit", new { signedData = "MIIDEMO==", signer = cert, simulateNetworkError = true }));
-        Assert.Equal(EhealthSubmitStatuses.Error, S(failed["ehealthStatus"]));
+        // Мережева помилка 503 → задача лишається в черзі з витримкою (не втрачається), помилка видима
+        var signed = await Json(await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/mock-sign", new { kind = "submit" }));
+        var queued = await Json(await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/submit", new { signedData = S(signed["signedData"]), signer = cert, simulateNetworkError = true }));
+        Assert.Equal(EhealthSubmitStatuses.Processing, S(queued["ehealthStatus"]));
+        await _f.Pump(1);
+        var st = await Json(await doc.GetAsync($"/api/v1/lab/orders/{orderId}/ehealth/status"));
+        var row = st["outbox"]!.AsArray().First(x => S(x!["kind"]) == "SUBMIT_DR")!;
+        Assert.Equal("NEW", S(row["status"]));
+        Assert.Equal(1, row["attempts"]!.GetValue<int>());
+        Assert.Contains("503", S(row["lastError"]));
+        Assert.NotNull(row["nextAttemptAt"]);
+
+        // Без сесії повтор неможливий (401); вхід через КЕП: чужий ДРФО → 422; власний тестовий сертифікат → L2
         await doc.DeleteAsync("/api/v1/lab/ehealth/session");
-        Assert.Equal(HttpStatusCode.Unauthorized, (await doc.PostAsync($"/api/v1/lab/orders/{orderId}/ehealth/retry", null)).StatusCode);
-        Assert.Equal(EhealthSubmitStatuses.AuthRequired, S((await Json(await doc.GetAsync($"/api/v1/lab/orders/{orderId}/ehealth/status")))["status"]));
-
-        // Вхід через КЕП: чужий ДРФО → 422; власний тестовий сертифікат → L2; повтор без повторного підпису
+        Assert.Equal(HttpStatusCode.Unauthorized, (await doc.PostAsync($"/api/v1/lab/ehealth/outbox/{S(row["id"])}/retry", null)).StatusCode);
         await Json(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session", new { login = "doctor@clinic.ua", password = "secret" }));
         Assert.Equal("signer-mismatch", await Problem(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/confirm",
             new { method = "KEP", signer = new { drfo = "0000000000", name = "Інша особа" } }), HttpStatusCode.UnprocessableEntity));
         await Json(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/confirm", new { method = "KEP", signer = cert }));
-        var sent = await Json(await doc.PostAsync($"/api/v1/lab/orders/{orderId}/ehealth/retry", null));
-        Assert.Equal(EhealthSubmitStatuses.Registered, S(sent["ehealthStatus"]));
-        Assert.NotNull(sent["submission"]!["ehealthReportId"]);
 
-        var annulled = await Json(await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/annul", new { signedData = "MIIANNUL==", signer = cert, reason = "Помилка в одиницях" }));
-        Assert.Equal(EhealthSubmitStatuses.Annulled, S(annulled["ehealthStatus"]));
+        // Далі воркер доводить задачу до кінця (пакет → job → registered); без направлення погашення не потрібне
+        await _f.Pump();
+        var sent = await Json(await doc.GetAsync($"/api/v1/lab/orders/{orderId}/ehealth/status"));
+        Assert.True(S(sent["status"]) is EhealthSubmitStatuses.Registered or EhealthSubmitStatuses.Completed, sent["outbox"]!.ToJsonString());
+        Assert.NotNull(sent["submissions"]![0]!["ehealthReportId"]);
+
+        // Анулювання: пакет скасування → тестовий підпис → задача CANCEL_DR → створено новий висновок для повторної відправки
+        Assert.Equal(HttpStatusCode.BadRequest, (await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/annul/prepare", new { reason = "" })).StatusCode);
+        var cancelPkg = await Json(await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/annul/prepare", new { reason = "Помилка в одиницях" }));
+        Assert.Equal("entered_in_error", S(cancelPkg["package"]!["diagnostic_report"]!["status"]));
+        var asig = await Json(await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/mock-sign", new { kind = "annul", reason = "Помилка в одиницях" }));
+        var annulled = await Json(await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/annul", new { signedData = S(asig["signedData"]), signer = cert, reason = "Помилка в одиницях" }));
+        Assert.Equal("ANNUL", S(annulled["submission"]!["kind"]));
+        Assert.Equal(EhealthSubmitStatuses.Processing, S(annulled["submission"]!["status"]));
+        await _f.Pump();
+        Assert.Equal(EhealthSubmitStatuses.Annulled, S((await Json(await doc.GetAsync($"/api/v1/lab/orders/{orderId}/ehealth/status")))["status"]));
         await doc.DeleteAsync("/api/v1/lab/ehealth/session");
     }
 

@@ -1,13 +1,22 @@
 <template>
   <div class="logistics-page" data-testid="logisticsPage">
-    <page-header title="Логістика зразків" icon="fas fa-truck" subtitle="Маршрутні листи (маніфести), кур’єри, холодовий ланцюг +2…+8 °C" :breadcrumbs="[{ label: 'Логістика' }]">
-      <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
-      <q-btn unelevated color="primary" icon="add" label="Створити маніфест" data-testid="createManifestBtn" @click="openCreate" />
+    <page-header title="Логістика зразків" icon="fas fa-truck" subtitle="Маршрутні листи (маніфести), транспортні контейнери, кур’єри, холодовий ланцюг +2…+8 °C" :breadcrumbs="[{ label: 'Логістика' }]">
+      <template v-if="tab === 'manifests'">
+        <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
+        <q-btn unelevated color="primary" icon="add" label="Створити маніфест" data-testid="createManifestBtn" @click="openCreate" />
+      </template>
     </page-header>
 
-    <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />
+    <q-tabs v-model="tab" dense align="left" active-color="primary" indicator-color="primary" class="text-grey-8 q-mb-sm" data-testid="logisticsTabs">
+      <q-tab name="manifests" label="Маніфести" data-testid="tabManifests" />
+      <q-tab name="containers" label="Контейнери" data-testid="tabContainers" />
+    </q-tabs>
 
-    <div class="medlink-card q-pa-sm q-mb-md row items-center q-col-gutter-sm">
+    <transport-containers v-if="tab === 'containers'" />
+
+    <api-error-banner v-if="apiError && !apiOffline" v-show="tab === 'manifests'" :message="apiError" @retry="load" />
+
+    <div v-show="tab === 'manifests'" class="medlink-card q-pa-sm q-mb-md row items-center q-col-gutter-sm">
       <div class="col-12 col-md-3">
         <q-select v-model="statusFilter" dense outlined clearable label="Статус" :options="statusOptions" emit-value map-options @input="load" />
       </div>
@@ -16,7 +25,7 @@
       </div>
     </div>
 
-    <div class="medlink-card">
+    <div v-show="tab === 'manifests'" class="medlink-card">
       <q-table :data="manifests" :columns="columns" row-key="id" dense flat :loading="loading" :pagination.sync="pagination" :rows-per-page-options="[15, 50]" no-data-label="Маніфестів немає" data-testid="manifestsTable">
         <template v-slot:body="props">
           <q-tr :props="props" :class="{ 'bg-red-1': isViolated(props.row) }" class="cursor-pointer" @click="openCard(props.row)">
@@ -133,14 +142,17 @@
 import apiMixin from '../../mixins/apiMixin';
 import { MANIFEST_STATUS, toOptions } from '../../utils/statuses';
 import { formatNumber, parseDecimal } from '../../utils/format';
+import TransportContainers from './TransportContainers.vue';
 
 const emptyForm = () => ({ id: null, originDepartmentId: null, destinationDepartmentId: null, courierName: '', courierPhone: '', temperatureDispatch: '4', barcodes: [] });
 
 export default {
   name: 'SpecimenLogistics',
+  components: { TransportContainers },
   mixins: [apiMixin],
   data () {
     return {
+      tab: this.$route && this.$route.query.tab === 'containers' ? 'containers' : 'manifests',
       manifests: [],
       collected: [],
       collectedFilter: '',

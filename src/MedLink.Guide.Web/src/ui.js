@@ -14,6 +14,7 @@ export const CSS_TEXT = `
 .tip .hd{padding:12px 16px 0;display:flex;align-items:flex-start;gap:8px}
 .tip .ttl{font-weight:700;font-size:16px;flex:1}
 .tip .cnt{font-size:12px;color:#6b7280;white-space:nowrap;padding-top:3px}
+.tip .crumb{margin:10px 16px 0;padding:2px 8px;border-left:4px solid #2f7de1;background:#f3f4f6;border-radius:4px;font-size:12px;color:#4b5563}
 .tip .bd{padding:6px 16px 4px;white-space:pre-wrap}
 .tip .val{margin:6px 16px;padding:6px 10px;background:#eff6ff;border:1px dashed #2f7de1;border-radius:8px;font-family:Consolas,monospace;font-size:13px}
 .tip .warn{margin:6px 16px;padding:6px 10px;background:#fef3c7;border-radius:8px;color:#92400e;font-size:13px}
@@ -40,6 +41,21 @@ export const CSS_TEXT = `
 .kids{margin-left:16px;border-left:1px solid #e5e7eb;padding-left:4px}
 .empty{padding:24px;text-align:center;color:#6b7280}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1f2937;color:#fff;padding:9px 16px;border-radius:10px;z-index:9;pointer-events:none;font-size:13.5px}
+/* титри та озвучення */
+.narr{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);width:min(780px,calc(100vw - 24px));background:rgba(17,24,39,.93);color:#fff;border-radius:12px;padding:10px 16px;pointer-events:auto;z-index:4;box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.narr .txt{font-size:16.5px;line-height:1.45;text-align:center;max-height:34vh;overflow:auto;margin-bottom:8px}
+.narr .tools{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
+.narr .tg{border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;border-radius:999px;padding:2px 11px;font-size:12px;cursor:pointer}
+.narr .tg:hover{background:rgba(255,255,255,.15)}.narr .tg.on{background:#2f7de1;border-color:#2f7de1}
+.narr .nh{font-size:11.5px;opacity:.6}
+/* набори */
+.setcard{margin:6px 4px 10px;padding:10px 12px 10px 14px;border-radius:10px;background:#f9fafb;border:1px solid #e5e7eb;border-left:6px solid #2f7de1}
+.setcard .sh{display:flex;align-items:flex-start;gap:8px;cursor:pointer}.setcard .sh b{flex:1;font-size:14.5px}
+.setcard .sm{font-size:12px;color:#6b7280;margin:2px 0 6px}.setcard .sd{font-size:12.5px;color:#4b5563;margin-bottom:6px}
+.setcard .pbar{height:5px;border-radius:3px;background:#e5e7eb;margin:4px 0 8px;overflow:hidden}.setcard .pbar>i{display:block;height:100%}
+.setcard .sitems{margin:2px 0 8px}.setcard .sitems .node{padding:3px 4px;font-size:13px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
+.node.inset{border-left:4px solid transparent}
 /* конструктор */
 .bld{position:fixed;left:14px;bottom:14px;width:400px;max-height:calc(100vh - 28px);background:#fff;color:#1f2937;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.35);pointer-events:auto;z-index:8;display:flex;flex-direction:column;font-size:13.5px;overflow:hidden}
 .bld .bh{background:#1f2937;color:#fff;padding:9px 12px;display:flex;align-items:center;gap:8px;cursor:move}

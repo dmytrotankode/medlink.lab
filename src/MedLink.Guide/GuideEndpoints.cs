@@ -93,6 +93,20 @@ public static class GuideEndpoints
         edit.MapPost("/apps/{appCode}/import", async (HttpContext h, GuideService s, string appCode) =>
             Results.Json(await s.ImportAsync(appCode, await Body<GuideBundle>(h), U(h)), GuideJson.Options));
 
+        edit.MapGet("/apps/{appCode}/sets", async (HttpContext h, GuideService s, string appCode) =>
+            Results.Json(await s.ListSetsAsync(appCode, U(h)), GuideJson.Options));
+        edit.MapPost("/sets", async (HttpContext h, GuideService s) =>
+            Results.Json(await s.CreateSetAsync(await Body<SetDto>(h), U(h)), GuideJson.Options, statusCode: 201));
+        edit.MapPut("/sets/{id}", async (HttpContext h, GuideService s, string id) =>
+            Results.Json(await s.UpdateSetAsync(id, await Body<SetDto>(h), U(h)), GuideJson.Options));
+        edit.MapDelete("/sets/{id}", async (HttpContext h, GuideService s, string id) =>
+        {
+            await s.DeleteSetAsync(id, U(h));
+            return Results.NoContent();
+        });
+        edit.MapPut("/sets/{id}/items", async (HttpContext h, GuideService s, string id) =>
+            Results.Json(await s.ReplaceSetItemsAsync(id, await Body<List<SetItemDto>>(h), U(h)), GuideJson.Options));
+
         edit.MapGet("/apps/{appCode}/anchors", async (HttpContext h, GuideService s, string appCode) =>
             Results.Json(await s.ListAnchorsAsync(appCode, U(h)), GuideJson.Options));
         edit.MapPut("/anchors/{id}", async (HttpContext h, GuideService s, string id) =>

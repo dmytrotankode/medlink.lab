@@ -17,13 +17,27 @@ public sealed class LisApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        // LIS_TEST_PG=<рядок підключення Npgsql> — прогін тестів на PostgreSQL (БД очищується: схеми public і guide перестворюються)
+        var pg = Environment.GetEnvironmentVariable("LIS_TEST_PG");
+        if (!string.IsNullOrWhiteSpace(pg)) ResetPostgres(pg);
         builder.ConfigureAppConfiguration((_, cfg) => cfg.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Database:SqlitePath"] = _dbPath,
+            ["Database:Provider"] = string.IsNullOrWhiteSpace(pg) ? "Sqlite" : "Postgres",
+            ["Database:ConnectionString"] = pg,
             ["Lab:SeedDemoData"] = "true",
             ["Lab:PublicBaseUrl"] = "http://localhost:5055",
             ["Logging:LogLevel:Default"] = "Warning"
         }));
+    }
+
+    private static void ResetPostgres(string connectionString)
+    {
+        using var conn = new Npgsql.NpgsqlConnection(connectionString);
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "DROP SCHEMA IF EXISTS guide CASCADE; DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;";
+        cmd.ExecuteNonQuery();
     }
 
     public HttpClient As(string employeeId)

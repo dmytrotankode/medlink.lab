@@ -37,9 +37,12 @@ public static class SchemaUpgrader
     public static async Task<List<string>> UpgradeAsync(LisDbContext db)
     {
         var applied = new List<string>();
-        if (!db.Database.IsSqlite()) return applied;
+        var pg = db.Database.IsNpgsql();
+        if (!db.Database.IsSqlite() && !pg) return applied;
 
-        var tables = (await db.Database.SqlQueryRaw<string>("SELECT name AS \"Value\" FROM sqlite_master WHERE type = 'table'").ToListAsync())
+        var tables = (await db.Database.SqlQueryRaw<string>(pg
+                ? "SELECT table_name AS \"Value\" FROM information_schema.tables WHERE table_schema = current_schema()"
+                : "SELECT name AS \"Value\" FROM sqlite_master WHERE type = 'table'").ToListAsync())
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         // 1) Відсутні таблиці — інструкції з повного скрипта створення, що стосуються лише їх
@@ -63,14 +66,16 @@ public static class SchemaUpgrader
             var table = entity.GetTableName();
             if (table == null || missing.Contains(table)) continue;
             var store = StoreObjectIdentifier.Table(table, entity.GetSchema());
-            var columns = (await db.Database.SqlQueryRaw<string>($"SELECT name AS \"Value\" FROM pragma_table_info('{table}')").ToListAsync())
+            var columns = (await db.Database.SqlQueryRaw<string>(pg
+                    ? $"SELECT column_name AS \"Value\" FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = '{table}'"
+                    : $"SELECT name AS \"Value\" FROM pragma_table_info('{table}')").ToListAsync())
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var prop in entity.GetProperties())
             {
                 var column = prop.GetColumnName(store);
                 if (column == null || columns.Contains(column)) continue;
                 var type = prop.GetColumnType();
-                var sql = $"ALTER TABLE \"{table}\" ADD COLUMN \"{column}\" {type}" + (prop.IsNullable ? "" : $" NOT NULL DEFAULT {DefaultLiteral(prop)}");
+                var sql = $"ALTER TABLE \"{table}\" ADD COLUMN \"{column}\" {type}" + (prop.IsNullable ? "" : $" NOT NULL DEFAULT {DefaultLiteral(prop, pg)}");
                 await db.Database.ExecuteSqlRawAsync(sql);
                 columns.Add(column);
                 applied.Add(sql);
@@ -79,14 +84,14 @@ public static class SchemaUpgrader
         return applied;
     }
 
-    private static string DefaultLiteral(IProperty prop)
+    private static string DefaultLiteral(IProperty prop, bool pg)
     {
         var clr = Nullable.GetUnderlyingType(prop.ClrType) ?? prop.ClrType;
         var value = prop.GetDefaultValue() ?? (clr.IsValueType ? Activator.CreateInstance(clr) : null);
         return value switch
         {
             null => "''",
-            bool b => b ? "1" : "0",
+            bool b => pg ? (b ? "true" : "false") : (b ? "1" : "0"),
             string s => "'" + s.Replace("'", "''") + "'",
             DateTime d => "'" + d.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) + "'",
             IFormattable f when clr.IsPrimitive || clr == typeof(decimal) => f.ToString(null, CultureInfo.InvariantCulture),

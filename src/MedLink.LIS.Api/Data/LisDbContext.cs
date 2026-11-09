@@ -67,6 +67,10 @@ public class LisDbContext : DbContext
     // --- logistics / biobank / reagents ---
     public DbSet<LabSampleLogistics> Logistics => Set<LabSampleLogistics>();
     public DbSet<LabSampleLogisticsItem> LogisticsItems => Set<LabSampleLogisticsItem>();
+    public DbSet<LabTransportContainerType> ContainerTypes => Set<LabTransportContainerType>();
+    public DbSet<LabTransportContainer> TransportContainers => Set<LabTransportContainer>();
+    public DbSet<LabTransportContainerItem> ContainerItems => Set<LabTransportContainerItem>();
+    public DbSet<LabTransportContainerEvent> ContainerEvents => Set<LabTransportContainerEvent>();
     public DbSet<LabArchiveRack> Racks => Set<LabArchiveRack>();
     public DbSet<LabArchiveCell> Cells => Set<LabArchiveCell>();
     public DbSet<LabReagentLot> ReagentLots => Set<LabReagentLot>();
@@ -111,6 +115,7 @@ public class LisDbContext : DbContext
     public DbSet<LabServicePackage> ServicePackages => Set<LabServicePackage>();
     public DbSet<LabEhealthSession> EhealthSessions => Set<LabEhealthSession>();
     public DbSet<LabEhealthSubmission> EhealthSubmissions => Set<LabEhealthSubmission>();
+    public DbSet<EheOutbox> EhealthOutbox => Set<EheOutbox>();
     public DbSet<LabStatDaily> StatDaily => Set<LabStatDaily>();
     public DbSet<LabReportRun> ReportRuns => Set<LabReportRun>();
 
@@ -180,6 +185,18 @@ public class LisDbContext : DbContext
         mb.Entity<LabAuditLog>().HasIndex(a => a.At);
         mb.Entity<LabArchiveCell>().HasIndex(c => new { c.RackId, c.RowNum, c.ColNum }).IsUnique();
         mb.Entity<LabEucastBreakpoint>().HasIndex(b => new { b.OrganismId, b.AntibioticId, b.EucastVersion }).IsUnique();
+        // Транспортні контейнери: штрихкод та код типу унікальні; місце та проба в контейнері — не більше одного разу
+        mb.Entity<LabTransportContainerType>().HasIndex(t => t.Code).IsUnique();
+        mb.Entity<LabTransportContainer>().HasIndex(c => c.Barcode).IsUnique();
+        mb.Entity<LabTransportContainer>().HasIndex(c => c.Status);
+        mb.Entity<LabTransportContainer>().HasOne(c => c.Type).WithMany().HasForeignKey(c => c.TypeId).OnDelete(DeleteBehavior.Restrict);
+        mb.Entity<LabTransportContainer>().HasOne(c => c.Manifest).WithMany().HasForeignKey(c => c.ManifestId).OnDelete(DeleteBehavior.SetNull);
+        mb.Entity<LabTransportContainer>().HasMany(c => c.Items).WithOne(i => i.Container).HasForeignKey(i => i.ContainerId).OnDelete(DeleteBehavior.Cascade);
+        mb.Entity<LabTransportContainerItem>().HasIndex(i => new { i.ContainerId, i.Position }).IsUnique();
+        mb.Entity<LabTransportContainerItem>().HasIndex(i => new { i.ContainerId, i.SampleId }).IsUnique();
+        mb.Entity<LabTransportContainerItem>().HasIndex(i => i.SampleId);
+        mb.Entity<LabTransportContainerEvent>().HasOne(e => e.Container).WithMany().HasForeignKey(e => e.ContainerId).OnDelete(DeleteBehavior.Cascade);
+        mb.Entity<LabTransportContainerEvent>().HasIndex(e => new { e.ContainerId, e.At });
         mb.Entity<LabSection>().HasIndex(s => s.Code).IsUnique();
         mb.Entity<LabSectionJournalEntry>().HasIndex(j => new { j.LabSectionId, j.RegisteredAt });
         mb.Entity<LabSectionJournalEntry>().HasIndex(j => new { j.OrderId, j.LabSectionId, j.SampleId }).IsUnique();
@@ -225,6 +242,9 @@ public class LisDbContext : DbContext
         mb.Entity<LabServicePackage>().HasIndex(p => p.Code).IsUnique();
         mb.Entity<LabEhealthSession>().HasIndex(s => new { s.EmployeeId, s.ClosedAt });
         mb.Entity<LabEhealthSubmission>().HasIndex(s => new { s.OrderId, s.Status });
+        mb.Entity<EheOutbox>().HasIndex(o => o.IdempotencyKey).IsUnique();
+        mb.Entity<EheOutbox>().HasIndex(o => new { o.Status, o.NextAttemptAt });
+        mb.Entity<EheOutbox>().HasIndex(o => o.OrderId);
         mb.Entity<LabStatDaily>().HasIndex(s => s.Day);
         mb.Entity<LabReportRun>().HasIndex(r => r.RunAt);
         mb.Entity<LabPathReferral>().HasIndex(r => r.OrderId).IsUnique();

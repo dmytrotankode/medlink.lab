@@ -4,6 +4,7 @@ import { sleep, interpolate, resolveVariables, routeMatches, setNativeValue, sto
 import { resolveAnchor, climb, refreshAnchor } from './anchor.js';
 import * as overlay from './overlay.js';
 import { toast } from './ui.js';
+import * as narration from './narration.js';
 
 const RUN_KEY = 'mlg.run';
 
@@ -11,6 +12,7 @@ export class Player {
   constructor (ctx) {
     this.ctx = ctx; // { api, host:{navigate,currentRoute}, opts }
     this.run = null; this.cleanup = []; this.token = 0; this.reported = {};
+    this.chain = null; // SetRunner, якщо інструкції проходяться як набір
   }
 
   get active () { return !!this.run; }
@@ -31,7 +33,8 @@ export class Player {
     if (sc.version === undefined) sc.version = sc.versionNo || 0;
     if (!sc.steps || !sc.steps.length) { toast('У сценарії немає кроків'); return; }
     this.stop(true);
-    this.run = { scenarioId: scenarioId, scenario: sc, i: o.from || 0, mode: o.mode || 'guided', vars: resolveVariables(sc.variables), preview: !!o.preview };
+    this.chain = o.chain || null;
+    this.run = { scenarioId: scenarioId, scenario: sc, i: o.from || 0, mode: o.mode || 'guided', vars: resolveVariables(sc.variables), preview: !!o.preview, auto: !!o.auto };
     if (o.preview) this.previewScenario = sc; else this.previewScenario = null;
     this.persist();
     if (!o.preview) this.ctx.api.progress({ scenarioId: scenarioId, versionNo: sc.version, status: 'started', lastStep: 0, mode: this.run.mode });
@@ -47,18 +50,19 @@ export class Player {
     if (!saved) return;
     try {
       const sc = saved.preview && saved.scenario ? saved.scenario : await this.ctx.api.play(saved.scenarioId);
-      this.run = { scenarioId: saved.scenarioId, scenario: sc, i: saved.i, mode: saved.mode, vars: saved.vars || resolveVariables(sc.variables), preview: saved.preview };
+      this.run = { scenarioId: saved.scenarioId, scenario: sc, i: saved.i, mode: saved.mode, vars: saved.vars || resolveVariables(sc.variables), preview: saved.preview, auto: !!saved.auto };
       this.go(this.run.i);
     } catch (e) { store(RUN_KEY, null); }
   }
 
-  persist () { if (this.run) store(RUN_KEY, { scenarioId: this.run.scenarioId, i: this.run.i, mode: this.run.mode, vars: this.run.vars, preview: this.run.preview, scenario: this.run.preview ? this.run.scenario : undefined }); }
+  persist () { if (this.run) store(RUN_KEY, { scenarioId: this.run.scenarioId, i: this.run.i, mode: this.run.mode, auto: this.run.auto, vars: this.run.vars, preview: this.run.preview, scenario: this.run.preview ? this.run.scenario : undefined }); }
 
   stop (silent) {
     this.token++; this.runCleanup();
-    overlay.hide();
+    overlay.hide(); narration.hide();
     if (this.run && !silent && !this.run.preview) this.ctx.api.progress({ scenarioId: this.run.scenarioId, versionNo: this.run.scenario.version, status: 'abandoned', lastStep: this.run.i, mode: this.run.mode });
     this.run = null; store(RUN_KEY, null);
+    if (!silent && this.chain) { const c = this.chain; this.chain = null; c.onUserStop(); }
     if (this.ctx.onStop) this.ctx.onStop();
   }
 
@@ -83,7 +87,12 @@ export class Player {
   finish () {
     const r = this.run; if (!r) return;
     if (!r.preview) this.ctx.api.progress({ scenarioId: r.scenarioId, versionNo: r.scenario.version, status: 'completed', lastStep: r.scenario.steps.length, mode: r.mode });
-    this.token++; this.runCleanup();
+    this.token++; this.runCleanup(); narration.hide();
+    if (this.chain && !r.preview) { // у наборі: без діалогу «Готово» — далі заставка наступної інструкції
+      const c = this.chain; this.run = null; store(RUN_KEY, null);
+      if (this.ctx.onDone) this.ctx.onDone(r.scenarioId, false);
+      overlay.hide(); c.onScenarioDone(r.scenarioId); return;
+    }
     overlay.show({
       title: 'Готово!', body: 'Інструкцію «' + r.scenario.caption + '» пройдено.', target: null, blockOutside: true,
       buttons: [{ text: 'Закрити', kind: 'pri', onClick: () => this.stop(true) }, { text: 'Повторити', onClick: () => (r.preview ? this.startWith(r.scenario, { preview: true, mode: r.mode }) : this.start(r.scenarioId, { mode: r.mode })) }]
@@ -115,13 +124,14 @@ export class Player {
       if (typeof console !== 'undefined') console.error('[guide]', e);
       toast('Не вдалося показати крок — інструкцію зупинено');
       this.stop(true);
+      if (this.chain) { const c = this.chain; this.chain = null; c.onUserStop(); }
     }
   }
 
   async goInner (i) {
     const r = this.run; if (!r) return;
     if (!r.scenario.steps[i]) return this.finish();
-    const token = ++this.token; this.runCleanup();
+    const token = ++this.token; this.runCleanup(); narration.pause();
     r.i = i; this.persist();
     const steps = r.scenario.steps; const step = steps[i];
     const total = steps.length;
@@ -221,17 +231,17 @@ export class Player {
 
     // очікування дії користувача
     const listen = (target, ev, fn) => { target.addEventListener(ev, fn, true); this.cleanup.push(() => target.removeEventListener(ev, fn, true)); };
-    let hint = ''; let nextEnabled = true;
+    let hint = ''; let nextEnabled = true; let waits = false; // waits — крок чекає дії користувача (автопроходження його не перемикає)
     // префіл (автозаповнення тестовими даними)
     if (el && type === 'input' && step.inputMode === 'prefill' && value && mode === 'guided') { el.focus && el.focus(); setNativeValue(el, value); }
     const prefilled = el && type === 'input' && step.inputMode === 'prefill' && value;
     if (el && mode === 'guided') {
       if (expect === 'click' || (type === 'click' && expect === 'next')) {
-        hint = 'Виконайте дію на підсвіченому елементі — крок завершиться автоматично.';
+        hint = 'Виконайте дію на підсвіченому елементі — крок завершиться автоматично.'; waits = true;
         listen(el, 'click', () => advance(500));
         nextEnabled = true;
       } else if (!prefilled && (expect === 'input' || (type === 'input' && expect === 'next' && step.inputMode === 'require'))) {
-        hint = 'Заповніть поле — перейдемо далі автоматично.';
+        hint = 'Заповніть поле — перейдемо далі автоматично.'; waits = true;
         let typingTimer = null; this.cleanup.push(() => clearTimeout(typingTimer));
         const chk = () => {
           const v = String(el.value === undefined ? el.textContent : el.value).trim();
@@ -241,13 +251,14 @@ export class Player {
         };
         listen(el, 'input', chk); listen(el, 'change', chk);
       } else if (expect === 'change') {
-        hint = 'Виберіть значення — перейдемо далі автоматично.';
+        hint = 'Виберіть значення — перейдемо далі автоматично.'; waits = true;
         listen(el, 'change', () => advance(500)); listen(el, 'click', () => setTimeout(() => { if (!resolveAnchor(step.anchor)) advance(200); }, 600));
       } else if (expect === 'route' && step.waitRoute) {
-        hint = 'Виконайте дію — крок завершиться при переході на потрібний екран.';
+        hint = 'Виконайте дію — крок завершиться при переході на потрібний екран.'; waits = true;
         const t = setInterval(() => { if (routeMatches(step.waitRoute, this.ctx.host.currentRoute())) { clearInterval(t); advance(300); } }, 200);
         this.cleanup.push(() => clearInterval(t));
       } else if (expect === 'disappear') {
+        waits = true;
         const t = setInterval(() => { if (!document.contains(el) || !isVisible(el)) { clearInterval(t); advance(200); } }, 200);
         this.cleanup.push(() => clearInterval(t));
       }
@@ -267,11 +278,21 @@ export class Player {
       target: hlEl ? rectFn : null, padding: step.padding === undefined ? 6 : step.padding, placement: step.placement,
       blockOutside: step.blockOutside !== false && !(el && (type === 'select' || (el.closest && el.closest('.q-select, .q-menu, .q-btn-dropdown, .q-date, .q-time, [role=listbox]')))),
       title: title || (el ? '' : 'Крок ' + (i + 1)), body: body, valueHint: valueHint, warn: c.warn, hint: hint || (c.healed ? 'Елемент знайдено за схожістю — повідомлено автору інструкції.' : ''),
-      index: i, total: total, buttons: buttons
+      index: i, total: total, buttons: buttons,
+      crumb: this.chain ? this.chain.label() : '', crumbColor: this.chain ? this.chain.color() : ''
     });
 
+    // титри та озвучення; автопроходження — після кінця фрази (+ пауза 1,2 с)
+    const text = narration.stepText(this.vars(step.transcript), body, title);
+    const voiceOn = narration.isVoiceOn();
+    const autoDemo = mode === 'demo' && voiceOn;
+    const autoGuided = mode !== 'demo' && !!r.auto && voiceOn && !waits && !c.warn;
+    const afterSpeech = fn => () => { setTimeout(() => { if (token === this.token) fn(); }, 1200); };
+    const demoAct = async () => { if (token !== this.token) return; if (el && (type === 'click' || type === 'input' || type === 'select')) { await perform(); } advance(300); };
+    narration.present(text, { onSpoken: autoDemo ? afterSpeech(demoAct) : autoGuided ? afterSpeech(() => advance(0)) : null });
+
     // демо-режим: сам виконує
-    if (mode === 'demo') {
+    if (mode === 'demo' && !voiceOn) {
       const dwell = Math.max(2200, Math.min(7000, (body || '').length * 45));
       (async () => {
         await sleep(dwell); if (token !== this.token) return;

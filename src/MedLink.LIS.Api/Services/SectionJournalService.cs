@@ -144,8 +144,7 @@ public sealed class SectionJournalService
             await _db.SaveChangesAsync();
         }
         await _db.Database.ExecuteSqlInterpolatedAsync($"UPDATE lab_numerator SET current_value = 0, period_key = {periodKey} WHERE code = {code} AND (period_key IS NULL OR period_key <> {periodKey})");
-        await _db.Database.ExecuteSqlInterpolatedAsync($"UPDATE lab_numerator SET current_value = current_value + 1, modified_on = {DateTime.UtcNow} WHERE code = {code}");
-        return await _db.Numerators.AsNoTracking().Where(n => n.Code == code).Select(n => n.CurrentValue).FirstAsync();
+        return (await _db.Database.SqlQuery<long>($"UPDATE lab_numerator SET current_value = current_value + 1, modified_on = {DateTime.UtcNow} WHERE code = {code} RETURNING current_value AS \"Value\"").ToListAsync()).First();
     }
 
     public async Task<(string number, long seq, int daySeq, string? secondary, string periodKey)> NextJournalNumberAsync(LabSection section, DateTime at)

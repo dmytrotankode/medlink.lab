@@ -1,0 +1,59 @@
+[
+  {
+    "name": "Job NBXk9EyErUZv1RhXgyvgg: pending (200), then processed (303) -- first report package",
+    "match": { "method": "GET", "pathRegex": "/api/jobs/NBXk9EyErUZv1RhXgyvgg$" },
+    "responses": [
+      { "status": 200, "body": { "data": { "status": "pending" }, "meta": { "code": 200 } } },
+      { "status": 303, "body": { "data": { "status": "processed", "links": [ { "entity": "diagnostic_report", "href": "/api/patients/0b000000-0000-0000-0000-000000000006/diagnostic_reports" } ] }, "meta": { "code": 303 } } }
+    ]
+  },
+  {
+    "name": "Job Fq3rYt8LmZp2VxA6Hc1Wd: failed with 422 (validation) -- report package rejected",
+    "match": { "method": "GET", "pathRegex": "/api/jobs/Fq3rYt8LmZp2VxA6Hc1Wd$" },
+    "responses": [
+      {
+        "status": 422,
+        "body": {
+          "data": {
+            "status": "failed",
+            "status_code": "422",
+            "error": {
+              "type": "validation_failed",
+              "message": "Validation failed.",
+              "invalid": [ { "entry": "$.diagnostic_report.issued", "entry_type": "json_data_property", "rules": [ { "rule": "invalid", "description": "Issued date must be in the past" } ] } ]
+            }
+          },
+          "meta": { "code": 422 }
+        }
+      }
+    ]
+  },
+  {
+    "name": "Job Pk7sBn4TgQe9JuR5Mz0Lw: processed (303) -- new package after the rejection",
+    "match": { "method": "GET", "pathRegex": "/api/jobs/Pk7sBn4TgQe9JuR5Mz0Lw$" },
+    "responses": [
+      { "status": 303, "body": { "data": { "status": "processed" }, "meta": { "code": 303 } } }
+    ]
+  },
+  {
+    "name": "Job Ck3wPZ8hQTq6RjS2mNvXa1: service request complete -- processed (303)",
+    "match": { "method": "GET", "pathRegex": "/api/jobs/Ck3wPZ8hQTq6RjS2mNvXa1$" },
+    "responses": [
+      { "status": 303, "body": { "data": { "status": "processed" }, "meta": { "code": 303 } } }
+    ]
+  },
+  {
+    "name": "Job Cn2vHd6WqXk8SyT4Ba9Ge: cancel report package -- processed (303)",
+    "match": { "method": "GET", "pathRegex": "/api/jobs/Cn2vHd6WqXk8SyT4Ba9Ge$" },
+    "responses": [
+      { "status": 303, "body": { "data": { "status": "processed" }, "meta": { "code": 303 } } }
+    ]
+  },
+  {
+    "name": "Job not found",
+    "match": { "method": "GET", "pathRegex": "/api/jobs/UNKNOWN$" },
+    "responses": [
+      { "status": 404, "body": { "error": { "type": "not_found" }, "meta": { "code": 404 } } }
+    ]
+  }
+]

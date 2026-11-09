@@ -17,6 +17,8 @@ public class GuideDbContext : DbContext
 
     public DbSet<GuideApp> Apps => Set<GuideApp>();
     public DbSet<GuideFolder> Folders => Set<GuideFolder>();
+    public DbSet<GuideSet> Sets => Set<GuideSet>();
+    public DbSet<GuideSetItem> SetItems => Set<GuideSetItem>();
     public DbSet<GuideAnchor> Anchors => Set<GuideAnchor>();
     public DbSet<GuideScenario> Scenarios => Set<GuideScenario>();
     public DbSet<GuideScenarioVariable> Variables => Set<GuideScenarioVariable>();
@@ -46,6 +48,8 @@ public class GuideDbContext : DbContext
 
         b.Entity<GuideApp>().ToTable("gd_app");
         b.Entity<GuideFolder>().ToTable("gd_folder");
+        b.Entity<GuideSet>().ToTable("gd_set");
+        b.Entity<GuideSetItem>().ToTable("gd_set_item");
         b.Entity<GuideAnchor>().ToTable("gd_anchor");
         b.Entity<GuideScenario>().ToTable("gd_scenario");
         b.Entity<GuideScenarioVariable>().ToTable("gd_scenario_variable");
@@ -58,6 +62,7 @@ public class GuideDbContext : DbContext
         // Soft delete: record_state = 4 ховається глобальним фільтром
         b.Entity<GuideApp>().HasQueryFilter(e => e.RecordState == RecordStates.Active);
         b.Entity<GuideFolder>().HasQueryFilter(e => e.RecordState == RecordStates.Active);
+        b.Entity<GuideSet>().HasQueryFilter(e => e.RecordState == RecordStates.Active);
         b.Entity<GuideAnchor>().HasQueryFilter(e => e.RecordState == RecordStates.Active);
         b.Entity<GuideScenario>().HasQueryFilter(e => e.RecordState == RecordStates.Active);
         b.Entity<GuideScenarioVariable>().HasQueryFilter(e => e.RecordState == RecordStates.Active);
@@ -66,6 +71,8 @@ public class GuideDbContext : DbContext
 
         b.Entity<GuideApp>().HasIndex(e => e.Code).IsUnique().HasDatabaseName("ux_gd_app_code");
         b.Entity<GuideFolder>().HasIndex(e => new { e.AppId, e.ParentId, e.SortOrder }).HasDatabaseName("ix_gd_folder_app_parent");
+        b.Entity<GuideSet>().HasIndex(e => new { e.AppId, e.SortOrder }).HasDatabaseName("ix_gd_set_app");
+        b.Entity<GuideSetItem>().HasIndex(e => new { e.SetId, e.SortOrder }).HasDatabaseName("ix_gd_set_item_set");
         b.Entity<GuideAnchor>().HasIndex(e => new { e.AppId, e.RecordState }).HasDatabaseName("ix_gd_anchor_app");
         b.Entity<GuideScenario>().HasIndex(e => new { e.AppId, e.FolderId, e.SortOrder }).HasDatabaseName("ix_gd_scenario_app_folder");
         b.Entity<GuideStep>().HasIndex(e => new { e.ScenarioId, e.SortOrder }).HasDatabaseName("ix_gd_step_scenario");

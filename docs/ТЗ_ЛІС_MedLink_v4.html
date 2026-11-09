@@ -2538,6 +2538,10 @@ mis_patient_card, org_employee, org_department, ehe_incoming_medical_referral, m
 <td>FR-LOG-006</td>
 <td>Маніфест із <code>status=RECEIVED</code> не редагується</td>
 </tr>
+<tr>
+<td>FR-LOG-101…115</td>
+<td>Транспортні контейнери (термобокси, сумки): типи тари, укладка по місцях, запечатування, прийом цілком з розбіжностями, повернення тари — див. розд. 22.20</td>
+</tr>
 </tbody>
 </table>
 <p><strong>UI.</strong> Картки контейнерів (як на скріншоті 08): номер, маршрут «Пункт → Центральна КДЛ», кур'єр, кількість пробірок, стан (В дорозі/Доставлено/Увага з температурою), кнопка «Прийняти». Графік температури за рейсом (якщо є точки термологера — <strong>пропозиція команди</strong>, у v4 — дві точки: відправлення/прийом). Діалог прийому зі сканером штрихкодів і чекбоксами бракеражу.</p>
@@ -4509,7 +4513,7 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 </tr>
 <tr>
 <td>Проби/логістика</td>
-<td><code>GET /samples</code>, <code>POST /samples/{barcode}/collect|receive|reject</code>, <code>GET /samples/{barcode}/label</code>, <code>GET/POST /logistics/manifests</code>, <code>POST /logistics/manifests/{id}/receive</code></td>
+<td><code>GET /samples</code>, <code>POST /samples/{barcode}/collect|receive|reject</code>, <code>GET /samples/{barcode}/label</code>, <code>GET/POST /logistics/manifests</code>, <code>POST /logistics/manifests/{id}/receive</code>, <code>GET/POST /logistics/containers</code>, <code>POST /logistics/containers/{id}/pack|seal|dispatch|receive|return|lost</code>, <code>GET/POST/PUT /logistics/container-types</code></td>
 </tr>
 <tr>
 <td>Робочий лист</td>
@@ -8279,7 +8283,7 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 </tr>
 <tr>
 <td>FR-SGN-007</td>
-<td>Відправка: <code>POST patients/{patientId}/diagnostic_report_package</code> → <code>GET jobs/{id}</code> → id звіту в ЕСОЗ → <code>complete</code> е-направлення з <code>completed_with</code> (розд. 20.6.2). Для внутрішніх призначень — див. FR-SGN-013</td>
+<td>Відправка: <code>POST patients/{patientId}/diagnostic_report_package</code> → <code>GET jobs/{id}</code> → id звіту в ЕСОЗ → <strong>окрема задача</strong> <code>complete</code> е-направлення з <code>completed_with</code> лише після реєстрації звіту (розд. 20.6.2, FR-SGN-015). Для внутрішніх призначень — див. FR-SGN-013</td>
 </tr>
 <tr>
 <td>FR-SGN-008</td>
@@ -8363,6 +8367,61 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 </tr>
 </tbody>
 </table>
+<h3 id="21131-outbox-fr-sgn-015023">21.13.1. Черга відправки (outbox), режими обміну та порядок викликів ЕСОЗ (FR-SGN-015…023)</h3>
+<p><span class="tag-new">НОВЕ</span> Розділ описує реалізацію відправки, виконану за специфікацією OpenAPI eHealth і <code>docs/ESOZ_LAB_INTERACTIONS.md</code>. <strong>Стан перевірки:</strong> реалізація працює й перевірена автотестами в режимах Mock (двійник контракту) та Replay (фікстури, зібрані з прикладів OpenAPI). <strong>Режим Live (реальна ЕСОЗ, preprod) не перевірявся</strong> — він вимкнений типово, вмикається поопераційно прапорцями й потребує токена, ідентифікаторів закладу/працівника та звірки довідників (див. «Не реалізовано та не перевірено»).</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Правило</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-SGN-015</td>
+<td><strong>Порядок викликів.</strong> Видача результату в ЛІС більше <strong>не погашає</strong> е-направлення. Спершу в ЕСОЗ реєструється звіт: <code>POST /api/patients/{patientId}/diagnostic_report_package</code> <code>{signed_data}</code> → <code>202</code> з <code>links[entity=job]</code> → опитування <code>GET /api/jobs/{id}</code> (<code>200</code> — виконується, <code>303</code> — виконано, тіло з <code>data.status=failed</code> — відхилено). Лише коли job <code>processed</code>, у чергу ставиться <strong>окрема</strong> задача погашення <code>PATCH /api/service_requests/{id}/actions/complete</code> <code>{completed_with: diagnostic_report/&lt;id&gt;}</code> з власним job. Двійник контракту відхиляє <code>complete</code> до реєстрації звіту (422)</td>
+</tr>
+<tr>
+<td>FR-SGN-016</td>
+<td><strong>Таблиця <code>ehe_outbox</code>:</strong> <code>id, kind (SUBMIT_DR / COMPLETE_SR / CANCEL_DR), entity_id, order_id, idempotency_key (унікальний), payload, status (NEW / SENDING / WAITING_JOB / DONE / FAILED / DEAD), attempts, poll_attempts, next_attempt_at, last_error, error_code, job_id, locked_by, locked_until, done_at, created_*/updated_at</code>. Запис створюється в тій самій транзакції, що й зміна статусу підпису. Ключі: <code>SUBMIT_DR:{підпис}:{хеш пакета}</code>, <code>COMPLETE_SR:{направлення}:{звіт}</code>, <code>CANCEL_DR:{звіт}:{анулювання}</code> — повторна постановка з тим самим ключем повертає наявний запис (дубль неможливий)</td>
+</tr>
+<tr>
+<td>FR-SGN-017</td>
+<td><strong>Воркер</strong> (<code>BackgroundService</code>, <code>Ehealth:Outbox:*</code>): раз на <code>PollIntervalSeconds</code> вибирає задачі <code>NEW/WAITING_JOB</code>, термін яких настав, і виконує до <code>MaxParallel</code> одночасно (на SQLite — по одній). Захоплення запису атомарне (<code>UPDATE … WHERE status IN (NEW, WAITING_JOB) AND next_attempt_at &lt;= now</code> — виграє рівно один воркер; працює на SQLite і PostgreSQL). Запис у <code>SENDING</code>, замок якого (<code>locked_until</code>, <code>SendingTimeoutMinutes</code>) прострочено, повертається в чергу: з відомим <code>job_id</code> — в опитування job (повторний POST не надсилається), без нього — у <code>NEW</code>. У середовищі <code>Testing</code> воркер вимкнено, тести керують рушієм вручну</td>
+</tr>
+<tr>
+<td>FR-SGN-018</td>
+<td><strong>Витримки.</strong> Повтор відправки: <code>BackoffBaseSeconds · 2^(n−1)</code> (30 с, 1, 2, 4, 8, 16 хв …), не більше <code>BackoffMaxSeconds</code> (30 хв), із розкидом <code>BackoffJitter</code> (±10 %). Опитування job: 2, 5, 10, 30 с, далі кожні <code>PollMaxSeconds</code> (120 с); job, що не завершився за <code>JobDeadlineHours</code> (24 год), → <code>FAILED</code> (<code>JOB_TIMEOUT</code>). Після <code>MaxAttempts</code> (8) тимчасових помилок → <code>DEAD</code>, статус звіту <code>ERROR</code>; задача лишається доступною для ручного «Повторити»</td>
+</tr>
+<tr>
+<td>FR-SGN-019</td>
+<td><strong>Класифікація відповідей ЕСОЗ.</strong> <code>401</code> → зупинка (<code>FAILED</code>, статус звіту <code>AUTH_REQUIRED</code>); <code>403</code> («немає права/скоупу»), <code>404</code>, <code>409</code>, <code>422</code> → зупинка без автоповтору (звіт <code>REJECTED</code>), текст <code>error.message</code> і перелік <code>error.invalid[]</code> показуються користувачу; <code>429</code>, <code>5xx</code>, мережевий збій і таймаут → повтор із витримкою. Автоповтор на рівні HTTP — лише для <code>GET</code> (до 2 додаткових спроб); <code>POST/PATCH</code> повторюються тільки задачею черги, і перед повторним <code>POST</code> перевіряється <code>GET /api/patients/{id}/diagnostic_reports/{reportId}</code>: якщо звіт уже <code>final</code> — вважається зареєстрованим без повторної відправки. <code>409</code> на дубль id обробляється так само</td>
+</tr>
+<tr>
+<td>FR-SGN-020</td>
+<td><strong>Виправлення.</strong> Пакет відхилено (job <code>failed</code>) → задача <code>FAILED</code>/<code>JOB_FAILED</code>, звіт <code>REJECTED</code>; користувач готує <strong>новий пакет</strong> (нові UUID v1 звіту й спостережень, новий підпис) — старі ідентифікатори не використовуються повторно. Якщо звіт зареєстровано, а погашення не вдалося — «Анулювати» (пакет <code>entered_in_error</code> для звіту й усіх спостережень, підпис КЕП, задача <code>CANCEL_DR</code>), після чого створюється виправлений висновок і новий пакет. Застарілі задачі погашення анульованого звіту знімаються (<code>DEAD</code>)</td>
+</tr>
+<tr>
+<td>FR-SGN-021</td>
+<td><strong>Режими <code>Ehealth:Mode</code>.</strong> <code>Mock</code> — двійник контракту OpenAPI в пам'яті (реєстр направлень, звітів, job; валідація підпису й схеми пакета; ін'єкція збоїв для тестів), <strong>не</strong> дзеркало БД; демо-направлення з БД копіюються в реєстр один раз при першому зверненні (<code>Ehealth:Mock:SeedFromMirror</code>). <code>Replay</code> — відповіді з файлів <code>tests/MedLink.LIS.Tests/Fixtures/ehealth/*.json</code> (приклади OpenAPI: пошук, <code>use/release/complete</code>, пакет звіту, job <code>pending → 303</code>, <code>failed 422</code>, 404). <code>Live</code> — реальна ЕСОЗ; кожна операція вмикається окремо: <code>Ehealth:Live:Operations:{SearchRead, Use, Complete, SubmitDr, CancelDr, Specimen, Equipment}</code> (типово все вимкнено; вимкнена операція дає помилку «Операцію ЕСОЗ вимкнено» без виклику мережі)</td>
+</tr>
+<tr>
+<td>FR-SGN-022</td>
+<td><strong>Е-направлення.</strong> Пошук виконується в ЕСОЗ (<code>GET /api/service_requests?requisition=</code>), далі оновлюється дзеркало <code>ehe_incoming_medical_referral</code> — воно є лише <strong>кешем</strong> (джерело істини про статус — ЕСОЗ; додано поля <code>ehealth_patient_id, ehealth_program_id, ehealth_status, used_in_ehealth, last_synced_at</code>). Направлення, якого ще немає в БД, знаходиться через ЕСОЗ. <code>use</code> викликається лише для направлень із медичною програмою (за схемою <code>program</code> обов'язкова; для решти — <code>Ehealth:UseWithoutProgram</code>, потребує перевірки на preprod); <code>release</code> — лише якщо <code>use</code> виконувався</td>
+</tr>
+<tr>
+<td>FR-SGN-023</td>
+<td><strong>Екран «Відправка в ЕСОЗ»</strong> (<code>/laboratory/ehealth</code>): таблиця вихідних задач (замовлення, направлення, пацієнт, дія, стан, спроби, наступна спроба, job, остання помилка), фільтри за станом, датою створення й пошук за номером направлення/замовлення/пацієнтом; «Повторити» — лише для <code>FAILED/DEAD</code>, «Скасувати» — лише для <code>NEW/FAILED/DEAD</code> (передані в ЕСОЗ задачі скасувати не можна; скасування зберігає підписаний пакет); «Обробити зараз» — у режимах Mock/Replay. Блок «ЕСОЗ» картки замовлення показує задачі замовлення. Користувацькі тексти — українською</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Підпис.</strong> Пакет серіалізується канонічним JSON (UTF-8 без BOM), <code>signed_data</code> — base64-рядок CAdES-X Long із вкладеним пакетом (ТВ 1.3.3). ЛІС перевіряє <strong>лише структуру</strong> підпису (CMS SignedData, атрибути certificate-values/revocation-values, збіг вкладеного вмісту з пакетом); <strong>криптографічну чинність перевіряє ЕСОЗ</strong>. У режимах Mock/Replay підпис створює тестовий підписувач (<code>mock-sign</code>) — структурно коректний, але не є криптографічним підписом; у Live підпис має виконати віджет КЕП (не підключено).</p>
+<p><strong>Ідентифікатори.</strong> <code>diagnostic_report.id</code> і <code>observations[].id</code> — UUID версії 1, створюються при побудові пакета й не змінюються при повторі; поточний пакет і його хеш зберігаються в <code>lab_ehealth_submission</code>.</p>
+<p><strong>Не реалізовано та не перевірено.</strong>
+1. Режим Live на preprod/prod <strong>не перевірявся ні в одній операції</strong>; вхід через OAuth/КЕП у Live повертає 503 (<code>ehealth-live-oauth-not-implemented</code>), токен задається конфігурацією <code>Ehealth:AccessToken</code>.
+2. Криптографічна перевірка CAdES і віджет підпису КЕП у браузері — не реалізовані.
+3. Не мапляться: <code>specimens</code>, <code>used_references</code> (обладнання), <code>components</code>, <code>results_interpreter</code>; ідентифікатори працівника й закладу в ЕСОЗ беруться з конфігурації (<code>Ehealth:DefaultEmployeeId</code>, <code>LegalEntityId</code>), а не з реєстру співробітників.
+4. Потребують звірки з довідниками preprod: код категорії звіту (<code>Ehealth:DiagnosticReportCategoryCode</code>, типово <code>LAB</code>), код причини скасування (<code>misspelling</code>), коди LOINC/UCUM для показників (у Mock/Replay підставляється код-заглушка <code>MOCK-&lt;код&gt;</code>, у Live його немає — пакет не будується), поведінка <code>use</code> без програми.</p>
 <h3 id="2114">21.14. Релізи, ризики та відкриті питання</h3>
 <p><strong>Реліз.</strong> R1.1: 21.3–21.13, T-410…T-419, T-421…T-428 (у тому числі авторизація в ЕСОЗ, підпис КЕП і відправка DiagnosticReport). R2: планові/повторювані призначення (T-420), пакетна відправка (T-429).</p>
 <table>
@@ -8465,6 +8524,11 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 <td>FR-SGN-001…014</td>
 <td>Сесія ЕСОЗ: пароль (L1) → КЕП або 2FA (L2), TTL і простій, пароль не зберігається; пакет DiagnosticReport → підпис КЕП → job → реєстрація → погашення е-направлення; помилка мережі → черга повторів без повторного підпису; завершена сесія → AUTH_REQUIRED; анулювання з КЕП; підписувач має збігатися з користувачем (ДРФО). Режим Mock (тестовий сертифікат, код 2FA 123456)</td>
 <td><code>EhealthSignService</code>, індикатор сесії в шапці, блок «ЕСОЗ» картки замовлення, екран «Відправка в ЕСОЗ»</td>
+</tr>
+<tr>
+<td>FR-SGN-015…023</td>
+<td>Черга відправки <code>ehe_outbox</code> + фоновий воркер (атомарне захоплення, витримки, відновлення після збою, опитування job), виправлений порядок «звіт → job → погашення», клієнт за OpenAPI (шляхи <code>/api/service_requests…</code>, id job з <code>links</code>, класифікація 401/403/404/409/422/5xx), режими Mock / Replay / Live з поопераційними прапорцями, ЕСОЗ як джерело істини для направлень (дзеркало — кеш), екран «Відправка в ЕСОЗ» із «Повторити»/«Скасувати». <strong>Mock і Replay перевірені автотестами; Live на preprod не перевірявся</strong> (розд. 21.13.1)</td>
+<td><code>Services/Ehealth/*</code>, <code>Controllers/EhealthSignController.cs</code>, <code>EhealthSubmissionsPage.vue</code>, тести <code>EhealthContractTests</code>, <code>EhealthOutboxApiTests</code>, <code>EhealthReplayApiTests</code></td>
 </tr>
 </tbody>
 </table>
@@ -9422,6 +9486,92 @@ ToDays(v, unit): DAYS → v; MONTHS → v×30.4375; YEARS → v×365.25
 </table>
 <p><strong>Приймальні сценарії.</strong> S-120: <strong>Given</strong> гінекологічний мазок без дня циклу й дати місячних <strong>When</strong> направлення надходить з МІС <strong>Then</strong> відмова з вказівкою поля; з анамнезом — справа з номером <code>ЦИТ-YY-NNNN</code>. S-121: <strong>Given</strong> прийнята цитологічна справа <strong>When</strong> лаборант готує препарати (по контейнерах, методика Папаніколау за замовчуванням) <strong>Then</strong> створено скельця <code>C{yy}-NNNN-n</code>, вартість = скельця × ціна, справа на етапі «Фарбування»; лікар приготувати не може. S-122: <strong>Given</strong> пофарбовані скельця <strong>When</strong> скринер ставить оцінку «підозра» <strong>Then</strong> її видно лікарю; до фарбування скринінг недоступний. S-123: <strong>Given</strong> висновок без адекватності або без категорії <strong>When</strong> «Підписати» <strong>Then</strong> відмова (<code>adequacy-required</code> / <code>category-required</code>); непридатний матеріал підписується без категорії. S-124: <strong>Given</strong> категорія високого ступеня (HSIL, AGC, ASC-H, підозра, злоякісні клітини) <strong>When</strong> підписано <strong>Then</strong> МІС отримала критичний результат. S-125: <strong>Given</strong> підписані цитологічні справи <strong>When</strong> відкрито журнал цитології <strong>Then</strong> видно частку непридатних, розбіжність скринер/лікар, медіану TAT.</p>
 <p><strong>Стан реалізації.</strong> FR-CYT-001…012 реалізовані в робочому прототипі: розділ меню «Цитологія» (журнал із плитками етапів і блоком аналітики), вкладки справи «Приготування», «Блоки і скельця» (фарбування, покриття, утилізація), «Опис і висновок» зі скринінгом, адекватністю, категорією й рекомендаціями; API <code>POST /pathology/cases/{id}/prepare</code>, <code>/prepare-repeat</code>, <code>/screening</code>, <code>GET /pathology/cytology/analytics</code>, журнал <code>GET /pathology/cases?group=cyto|hist</code>; автотести <code>PathologyApiTests</code> (S120, S121). Ціна скельця за замовчуванням — 160 грн (налаштовується разом з довідником цін). Друк окремої форми висновку цитології (FR-CYT-012) використовує загальний механізм друку; спеціалізований макет — наступний крок.</p>
+<h3 id="2220-fr-log-101115">22.20. Транспортні контейнери: укладка, запечатування, прийом цілком (FR-LOG-101…115)</h3>
+<p><strong>Призначення.</strong> Маніфест (розд. 4.3) описує, <em>які пробірки</em> їдуть. Контейнер описує, <em>в чому</em> вони їдуть: термобокс або термосумка з обмеженою кількістю місць, власним температурним режимом і штрихкодом. Пункт забору укладає пробірки у контейнер по місцях, запечатує його з виміряною температурою й відправляє; лабораторія скануює контейнер, отримує очікуваний склад, скануює пробірки й бачить розбіжності (відсутні, зайві, пошкоджені). Порожню багаторазову тару повертають.</p>
+<p><strong>Актори.</strong> PHLEBOTOMIST, LAB_TECHNICIAN, REGISTRAR, LOGISTICS_COURIER (укладка, запечатування, відправка); LAB_TECHNICIAN, REGISTRAR, LOGISTICS_COURIER (прийом, повернення тари, втрата); LAB_ADMIN (довідник типів тари і всі дії). LAB_DOCTOR до контейнерів доступу не має.</p>
+<p><strong>Основний потік.</strong>
+1. Створюється контейнер: тип тари, пункт відправлення, пункт призначення → штрихкод <code>TC</code> + 8 цифр, статус <code>FREE</code>.
+2. Скан пробірки → місце (перше вільне або задане) → <code>PACKING</code>. Помилкову пробірку можна зняти.
+3. Запечатування з температурою → <code>SEALED</code>; створюється маніфест (<code>CREATED</code>) зі складом контейнера.
+4. Відправка → <code>IN_TRANSIT</code>; маніфест <code>DISPATCHED</code>, пробірки <code>IN_TRANSIT</code>.
+5. Прийом: скан контейнера → очікуваний склад → скан пробірок → температура при прийомі → <code>RECEIVED</code>.
+6. Повернення багаторазової тари → <code>RETURNED</code>. Втрату в дорозі фіксує дія «Втрачено» з причиною → <code>LOST</code>.</p>
+<p><strong>Статуси.</strong> <code>FREE</code> → <code>PACKING</code> → <code>SEALED</code> → <code>IN_TRANSIT</code> → <code>RECEIVED</code> → <code>RETURNED</code>; <code>LOST</code> — з <code>SEALED</code> та <code>IN_TRANSIT</code>. Порожній <code>PACKING</code> повертається в <code>FREE</code>.</p>
+<table>
+<thead>
+<tr>
+<th>№</th>
+<th>Вимога</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-LOG-101</td>
+<td>Довідник типів транспортної тари: код (унікальний), назва, місткість (кількість місць, 1…500), температурний режим «від — до» (пара або не задається), ознаки «багаторазова» та «активна». Створює й змінює лише LAB_ADMIN. Місткість не можна зменшити нижче зайнятого місця в діючих контейнерах</td>
+</tr>
+<tr>
+<td>FR-LOG-102</td>
+<td>Контейнер має унікальний штрихкод <code>TC</code> + 8 цифр (лічильник <code>lab_transport_container_barcode</code>), тип, пункт відправлення, пункт призначення (різні), статус. Створення — ролі укладки</td>
+</tr>
+<tr>
+<td>FR-LOG-103</td>
+<td>Укладка: скан штрихкода пробірки кладе її на місце (задане 1…місткість або перше вільне). Пробірка має бути <code>COLLECTED</code>, належати пункту відправлення контейнера (<code>lab_order.department_id</code>), не лежати в іншому діючому контейнері і не входити до чернетки маніфесту. Дубль — 409; усі місця зайняті — 409; місце поза межами — 400; зайняте місце — 409</td>
+</tr>
+<tr>
+<td>FR-LOG-104</td>
+<td>Зняти пробірку з місця можна лише до запечатування; контейнер без пробірок повертається в <code>FREE</code>. Запечатаний контейнер не змінюється</td>
+</tr>
+<tr>
+<td>FR-LOG-105</td>
+<td>Запечатування: температура в контейнері обов’язкова (400 без неї), контейнер не порожній, усі пробірки ще <code>COLLECTED</code>. Коридор — режим типу тари, а якщо його не задано, коридор холодового ланцюга з налаштувань (FR-LOG-001). Температура поза коридором ставить <code>isColdChainViolated=true</code> і не блокує запечатування</td>
+</tr>
+<tr>
+<td>FR-LOG-106</td>
+<td>Запечатування створює й прив’язує маніфест (<code>CREATED</code>) зі складом контейнера та температурою відправлення; номер — з нумератора маніфестів</td>
+</tr>
+<tr>
+<td>FR-LOG-107</td>
+<td>Відправка: маніфест <code>DISPATCHED</code>, пробірки <code>IN_TRANSIT</code>; кур’єр (ПІБ, телефон) не обов’язковий і записується в маніфест</td>
+</tr>
+<tr>
+<td>FR-LOG-108</td>
+<td>Прийом цілком доступний лише для контейнера <code>IN_TRANSIT</code> (не запечатаного і не відправленого — 409). Скан контейнера повертає очікуваний склад з місцями. Температура при прийомі обов’язкова</td>
+</tr>
+<tr>
+<td>FR-LOG-109</td>
+<td>Розбіжності: <em>відсутні</em> — очікувані, але не відскановані (місце <code>MISSING</code>, пробірка лишається <code>IN_TRANSIT</code>, як у маніфесті); <em>зайві</em> — відскановані, але не було в контейнері (список зберігається в контейнері, пробірки не змінюються); <em>пошкоджені</em> — відскановані й позначені пошкодженими (місце <code>DAMAGED</code>, пробірка <code>REJECTED</code> з причиною «Пошкоджено під час транспортування», незавершені тести відхилені)</td>
+</tr>
+<tr>
+<td>FR-LOG-110</td>
+<td>Відскановані й непошкоджені пробірки отримують <code>RECEIVED</code>, <code>receivedAt</code>, <code>receivedById</code> і реєструються в журналі підрозділу лабораторії (як при прийомі маніфесту). Маніфест контейнера переходить у <code>RECEIVED</code></td>
+</tr>
+<tr>
+<td>FR-LOG-111</td>
+<td>Холодовий ланцюг: порушення при запечатуванні або при прийомі (за коридором FR-LOG-105) дає <code>isColdChainViolated=true</code> у контейнері й маніфесті, запис у примітках; прийом не блокується (FR-LOG-002)</td>
+</tr>
+<tr>
+<td>FR-LOG-112</td>
+<td>Повернення тари: лише для контейнера <code>RECEIVED</code> з багаторазовим типом (<code>RETURNED</code>, <code>returnedAt</code>, <code>returnedById</code>); одноразова тара — 409</td>
+</tr>
+<tr>
+<td>FR-LOG-113</td>
+<td>Позначити контейнер втраченим можна з <code>SEALED</code> та <code>IN_TRANSIT</code>; причина обов’язкова</td>
+</tr>
+<tr>
+<td>FR-LOG-114</td>
+<td>Історія подій контейнера (створено, пробірку покладено / знято, запечатано, відправлено, прийнято, повернено, втрачено): час, співробітник, штрихкод, місце, температура, пояснення. Журнал контейнерів фільтрується за статусом, пунктами, типом; пошук — за штрихкодом контейнера або пробірки в ньому</td>
+</tr>
+<tr>
+<td>FR-LOG-115</td>
+<td>Кожна зміна пишеться в аудит (<code>lab_audit_log</code>): CREATE, PACK, UNPACK, SEAL, DISPATCH, RECEIVE, RETURN, LOST, DELETE. Дії залежать від статусу (409) і ролі (403) за машиною станів (сутність <code>Container</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Модель даних.</strong> <code>lab_transport_container_type</code> (довідник), <code>lab_transport_container</code> (шапка: статус, пункти, маніфест, хто й коли запечатав / відправив / прийняв / повернув, температури, прапорець порушення, лічильники розбіжностей, зайві штрихкоди), <code>lab_transport_container_item</code> (пробірка, місце, статус <code>PACKED</code> / <code>RECEIVED</code> / <code>MISSING</code> / <code>DAMAGED</code>), <code>lab_transport_container_event</code> (історія). Унікальні: штрихкод контейнера, код типу, пара «контейнер + місце», пара «контейнер + пробірка». Таблиці створюються автоматично; DDL PostgreSQL — <code>db/postgres/medlink_lis_schema.sql</code>.</p>
+<p><strong>API.</strong> <code>GET/POST /logistics/container-types</code>, <code>PUT /logistics/container-types/{id}</code>; <code>GET /logistics/containers?status=&amp;search=&amp;originDepartmentId=&amp;destinationDepartmentId=&amp;typeId=</code>, <code>GET /logistics/containers/by-barcode/{barcode}</code>, <code>GET /logistics/containers/{id}</code>, <code>GET /logistics/containers/{id}/events</code>, <code>POST /logistics/containers</code>, <code>DELETE /logistics/containers/{id}</code>, <code>POST /logistics/containers/{id}/pack|seal|dispatch|receive|return|lost</code>, <code>DELETE /logistics/containers/{id}/items/{barcode}</code>. Деталі — <code>docs/API_CONTRACT.md</code>, розд. 2.6.</p>
+<p><strong>UI.</strong> Сторінка «Логістика зразків», вкладка «Контейнери»: журнал (статус, пошук за штрихкодом, рядки з порушенням підсвічені червоним, з розбіжностями — жовтим), картка контейнера з сіткою місць (скан пробірки: фокус у полі, Enter кладе на місце, клік по зайнятому місцю знімає пробірку), запечатування з температурою, відправка, екран прийому («Прийняти контейнер»: скан контейнера → очікується / відскановано / зайві / пошкоджені → температура → «Прийняти»), повернення тари, довідник «Типи тари».</p>
+<p><strong>Приймальні сценарії.</strong> S-130: <strong>Given</strong> контейнер на 24 місця й три зібрані пробірки пункту забору <strong>When</strong> покласти пробірки, запечатати при +4,5 °C, відправити, прийняти (одна пробірка пошкоджена, одна не відскановано, одна зайва), повернути тару <strong>Then</strong> статуси <code>PACKING → SEALED → IN_TRANSIT → RECEIVED → RETURNED</code>, непошкоджена пробірка <code>RECEIVED</code>, пошкоджена <code>REJECTED</code>, відсутня <code>IN_TRANSIT</code>, розбіжності видно в картці, історія містить усі етапи. S-131: <strong>Given</strong> контейнер <strong>When</strong> покласти ту саму пробірку вдруге, пробірку з іншого контейнера, пробірку іншого пункту, не зібрану пробірку, пробірку в заповнений контейнер <strong>Then</strong> 409 з поясненням (невідомий штрихкод — 404, порожній штрихкод — 400, місце поза межами — 400). S-132: <strong>Given</strong> контейнер у статусі <code>FREE</code>, <code>PACKING</code> або <code>SEALED</code> <strong>When</strong> відправити, прийняти або повернути тару раніше за час <strong>Then</strong> 409; запечатування без температури — 400, запечатування порожнього контейнера — 409. S-133: <strong>Given</strong> температура запечатування +12 °C <strong>When</strong> контейнер доставлено <strong>Then</strong> <code>isColdChainViolated=true</code>, пробірки все одно <code>RECEIVED</code>; для типу з режимом 15…25 °C температура прийому +5 °C — порушення; одноразову тару повернути не можна. S-134: <strong>Given</strong> лікар <strong>When</strong> створює контейнер, кладе пробірку, відправляє, приймає <strong>Then</strong> 403; медсестра пункту забору не приймає контейнер; реєстратор укладає й приймає; довідник типів змінює лише LAB_ADMIN. S-135: <strong>Given</strong> контейнер із пробіркою <strong>When</strong> шукаю за штрихкодом контейнера або пробірки <strong>Then</strong> контейнер знайдено; відправлений контейнер можна позначити втраченим лише з причиною, після цього прийняти його не можна.</p>
+<p><strong>Стан реалізації.</strong> FR-LOG-101…115 реалізовані в робочому прототипі: сервіс логістики (<code>LogisticsService.Containers.cs</code>), контролер <code>TransportContainersController</code>, сутності <code>TransportContainerEntities.cs</code>, сторінка <code>TransportContainers.vue</code>, інструкції Guide (<code>lab_transport_containers.json</code>), автотести S-130…S-135.</p>
 <h2 id="4323-43-01112026"><span class="tag-new43">НОВЕ 4.3</span>23. Послуги ЕСОЗ і аналізатори, показники та пакети з МІС, розподіл направлень лаборантом, робота за направленнями, звіти лабораторії (редакція 4.3, 01.11.2026)</h2>
 <h3 id="230">23.0. Доручення власника продукту та що змінюється</h3>
 <p><strong>Доручення (01.11.2026).</strong> Має бути відповідність послуг із довідника ЕСОЗ і аналізаторів, які ці послуги можуть виконувати; одна послуга може виконуватися на кількох аналізаторах. Послуга ЕСОЗ має на стороні МІС перелік показників, які лікар обирає окремо: у межах послуги можуть виконуватися не всі показники. З МІС може надходити пакет послуг (наприклад, післяопераційний). Лаборанту при надходженні внутрішнього або зовнішнього направлення потрібно розподілити, на якому аналізаторі воно виконуватиметься, і далі працювати з направленнями на рівні аналізатора, пацієнта й дослідження. По лабораторії потрібні звіти, окрім журналів.</p>
@@ -12174,6 +12324,13 @@ MSA|AA|MSG009841|Message accepted successfully
 <td>FR-LOG-001..006</td>
 <td><code>/logistics/manifests*</code></td>
 <td>I-LOG-coldchain-flag, I-LOG-reject-repeat-order, E-S03</td>
+</tr>
+<tr>
+<td>Процес 2 логістика: транспортні контейнери</td>
+<td>T-075</td>
+<td>FR-LOG-101..115</td>
+<td><code>/logistics/containers*</code>, <code>/logistics/container-types*</code></td>
+<td>S-130…S-135</td>
 </tr>
 <tr>
 <td>Процес 11 монітор шлюзу</td>

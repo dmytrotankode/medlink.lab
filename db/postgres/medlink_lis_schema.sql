@@ -1,6 +1,6 @@
 -- =============================================================================
 -- MedLink LIS — схема модуля «Лабораторія» для PostgreSQL (evomis). Згенеровано з EF-моделі ЛІС.
--- Дата генерації: 2026-11-08. Не редагувати вручну — перегенерувати: --export-pg-ddl.
+-- Дата генерації: 2026-11-09. Не редагувати вручну — перегенерувати: --export-pg-ddl.
 -- [MedLink]  — таблиця evomis, не створюється (наведено колонки, які використовує ЛІС).
 -- [MedLink+] — колонки, які ЛІС додає до таблиці evomis.
 -- [ЛІС]      — таблиця модуля, створюється цим скриптом.
@@ -11,7 +11,8 @@ BEGIN;
 -- ----------------------------------------------------------------------------- [MedLink]
 -- [MedLink] cmn_enum_record: id, caption, code, created_by, created_on, enum_type, modified_by, modified_on, parent_id, record_state, value_type
 -- [MedLink] cmn_person: id, birthday, caption, created_by, created_on, description, email, gender_id, ipn, last_name, location, middle_name, modified_by, modified_on, name, no_ipn, phone, record_state, subscribed_to_notifications
--- [MedLink] ehe_incoming_medical_referral: id, caption, complete_date_in_ehealth, completed_with_item_entity_id, completed_with_item_entity_name, created_by, created_on, ehealth_id, expiration_date, medical_referral_category_id, medical_service_program_id, modified_by, modified_on, organization_id, patient_card_id, patient_instruction, patient_short_name, priority_id, processing_status_in_ehealth_id, record_state, reg_date, reg_number, requester_id, service_catalog_service_id, status_id, take_in_work_date
+-- [MedLink] ehe_incoming_medical_referral: id, caption, complete_date_in_ehealth, completed_with_item_entity_id, completed_with_item_entity_name, created_by, created_on, ehealth_id, ehealth_patient_id, ehealth_program_id, ehealth_status, expiration_date, last_synced_at, medical_referral_category_id, medical_service_program_id, modified_by, modified_on, organization_id, patient_card_id, patient_instruction, patient_short_name, priority_id, processing_status_in_ehealth_id, record_state, reg_date, reg_number, requester_id, service_catalog_service_id, status_id, take_in_work_date, used_in_ehealth
+-- [MedLink] ehe_outbox: id, attempts, created_by, created_on, done_at, entity_id, error_code, idempotency_key, job_id, kind, last_error, locked_by, locked_until, modified_by, modified_on, next_attempt_at, order_id, payload, poll_attempts, record_state, status, updated_at
 -- [MedLink] ehe_paper_medical_referral: id, caption, created_by, created_on, description, modified_by, modified_on, organization_id, patient_card_id, processed_date, record_state, reg_date, reg_number, requester_employee_name, requester_legal_entity_edrpou, requester_legal_entity_name, status
 -- [MedLink] ehe_service_catalog_service: id, caption, code, created_by, created_on, ehealth_id, inserted_at_in_ehealth, is_active, is_composition, medical_referral_category_id, modified_by, modified_on, name, record_state, request_allowed
 -- [MedLink] mis_diagnostic_report: id, caption, comment, created_by, created_on, description, diagnostic_report_category_id, division_id, document_type_id, effective_date_time_end, effective_date_time_start, ehealth_id, ehealth_incoming_medical_referral_id, ehealth_service_catalog_service_id, is_performer_string, is_primary_source, issued_at, legal_entity_id, modified_by, modified_on, organization_id, patient_card_id, performer_id, performer_string, record_state, recorded_by_id, reg_date, reg_number, status
@@ -2151,6 +2152,108 @@ CREATE INDEX IF NOT EXISTS ix_lab_test_result_entered_at ON lab_test_result (ent
 CREATE INDEX IF NOT EXISTS ix_lab_test_result_flag ON lab_test_result (flag);
 CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_test_result_order_test_id ON lab_test_result (order_test_id);
 
+-- [ЛІС] lab_transport_container (LabTransportContainer)
+CREATE TABLE IF NOT EXISTS lab_transport_container (
+    id uuid NOT NULL,
+    barcode varchar(32) NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    damaged_count integer NOT NULL,
+    destination_department_id uuid NOT NULL,
+    dispatched_at timestamp without time zone,
+    dispatched_by_id uuid,
+    extra_barcodes_json text,
+    extra_count integer NOT NULL,
+    is_cold_chain_violated boolean NOT NULL,
+    manifest_id uuid,
+    missing_count integer NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    notes text,
+    origin_department_id uuid NOT NULL,
+    packed_at timestamp without time zone,
+    packed_by_id uuid,
+    received_at timestamp without time zone,
+    received_by_id uuid,
+    record_state integer NOT NULL DEFAULT 2,
+    returned_at timestamp without time zone,
+    returned_by_id uuid,
+    sealed_at timestamp without time zone,
+    sealed_by_id uuid,
+    status varchar(16) NOT NULL,
+    temperature_receipt double precision,
+    temperature_seal double precision,
+    type_id uuid NOT NULL,
+    CONSTRAINT pk_lab_transport_container PRIMARY KEY (id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_transport_container_barcode ON lab_transport_container (barcode);
+CREATE INDEX IF NOT EXISTS ix_lab_transport_container_destination_department_id ON lab_transport_container (destination_department_id);
+CREATE INDEX IF NOT EXISTS ix_lab_transport_container_manifest_id ON lab_transport_container (manifest_id);
+CREATE INDEX IF NOT EXISTS ix_lab_transport_container_origin_department_id ON lab_transport_container (origin_department_id);
+CREATE INDEX IF NOT EXISTS ix_lab_transport_container_status ON lab_transport_container (status);
+CREATE INDEX IF NOT EXISTS ix_lab_transport_container_type_id ON lab_transport_container (type_id);
+
+-- [ЛІС] lab_transport_container_event (LabTransportContainerEvent)
+CREATE TABLE IF NOT EXISTS lab_transport_container_event (
+    id uuid NOT NULL,
+    at timestamp without time zone NOT NULL,
+    container_id uuid NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    details varchar(1024),
+    employee_id uuid,
+    event_type varchar(16) NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    position integer,
+    record_state integer NOT NULL DEFAULT 2,
+    sample_barcode varchar(32),
+    temperature double precision,
+    CONSTRAINT pk_lab_transport_container_event PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_transport_container_event_container_id_at ON lab_transport_container_event (container_id, at);
+
+-- [ЛІС] lab_transport_container_item (LabTransportContainerItem)
+CREATE TABLE IF NOT EXISTS lab_transport_container_item (
+    id uuid NOT NULL,
+    barcode varchar(32) NOT NULL,
+    container_id uuid NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    packed_at timestamp without time zone NOT NULL,
+    packed_by_id uuid,
+    position integer NOT NULL,
+    received_at timestamp without time zone,
+    record_state integer NOT NULL DEFAULT 2,
+    sample_id uuid NOT NULL,
+    status varchar(16) NOT NULL,
+    CONSTRAINT pk_lab_transport_container_item PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ix_lab_transport_container_item_sample_id ON lab_transport_container_item (sample_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_transport_container_item_container_id_position ON lab_transport_container_item (container_id, position);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_transport_container_item_container_id_sample_id ON lab_transport_container_item (container_id, sample_id);
+
+-- [ЛІС] lab_transport_container_type (LabTransportContainerType)
+CREATE TABLE IF NOT EXISTS lab_transport_container_type (
+    id uuid NOT NULL,
+    capacity integer NOT NULL,
+    code varchar(64) NOT NULL,
+    created_by uuid NOT NULL,
+    created_on timestamp without time zone NOT NULL,
+    is_active boolean NOT NULL,
+    is_reusable boolean NOT NULL,
+    modified_by uuid NOT NULL,
+    modified_on timestamp without time zone,
+    name varchar(256) NOT NULL,
+    record_state integer NOT NULL DEFAULT 2,
+    temp_max_c double precision,
+    temp_min_c double precision,
+    CONSTRAINT pk_lab_transport_container_type PRIMARY KEY (id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_lab_transport_container_type_code ON lab_transport_container_type (code);
+
 -- [ЛІС] lab_tube_type (LabTubeType)
 CREATE TABLE IF NOT EXISTS lab_tube_type (
     id integer NOT NULL,
@@ -2334,6 +2437,13 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_t
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_test_profile_item_test_id') THEN ALTER TABLE lab_test_profile_item ADD CONSTRAINT fk_lab_test_profile_item_test_id FOREIGN KEY (test_id) REFERENCES lab_test_definition (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_test_result_analyzer_id') THEN ALTER TABLE lab_test_result ADD CONSTRAINT fk_lab_test_result_analyzer_id FOREIGN KEY (analyzer_id) REFERENCES lab_analyzer (id); END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_test_result_order_test_id') THEN ALTER TABLE lab_test_result ADD CONSTRAINT fk_lab_test_result_order_test_id FOREIGN KEY (order_test_id) REFERENCES lab_order_test (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_transport_container_destination_department_id') THEN ALTER TABLE lab_transport_container ADD CONSTRAINT fk_lab_transport_container_destination_department_id FOREIGN KEY (destination_department_id) REFERENCES org_department (id) ON DELETE CASCADE; END IF; END $$; -- → [MedLink]
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_transport_container_manifest_id') THEN ALTER TABLE lab_transport_container ADD CONSTRAINT fk_lab_transport_container_manifest_id FOREIGN KEY (manifest_id) REFERENCES lab_sample_logistics (id) ON DELETE SET NULL; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_transport_container_origin_department_id') THEN ALTER TABLE lab_transport_container ADD CONSTRAINT fk_lab_transport_container_origin_department_id FOREIGN KEY (origin_department_id) REFERENCES org_department (id) ON DELETE CASCADE; END IF; END $$; -- → [MedLink]
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_transport_container_type_id') THEN ALTER TABLE lab_transport_container ADD CONSTRAINT fk_lab_transport_container_type_id FOREIGN KEY (type_id) REFERENCES lab_transport_container_type (id); END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_transport_container_event_container_id') THEN ALTER TABLE lab_transport_container_event ADD CONSTRAINT fk_lab_transport_container_event_container_id FOREIGN KEY (container_id) REFERENCES lab_transport_container (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_transport_container_item_container_id') THEN ALTER TABLE lab_transport_container_item ADD CONSTRAINT fk_lab_transport_container_item_container_id FOREIGN KEY (container_id) REFERENCES lab_transport_container (id) ON DELETE CASCADE; END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_lab_transport_container_item_sample_id') THEN ALTER TABLE lab_transport_container_item ADD CONSTRAINT fk_lab_transport_container_item_sample_id FOREIGN KEY (sample_id) REFERENCES lab_order_sample (id) ON DELETE CASCADE; END IF; END $$;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_mis_patient_insurance_patient_card_id') THEN ALTER TABLE mis_patient_insurance ADD CONSTRAINT fk_mis_patient_insurance_patient_card_id FOREIGN KEY (patient_card_id) REFERENCES mis_patient_card (id) ON DELETE CASCADE; END IF; END $$; -- → [MedLink]
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_mis_patient_insurance_payer_id') THEN ALTER TABLE mis_patient_insurance ADD CONSTRAINT fk_mis_patient_insurance_payer_id FOREIGN KEY (payer_id) REFERENCES lab_payer (id) ON DELETE CASCADE; END IF; END $$;
 

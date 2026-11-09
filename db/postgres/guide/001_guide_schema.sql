@@ -197,6 +197,40 @@ CREATE TABLE IF NOT EXISTS gd_media (
     CONSTRAINT pk_gd_media PRIMARY KEY (id)
 );
 
+-- ---------------------------------------------------------------------------
+-- Набори інструкцій (презентації): упорядкований список розділів та/або інструкцій
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS gd_set (
+    id uuid NOT NULL,
+    app_id uuid NOT NULL,
+    tenant_id uuid,
+    code varchar(64),
+    caption varchar(256) NOT NULL,
+    description text,
+    color varchar(16),                              -- #rrggbb
+    icon varchar(64),
+    sort_order integer NOT NULL DEFAULT 0,
+    created_by uuid NOT NULL, created_on timestamp without time zone NOT NULL,
+    modified_by uuid NOT NULL, modified_on timestamp without time zone,
+    record_state integer NOT NULL DEFAULT 2,
+    CONSTRAINT pk_gd_set PRIMARY KEY (id),
+    CONSTRAINT fk_gd_set_app FOREIGN KEY (app_id) REFERENCES gd_app (id)
+);
+CREATE INDEX IF NOT EXISTS ix_gd_set_app ON gd_set (app_id, sort_order);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_gd_set_code ON gd_set (app_id, code) WHERE record_state = 2 AND code IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS gd_set_item (
+    id uuid NOT NULL,
+    set_id uuid NOT NULL,
+    scenario_id uuid,                               -- або інструкція...
+    folder_id uuid,                                 -- ...або розділ (розкривається в опубліковані інструкції)
+    sort_order integer NOT NULL DEFAULT 0,
+    CONSTRAINT pk_gd_set_item PRIMARY KEY (id),
+    CONSTRAINT fk_gd_set_item_set FOREIGN KEY (set_id) REFERENCES gd_set (id) ON DELETE CASCADE,
+    CONSTRAINT ck_gd_set_item_one CHECK ((scenario_id IS NULL) <> (folder_id IS NULL))
+);
+CREATE INDEX IF NOT EXISTS ix_gd_set_item_set ON gd_set_item (set_id, sort_order);
+
 -- Проходження користувачами
 CREATE TABLE IF NOT EXISTS gd_progress (
     id uuid NOT NULL,

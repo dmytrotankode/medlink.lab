@@ -44,7 +44,7 @@ public static class GuideExtensions
             var asm = typeof(GuideExtensions).Assembly;
             using var stream = asm.GetManifestResourceStream("MedLink.Guide.Sql.001_guide_schema.sql") ?? throw new InvalidOperationException("Немає вбудованого SQL схеми Guide");
             using var reader = new StreamReader(stream);
-            await db.Database.ExecuteSqlRawAsync(await reader.ReadToEndAsync(ct), ct);
+            await db.Database.ExecuteSqlRawAsync((await reader.ReadToEndAsync(ct)).Replace("{", "{{").Replace("}", "}}"), ct);
             return;
         }
         if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
@@ -56,8 +56,20 @@ public static class GuideExtensions
             {
                 using var check = conn.CreateCommand();
                 check.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='gd_app'";
-                if (Convert.ToInt32(await check.ExecuteScalarAsync(ct)) > 0) return;
-                await db.Database.ExecuteSqlRawAsync(db.Database.GenerateCreateScript(), ct);
+                var script = db.Database.GenerateCreateScript();
+                if (Convert.ToInt32(await check.ExecuteScalarAsync(ct)) > 0)
+                {
+                    // Дооснащення наявної БД: додаємо лише таблиці/індекси наборів (CREATE ... IF NOT EXISTS).
+                    // Нові колонки існуючих таблиць додавайте тут само: PRAGMA table_info + ALTER TABLE ... ADD COLUMN.
+                    foreach (var stmt in script.Split(";\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    {
+                        if (!stmt.Contains("\"gd_set\"") && !stmt.Contains("\"gd_set_item\"")) continue;
+                        var sql = stmt.Replace("CREATE TABLE ", "CREATE TABLE IF NOT EXISTS ").Replace("CREATE UNIQUE INDEX ", "CREATE UNIQUE INDEX IF NOT EXISTS ").Replace("CREATE INDEX ", "CREATE INDEX IF NOT EXISTS ");
+                        await db.Database.ExecuteSqlRawAsync(sql, ct);
+                    }
+                    return;
+                }
+                await db.Database.ExecuteSqlRawAsync(script, ct);
             }
             finally { if (wasClosed) await conn.CloseAsync(); }
             return;

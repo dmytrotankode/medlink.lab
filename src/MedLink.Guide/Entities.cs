@@ -46,6 +46,30 @@ public class GuideFolder : GuideAuditable
     public int SortOrder { get; set; }
 }
 
+/// <summary>Набір інструкцій (презентація): упорядкований список розділів та/або окремих інструкцій.</summary>
+public class GuideSet : GuideAuditable
+{
+    public string AppId { get; set; } = "";
+    public string? TenantId { get; set; }
+    public string? Code { get; set; }
+    public string Caption { get; set; } = "";
+    public string? Description { get; set; }
+    /// <summary>Колір набору (#rrggbb) для підсвічування розділів та інструкцій у панелі.</summary>
+    public string? Color { get; set; }
+    public string? Icon { get; set; }
+    public int SortOrder { get; set; }
+}
+
+/// <summary>Елемент набору: або інструкція (ScenarioId), або розділ (FolderId) — розділ розкривається в опубліковані інструкції.</summary>
+public class GuideSetItem
+{
+    [Key, MaxLength(64)] public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string SetId { get; set; } = "";
+    public string? ScenarioId { get; set; }
+    public string? FolderId { get; set; }
+    public int SortOrder { get; set; }
+}
+
 public class GuideAnchor : GuideAuditable
 {
     public string AppId { get; set; } = "";

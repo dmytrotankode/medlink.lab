@@ -35,7 +35,7 @@ public sealed record ActionRule(
 public static class LisEntities
 {
     public const string Order = "Order", Sample = "Sample", OrderTest = "OrderTest", Manifest = "Manifest",
-        Culture = "Culture", Connector = "Connector";
+        Culture = "Culture", Connector = "Connector", Container = "Container";
 }
 
 public static class OrderActions
@@ -64,6 +64,12 @@ public static class ManifestActions
     public const string Edit = "EDIT", Dispatch = "DISPATCH", Receive = "RECEIVE", Reject = "REJECT", Delete = "DELETE";
 }
 
+public static class ContainerActions
+{
+    public const string Pack = "PACK", Unpack = "UNPACK", Seal = "SEAL", Dispatch = "DISPATCH", Receive = "RECEIVE",
+        Return = "RETURN", MarkLost = "MARK_LOST", Delete = "DELETE";
+}
+
 public static class CultureActions
 {
     public const string Edit = "EDIT", Preliminary = "PRELIMINARY", Isolate = "ISOLATE", Complete = "COMPLETE", Delete = "DELETE",
@@ -85,6 +91,10 @@ public static class LisStateMachine
     private static readonly string[] Collectors = { LabRoles.Admin, LabRoles.Phlebotomist, LabRoles.Technician };
     private static readonly string[] Couriers = { LabRoles.Admin, LabRoles.Courier, LabRoles.Phlebotomist };
     private static readonly string[] Receivers = { LabRoles.Admin, LabRoles.Technician, LabRoles.Doctor, LabRoles.Courier };
+    /// <summary>Транспортні контейнери: укладка, запечатування, відправка.</summary>
+    public static readonly string[] ContainerPackers = { LabRoles.Admin, LabRoles.Courier, LabRoles.Phlebotomist, LabRoles.Technician, LabRoles.Registrar };
+    /// <summary>Транспортні контейнери: прийом, розкомплектування, повернення тари.</summary>
+    public static readonly string[] ContainerReceivers = { LabRoles.Admin, LabRoles.Technician, LabRoles.Courier, LabRoles.Registrar };
 
     // ------------------------------------------------------------------ ORDER
     public static readonly ActionRule[] OrderRules =
@@ -152,6 +162,21 @@ public static class LisStateMachine
         new(ManifestActions.Delete, new[]{ ManifestCreated, ManifestDispatched }, null, new[]{ LabRoles.Admin, LabRoles.Courier }, "Видалити маніфест", true),
     };
 
+    // ------------------------------------------------------------------ CONTAINER (транспортні контейнери)
+    public const string ContainerFree = ContainerStatuses.Free, ContainerPacking = ContainerStatuses.Packing, ContainerSealed = ContainerStatuses.Sealed,
+        ContainerInTransit = ContainerStatuses.InTransit, ContainerReceived = ContainerStatuses.Received, ContainerReturned = ContainerStatuses.Returned, ContainerLost = ContainerStatuses.Lost;
+    public static readonly ActionRule[] ContainerRules =
+    {
+        new(ContainerActions.Pack, new[]{ ContainerFree, ContainerPacking }, ContainerPacking, ContainerPackers, "Покласти пробу в контейнер"),
+        new(ContainerActions.Unpack, new[]{ ContainerPacking }, null, ContainerPackers, "Зняти пробу з місця", true),
+        new(ContainerActions.Seal, new[]{ ContainerPacking }, ContainerSealed, ContainerPackers, "Запечатати"),
+        new(ContainerActions.Dispatch, new[]{ ContainerSealed }, ContainerInTransit, ContainerPackers, "Відправити"),
+        new(ContainerActions.Receive, new[]{ ContainerInTransit }, ContainerReceived, ContainerReceivers, "Прийняти контейнер"),
+        new(ContainerActions.Return, new[]{ ContainerReceived }, ContainerReturned, ContainerReceivers, "Повернути тару"),
+        new(ContainerActions.MarkLost, new[]{ ContainerSealed, ContainerInTransit }, ContainerLost, ContainerReceivers, "Позначити втраченим"),
+        new(ContainerActions.Delete, new[]{ ContainerFree, ContainerPacking }, null, ContainerPackers, "Видалити порожній контейнер", true),
+    };
+
     // ------------------------------------------------------------------ CULTURE (посів)
     public const string CultureIncubating = "INCUBATING", CulturePreliminary = "PRELIMINARY", CultureIsolated = "ISOLATED", CultureCompleted = "COMPLETED";
     public static readonly ActionRule[] CultureRules =
@@ -187,6 +212,7 @@ public static class LisStateMachine
         LisEntities.Manifest => ManifestRules,
         LisEntities.Culture => CultureRules,
         LisEntities.Connector => ConnectorRules,
+        LisEntities.Container => ContainerRules,
         _ => throw new ArgumentException($"Невідома сутність машини станів: {entity}")
     };
 
@@ -198,6 +224,7 @@ public static class LisStateMachine
         LisEntities.Manifest => "Маніфест",
         LisEntities.Culture => "Посів",
         LisEntities.Connector => "Коннектор",
+        LisEntities.Container => "Контейнер",
         _ => entity
     };
 

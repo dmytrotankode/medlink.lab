@@ -125,6 +125,22 @@
 | GET | `/logistics/manifests?status=` | |
 | POST | `/logistics/manifests` | `{originDepartmentId, destinationDepartmentId, courierName, courierPhone, temperatureDispatch, barcodes[]}` → `DISPATCHED`, проби → `IN_TRANSIT` |
 | POST | `/logistics/manifests/{id}/receive` | `{temperatureReceipt, receivedBarcodes[], notes}` → перевірка холодового ланцюга (поза +2..+8 → `isColdChainViolated`) |
+| GET | `/logistics/container-types?includeInactive=` | довідник типів транспортної тари `{id, code, name, capacity, tempMinC, tempMaxC, isReusable, isActive}` |
+| POST | `/logistics/container-types` | LAB_ADMIN: `{code, name, capacity, tempMinC?, tempMaxC?, isReusable, isActive}` (режим — пара або порожньо); 409 при дублі коду |
+| PUT | `/logistics/container-types/{id}` | LAB_ADMIN: часткове оновлення; місткість не менша за зайняте місце в діючих контейнерах |
+| GET | `/logistics/containers?status=&search=&originDepartmentId=&destinationDepartmentId=&typeId=&take=` | журнал контейнерів; `search` — штрихкод контейнера або пробірки в ньому |
+| GET | `/logistics/containers/by-barcode/{barcode}` | контейнер за штрихкодом `TC########` (очікуваний склад для прийому) |
+| GET | `/logistics/containers/{id}` | `{id, barcode, typeCode, capacity, tempMinC, tempMaxC, status, origin/destinationDepartmentId, manifestId, manifestNumber, temperatureSeal, temperatureReceipt, isColdChainViolated, itemsCount, freeSlots, missingCount, extraCount, damagedCount, hasDiscrepancies, discrepancies{missing[],damaged[],extra[]}, items[{barcode, position, status}], allowedActions}` |
+| GET | `/logistics/containers/{id}/events` | історія: `[{eventType, at, employeeId, sampleBarcode, position, temperature, details}]` |
+| POST | `/logistics/containers` | `{typeId, originDepartmentId, destinationDepartmentId}` → `FREE`, штрихкод `TC`+8 цифр |
+| DELETE | `/logistics/containers/{id}` | лише порожній `FREE`/`PACKING` |
+| POST | `/logistics/containers/{id}/pack` | `{barcode, position?}` → місце; 409: дубль, інший контейнер, чужий пункт, не `COLLECTED`, переповнення, зайняте місце; 400: місце поза межами |
+| DELETE | `/logistics/containers/{id}/items/{barcode}` | зняти пробірку (лише `PACKING`) |
+| POST | `/logistics/containers/{id}/seal` | `{temperatureSeal, notes?}` → `SEALED`, створює маніфест `CREATED`; поза коридором → `isColdChainViolated` |
+| POST | `/logistics/containers/{id}/dispatch` | `{courierName?, courierPhone?}` → `IN_TRANSIT`, маніфест `DISPATCHED`, проби `IN_TRANSIT` |
+| POST | `/logistics/containers/{id}/receive` | `{temperatureReceipt, scannedBarcodes[], damagedBarcodes[], notes?}` → `RECEIVED`; проби `RECEIVED`, відсутні `MISSING`, пошкоджені `REJECTED`, зайві в `discrepancies.extra` |
+| POST | `/logistics/containers/{id}/return` | `{notes?}` → `RETURNED` (лише багаторазова тара після прийому) |
+| POST | `/logistics/containers/{id}/lost` | `{reason}` → `LOST` (з `SEALED`/`IN_TRANSIT`) |
 
 ### 2.7. Робочий лист і результати
 | Метод | Шлях | Опис |
@@ -213,16 +229,25 @@
 
 **Маршрутизація (FR-RTE-001…012)**: `POST /routing/preview {profileId?, testCodes[], cito}`; `GET /routing/log?orderId=&orderTestId=`; `GET /analyzers/{id}/queue` (CITO → планований час → час прийому); `PUT /order-tests/{id}/analyzer {analyzerId, reason}` (лише на доступного кандидата); `POST /analyzers/{id}/reroute {reason}` (прилад без зв'язку → online-кандидати). Правило: кандидати — прилади з увімкненим показником; вимкнена послуга приладу виключає його; без послуги — «окремий показник» (пріоритет 10); недоступні — ТО, lockout ВКЯ, без зв'язку довше `RerouteOnOfflineMinutes`; група показників однієї послуги в пробі — спершу прилад, що виконує всі; стратегія `PRIORITY | LEAST_LOAD | PRIORITY_THEN_LOAD`; CITO — мінімальний TAT. Lockout ВКЯ і вимкнення послуги переназначають тести в черзі.
 
-**ЕСОЗ: сесія, підпис КЕП, відправка (FR-SGN-001…014)**
+**ЕСОЗ: сесія, підпис КЕП, відправка (FR-SGN-001…023)**. Відправка асинхронна: `submit`/`annul` лише ставлять задачу в чергу `ehe_outbox` (відповідь — стан замовлення зі статусом `PROCESSING`), фоновий воркер надсилає пакет, опитує job і, **після** реєстрації звіту, окремою задачею погашає е-направлення (ТЗ 21.13.1). Режим обміну — `Ehealth:Mode = Mock | Replay | Live` (відповідь `/ehealth/submissions` містить `mode`).
 | Метод | Шлях | Опис |
 |---|---|---|
-| GET/POST/DELETE | `/ehealth/session` | стан `{level L0\|L1\|L2, label, expiresAt, totpEnabled, testCertificate, demoTotpCode}`; POST `{login, password}` → L1 (пароль не зберігається) |
+| GET/POST/DELETE | `/ehealth/session` | стан `{level L0\|L1\|L2, label, expiresAt, totpEnabled, testCertificate, demoTotpCode}`; POST `{login, password}` → L1 (пароль не зберігається). У режимі Live вхід недоступний (503 `ehealth-live-oauth-not-implemented`) |
 | POST | `/ehealth/session/confirm` | `{method KEP\|TOTP, code?, signer?{drfo, name, certSerial, validTo}}` → L2 |
 | POST | `/ehealth/session/totp` | увімкнення 2FA (мок: код `123456`) |
-| POST | `/orders/{id}/ehealth/prepare` | пакет DiagnosticReport → `READY_TO_SIGN` (hash) |
-| POST | `/orders/{id}/ehealth/submit` | `{signedData, signer, simulateNetworkError?}` → SIGNED → PROCESSING → REGISTERED → COMPLETED (е-направлення) / ERROR (повтор) / AUTH_REQUIRED |
-| POST | `/orders/{id}/ehealth/retry`, `/orders/{id}/ehealth/annul {signedData, signer, reason}` | повтор без повторного підпису; анулювання з КЕП |
-| GET | `/orders/{id}/ehealth/status`, `/ehealth/submissions?status=` | статус, журнал відправок |
+| POST | `/orders/{id}/ehealth/prepare` | будує пакет `{diagnostic_report, observations[]}` за OpenAPI (UUID v1, перевірка контракту) → `READY_TO_SIGN` (`submission.package`, `submission.packageHash`). Повторний `prepare` для відхиленого пакета створює новий пакет з новими id |
+| POST | `/orders/{id}/ehealth/mock-sign` | `{kind submit\|annul, reason?}` → `{signedData, signer, mock:true}`: тестовий підпис (CAdES-X Long, структурно коректний, не криптографічний); лише Mock/Replay, у Live — 409 `mock-sign-disabled` |
+| POST | `/orders/{id}/ehealth/submit` | `{signedData, signer, simulateNetworkError?}`; структура підпису й збіг вмісту з пакетом перевіряються (422 `signature-invalid`) → задача `SUBMIT_DR` → `PROCESSING`; далі `REGISTERED` → `COMPLETED` (е-направлення погашено) / `ERROR` / `REJECTED` / `AUTH_REQUIRED`. Повторний виклик для відправленого звіту — 409 |
+| POST | `/orders/{id}/ehealth/retry` | повертає в чергу останню зупинену (`FAILED`/`DEAD`) задачу замовлення без повторного підпису; немає такої — 409 |
+| POST | `/orders/{id}/ehealth/annul/prepare` `{reason}` | пакет скасування (`entered_in_error`) для підпису; 409, якщо звіт не зареєстровано |
+| POST | `/orders/{id}/ehealth/annul` | `{signedData, signer, reason}` → задача `CANCEL_DR`; після job `processed` — статус `ANNULLED` і новий висновок для повторної відправки. 409, якщо є незавершена задача замовлення |
+| GET | `/orders/{id}/ehealth/status` | `{status, label, mode, simulated, canSubmit, canAnnul, canRetry, cancelPending, problems[], submissions[], outbox[]}` |
+| GET | `/ehealth/submissions?status=&from=&to=&search=&kind=` | вихідні задачі: `items[{id, orderId, orderNumber, patientName, referralNumber, kind SUBMIT_DR\|COMPLETE_SR\|CANCEL_DR, kindLabel, status NEW\|SENDING\|WAITING_JOB\|DONE\|FAILED\|DEAD, statusLabel, attempts, pollAttempts, nextAttemptAt, lastError, errorCode, jobId, ehealthReportId, canRetry, canCancel, createdOn}]`, `notSent[]` (видані замовлення, які ще не надсилались; без `status` або `status=NOT_SENT`), `summary{статус: кількість}`, `mode`. `search` — номер направлення (е-/паперового), замовлення або пацієнт; `from/to` — дата створення задачі |
+| POST | `/ehealth/outbox/{id}/retry` | `FAILED`/`DEAD` → `NEW` (лічильники скидаються); інакше 409. Потрібна сесія L2 |
+| POST | `/ehealth/outbox/{id}/cancel` | `NEW`/`FAILED`/`DEAD` → `DEAD` (`CANCELLED_BY_USER`), підписаний пакет зберігається; передану в ЕСОЗ задачу (`SENDING`/`WAITING_JOB`/`DONE`) скасувати не можна — 409 |
+| POST | `/ehealth/outbox/run` | `{processed}`: негайний прохід черги (кнопка «Обробити зараз»; воркер робить це сам) |
+| GET | `/ehealth/exchange-log?take=` | журнал HTTP-обміну з ЕСОЗ (метод, шлях `/api/...`, стан, тіло запиту без `signed_data` — лише `[base64:N]`, відповідь), `mode` |
+| GET | `/referrals/ehealth/lookup?number=&patientId=` | пошук е-направлення: спершу `GET /api/service_requests?requisition=` в ЕСОЗ, далі оновлення дзеркала-кешу; `source: ESOZ \| CACHE`, `canUse`, `problems[]`; ЕСОЗ не знає номера — 404 |
 
 **Робота за направленнями і звіти (FR-WRK-001…010, FR-RPT-001…014)**: `GET /work/summary|/work/by-analyzer/{id}|/work/by-patient[/{id}]|/work/by-service[/{code}]` з фільтрами `source, packagesOnly, department, cito, status=active|all, from, to, q`; `GET /work/export?view=&key=` (XLSX). `GET /reports` — перелік; `GET /reports/{type}?format=json|xlsx|pdf` для `load, sources, indicators, tat, distribution, unperformed, packages`; `GET /reports/cumulative/{patientId}?from=&to=&group=service|analyzer&abnormalOnly=&format=` (стрілки ↑ ↓ ↑↑ ↓↓, критичні, журнал `lab_report_run` + аудит `REPORT_ACCESS`); `POST /reports/stat-daily/rebuild?from=&to=` (агрегати `lab_stat_daily`).
 

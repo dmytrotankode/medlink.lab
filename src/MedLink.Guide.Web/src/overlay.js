@@ -1,6 +1,7 @@
 // Оверлей: підсвічування зони (spotlight) + підказка з кнопками. Стежить за елементом (скрол/ресайз/анімації).
 import { h } from './util.js';
 import { getLayer } from './ui.js';
+import { bottomReserve } from './narration.js';
 
 let hole = null; let blockers = []; let tip = null; let raf = 0; let getRect = null; let cfg = null; let lastKey = '';
 
@@ -29,7 +30,7 @@ function setBlockers (r, block, dim) {
 
 function placeTip (r, placement) {
   if (!tip) return;
-  const tw = tip.offsetWidth; const th = tip.offsetHeight; const W = innerWidth; const H = innerHeight; const g = 14;
+  const tw = tip.offsetWidth; const th = tip.offsetHeight; const W = innerWidth; const H = innerHeight - bottomReserve(); const g = 14; // знизу лишаємо місце під панель титрів
   let x; let y;
   if (!r || placement === 'center') { x = (W - tw) / 2; y = (H - th) / 2; } else {
     const space = { bottom: H - (r.top + r.height), top: r.top, right: W - (r.left + r.width), left: r.left };
@@ -83,6 +84,7 @@ export function show (o) {
   const pct = o.total ? Math.round(((o.index + 1) / o.total) * 100) : 0;
   tip = h('div', { class: 'tip' },
     o.total ? h('div', { class: 'bar' }, h('i', { style: { width: pct + '%' } })) : null,
+    o.crumb ? h('div', { class: 'crumb', text: o.crumb, style: o.crumbColor ? { borderLeftColor: o.crumbColor } : {} }) : null,
     h('div', { class: 'hd' }, h('div', { class: 'ttl', text: o.title || '' }), o.total ? h('div', { class: 'cnt', text: (o.index + 1) + ' / ' + o.total }) : null),
     o.body ? h('div', { class: 'bd', text: o.body }) : null,
     o.valueHint ? h('div', { class: 'val', text: o.valueHint }) : null,

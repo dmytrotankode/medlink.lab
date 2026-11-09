@@ -14,7 +14,7 @@
 <script>
 import {
   ORDER_STATUS, SAMPLE_STATUS, TEST_STATUS, FLAG, MANIFEST_STATUS, CONNECTOR_STATUS,
-  BATCH_STATUS, QC_STATUS, CULTURE_STATUS, statusMeta
+  BATCH_STATUS, QC_STATUS, CULTURE_STATUS, CONTAINER_STATUS, statusMeta
 } from '../../utils/statuses';
 
 const MAPS = {
@@ -26,7 +26,8 @@ const MAPS = {
   connector: CONNECTOR_STATUS,
   batch: BATCH_STATUS,
   qc: QC_STATUS,
-  culture: CULTURE_STATUS
+  culture: CULTURE_STATUS,
+  container: CONTAINER_STATUS
 };
 
 export default {

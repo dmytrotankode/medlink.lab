@@ -4,6 +4,7 @@ import { h, uid, isOurs, safeJson } from './util.js';
 import { getLayer, toast } from './ui.js';
 import { buildAnchor, resolveAnchor, climb, interactiveTarget, describe, anchorQuality } from './anchor.js';
 import * as overlay from './overlay.js';
+import { SetsEditor } from './setseditor.js';
 
 const TYPES = { info: 'Пояснення', click: 'Клік', input: 'Введення', select: 'Вибір зі списку', hover: 'Наведення', navigate: 'Перехід', wait: 'Пауза' };
 const EXPECT = { next: 'Кнопка «Далі»', click: 'Клік по елементу', input: 'Заповнення поля', change: 'Зміна значення', route: 'Перехід на екран', appear: 'Поява елемента', disappear: 'Зникнення елемента' };
@@ -79,8 +80,15 @@ export class Builder {
     if (this.restorable) this.setStatus('Знайдено незбережену чернетку («' + (this.restorable.sc.caption || 'без назви') + '», кроків: ' + this.restorable.steps.length + ') — натисніть «Відновити».', 'warn');
   }
 
+  /** Керування наборами інструкцій (окреме вікно, див. setseditor.js). */
+  openSets () {
+    if (!this.setsEditor) this.setsEditor = new SetsEditor(this.ctx);
+    return this.setsEditor.open();
+  }
+
   close (silent) {
     this.stopPick(); this.stopRecord();
+    if (this.setsEditor) this.setsEditor.close();
     if (this.onKey) { document.removeEventListener('keydown', this.onKey, true); this.onKey = null; }
     if (this.el) { this.el.remove(); this.el = null; }
     if (!silent) overlay.hide();
@@ -327,6 +335,7 @@ export class Builder {
     const statusTxt = sc.id ? (sc.status === 'published' ? 'Опубліковано v' + (sc.publishedVersion || 1) : 'Чернетка') : 'Нова';
     bodyEls.push(h('div', { class: 'row' },
       h('button', { class: 'btn', text: '▶ З вибраного', disabled: !this.steps.length, onclick: () => this.preview(Math.max(0, this.sel)) }),
+      h('button', { class: 'btn', text: '🎞 Набори', title: 'Керування наборами інструкцій', onclick: () => this.openSets() }),
       h('span', { class: 'sp' }),
       h('span', { text: statusTxt + (this.dirty ? ' • не збережено' : ''), style: { fontSize: '12px', color: '#6b7280' } }),
       h('button', { class: 'btn', text: '💾 Зберегти', onclick: () => this.save() }),

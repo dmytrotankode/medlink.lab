@@ -19,7 +19,7 @@ public sealed class ReferralsController : LisControllerBase
     [HttpGet("ehealth/exchange-log")]
     public async Task<IActionResult> ExchangeLog([FromQuery] int take = 200) => Ok(new
     {
-        mode = _ehealth.IsMock ? "MOCK" : "LIVE", baseUrl = _ehealth.BaseUrl,
+        mode = _ehealth.ModeName, baseUrl = _ehealth.BaseUrl,
         items = await _db.EhealthExchangeLog.AsNoTracking().OrderByDescending(l => l.At).Take(Math.Clamp(take, 1, 1000))
             .Select(l => new { l.Id, l.At, l.Mode, l.Method, l.Url, l.StatusCode, l.DurationMs, l.RequestJson, l.ResponseJson }).ToListAsync()
     });

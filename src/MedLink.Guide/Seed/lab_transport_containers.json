@@ -1,0 +1,1857 @@
+{
+  "format": "medlink-guide-bundle",
+  "version": 1,
+  "app": {
+    "code": "lab",
+    "caption": "MedLink LIS"
+  },
+  "folders": [
+    {
+      "code": "ord-containers",
+      "caption": "Транспортні контейнери",
+      "icon": "inventory_2",
+      "sortOrder": 185
+    }
+  ],
+  "scenarios": [
+    {
+      "code": "lab.containers.pack",
+      "folderCode": "ord-containers",
+      "caption": "Як упакувати контейнер",
+      "description": "Створити контейнер, покласти пробірки по місцях, запечатувати з температурою й відправити.",
+      "icon": "inventory_2",
+      "startRoute": "/laboratory/logistics",
+      "requiredRoles": [],
+      "tags": [
+        "логістика",
+        "контейнер",
+        "укладка"
+      ],
+      "estMinutes": 5,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [
+        {
+          "name": "tubeBarcode",
+          "caption": "Штрихкод пробірки",
+          "kind": "fixed",
+          "defaultValue": "48000123"
+        },
+        {
+          "name": "sealTemp",
+          "caption": "t° при запечатуванні",
+          "kind": "fixed",
+          "defaultValue": "4,5"
+        }
+      ],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Вкладка «Контейнери»",
+          "body": "Відкрийте вкладку «Контейнери» на сторінці «Логістика зразків».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте вкладку «Контейнери».",
+          "anchor": {
+            "code": "lab.ol.tc-tab",
+            "caption": "Вкладка «Контейнери»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"tabContainers\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "tabContainers"
+              },
+              "label": "Вкладка «Контейнери»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Новий контейнер",
+          "body": "Натисніть «Новий контейнер».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Новий контейнер».",
+          "anchor": {
+            "code": "lab.ol.tc-create",
+            "caption": "Кнопка «Новий контейнер»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"createContainerBtn\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "createContainerBtn"
+              },
+              "label": "Кнопка «Новий контейнер»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "select",
+          "title": "Тип тари",
+          "body": "Оберіть тип тари: від нього залежать кількість місць і температурний режим.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "change",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Оберіть тип тари.",
+          "anchor": {
+            "code": "lab.ol.tc-create-type",
+            "caption": "Тип тари",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerTypeSelect\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerTypeSelect"
+              },
+              "label": "Тип тари"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "select",
+          "title": "Звідки",
+          "body": "Вкажіть пункт відправлення. До контейнера можна покласти лише пробірки цього пункту.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "change",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Вкажіть пункт відправлення.",
+          "anchor": {
+            "code": "lab.ol.tc-create-origin",
+            "caption": "Пункт відправлення",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerOrigin\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerOrigin"
+              },
+              "label": "Пункт відправлення"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "select",
+          "title": "Куди",
+          "body": "Вкажіть пункт призначення — лабораторію, яка прийме контейнер.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "change",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Вкажіть пункт призначення.",
+          "anchor": {
+            "code": "lab.ol.tc-create-dest",
+            "caption": "Пункт призначення",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerDestination\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerDestination"
+              },
+              "label": "Пункт призначення"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Створити",
+          "body": "Натисніть «Створити». Контейнер отримає штрихкод, що починається з TC, і відкриється його картка.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Створити».",
+          "anchor": {
+            "code": "lab.ol.tc-create-ok",
+            "caption": "Кнопка «Створити»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerCreateConfirm\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerCreateConfirm"
+              },
+              "label": "Кнопка «Створити»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Штрихкод контейнера",
+          "body": "Це штрихкод контейнера. Його можна надрукувати й наклеїти на термобокс.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Це штрихкод контейнера.",
+          "anchor": {
+            "code": "lab.ol.tc-card-barcode",
+            "caption": "Штрихкод контейнера",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerCardBarcode\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerCardBarcode"
+              },
+              "label": "Штрихкод контейнера"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Скан пробірки",
+          "body": "Відскануйте штрихкод пробірки (наприклад {{tubeBarcode}}) і натисніть Enter — пробірка стане на перше вільне місце. Поле лишається активним для наступної пробірки.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "{{tubeBarcode}}",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Скануйте пробірки одну за одною.",
+          "anchor": {
+            "code": "lab.ol.tc-scan",
+            "caption": "Поле сканування пробірки",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerScanInput\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerScanInput"
+              },
+              "label": "Поле сканування пробірки"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Сітка місць",
+          "body": "Кожна клітинка — одне місце. Зайняті місця показують штрихкод пробірки. Клік по зайнятому місцю знімає пробірку, поки контейнер не запечатано.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Так виглядають місця контейнера.",
+          "anchor": {
+            "code": "lab.ol.tc-slots",
+            "caption": "Сітка місць",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerSlots\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerSlots"
+              },
+              "label": "Сітка місць"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Запечатати",
+          "body": "Коли всі пробірки на місцях, натисніть «Запечатати».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Запечатайте контейнер.",
+          "anchor": {
+            "code": "lab.ol.tc-seal",
+            "caption": "Кнопка «Запечатати»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerSealBtn\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerSealBtn"
+              },
+              "label": "Кнопка «Запечатати»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Температура",
+          "body": "Введіть температуру в контейнері — наприклад {{sealTemp}} °C. Якщо вона поза режимом типу тари, система зафіксує порушення холодового ланцюга.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "{{sealTemp}}",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Введіть температуру в контейнері.",
+          "anchor": {
+            "code": "lab.ol.tc-seal-temp",
+            "caption": "Температура запечатування",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"sealTemperature\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "sealTemperature"
+              },
+              "label": "Температура запечатування"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Підтвердити запечатування",
+          "body": "Натисніть «Запечатати». Система сформує маніфест зі складом контейнера.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Підтвердьте запечатування.",
+          "anchor": {
+            "code": "lab.ol.tc-seal-ok",
+            "caption": "Кнопка «Запечатати»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"sealConfirm\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "sealConfirm"
+              },
+              "label": "Кнопка «Запечатати»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Відправити",
+          "body": "Натисніть «Відправити», коли кур’єр забирає контейнер.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відправте контейнер.",
+          "anchor": {
+            "code": "lab.ol.tc-dispatch",
+            "caption": "Кнопка «Відправити»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerDispatchBtn\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerDispatchBtn"
+              },
+              "label": "Кнопка «Відправити»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Кур’єр",
+          "body": "За потреби вкажіть кур’єра. Поле не обов’язкове.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "Іваненко І.",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Вкажіть кур’єра.",
+          "anchor": {
+            "code": "lab.ol.tc-courier",
+            "caption": "Кур’єр",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerCourierName\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerCourierName"
+              },
+              "label": "Кур’єр"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Підтвердити відправку",
+          "body": "Натисніть «Відправити». Пробірки отримають статус «У дорозі».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Підтвердьте відправку.",
+          "anchor": {
+            "code": "lab.ol.tc-dispatch-ok",
+            "caption": "Кнопка «Відправити»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dispatchConfirm\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dispatchConfirm"
+              },
+              "label": "Кнопка «Відправити»"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.containers.receive",
+      "folderCode": "ord-containers",
+      "caption": "Як прийняти контейнер і розкомплектувати",
+      "description": "Відсканувати контейнер, звірити пробірки з очікуваним складом, відмітити пошкоджені й прийняти з розбіжностями.",
+      "icon": "inbox",
+      "startRoute": "/laboratory/logistics",
+      "requiredRoles": [],
+      "tags": [
+        "логістика",
+        "контейнер",
+        "прийом",
+        "розкомплектування",
+        "хоцо"
+      ],
+      "estMinutes": 5,
+      "sortOrder": 20,
+      "publish": true,
+      "variables": [
+        {
+          "name": "containerBarcode",
+          "caption": "Штрихкод контейнера",
+          "kind": "fixed",
+          "defaultValue": "TC00000001"
+        },
+        {
+          "name": "tubeBarcode",
+          "caption": "Штрихкод пробірки",
+          "kind": "fixed",
+          "defaultValue": "48000123"
+        },
+        {
+          "name": "recvTemp",
+          "caption": "t° при прийомі",
+          "kind": "fixed",
+          "defaultValue": "5,0"
+        }
+      ],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Вкладка «Контейнери»",
+          "body": "Відкрийте вкладку «Контейнери» на сторінці «Логістика зразків».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте вкладку «Контейнери».",
+          "anchor": {
+            "code": "lab.ol.tc-tab",
+            "caption": "Вкладка «Контейнери»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"tabContainers\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "tabContainers"
+              },
+              "label": "Вкладка «Контейнери»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Прийняти контейнер",
+          "body": "Натисніть «Прийняти контейнер».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Прийняти контейнер».",
+          "anchor": {
+            "code": "lab.ol.tc-recv-open",
+            "caption": "Кнопка «Прийняти контейнер»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveContainerBtn\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveContainerBtn"
+              },
+              "label": "Кнопка «Прийняти контейнер»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Скан контейнера",
+          "body": "Відскануйте штрихкод контейнера (наприклад {{containerBarcode}}) і натисніть Enter. Приймати можна лише контейнер зі статусом «У дорозі».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "{{containerBarcode}}",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Скануйте контейнер.",
+          "anchor": {
+            "code": "lab.ol.tc-recv-scan-c",
+            "caption": "Скан контейнера",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveContainerScan\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveContainerScan"
+              },
+              "label": "Скан контейнера"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Очікуваний склад",
+          "body": "Тут усі пробірки, які мали приїхати, з їхніми місцями. Відскановані стають зеленими.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Це очікуваний склад контейнера.",
+          "anchor": {
+            "code": "lab.ol.tc-recv-expected",
+            "caption": "Очікуваний склад",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveExpectedList\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveExpectedList"
+              },
+              "label": "Очікуваний склад"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Скан пробірок",
+          "body": "Скануйте пробірки з контейнера по одній (наприклад {{tubeBarcode}}) і натискайте Enter. Невідому пробірку система додасть до зайвих.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "{{tubeBarcode}}",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Скануйте пробірки.",
+          "anchor": {
+            "code": "lab.ol.tc-recv-scan-s",
+            "caption": "Скан пробірки",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveSampleScan\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveSampleScan"
+              },
+              "label": "Скан пробірки"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Зайві пробірки",
+          "body": "Сюди потрапляють штрихкоди, яких не було у складі контейнера. Помилково відскановану можна прибрати хрестиком.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Тут зайві пробірки.",
+          "anchor": {
+            "code": "lab.ol.tc-recv-extra",
+            "caption": "Зайві пробірки",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveExtraList\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveExtraList"
+              },
+              "label": "Зайві пробірки"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Підсумок розбіжностей",
+          "body": "Підсумок показує, скільки пробірок відскановано, скільки відсутні, пошкоджені й зайві. Пошкоджену пробірку позначте кнопкою біля неї — вона буде відбракована.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Ось підсумок розбіжностей.",
+          "anchor": {
+            "code": "lab.ol.tc-recv-summary",
+            "caption": "Підсумок",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveSummary\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveSummary"
+              },
+              "label": "Підсумок"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Температура при прийомі",
+          "body": "Введіть температуру в контейнері — наприклад {{recvTemp}} °C. Поза режимом — система зафіксує порушення холодового ланцюга, але прийом не блокується.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "{{recvTemp}}",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Введіть температуру при прийомі.",
+          "anchor": {
+            "code": "lab.ol.tc-recv-temp",
+            "caption": "Температура при прийомі",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveTemperature\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveTemperature"
+              },
+              "label": "Температура при прийомі"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Примітки",
+          "body": "За потреби опишіть стан пакування, мокрий пакет, пошкодження.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Додайте примітку, якщо потрібно.",
+          "anchor": {
+            "code": "lab.ol.tc-recv-notes",
+            "caption": "Примітки",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveNotes\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveNotes"
+              },
+              "label": "Примітки"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Прийняти",
+          "body": "Натисніть «Прийняти». Скановані пробірки стануть «Прийнято», відсутні лишаться в дорозі, пошкоджені будуть відбраковані.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Підтвердьте прийом.",
+          "anchor": {
+            "code": "lab.ol.tc-recv-ok",
+            "caption": "Кнопка «Прийняти»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveContainerConfirm\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveContainerConfirm"
+              },
+              "label": "Кнопка «Прийняти»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Результат",
+          "body": "Картка контейнера показує розбіжності й порушення холодового ланцюга, якщо вони були.",
+          "route": "/laboratory/logistics",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Це результат прийому.",
+          "anchor": {
+            "code": "lab.ol.tc-card",
+            "caption": "Картка контейнера",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerCard\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerCard"
+              },
+              "label": "Картка контейнера"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.containers.receive-from-card",
+      "folderCode": "ord-containers",
+      "caption": "Як відкрити контейнер у дорозі й прийняти його з картки",
+      "description": "Знайти контейнер у журналі, відкрити картку й перейти до розкомплектування.",
+      "icon": "inbox",
+      "startRoute": "/laboratory/logistics",
+      "requiredRoles": [],
+      "tags": [
+        "логістика",
+        "контейнер",
+        "прийом",
+        "хоцо"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 30,
+      "publish": true,
+      "variables": [
+        {
+          "name": "containerBarcode",
+          "caption": "Штрихкод контейнера",
+          "kind": "fixed",
+          "defaultValue": "TC00000001"
+        }
+      ],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Вкладка «Контейнери»",
+          "body": "Відкрийте вкладку «Контейнери» на сторінці «Логістика зразків».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте вкладку «Контейнери».",
+          "anchor": {
+            "code": "lab.ol.tc-tab",
+            "caption": "Вкладка «Контейнери»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"tabContainers\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "tabContainers"
+              },
+              "label": "Вкладка «Контейнери»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "select",
+          "title": "Статус «У дорозі»",
+          "body": "Відфільтруйте журнал за статусом «У дорозі» — це контейнери, які чекають на прийом.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "change",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Оберіть статус «У дорозі».",
+          "anchor": {
+            "code": "lab.ol.tc-flt-status",
+            "caption": "Фільтр статусу",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerStatusFilter\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerStatusFilter"
+              },
+              "label": "Фільтр статусу"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Пошук",
+          "body": "Або введіть штрихкод контейнера чи пробірки, наприклад {{containerBarcode}}, і натисніть Enter.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "{{containerBarcode}}",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Знайдіть контейнер за штрихкодом.",
+          "anchor": {
+            "code": "lab.ol.tc-search",
+            "caption": "Пошук",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerSearch\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerSearch"
+              },
+              "label": "Пошук"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Відкрийте картку",
+          "body": "Клацніть по рядку потрібного контейнера.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте картку контейнера.",
+          "anchor": {
+            "code": "lab.ol.tc-table",
+            "caption": "Журнал контейнерів",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containersTable\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containersTable"
+              },
+              "label": "Журнал контейнерів"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Прийняти контейнер",
+          "body": "У картці натисніть «Прийняти контейнер» — відкриється екран розкомплектування.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Прийняти контейнер».",
+          "anchor": {
+            "code": "lab.ol.tc-card-recv",
+            "caption": "Кнопка «Прийняти контейнер»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerReceiveBtn\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerReceiveBtn"
+              },
+              "label": "Кнопка «Прийняти контейнер»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Очікуваний склад",
+          "body": "Склад уже завантажено — залишилось відсканувати пробірки.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Склад контейнера вже відображено.",
+          "anchor": {
+            "code": "lab.ol.tc-recv-expected2",
+            "caption": "Очікуваний склад",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveExpectedList\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveExpectedList"
+              },
+              "label": "Очікуваний склад"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.containers.return",
+      "folderCode": "ord-containers",
+      "caption": "Як повернути тару",
+      "description": "Після прийому повернути порожній багаторазовий контейнер відправнику.",
+      "icon": "keyboard_return",
+      "startRoute": "/laboratory/logistics",
+      "requiredRoles": [],
+      "tags": [
+        "логістика",
+        "контейнер",
+        "тара"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 40,
+      "publish": true,
+      "variables": [
+        {
+          "name": "containerBarcode",
+          "caption": "Штрихкод контейнера",
+          "kind": "fixed",
+          "defaultValue": "TC00000001"
+        }
+      ],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Вкладка «Контейнери»",
+          "body": "Відкрийте вкладку «Контейнери» на сторінці «Логістика зразків».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте вкладку «Контейнери».",
+          "anchor": {
+            "code": "lab.ol.tc-tab",
+            "caption": "Вкладка «Контейнери»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"tabContainers\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "tabContainers"
+              },
+              "label": "Вкладка «Контейнери»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Знайдіть контейнер",
+          "body": "Введіть штрихкод прийнятого контейнера, наприклад {{containerBarcode}}, і натисніть Enter.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "{{containerBarcode}}",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Знайдіть прийнятий контейнер.",
+          "anchor": {
+            "code": "lab.ol.tc-search2",
+            "caption": "Пошук",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerSearch\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerSearch"
+              },
+              "label": "Пошук"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Відкрийте картку",
+          "body": "Клацніть по рядку контейнера зі статусом «Прийнято».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте картку.",
+          "anchor": {
+            "code": "lab.ol.tc-table2",
+            "caption": "Журнал контейнерів",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containersTable\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containersTable"
+              },
+              "label": "Журнал контейнерів"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Повернути тару",
+          "body": "Натисніть «Повернути тару». Кнопка є лише для багаторазових типів тари.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Поверніть тару.",
+          "anchor": {
+            "code": "lab.ol.tc-return",
+            "caption": "Кнопка «Повернути тару»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerReturnBtn\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerReturnBtn"
+              },
+              "label": "Кнопка «Повернути тару»"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.containers.journal",
+      "folderCode": "ord-containers",
+      "caption": "Журнал контейнерів: статуси, пошук, історія",
+      "description": "Як читати журнал контейнерів, шукати за штрихкодом і дивитися історію подій.",
+      "icon": "list_alt",
+      "startRoute": "/laboratory/logistics",
+      "requiredRoles": [],
+      "tags": [
+        "логістика",
+        "контейнер",
+        "журнал"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 50,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Вкладка «Контейнери»",
+          "body": "Відкрийте вкладку «Контейнери» на сторінці «Логістика зразків».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте вкладку «Контейнери».",
+          "anchor": {
+            "code": "lab.ol.tc-tab",
+            "caption": "Вкладка «Контейнери»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"tabContainers\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "tabContainers"
+              },
+              "label": "Вкладка «Контейнери»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Журнал контейнерів",
+          "body": "Тут усі транспортні контейнери: тип, маршрут, заповнення, температури й статус. Червоний рядок — порушення холодового ланцюга, жовтий — розбіжності при прийомі.",
+          "route": "/laboratory/logistics",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Це журнал контейнерів.",
+          "anchor": {
+            "code": "lab.ol.tc-panel",
+            "caption": "Журнал контейнерів",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containersPanel\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containersPanel"
+              },
+              "label": "Журнал контейнерів"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "select",
+          "title": "Фільтр статусу",
+          "body": "Відфільтруйте контейнери за статусом: вільний, укладання, запечатано, у дорозі, прийнято, повернуто, втрачено.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "change",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Фільтруйте за статусом.",
+          "anchor": {
+            "code": "lab.ol.tc-flt-status2",
+            "caption": "Фільтр статусу",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerStatusFilter\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerStatusFilter"
+              },
+              "label": "Фільтр статусу"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Пошук за штрихкодом",
+          "body": "Пошук працює за штрихкодом контейнера та за штрихкодом пробірки всередині нього.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Шукайте за штрихкодом.",
+          "anchor": {
+            "code": "lab.ol.tc-search3",
+            "caption": "Пошук",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerSearch\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerSearch"
+              },
+              "label": "Пошук"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Відкрийте картку",
+          "body": "Клацніть по рядку, щоб побачити сітку місць і розбіжності.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте картку контейнера.",
+          "anchor": {
+            "code": "lab.ol.tc-table3",
+            "caption": "Журнал контейнерів",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containersTable\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containersTable"
+              },
+              "label": "Журнал контейнерів"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Історія",
+          "body": "У розділі «Історія» видно, хто й коли поклав пробірки, запечатав, відправив і прийняв контейнер, з температурами.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Тут історія контейнера.",
+          "anchor": {
+            "code": "lab.ol.tc-events",
+            "caption": "Історія контейнера",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerEvents\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerEvents"
+              },
+              "label": "Історія контейнера"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.containers.types",
+      "folderCode": "ord-containers",
+      "caption": "Як налаштувати типи тари",
+      "description": "Додати тип транспортної тари: місткість, температурний режим, багаторазовість.",
+      "icon": "settings",
+      "startRoute": "/laboratory/logistics",
+      "requiredRoles": [],
+      "tags": [
+        "логістика",
+        "контейнер",
+        "довідник",
+        "тара"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 60,
+      "publish": true,
+      "variables": [
+        {
+          "name": "typeCode",
+          "caption": "Код типу",
+          "kind": "fixed",
+          "defaultValue": "TB-12"
+        },
+        {
+          "name": "typeName",
+          "caption": "Назва",
+          "kind": "fixed",
+          "defaultValue": "Термобокс на 12 місць"
+        },
+        {
+          "name": "typeCap",
+          "caption": "Місткість",
+          "kind": "fixed",
+          "defaultValue": "12"
+        }
+      ],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Вкладка «Контейнери»",
+          "body": "Відкрийте вкладку «Контейнери» на сторінці «Логістика зразків».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте вкладку «Контейнери».",
+          "anchor": {
+            "code": "lab.ol.tc-tab",
+            "caption": "Вкладка «Контейнери»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"tabContainers\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "tabContainers"
+              },
+              "label": "Вкладка «Контейнери»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Типи тари",
+          "body": "Натисніть «Типи тари». Довідник змінює лише адміністратор лабораторії.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте довідник типів тари.",
+          "anchor": {
+            "code": "lab.ol.tc-types",
+            "caption": "Кнопка «Типи тари»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerTypesBtn\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerTypesBtn"
+              },
+              "label": "Кнопка «Типи тари»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Список типів",
+          "body": "Клацніть по рядку, щоб змінити тип. Вимкнені типи не пропонуються при створенні контейнера.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Це список типів тари.",
+          "anchor": {
+            "code": "lab.ol.tc-types-table",
+            "caption": "Список типів",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"containerTypesTable\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "containerTypesTable"
+              },
+              "label": "Список типів"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Код",
+          "body": "Введіть унікальний код типу — наприклад {{typeCode}}.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "{{typeCode}}",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Введіть код типу.",
+          "anchor": {
+            "code": "lab.ol.tc-type-code",
+            "caption": "Код",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"typeCode\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "typeCode"
+              },
+              "label": "Код"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Назва",
+          "body": "Введіть назву — наприклад «{{typeName}}».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "{{typeName}}",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Введіть назву.",
+          "anchor": {
+            "code": "lab.ol.tc-type-name",
+            "caption": "Назва",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"typeName\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "typeName"
+              },
+              "label": "Назва"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Кількість місць",
+          "body": "Вкажіть кількість місць — наприклад {{typeCap}}.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "{{typeCap}}",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Вкажіть кількість місць.",
+          "anchor": {
+            "code": "lab.ol.tc-type-cap",
+            "caption": "Місткість",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"typeCapacity\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "typeCapacity"
+              },
+              "label": "Місткість"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Температурний режим",
+          "body": "Вкажіть мінімальну температуру режиму. Максимум — у сусідньому полі. Якщо залишити порожнім, діє коридор холодового ланцюга +2…+8 °C.",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "2",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Вкажіть температурний режим.",
+          "anchor": {
+            "code": "lab.ol.tc-type-tmin",
+            "caption": "t° від",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"typeTempMin\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "typeTempMin"
+              },
+              "label": "t° від"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Зберегти",
+          "body": "Натисніть «Зберегти».",
+          "route": "/laboratory/logistics",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Збережіть тип тари.",
+          "anchor": {
+            "code": "lab.ol.tc-type-save",
+            "caption": "Кнопка «Зберегти»",
+            "routePattern": "/laboratory/logistics",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"typeSave\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "typeSave"
+              },
+              "label": "Кнопка «Зберегти»"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    }
+  ]
+}

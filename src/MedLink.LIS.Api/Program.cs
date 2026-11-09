@@ -24,16 +24,23 @@ static string ResolveSqlitePath(IConfiguration cfg, IHostEnvironment env)
     Directory.CreateDirectory(Path.GetDirectoryName(path)!);
     return path;
 }
+// Database:Provider = Sqlite (типово) | Postgres (Database:ConnectionString). Дати зберігаються як є (без часових поясів).
+var usePostgres = string.Equals(builder.Configuration["Database:Provider"], "Postgres", StringComparison.OrdinalIgnoreCase);
+if (usePostgres) AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 builder.Services.AddDbContext<LisDbContext>((sp, o) =>
-    o.UseSqlite($"Data Source={ResolveSqlitePath(sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<IHostEnvironment>())}"));
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    if (usePostgres) o.UseNpgsql(cfg["Database:ConnectionString"] ?? throw new InvalidOperationException("Database:ConnectionString не задано"));
+    else o.UseSqlite($"Data Source={ResolveSqlitePath(cfg, sp.GetRequiredService<IHostEnvironment>())}");
+});
 
 // --- MedLink Guide: інтерактивні покрокові інструкції (окрема бібліотека/схема guide, API /api/v1/guide) ---
 // На SQLite — окремий файл App_Data/medlink_guide.db; на PostgreSQL — та сама БД, схема "guide" (db/postgres/guide).
 var guideDbPath = Path.Combine(builder.Environment.ContentRootPath, builder.Configuration["Database:GuideSqlitePath"] ?? "App_Data/medlink_guide.db");
-Directory.CreateDirectory(Path.GetDirectoryName(guideDbPath)!);
+if (!usePostgres) Directory.CreateDirectory(Path.GetDirectoryName(guideDbPath)!);
 builder.Services.AddGuide(builder.Configuration, o =>
 {
-    o.ConfigureDb = db => db.UseSqlite($"Data Source={guideDbPath}");
+    o.ConfigureDb = db => { if (usePostgres) db.UseNpgsql(builder.Configuration["Database:ConnectionString"]); else db.UseSqlite($"Data Source={guideDbPath}"); };
     o.AllowAnonymousEditing = true; // у ЛІС немає автентифікації (її надає evomis); розмежування — через Guide:EditorRoles у evomis
 });
 
@@ -81,19 +88,8 @@ builder.Services.AddScoped<OrderStateService>();
 builder.Services.AddScoped<TubePlanService>();
 builder.Services.AddScoped<OrgDictionaryService>();
 builder.Services.AddScoped<SendOutService>();
-// --- ЕСОЗ (eHealth): реальні виклики API; у режимі Mock відповідає EhealthMockHandler (автономна робота й тести) ---
-var ehealthOptions = builder.Configuration.GetSection("Ehealth").Get<MedLink.LIS.Api.Services.Ehealth.EhealthOptions>() ?? new();
-builder.Services.AddSingleton(ehealthOptions);
-builder.Services.AddSingleton<MedLink.LIS.Api.Services.Ehealth.EhealthMockState>();
-builder.Services.AddTransient<MedLink.LIS.Api.Services.Ehealth.EhealthMockHandler>();
-var ehealthHttp = builder.Services.AddHttpClient(MedLink.LIS.Api.Services.Ehealth.EhealthClient.HttpClientName, c =>
-{
-    c.BaseAddress = new Uri(ehealthOptions.BaseUrl.EndsWith('/') ? ehealthOptions.BaseUrl : ehealthOptions.BaseUrl + "/");
-    c.Timeout = TimeSpan.FromSeconds(60);
-});
-if (ehealthOptions.IsMock) ehealthHttp.ConfigurePrimaryHttpMessageHandler<MedLink.LIS.Api.Services.Ehealth.EhealthMockHandler>();
-builder.Services.AddScoped<MedLink.LIS.Api.Services.Ehealth.IEhealthClient, MedLink.LIS.Api.Services.Ehealth.EhealthClient>();
-builder.Services.AddScoped<IEhealthReferralGateway, EhealthReferralGateway>();
+// --- ЕСОЗ (eHealth): режими Mock | Replay | Live, клієнт, outbox-воркер (Services/Ehealth/EhealthServiceCollectionExtensions.cs) ---
+MedLink.LIS.Api.Services.Ehealth.EhealthServiceCollectionExtensions.AddEhealthIntegration(builder);
 builder.Services.AddScoped<ReferralService>();
 builder.Services.AddScoped<BillingService>();
 builder.Services.AddScoped<ClientService>();
@@ -103,7 +99,6 @@ builder.Services.AddScoped<MisCatalogService>();
 builder.Services.AddScoped<MisReferralService>();
 builder.Services.AddScoped<WorkReportsService>();
 builder.Services.AddScoped<PathologyService>();
-builder.Services.AddScoped<MedLink.LIS.Api.Services.Ehealth.EhealthSignService>();
 builder.Services.AddScoped<SampleService>();
 builder.Services.AddScoped<ResultPipelineService>();
 builder.Services.AddScoped<WorklistService>();
@@ -156,7 +151,7 @@ using (var scope = app.Services.CreateScope())
     if (legacyBackup != null) app.Logger.LogWarning("БД попередньої структури (до вирівнювання з MedLink) збережено як {Backup}; створюється нова БД", legacyBackup);
     await db.Database.EnsureCreatedAsync();
     foreach (var change in await SchemaUpgrader.UpgradeAsync(db)) app.Logger.LogWarning("Оновлення схеми БД: {Sql}", change);
-    await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
+    if (db.Database.IsSqlite()) await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
     await scope.ServiceProvider.GetRequiredService<SeedService>().SeedAsync();
     await scope.ServiceProvider.GetRequiredService<MisCatalogSeeder>().SeedAsync();
     await scope.ServiceProvider.GetRequiredService<MisCatalogService>().RecomputeReadinessAsync();

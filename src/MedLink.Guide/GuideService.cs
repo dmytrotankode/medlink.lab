@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MedLink.Guide;
 
-public sealed class GuideService
+public sealed partial class GuideService
 {
     private readonly GuideDbContext _db;
 
@@ -98,10 +98,19 @@ public sealed class GuideService
             while (fid != null && byId.TryGetValue(fid, out var f) && keep.Add(f.Id)) fid = f.ParentId;
         }
 
+        var setData = await BuildCatalogSetsAsync(app.Id, scenarios, folders, user);
+        var noSets = Array.Empty<SetRef>();
+
         return new
         {
             app = new { app.Code, app.Caption },
-            folders = folders.Where(f => keep.Contains(f.Id)).Select(f => new { f.Id, f.ParentId, f.Code, f.Caption, f.Description, f.Icon, f.SortOrder }),
+            sets = setData.Sets,
+            folders = folders.Where(f => keep.Contains(f.Id)).Select(f => new
+            {
+                f.Id, f.ParentId, f.Code, f.Caption, f.Description, f.Icon, f.SortOrder,
+                setCodes = setData.FolderSets.TryGetValue(f.Id, out var fs) ? fs.Select(x => x.Code).ToArray() : Array.Empty<string>(),
+                sets = setData.FolderSets.TryGetValue(f.Id, out var fs2) ? fs2.ToArray() : noSets
+            }),
             scenarios = scenarios.OrderBy(s => s.SortOrder).ThenBy(s => s.Caption).Select(s => new
             {
                 s.Id, s.FolderId, s.Code, s.Caption, s.Description, s.Icon, s.StartRoute, s.EstMinutes, s.Locale, s.SortOrder,
@@ -109,7 +118,9 @@ public sealed class GuideService
                 requiredRoles = GuideJson.ParseList(s.RequiredRoles),
                 s.PublishedVersion,
                 stepCount = steps.Count(x => x.ScenarioId == s.Id),
-                relevantHere = route != null && (RouteMatches(s.StartRoute, route) || steps.Any(x => x.ScenarioId == s.Id && RouteMatches(x.Route, route)))
+                relevantHere = route != null && (RouteMatches(s.StartRoute, route) || steps.Any(x => x.ScenarioId == s.Id && RouteMatches(x.Route, route))),
+                setCodes = setData.ScenarioSets.TryGetValue(s.Id, out var ss) ? ss.Select(x => x.Code).ToArray() : Array.Empty<string>(),
+                sets = setData.ScenarioSets.TryGetValue(s.Id, out var ss2) ? ss2.ToArray() : noSets
             })
         };
     }
@@ -612,6 +623,7 @@ public sealed class GuideService
                 }
             }
         }
+        await ImportSetsAsync(app, bundle.Sets, res);
         return res;
     }
 

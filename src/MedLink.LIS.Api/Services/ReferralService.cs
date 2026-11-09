@@ -1,8 +1,8 @@
 // =============================================================================
 // FR-REF-001. Типи направлень і облік: е-направлення ЕСОЗ, паперове, внутрішнє, клініка-партнер, самозвернення.
-// Життєвий цикл е-направлення у статусах evomis: перевірка → взяти в роботу → погасити висновком → звільнити при скасуванні.
-// Операції ЕСОЗ інкапсульовано в IEhealthReferralGateway: в автономній ЛІС — емулятор, що оновлює дзеркальні колонки
-// ehe_incoming_medical_referral; у MedLink — штатні EhealthIncomingMedicalReferralService.Use/Complete/Release (ТЗ 20.3.2, п. 5–6).
+// Життєвий цикл е-направлення: пошук у ЕСОЗ за номером (дзеркало ehe_incoming_medical_referral — лише кеш) → взяти в роботу (use, якщо є програма)
+// → звільнити при скасуванні. Погашення (complete) виконується НЕ тут, а задачею outbox COMPLETE_SR після реєстрації звіту в ЕСОЗ.
+// Операції ЕСОЗ інкапсульовано в IEhealthReferralGateway (ТЗ 20.3.2, 21.13).
 // =============================================================================
 using MedLink.LIS.Api.Data;
 using MedLink.LIS.Api.Data.Entities;
@@ -12,52 +12,60 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MedLink.LIS.Api.Services;
 
-/// <summary>Операції з е-направленням в ЕСОЗ (виконавець): виклик API ЕСОЗ + оновлення дзеркала МІС після успіху (як в evomis).</summary>
+/// <summary>Операції з е-направленням в ЕСОЗ (виконавець). Погашення (complete) тут НЕМАЄ: воно виконується окремою задачею outbox
+/// COMPLETE_SR лише після того, як діагностичний звіт зареєстровано в ЕСОЗ (див. Services/Ehealth/EhealthOutbox.cs).</summary>
 public interface IEhealthReferralGateway
 {
-    /// <summary>Перевірити направлення в реєстрі ЕСОЗ: GET patients/service_requests?requisition=…</summary>
-    Task<List<string>> CheckInRegistryAsync(EheIncomingMedicalReferral r);
-    /// <summary>Взяти в роботу: PATCH patients/service_requests/{id}/actions/use.</summary>
+    /// <summary>Чи можна опитувати реєстр ЕСОЗ (Mock/Replay — завжди; Live — прапорець SearchRead).</summary>
+    bool SearchEnabled { get; }
+    /// <summary>Пошук за номером у реєстрі ЕСОЗ: GET /api/service_requests?requisition=… Повертає null, якщо ЕСОЗ направлення не знає.</summary>
+    Task<MedLink.LIS.Api.Services.Ehealth.EhealthServiceRequest?> FindAsync(string requisition);
+    /// <summary>Взяти в роботу: PATCH /api/service_requests/{id}/actions/use (для направлень без програми — лише якщо Ehealth:UseWithoutProgram).</summary>
     Task TakeInWorkAsync(EheIncomingMedicalReferral r, string employeeId, string organizationId, DateTime at);
-    /// <summary>Погасити документом: PATCH patients/service_requests/{id}/actions/complete.</summary>
-    Task CompleteAsync(EheIncomingMedicalReferral r, string entityId, string entityName, DateTime at);
-    /// <summary>Звільнити: PATCH patients/service_requests/{id}/actions/release.</summary>
+    /// <summary>Звільнити: PATCH /api/service_requests/{id}/actions/release (лише якщо use виконувався).</summary>
     Task ReleaseAsync(EheIncomingMedicalReferral r);
 }
 
 public sealed class EhealthReferralGateway : IEhealthReferralGateway
 {
     private readonly MedLink.LIS.Api.Services.Ehealth.IEhealthClient _client;
-    public EhealthReferralGateway(MedLink.LIS.Api.Services.Ehealth.IEhealthClient client) => _client = client;
+    private readonly MedLink.LIS.Api.Services.Ehealth.EhealthOptions _options;
+    private readonly MedLink.LIS.Api.Services.Ehealth.EhealthIdentity _identity;
+    public EhealthReferralGateway(MedLink.LIS.Api.Services.Ehealth.IEhealthClient client, MedLink.LIS.Api.Services.Ehealth.EhealthOptions options, MedLink.LIS.Api.Services.Ehealth.EhealthIdentity identity)
+    { _client = client; _options = options; _identity = identity; }
 
     private static string EhealthId(EheIncomingMedicalReferral r) => r.EhealthId ?? r.Id;
+    public bool SearchEnabled => _options.IsAllowed(MedLink.LIS.Api.Services.Ehealth.EhealthOperation.SearchRead);
 
-    public async Task<List<string>> CheckInRegistryAsync(EheIncomingMedicalReferral r)
+    public async Task<MedLink.LIS.Api.Services.Ehealth.EhealthServiceRequest?> FindAsync(string requisition)
     {
-        var found = await Call(() => _client.SearchServiceRequestsAsync(r.RegNumber ?? "", status: ""));
-        var sr = found.FirstOrDefault(x => x.Id == EhealthId(r));
-        if (sr == null) return new() { "Направлення не знайдено в реєстрі ЕСОЗ" };
-        var problems = new List<string>();
-        if (sr.Status != "active") problems.Add($"У ЕСОЗ направлення має статус «{sr.Status}»");
-        return problems;
+        var found = await Call(() => _client.SearchServiceRequestsAsync(requisition, status: ""));
+        return found.FirstOrDefault(x => x.Requisition == requisition) ?? found.FirstOrDefault();
     }
 
     public async Task TakeInWorkAsync(EheIncomingMedicalReferral r, string employeeId, string organizationId, DateTime at)
     {
-        await Call(() => _client.UseServiceRequestAsync(EhealthId(r), employeeId, organizationId));
+        // За схемою OpenAPI program обов'язкова в use; для направлень без програми use імовірно не застосовується (потребує перевірки на preprod)
+        if (r.EhealthProgramId != null || _options.UseWithoutProgram)
+        {
+            if (!_options.IsAllowed(MedLink.LIS.Api.Services.Ehealth.EhealthOperation.Use)) throw new ConflictException("Операцію ЕСОЗ «взяти в роботу» вимкнено (Ehealth:Live:Operations:Use)");
+            var emp = _identity.EmployeeId(employeeId) ?? throw new ConflictException("Не налаштовано ідентифікатор працівника в ЕСОЗ (Ehealth:DefaultEmployeeId)");
+            var le = _identity.LegalEntityId(organizationId) ?? throw new ConflictException("Не налаштовано ідентифікатор закладу в ЕСОЗ (Ehealth:LegalEntityId)");
+            var job = await Call(async () => await _client.WaitForJobAsync(await _client.UseServiceRequestAsync(EhealthId(r), emp, le, r.EhealthProgramId, _identity.DivisionId())));
+            if (job.IsFailed) throw new ConflictException($"ЕСОЗ не взяла направлення в роботу: {job.Error ?? job.RawStatus}");
+            r.UsedInEhealth = true;
+        }
         r.ProcessingStatusInEhealthId = MedLinkEnums.ProcessingInProgress; r.TakeInWorkDate = at;
-    }
-
-    public async Task CompleteAsync(EheIncomingMedicalReferral r, string entityId, string entityName, DateTime at)
-    {
-        await Call(() => _client.CompleteServiceRequestAsync(EhealthId(r), entityName == "DiagnosticReport" ? "diagnostic_report" : entityName.ToLowerInvariant(), entityId));
-        r.StatusId = MedLinkEnums.ReferralStatusCompleted; r.ProcessingStatusInEhealthId = MedLinkEnums.ProcessingCompleted;
-        r.CompleteDateInEhealth = at; r.CompletedWithItemEntityId = entityId; r.CompletedWithItemEntityName = entityName;
     }
 
     public async Task ReleaseAsync(EheIncomingMedicalReferral r)
     {
-        await Call(() => _client.ReleaseServiceRequestAsync(EhealthId(r)));
+        if (r.UsedInEhealth)
+        {
+            var job = await Call(async () => await _client.WaitForJobAsync(await _client.ReleaseServiceRequestAsync(EhealthId(r))));
+            if (job.IsFailed) throw new ConflictException($"ЕСОЗ не звільнила направлення: {job.Error ?? job.RawStatus}");
+            r.UsedInEhealth = false;
+        }
         r.ProcessingStatusInEhealthId = MedLinkEnums.ProcessingNew; r.TakeInWorkDate = null;
     }
 
@@ -84,13 +92,97 @@ public sealed class ReferralService
     private readonly IEhealthReferralGateway _gateway;
     private readonly IAuditService _audit;
     private readonly ICurrentEmployee _current;
+    private readonly MedLink.LIS.Api.Services.Ehealth.EhealthIdentity _identity;
 
-    public ReferralService(LisDbContext db, IEhealthReferralGateway gateway, IAuditService audit, ICurrentEmployee current) { _db = db; _gateway = gateway; _audit = audit; _current = current; }
+    public ReferralService(LisDbContext db, IEhealthReferralGateway gateway, IAuditService audit, ICurrentEmployee current, MedLink.LIS.Api.Services.Ehealth.EhealthIdentity identity)
+    { _db = db; _gateway = gateway; _audit = audit; _current = current; _identity = identity; }
 
     // ------------------------------------------------------------------ пошук і перевірка е-направлення
+    /// <summary>Пошук у локальному дзеркалі (кеш) за id або номером.</summary>
     public async Task<EheIncomingMedicalReferral?> FindEhealthAsync(string idOrNumber) =>
         await _db.Referrals.Include(r => r.ServiceCatalogService).Include(r => r.PatientCard).Include(r => r.Status).Include(r => r.ProcessingStatus)
             .FirstOrDefaultAsync(r => (r.Id == idOrNumber || r.RegNumber == idOrNumber) && r.RecordState != RecordStates.Deleted);
+
+    /// <summary>Результат пошуку: рядок дзеркала, відповідь ЕСОЗ (null — кеш без перевірки) і причини, що перешкоджають використанню.</summary>
+    public sealed record ResolvedReferral(EheIncomingMedicalReferral Referral, MedLink.LIS.Api.Services.Ehealth.EhealthServiceRequest? Remote, List<string> Problems);
+
+    /// <summary>
+    /// Спочатку запит у ЕСОЗ (GET /api/service_requests?requisition=…), далі upsert дзеркала. Дзеркало — кеш: направлення, якого ще немає в БД,
+    /// знаходиться через ЕСОЗ. Якщо опитування реєстру вимкнено (Live без SearchRead) — працюємо з кешем.
+    /// </summary>
+    public async Task<ResolvedReferral> ResolveAsync(string idOrNumber)
+    {
+        idOrNumber = idOrNumber.Trim();
+        var local = await FindEhealthAsync(idOrNumber);
+        var number = local?.RegNumber ?? idOrNumber;
+        var problems = new List<string>();
+        if (_gateway.SearchEnabled)
+        {
+            var remote = await _gateway.FindAsync(number);
+            if (remote != null)
+            {
+                var r = await UpsertAsync(local, remote, problems);
+                problems.AddRange(RemoteProblems(remote));
+                return new ResolvedReferral(r, remote, problems);
+            }
+            if (local == null) throw new NotFoundException($"Е-направлення {number} не знайдено в реєстрі ЕСОЗ");
+            problems.Add("Направлення не знайдено в реєстрі ЕСОЗ");
+            return new ResolvedReferral(local, null, problems);
+        }
+        if (local == null) throw NotFoundException.For("Е-направлення", number);
+        return new ResolvedReferral(local, null, problems);
+    }
+
+    private IEnumerable<string> RemoteProblems(MedLink.LIS.Api.Services.Ehealth.EhealthServiceRequest sr)
+    {
+        if (sr.Status != "active") yield return $"У ЕСОЗ направлення має статус «{sr.Status}»";
+        if (sr.Category != null && sr.Category is not ("laboratory_procedure" or "108252007")) yield return "Категорія направлення в ЕСОЗ не «лабораторна процедура»";
+        if (sr.RemainingQuantity is <= 0) yield return "Залишок послуг за направленням вичерпано";
+        var me = _identity.LegalEntityId(null);
+        if (sr.UsedByLegalEntity != null && sr.UsedByLegalEntity != me && sr.Status == "active") yield return "Направлення вже використовується іншим закладом";
+    }
+
+    /// <summary>Знеособлена перевірка пацієнта: лаборант не має доступу до персональних даних, лише до identity (прізвище) з направлення.</summary>
+    private static string? IdentityProblem(MedLink.LIS.Api.Services.Ehealth.EhealthServiceRequest? remote, string? patientCaption)
+    {
+        var last = remote?.IdentityLastName?.Trim();
+        if (string.IsNullOrEmpty(last) || string.IsNullOrWhiteSpace(patientCaption)) return null;
+        return patientCaption.Contains(last, StringComparison.OrdinalIgnoreCase) ? null : "Прізвище в направленні не збігається з пацієнтом замовлення";
+    }
+
+    /// <summary>Оновлює (або створює) рядок дзеркала за відповіддю ЕСОЗ.</summary>
+    private async Task<EheIncomingMedicalReferral> UpsertAsync(EheIncomingMedicalReferral? local, MedLink.LIS.Api.Services.Ehealth.EhealthServiceRequest sr, List<string> problems)
+    {
+        var r = local ?? await _db.Referrals.Include(x => x.ServiceCatalogService).Include(x => x.PatientCard).Include(x => x.Status).Include(x => x.ProcessingStatus)
+            .FirstOrDefaultAsync(x => x.EhealthId == sr.Id && x.RecordState != RecordStates.Deleted);
+        var service = string.IsNullOrWhiteSpace(sr.ServiceCode) ? null : await _db.ServiceCatalog.FirstOrDefaultAsync(x => x.Code == sr.ServiceCode);
+        if (service == null && !string.IsNullOrWhiteSpace(sr.ServiceCode)) problems.Add($"Послугу направлення «{sr.ServiceCode}» не знайдено в каталозі ЛІС");
+        var statusId = sr.Status switch { "completed" => MedLinkEnums.ReferralStatusCompleted, "active" => MedLinkEnums.ReferralStatusActive, _ => MedLinkEnums.ReferralStatusRecalled };
+        if (r == null)
+        {
+            var patientCard = string.IsNullOrWhiteSpace(sr.PatientId) ? null : await _db.Patients.FirstOrDefaultAsync(p => p.Id == sr.PatientId);
+            r = new EheIncomingMedicalReferral
+            {
+                RegNumber = sr.Requisition, Caption = sr.ServiceName ?? service?.Name, OrganizationId = MedLinkDefaults.OrganizationId, PatientCardId = patientCard?.Id,
+                PatientShortName = sr.IdentityLastName, ServiceCatalogServiceId = service?.Id, MedicalReferralCategoryId = MedLinkDefaults.ReferralCategoryLaboratoryId,
+                StatusId = statusId, PriorityId = MedLinkEnums.EmptyGuid, ProcessingStatusInEhealthId = MedLinkEnums.ProcessingNew, ExpirationDate = sr.ExpiresAt, EhealthId = sr.Id
+            };
+            _db.Referrals.Add(r);
+            r.ServiceCatalogService = service; r.PatientCard = patientCard;
+            r.Status = await _db.EnumRecords.FirstOrDefaultAsync(e => e.Id == statusId);
+        }
+        else
+        {
+            r.EhealthId ??= sr.Id;
+            if (sr.ExpiresAt != null) r.ExpirationDate = sr.ExpiresAt;
+            if (service != null && r.ServiceCatalogServiceId == null) r.ServiceCatalogServiceId = service.Id;
+            // ЕСОЗ — джерело істини про статус; локальне погашення без підтвердження ЕСОЗ не скасовуємо
+            if (r.StatusId != statusId && !(r.StatusId == MedLinkEnums.ReferralStatusCompleted && sr.Status == "active" && r.CompleteDateInEhealth != null))
+            { r.StatusId = statusId; r.Status = await _db.EnumRecords.FirstOrDefaultAsync(e => e.Id == statusId); }
+        }
+        r.EhealthStatus = sr.Status; r.EhealthPatientId = sr.PatientId; r.EhealthProgramId = sr.ProgramId; r.LastSyncedAt = DateTime.UtcNow;
+        return r;
+    }
 
     /// <summary>Причини, з яких направлення не можна використати (порожньо — можна).</summary>
     public async Task<List<string>> ProblemsAsync(EheIncomingMedicalReferral r, string? patientId, string? exceptOrderId = null)
@@ -110,16 +202,19 @@ public sealed class ReferralService
     /// <summary>Пошук е-направлення за номером для реєстратора: дані, придатність, профілі ЛІС для послуги направлення.</summary>
     public async Task<object> LookupAsync(string number, string? patientId)
     {
-        var r = await FindEhealthAsync(number.Trim()) ?? throw NotFoundException.For("Е-направлення", number);
+        var res = await ResolveAsync(number.Trim());
+        var r = res.Referral;
         var problems = await ProblemsAsync(r, string.IsNullOrWhiteSpace(patientId) ? null : patientId);
-        problems.AddRange(await _gateway.CheckInRegistryAsync(r));
+        problems.AddRange(res.Problems.Where(p => !problems.Contains(p)));
+        if (!string.IsNullOrWhiteSpace(patientId) && IdentityProblem(res.Remote, (await _db.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.Id == patientId))?.Caption) is { } idp) problems.Add(idp);
+        await _db.SaveChangesAsync(); // кеш: дзеркало оновлено відповіддю ЕСОЗ
         var profiles = r.ServiceCatalogServiceId == null ? new() :
             await _db.Profiles.AsNoTracking().Where(p => p.EhealthServiceCatalogServiceId == r.ServiceCatalogServiceId && p.IsActive)
                 .Select(p => new { p.Id, p.Code, p.Name }).ToListAsync();
         return new
         {
-            r.Id, number = r.RegNumber, r.RegDate, r.ExpirationDate, status = r.Status?.Code, statusName = r.Status?.Caption,
-            processingStatus = r.ProcessingStatus?.Code, r.TakeInWorkDate, r.CompleteDateInEhealth,
+            r.Id, number = r.RegNumber, r.RegDate, r.ExpirationDate, status = r.Status?.Code, statusName = r.Status?.Caption, ehealthStatus = r.EhealthStatus, source = res.Remote != null ? "ESOZ" : "CACHE",
+            processingStatus = r.ProcessingStatus?.Code, r.TakeInWorkDate, r.CompleteDateInEhealth, programId = r.EhealthProgramId,
             patientId = r.PatientCardId, patientName = r.PatientCard?.Caption ?? r.PatientShortName,
             serviceCode = r.ServiceCatalogService?.Code, serviceName = r.ServiceCatalogService?.Name ?? r.Caption,
             canUse = problems.Count == 0, problems, matchingProfiles = profiles
@@ -150,9 +245,13 @@ public sealed class ReferralService
             case ReferralTypes.Ehealth:
             {
                 if (ehealthRef == null) throw ValidationException.Field("ehealthReferralNumber", "Вкажіть номер е-направлення");
-                var r = await FindEhealthAsync(ehealthRef) ?? throw ValidationException.Field("ehealthReferralNumber", $"Е-направлення {ehealthRef} не знайдено");
+                ResolvedReferral res;
+                try { res = await ResolveAsync(ehealthRef); }
+                catch (NotFoundException) { throw ValidationException.Field("ehealthReferralNumber", $"Е-направлення {ehealthRef} не знайдено"); }
+                var r = res.Referral;
                 var problems = await ProblemsAsync(r, patient.Id);
-                if (problems.Count == 0) problems.AddRange(await _gateway.CheckInRegistryAsync(r)); // пошук у реєстрі ЕСОЗ перед use (як в evomis)
+                problems.AddRange(res.Problems.Where(p => !problems.Contains(p))); // перевірка в реєстрі ЕСОЗ перед use
+                if (IdentityProblem(res.Remote, patient.Caption) is { } idp) problems.Add(idp);
                 if (problems.Count > 0) throw new ConflictException($"Е-направлення {r.RegNumber}: {string.Join("; ", problems)}");
                 order.EhealthReferralId = r.Id;
                 await _gateway.TakeInWorkAsync(r, Guid.TryParse(_current.EmployeeId, out _) ? _current.EmployeeId : MedLinkEnums.EmptyGuid, order.OrganizationId ?? MedLinkDefaults.OrganizationId, DateTime.UtcNow);
@@ -189,18 +288,12 @@ public sealed class ReferralService
         }
     }
 
-    /// <summary>Погашення направлення висновком при видачі замовлення.</summary>
+    /// <summary>
+    /// Дії з направленням при видачі замовлення. Е-направлення тут НЕ погашається: ЕСОЗ погашає його лише записом, який уже існує,
+    /// тож complete виконує задача outbox COMPLETE_SR після реєстрації діагностичного звіту (job processed). Паперове — погашається локально.
+    /// </summary>
     public async Task CompleteAsync(LabOrder order, MisDiagnosticReport report, DateTime at)
     {
-        if (order.EhealthReferralId != null)
-        {
-            var r = await _db.Referrals.FirstOrDefaultAsync(x => x.Id == order.EhealthReferralId);
-            if (r != null && r.CompleteDateInEhealth == null)
-            {
-                await _gateway.CompleteAsync(r, report.Id, "DiagnosticReport", at);
-                _audit.Log("EHEALTH_REFERRAL_COMPLETE", "ehe_incoming_medical_referral", r.Id, null, new { r.RegNumber, reportId = report.Id });
-            }
-        }
         if (order.PaperReferralId != null)
         {
             var p = await _db.PaperReferrals.FirstOrDefaultAsync(x => x.Id == order.PaperReferralId);

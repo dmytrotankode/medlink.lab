@@ -27,7 +27,7 @@ public sealed class ManifestReceiveRequest
     public string? Notes { get; set; }
 }
 
-public sealed class LogisticsService
+public sealed partial class LogisticsService
 {
     private readonly LisDbContext _db;
     private readonly IRolePolicy _policy;
@@ -92,9 +92,12 @@ public sealed class LogisticsService
         }
     }
 
-    private void Dispatch(LabSampleLogistics m)
+    /// <param name="system">true — перехід виконується від імені контейнера (ролі контролює машина станів контейнера).</param>
+    private void Dispatch(LabSampleLogistics m, bool system = false)
     {
-        var rule = _policy.Ensure(LisEntities.Manifest, ManifestActions.Dispatch, m.Status, $"Маніфест {m.ManifestNumber}");
+        var rule = system
+            ? LisStateMachine.Ensure(LisEntities.Manifest, ManifestActions.Dispatch, m.Status, LabRoles.System, $"Маніфест {m.ManifestNumber}")
+            : _policy.Ensure(LisEntities.Manifest, ManifestActions.Dispatch, m.Status, $"Маніфест {m.ManifestNumber}");
         m.Status = rule.ToStatus!;
         m.DispatchedAt = DateTime.UtcNow;
         m.DispatchedById = _current.EmployeeId;
@@ -165,23 +168,50 @@ public sealed class LogisticsService
     public async Task<object> ReceiveAsync(string id, ManifestReceiveRequest req)
     {
         var m = await LoadAsync(id);
-        var rule = _policy.Ensure(LisEntities.Manifest, ManifestActions.Receive, m.Status, $"Маніфест {m.ManifestNumber}");
+        var received = req.ReceivedBarcodes.Count == 0 ? m.Items.Select(i => i.Barcode).ToList() : req.ReceivedBarcodes;
+        await ReceiveCoreAsync(m, req.TemperatureReceipt, received, new List<string>(), req.Notes, null, false);
+        await _db.SaveChangesAsync();
+        return await GetAsync(id);
+    }
+
+    /// <summary>
+    /// Прийом маніфесту (без збереження змін). <paramref name="corridor"/> — власний температурний коридор (напр. тип контейнера),
+    /// null → коридор холодового ланцюга з налаштувань (FR-LOG-001). <paramref name="damaged"/> — пошкоджені проби:
+    /// отримані фізично, але відбраковуються. Відсутні у <paramref name="received"/> та <paramref name="damaged"/> → MISSING.
+    /// </summary>
+    private async Task ReceiveCoreAsync(LabSampleLogistics m, double? temperatureReceipt, IReadOnlyCollection<string> received, IReadOnlyCollection<string> damaged,
+        string? notes, (double Min, double Max)? corridor, bool system)
+    {
+        var rule = system
+            ? LisStateMachine.Ensure(LisEntities.Manifest, ManifestActions.Receive, m.Status, LabRoles.System, $"Маніфест {m.ManifestNumber}")
+            : _policy.Ensure(LisEntities.Manifest, ManifestActions.Receive, m.Status, $"Маніфест {m.ManifestNumber}");
         var settings = await _db.Settings.AsNoTracking().FirstOrDefaultAsync();
-        var min = settings?.ColdChainMinC ?? 2.0; var max = settings?.ColdChainMaxC ?? 8.0;
+        var min = corridor?.Min ?? settings?.ColdChainMinC ?? 2.0; var max = corridor?.Max ?? settings?.ColdChainMaxC ?? 8.0;
         var now = DateTime.UtcNow;
         m.Status = rule.ToStatus!;
-        m.ReceivedAt = now; m.ReceivedById = _current.EmployeeId; m.TemperatureReceipt = req.TemperatureReceipt;
-        m.IsColdChainViolated = (req.TemperatureReceipt.HasValue && (req.TemperatureReceipt < min || req.TemperatureReceipt > max))
+        m.ReceivedAt = now; m.ReceivedById = _current.EmployeeId; m.TemperatureReceipt = temperatureReceipt;
+        m.IsColdChainViolated = (temperatureReceipt.HasValue && (temperatureReceipt < min || temperatureReceipt > max))
                                 || (m.TemperatureDispatch.HasValue && (m.TemperatureDispatch < min || m.TemperatureDispatch > max));
-        if (!string.IsNullOrWhiteSpace(req.Notes)) m.Notes = string.IsNullOrWhiteSpace(m.Notes) ? req.Notes : m.Notes + "\n" + req.Notes;
-        if (m.IsColdChainViolated) m.Notes = (m.Notes ?? "") + $"\n[!] Порушення холодового ланцюга: відправка {m.TemperatureDispatch}°C, прийом {req.TemperatureReceipt}°C (норма {min}..{max}°C)";
+        if (!string.IsNullOrWhiteSpace(notes)) m.Notes = string.IsNullOrWhiteSpace(m.Notes) ? notes : m.Notes + "\n" + notes;
+        if (m.IsColdChainViolated) m.Notes = (m.Notes ?? "") + $"\n[!] Порушення холодового ланцюга: відправка {m.TemperatureDispatch}°C, прийом {temperatureReceipt}°C (норма {min}..{max}°C)";
 
-        var received = req.ReceivedBarcodes.Count == 0 ? m.Items.Select(i => i.Barcode).ToList() : req.ReceivedBarcodes;
         var missing = new List<string>();
         foreach (var item in m.Items)
         {
             var sample = await _db.Samples.Include(s => s.Order).ThenInclude(o => o!.Samples).FirstAsync(s => s.Id == item.SampleId);
-            if (received.Contains(item.Barcode))
+            if (damaged.Contains(item.Barcode))
+            {
+                item.Status = "DAMAGED";
+                if (sample.Status is SampleStatuses.InTransit or SampleStatuses.Collected)
+                {
+                    await _db.Entry(sample.Order!).Collection(o => o.Tests).LoadAsync();
+                    sample.Status = SampleStatuses.Rejected; sample.RejectReason = "Пошкоджено під час транспортування";
+                    foreach (var t in sample.Order!.Tests.Where(t => t.SampleId == sample.Id && !OrderTestStatuses.Final.Contains(t.Status)))
+                    { t.Status = OrderTestStatuses.Rejected; t.RejectReason = "Пробірку відбраковано: " + sample.RejectReason; }
+                    _state.RecomputeFromSamples(sample.Order);
+                }
+            }
+            else if (received.Contains(item.Barcode))
             {
                 item.Status = "RECEIVED";
                 if (sample.Status is SampleStatuses.InTransit or SampleStatuses.Collected) { sample.Status = SampleStatuses.Received; sample.ReceivedAt = now; sample.ReceivedById = _current.EmployeeId; }
@@ -192,8 +222,6 @@ public sealed class LogisticsService
             else { item.Status = "MISSING"; missing.Add(item.Barcode); }
         }
         _audit.Log("RECEIVE", "lab_sample_logistics", m.Id, null, new { m.Status, m.TemperatureReceipt, m.IsColdChainViolated, missing });
-        await _db.SaveChangesAsync();
-        return await GetAsync(id);
     }
 
     public async Task<object> RejectAsync(string id, string reason)

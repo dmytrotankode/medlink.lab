@@ -1,0 +1,184 @@
+{
+ "format": "medlink-guide-bundle",
+ "version": 1,
+ "app": {
+  "code": "lab",
+  "caption": "MedLink LIS"
+ },
+ "folders": [],
+ "scenarios": [],
+ "sets": [
+  {
+   "code": "hoco",
+   "caption": "ХОЦО",
+   "description": "Повний огляд лабораторії MedLink для співробітників Харківського онкологічного центру: від направлення до підписаного висновку. Послідовно проведе по всіх знайомих функціях.",
+   "color": "#e65100",
+   "icon": "slideshow",
+   "sortOrder": 1,
+   "items": [
+    {
+     "scenarioCode": "lab.orders.register-full"
+    },
+    {
+     "scenarioCode": "lab.phlebotomy.collect-full"
+    },
+    {
+     "scenarioCode": "lab.samples.receive"
+    },
+    {
+     "scenarioCode": "lab.sendout.full"
+    },
+    {
+     "scenarioCode": "lab.phlebotomy.scan-barcode"
+    },
+    {
+     "scenarioCode": "lab.logistics.track-status"
+    },
+    {
+     "scenarioCode": "lab.orders.track-status"
+    },
+    {
+     "scenarioCode": "lab.ws.enter-result"
+    },
+    {
+     "scenarioCode": "lab.ws.verify-one"
+    },
+    {
+     "scenarioCode": "lab.val.verify-one"
+    },
+    {
+     "scenarioCode": "lab.val.critical-verify"
+    },
+    {
+     "scenarioCode": "lab.qc.add-point"
+    },
+    {
+     "scenarioCode": "lab.qc.lockout-resolve"
+    },
+    {
+     "scenarioCode": "lab.an.connect"
+    },
+    {
+     "scenarioCode": "lab.an.simulator"
+    },
+    {
+     "scenarioCode": "lab.im.csv-dryrun"
+    },
+    {
+     "scenarioCode": "lab.tat.read"
+    },
+    {
+     "scenarioCode": "lab.rp.cumulative"
+    },
+    {
+     "scenarioCode": "lab.ws.fast-entry"
+    },
+    {
+     "scenarioCode": "lab.ws.autoverify"
+    },
+    {
+     "scenarioCode": "lab.val.verify-batch"
+    },
+    {
+     "scenarioCode": "lab.val.critical-call"
+    },
+    {
+     "scenarioCode": "lab.qc.read-chart"
+    },
+    {
+     "scenarioCode": "lab.an.connector-create"
+    },
+    {
+     "scenarioCode": "lab.an.order-preview"
+    },
+    {
+     "scenarioCode": "lab.rp.table-report"
+    },
+    {
+     "scenarioCode": "lab.ws.critical-entry"
+    },
+    {
+     "scenarioCode": "lab.val.calls-journal"
+    },
+    {
+     "scenarioCode": "lab.qc.westgard"
+    },
+    {
+     "scenarioCode": "lab.an.status"
+    },
+    {
+     "scenarioCode": "lab.rp.export"
+    },
+    {
+     "scenarioCode": "lab.ws.needs-review"
+    },
+    {
+     "scenarioCode": "lab.val.lockout-override"
+    },
+    {
+     "scenarioCode": "lab.qc.report"
+    },
+    {
+     "scenarioCode": "lab.an.messages"
+    },
+    {
+     "scenarioCode": "lab.tat.sla"
+    },
+    {
+     "scenarioCode": "lab.an.connection"
+    },
+    {
+     "scenarioCode": "lab.path.intake-accept"
+    },
+    {
+     "scenarioCode": "lab.path.gross"
+    },
+    {
+     "scenarioCode": "lab.path.cassettes"
+    },
+    {
+     "scenarioCode": "lab.path.microscopy"
+    },
+    {
+     "scenarioCode": "lab.path.sign"
+    },
+    {
+     "scenarioCode": "lab.cyto.intake"
+    },
+    {
+     "scenarioCode": "lab.path.archive-issue"
+    },
+    {
+     "scenarioCode": "lab.cyto.prepare"
+    },
+    {
+     "scenarioCode": "lab.cyto.stain-cover"
+    },
+    {
+     "scenarioCode": "lab.cyto.screening"
+    },
+    {
+     "scenarioCode": "lab.cyto.conclusion"
+    },
+    {
+     "scenarioCode": "lab.nav.tour-header"
+    },
+    {
+     "scenarioCode": "lab.bill.view-price"
+    },
+    {
+     "scenarioCode": "lab.mis.send-results"
+    },
+    {
+     "scenarioCode": "lab.nav.drawer-groups"
+    },
+    {
+     "scenarioCode": "lab.dict.view-tests"
+    },
+    {
+     "scenarioCode": "lab.nav.find-by-barcode"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Complete service request: 202 + job link (the completion is a separate job, after the report is registered)",
+    "match": { "method": "PATCH", "pathRegex": "/api/service_requests/[^/]+/actions/complete$" },
+    "responses": [
+      { "status": 202, "body": { "data": { "status": "pending", "eta": "{{now}}" }, "links": [ { "entity": "job", "href": "/Jobs/Ck3wPZ8hQTq6RjS2mNvXa1" } ], "meta": { "code": 202 } } }
+    ]
+  },
+  {
+    "name": "Use service request: 202 + job link",
+    "match": { "method": "PATCH", "pathRegex": "/api/service_requests/[^/]+/actions/use$" },
+    "responses": [
+      { "status": 202, "body": { "data": { "status": "pending" }, "links": [ { "entity": "job", "href": "/Jobs/Ck3wPZ8hQTq6RjS2mNvXa1" } ], "meta": { "code": 202 } } }
+    ]
+  },
+  {
+    "name": "Release service request: 202 + job link",
+    "match": { "method": "PATCH", "pathRegex": "/api/service_requests/[^/]+/actions/release$" },
+    "responses": [
+      { "status": 202, "body": { "data": { "status": "pending" }, "links": [ { "entity": "job", "href": "/Jobs/Ck3wPZ8hQTq6RjS2mNvXa1" } ], "meta": { "code": 202 } } }
+    ]
+  }
+]

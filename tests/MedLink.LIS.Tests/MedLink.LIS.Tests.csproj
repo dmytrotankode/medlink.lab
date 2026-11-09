@@ -23,6 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\MedLink.LIS.Core\MedLink.LIS.Core.csproj" />
     <ProjectReference Include="..\..\src\MedLink.LIS.Api\MedLink.LIS.Api.csproj" />
     <ProjectReference Include="..\..\src\MedLink.LabConnector\MedLink.LabConnector.csproj" />

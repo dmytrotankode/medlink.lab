@@ -21,7 +21,7 @@ export class HttpApi {
   ensureApp () { return this.req('POST', '/apps', { code: this.appCode, caption: this.appCaption }); }
   catalog (role, route) {
     return this.req('GET', `/apps/${this.appCode}/catalog?role=${encodeURIComponent(role || '')}&route=${encodeURIComponent(route || '')}`)
-      .catch(e => { if (e.status === 404) return { folders: [], scenarios: [] }; throw e; }); // система ще не зареєстрована — інструкцій немає
+      .catch(e => { if (e.status === 404) return { folders: [], scenarios: [], sets: [] }; throw e; }); // система ще не зареєстрована — інструкцій немає
   }
   async tree () { await this.ensureApp(); return this.req('GET', `/apps/${this.appCode}/tree`); }
   play (id) { return this.req('GET', `/scenarios/${id}/play`); }
@@ -38,21 +38,55 @@ export class HttpApi {
   progress (p) { return this.req('POST', '/progress', p).catch(() => null); }
   myProgress () { return this.req('GET', '/progress/me').catch(() => []); }
   async uploadMedia (m) { return this.req('POST', '/media', m); }
+  // набори інструкцій (презентації)
+  listSets () { return this.req('GET', `/apps/${this.appCode}/sets`); }
+  async createSet (s) { await this.ensureApp(); return this.req('POST', '/sets', Object.assign({ appCode: this.appCode }, s)); }
+  updateSet (id, s) { return this.req('PUT', `/sets/${id}`, s); }
+  deleteSet (id) { return this.req('DELETE', `/sets/${id}`); }
+  setItems (id, items) { return this.req('PUT', `/sets/${id}/items`, items); }
+}
+
+/** Розкриття наборів (як на бекенді): розділ → усі його інструкції з підрозділами; повертає набори та позначки для розділів/інструкцій. */
+function expandSets (sets, folders, scenarios) {
+  const out = []; const scMarks = {}; const fMarks = {};
+  const mark = (m, id, r) => { const l = m[id] || (m[id] = []); if (!l.some(x => x.code === r.code)) l.push(r); };
+  const sub = fid => { const l = [fid]; for (let i = 0; i < l.length; i++) folders.forEach(f => { if (f.parentId === l[i] && l.indexOf(f.id) < 0) l.push(f.id); }); return l; };
+  const fname = id => { const f = folders.find(x => x.id === id); return f ? f.caption : null; };
+  sets.slice().sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).forEach(set => {
+    const r = { code: set.code || set.id, caption: set.caption, color: set.color || null };
+    const list = [];
+    const add = s => { if (!list.some(x => x.id === s.id)) list.push(s); mark(scMarks, s.id, r); };
+    (set.items || []).forEach(it => {
+      if (it.scenarioId) { const s = scenarios.find(x => x.id === it.scenarioId); if (s) add(s); } else if (it.folderId) {
+        const ids = sub(it.folderId); ids.forEach(f => mark(fMarks, f, r));
+        scenarios.filter(s => ids.indexOf(s.folderId) >= 0).forEach(add);
+      }
+    });
+    if (list.length) {
+      out.push({ id: set.id, code: r.code, caption: set.caption, description: set.description, color: set.color, icon: set.icon, sortOrder: set.sortOrder || 0,
+        estMinutes: list.reduce((n, s) => n + (s.estMinutes || 0), 0), scenarioCount: list.length,
+        scenarios: list.map(s => ({ id: s.id, code: s.code, caption: s.caption, estMinutes: s.estMinutes, folder: s.folderId ? fname(s.folderId) : null })) });
+    }
+  });
+  return { sets: out, scMarks: scMarks, fMarks: fMarks };
 }
 
 const KEY = 'mlg.mem.';
 export class MemoryApi {
   constructor (o) {
     this.appCode = o.appCode || 'demo';
-    this.db = lstore(KEY + this.appCode) || { folders: [], scenarios: [], progress: [] };
+    this.db = lstore(KEY + this.appCode) || { folders: [], scenarios: [], progress: [], sets: [] };
     if (o.seed && !this.db.scenarios.length && !this.db.folders.length) this.db = JSON.parse(JSON.stringify(o.seed));
+    if (!this.db.sets) this.db.sets = [];
   }
   save () { lstore(KEY + this.appCode, this.db); }
   async ensureApp () { return { code: this.appCode }; }
   _pub (s) { return s.status === 'published'; }
   async catalog (role) {
     const sc = this.db.scenarios.filter(s => this._pub(s) && (!(s.requiredRoles || []).length || !role || s.requiredRoles.indexOf(role) >= 0));
-    return { folders: this.db.folders, scenarios: sc.map(s => this._head(s)) };
+    const ex = expandSets(this.db.sets, this.db.folders, sc);
+    const tag = (o, marks) => Object.assign({}, o, { sets: marks[o.id] || [], setCodes: (marks[o.id] || []).map(x => x.code) });
+    return { sets: ex.sets, folders: this.db.folders.map(f => tag(f, ex.fMarks)), scenarios: sc.map(s => tag(this._head(s), ex.scMarks)) };
   }
   async tree () { return { folders: this.db.folders, scenarios: this.db.scenarios.map(s => this._head(s)) }; }
   _head (s) { return { id: s.id, folderId: s.folderId, caption: s.caption, description: s.description, icon: s.icon, status: s.status, startRoute: s.startRoute, requiredRoles: s.requiredRoles || [], estMinutes: s.estMinutes, publishedVersion: s.publishedVersion, tags: s.tags || [], sortOrder: s.sortOrder || 0 }; }
@@ -90,5 +124,10 @@ export class MemoryApi {
   }
   async myProgress () { return this.db.progress; }
   async uploadMedia () { return null; }
+  async listSets () { return JSON.parse(JSON.stringify(this.db.sets)); }
+  async createSet (s) { const x = Object.assign({ id: uid(), sortOrder: this.db.sets.length, items: [] }, s); this.db.sets.push(x); this.save(); return x; }
+  async updateSet (id, p) { const x = this.db.sets.find(y => y.id === id); Object.assign(x, p); this.save(); return x; }
+  async deleteSet (id) { this.db.sets = this.db.sets.filter(x => x.id !== id); this.save(); }
+  async setItems (id, items) { const x = this.db.sets.find(y => y.id === id); x.items = items; this.save(); return x; }
 }
 export { safeJson };

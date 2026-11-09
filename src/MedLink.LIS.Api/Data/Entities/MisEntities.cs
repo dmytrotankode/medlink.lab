@@ -198,6 +198,16 @@ public class EheIncomingMedicalReferral : GuidEntity
     [MaxLength(64)] public string? CompletedWithItemEntityId { get; set; }
     /// <summary>Тип документа погашення: DiagnosticReport | Encounter | Procedure.</summary>
     public string? CompletedWithItemEntityName { get; set; }
+    // --- кеш відповіді ЕСОЗ: дзеркало не є джерелом істини, оновлюється пошуком GET /api/service_requests (ReferralService.ResolveAsync) ---
+    /// <summary>Ідентифікатор пацієнта в ЕСОЗ (subject.identifier.value) — потрібен для шляху /api/patients/{id}/diagnostic_report_package.</summary>
+    [MaxLength(64)] public string? EhealthPatientId { get; set; }
+    /// <summary>Медична програма направлення (program.identifier.value); null — направлення без програми.</summary>
+    [MaxLength(64)] public string? EhealthProgramId { get; set; }
+    /// <summary>Статус направлення в ЕСОЗ: active | completed | recalled | entered_in_error.</summary>
+    [MaxLength(32)] public string? EhealthStatus { get; set; }
+    /// <summary>Чи виконано use в ЕСОЗ (для коректного release; для направлень без програми use може не викликатись).</summary>
+    public bool UsedInEhealth { get; set; }
+    public DateTime? LastSyncedAt { get; set; }
 
     [ForeignKey(nameof(PatientCardId))] public MisPatientCard? PatientCard { get; set; }
     [ForeignKey(nameof(StatusId))] public CmnEnumRecord? Status { get; set; }

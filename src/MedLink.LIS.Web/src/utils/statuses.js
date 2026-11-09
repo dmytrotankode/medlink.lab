@@ -61,10 +61,21 @@ export const FLAG = {
 };
 
 export const MANIFEST_STATUS = {
+  CREATED: { label: 'Чернетка', color: 'grey-6', icon: 'edit_note' },
   DISPATCHED: { label: 'Відправлено', color: 'indigo-5', icon: 'local_shipping' },
   RECEIVED: { label: 'Прийнято', color: 'positive', icon: 'inbox' },
   PARTIAL: { label: 'Частково', color: 'warning', textColor: 'dark', icon: 'rule' },
   CANCELLED: { label: 'Скасовано', color: 'grey-6', icon: 'cancel' }
+};
+
+export const CONTAINER_STATUS = {
+  FREE: { label: 'Вільний', color: 'grey-6', icon: 'inventory_2' },
+  PACKING: { label: 'Укладання', color: 'blue-7', icon: 'move_to_inbox' },
+  SEALED: { label: 'Запечатано', color: 'deep-purple-5', icon: 'lock' },
+  IN_TRANSIT: { label: 'У дорозі', color: 'indigo-5', icon: 'local_shipping' },
+  RECEIVED: { label: 'Прийнято', color: 'positive', icon: 'inbox' },
+  RETURNED: { label: 'Повернуто', color: 'blue-grey-6', icon: 'keyboard_return' },
+  LOST: { label: 'Втрачено', color: 'negative', icon: 'report' }
 };
 
 export const CONNECTOR_STATUS = {

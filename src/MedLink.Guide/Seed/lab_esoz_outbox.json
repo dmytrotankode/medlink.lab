@@ -1,0 +1,546 @@
+{
+  "format": "medlink-guide-bundle",
+  "version": 1,
+  "app": {
+    "code": "lab",
+    "caption": "MedLink LIS"
+  },
+  "folders": [
+    {
+      "code": "esoz-outbox",
+      "caption": "Відправка в ЕСОЗ: черга і повтори",
+      "icon": "outbox",
+      "sortOrder": 420
+    }
+  ],
+  "scenarios": [
+    {
+      "code": "lab.esoz.outbox-overview",
+      "folderCode": "esoz-outbox",
+      "caption": "Черга відправки в ЕСОЗ: що де видно",
+      "description": "Кожна відправка звіту, погашення направлення й скасування звіту — окрема задача з видимим станом, кількістю спроб, наступною спробою та останньою помилкою.",
+      "icon": "outbox",
+      "startRoute": "/laboratory/ehealth",
+      "requiredRoles": [],
+      "tags": [
+        "ЕСОЗ",
+        "черга",
+        "повтори"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Сторінка «Відправка в ЕСОЗ»",
+          "body": "Тут видно всі вихідні задачі: відправка звіту, погашення е-направлення, скасування звіту.",
+          "transcript": "Сторінка «Відправка в ЕСОЗ». Тут видно всі вихідні задачі: відправка звіту, погашення е-направлення, скасування звіту.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.eo.page",
+            "caption": "Сторінка «Відправка в ЕСОЗ»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthSubmissionsPage\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Режим обміну",
+          "body": "Позначка показує, з чим працює система: MOCK і REPLAY — імітація ЕСОЗ, LIVE — реальна ЕСОЗ.",
+          "transcript": "Режим обміну. Позначка показує, з чим працює система: MOCK і REPLAY — імітація ЕСОЗ, LIVE — реальна ЕСОЗ.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.x.eo.mode",
+            "caption": "Режим обміну з ЕСОЗ",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthMode\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Таблиця задач",
+          "body": "У кожному рядку: замовлення, направлення, пацієнт, дія, стан, кількість спроб, наступна спроба, код job і остання помилка.",
+          "transcript": "Таблиця задач. У кожному рядку: замовлення, направлення, пацієнт, дія, стан, кількість спроб, наступна спроба, код job і остання помилка.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.eo.table",
+            "caption": "Таблиця задач відправки",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthTable\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Стан задачі",
+          "body": "У черзі — чекає відправки. Очікує обробки — ЕСОЗ прийняла запит і ще обробляє. Виконано — ЕСОЗ підтвердила. Помилка і Зупинено — потрібна дія людини.",
+          "transcript": "Стан задачі. У черзі — чекає відправки. Очікує обробки — ЕСОЗ прийняла запит і ще обробляє. Виконано — ЕСОЗ підтвердила. Помилка і Зупинено — потрібна дія людини.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.x.eo.status-badge",
+            "caption": "Стан задачі",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": "[data-testid^=\"ehealthStatus-\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Остання помилка",
+          "body": "Тут текст відповіді ЕСОЗ українською: що саме не так і чи варто повторювати.",
+          "transcript": "Остання помилка. Тут текст відповіді ЕСОЗ українською: що саме не так і чи варто повторювати.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.x.eo.error",
+            "caption": "Остання помилка задачі",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": "[data-testid^=\"ehealthError-\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Обробити зараз",
+          "body": "У тестових режимах чергу можна проганяти вручну. У бойовому режимі її обробляє фоновий сервіс сам.",
+          "transcript": "Обробити зараз. У тестових режимах чергу можна проганяти вручну. У бойовому режимі її обробляє фоновий сервіс сам.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.x.eo.run-now",
+            "caption": "Кнопка «Обробити зараз»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthRunNow\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Оновити",
+          "body": "Список оновлюється кнопкою «Оновити» або зміною фільтра.",
+          "transcript": "Оновити. Список оновлюється кнопкою «Оновити» або зміною фільтра.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.eo.refresh",
+            "caption": "Кнопка «Оновити»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthRefresh\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.esoz.outbox-filter",
+      "folderCode": "esoz-outbox",
+      "caption": "Знайти відправку за статусом, датою або номером направлення",
+      "description": "Фільтри списку задач відправки в ЕСОЗ: статус, період і пошук за номером направлення, замовлення чи пацієнтом.",
+      "icon": "filter_alt",
+      "startRoute": "/laboratory/ehealth",
+      "requiredRoles": [],
+      "tags": [
+        "ЕСОЗ",
+        "фільтри",
+        "пошук"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 20,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Фільтри",
+          "body": "Список можна звузити за станом, періодом і номером.",
+          "transcript": "Фільтри. Список можна звузити за станом, періодом і номером.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.eo.filters",
+            "caption": "Фільтри списку задач",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthFilters\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Статус",
+          "body": "Оберіть стан: наприклад, «Помилка» покаже лише задачі, що зупинились із помилкою.",
+          "transcript": "Статус. Оберіть стан: наприклад, «Помилка» покаже лише задачі, що зупинились із помилкою.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.eo.status-filter",
+            "caption": "Фільтр «Статус»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthStatusFilter\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Період «З»",
+          "body": "Вкажіть початок періоду за датою створення задачі.",
+          "transcript": "Період «З». Вкажіть початок періоду за датою створення задачі.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.eo.date-from",
+            "caption": "Дата «З»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthDateFrom\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Період «По»",
+          "body": "Вкажіть кінець періоду. Задачі цього дня теж потраплять у список.",
+          "transcript": "Період «По». Вкажіть кінець періоду. Задачі цього дня теж потраплять у список.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.eo.date-to",
+            "caption": "Дата «По»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthDateTo\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Номер направлення",
+          "body": "Введіть номер е-направлення, номер замовлення або прізвище пацієнта — список оновиться сам.",
+          "transcript": "Номер направлення. Введіть номер е-направлення, номер замовлення або прізвище пацієнта — список оновиться сам.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.eo.search",
+            "caption": "Пошук за номером направлення",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthSearch\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Результат",
+          "body": "Нижче залишаться лише задачі, що відповідають фільтрам.",
+          "transcript": "Результат. Нижче залишаться лише задачі, що відповідають фільтрам.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.eo.table",
+            "caption": "Таблиця задач відправки",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthTable\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.esoz.outbox-retry-cancel",
+      "folderCode": "esoz-outbox",
+      "caption": "Повторити або скасувати задачу відправки",
+      "description": "Кнопки «Повторити» і «Скасувати» з'являються лише там, де це дозволено станом задачі; скасування зберігає підписаний пакет.",
+      "icon": "replay",
+      "startRoute": "/laboratory/ehealth",
+      "requiredRoles": [],
+      "tags": [
+        "ЕСОЗ",
+        "повтор",
+        "скасування"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 30,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Знайдіть задачу з помилкою",
+          "body": "Відфільтруйте стан «Помилка» або «Зупинено» — саме для них доступні дії.",
+          "transcript": "Знайдіть задачу з помилкою. Відфільтруйте стан «Помилка» або «Зупинено» — саме для них доступні дії.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.eo.status-filter",
+            "caption": "Фільтр «Статус»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthStatusFilter\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Причина зупинки",
+          "body": "Прочитайте останню помилку: тимчасові збої ЕСОЗ повторюються самі, зупинка означає, що потрібна ваша дія.",
+          "transcript": "Причина зупинки. Прочитайте останню помилку: тимчасові збої ЕСОЗ повторюються самі, зупинка означає, що потрібна ваша дія.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.x.eo.error",
+            "caption": "Остання помилка задачі",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": "[data-testid^=\"ehealthError-\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Повторити",
+          "body": "Кнопка повертає задачу в чергу. Для цього потрібен активний вхід в ЕСОЗ (КЕП або 2FA). Якщо звіт уже зареєстровано, повторно він не надсилається.",
+          "transcript": "Повторити. Кнопка повертає задачу в чергу. Для цього потрібен активний вхід в ЕСОЗ (КЕП або 2FA). Якщо звіт уже зареєстровано, повторно він не надсилається.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.x.eo.retry",
+            "caption": "Кнопка «Повторити» у рядку задачі",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": "[data-testid^=\"ehealthRetry-\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Скасувати",
+          "body": "Скасувати можна задачу, яка ще не передана в ЕСОЗ. Підписаний пакет збережеться, відправку можна відновити кнопкою «Повторити».",
+          "transcript": "Скасувати. Скасувати можна задачу, яка ще не передана в ЕСОЗ. Підписаний пакет збережеться, відправку можна відновити кнопкою «Повторити».",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "left",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "anchor": {
+            "code": "lab.x.eo.cancel",
+            "caption": "Кнопка «Скасувати» у рядку задачі",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": "[data-testid^=\"ehealthCancel-\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Після відправлення звіту",
+          "body": "Погашення е-направлення — окрема задача. Вона з'являється лише після того, як ЕСОЗ підтвердила реєстрацію звіту.",
+          "transcript": "Після відправлення звіту. Погашення е-направлення — окрема задача. Вона з'являється лише після того, як ЕСОЗ підтвердила реєстрацію звіту.",
+          "route": "/laboratory/ehealth",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "bottom",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "anchor": {
+            "code": "lab.x.eo.table",
+            "caption": "Таблиця задач відправки",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ehealthTable\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+[
+  {
+    "name": "Search service requests: success (example requisition AX654654T from OpenAPI, adapted to demo catalog/patient)",
+    "match": { "method": "GET", "pathRegex": "/api/service_requests$", "query": { "requisition": "AX654654T" } },
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "id": "90a9e15b-b71b-4caf-8f2e-ff247e8a5600",
+              "requisition": "AX654654T",
+              "status": "active",
+              "category": { "coding": [ { "system": "eHealth/SNOMED/service_request_categories", "code": "108252007" } ] },
+              "code": { "identifier": { "type": { "coding": [ { "system": "eHealth/resources", "code": "service" } ] }, "value": "LAB-BIOCHEM" } },
+              "subject": { "identifier": { "type": { "coding": [ { "system": "eHealth/resources", "code": "patient" } ] }, "value": "0b000000-0000-0000-0000-000000000006" } },
+              "expiration_date": "2099-12-31T23:59:59Z",
+              "inserted_at": "2026-10-01T08:00:00Z",
+              "updated_at": "2026-10-01T08:00:00Z"
+            }
+          ],
+          "paging": { "page_number": 1, "page_size": 50, "total_entries": 1, "total_pages": 1 },
+          "meta": { "code": 200, "url": "https://api.ehealth.gov.ua/api/service_requests", "type": "list" }
+        }
+      }
+    ]
+  },
+  {
+    "name": "Search service requests: second active request (used for the job-failed scenario)",
+    "match": { "method": "GET", "pathRegex": "/api/service_requests$", "query": { "requisition": "AX654655T" } },
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "id": "5b3f1c7e-0d84-4f0e-9a52-1c2d9d6f7a10",
+              "requisition": "AX654655T",
+              "status": "active",
+              "category": { "coding": [ { "system": "eHealth/SNOMED/service_request_categories", "code": "108252007" } ] },
+              "code": { "identifier": { "type": { "coding": [ { "system": "eHealth/resources", "code": "service" } ] }, "value": "LAB-BIOCHEM" } },
+              "subject": { "identifier": { "type": { "coding": [ { "system": "eHealth/resources", "code": "patient" } ] }, "value": "0b000000-0000-0000-0000-000000000006" } },
+              "expiration_date": "2099-12-31T23:59:59Z"
+            }
+          ],
+          "paging": { "page_number": 1, "page_size": 50, "total_entries": 1, "total_pages": 1 },
+          "meta": { "code": 200, "type": "list" }
+        }
+      }
+    ]
+  },
+  {
+    "name": "Search service requests: nothing found",
+    "match": { "method": "GET", "pathRegex": "/api/service_requests$", "query": { "requisition": "NOT-FOUND" } },
+    "responses": [
+      { "status": 200, "body": { "data": [], "paging": { "page_number": 1, "page_size": 50, "total_entries": 0, "total_pages": 0 }, "meta": { "code": 200, "type": "list" } } }
+    ]
+  },
+  {
+    "name": "Search service requests: 422 validation error (malformed requisition)",
+    "match": { "method": "GET", "pathRegex": "/api/service_requests$", "query": { "requisition": "BAD" } },
+    "responses": [
+      {
+        "status": 422,
+        "body": {
+          "error": {
+            "type": "validation_failed",
+            "invalid": [ { "entry": "$.requisition", "entry_type": "query", "rules": [ { "rule": "format", "description": "Invalid requisition format" } ] } ],
+            "message": "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/reference/errors."
+          },
+          "meta": { "code": 422 }
+        }
+      }
+    ]
+  }
+]

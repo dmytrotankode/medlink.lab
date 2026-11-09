@@ -55,6 +55,7 @@ public sealed class SeedService
         await SeedBillingAsync();
         await SeedQcMaterialsAsync();
         await SeedCountersAsync();
+        await SeedContainerTypesAsync();
         await SeedPathologyAsync();
         _logger.LogInformation("Сід довідників завершено за {Ms} мс", sw.ElapsedMilliseconds);
     }
@@ -451,6 +452,21 @@ public sealed class SeedService
             foreach (var t in m.Targets) t.QcMaterialId = m.Id;
             _db.QcMaterials.Add(m);
         }
+        await _db.SaveChangesAsync();
+    }
+
+    /// <summary>Типи транспортної тари (термобокси, сумки) — початковий довідник; редагується в API /logistics/container-types.</summary>
+    private async Task SeedContainerTypesAsync()
+    {
+        if (await _db.ContainerTypes.AnyAsync()) return;
+        LabTransportContainerType T(string code, string name, int capacity, double? min, double? max, bool reusable) =>
+            new() { Id = DeterministicGuid.For("container-type-" + code), Code = code, Name = name, Capacity = capacity, TempMinC = min, TempMaxC = max, IsReusable = reusable };
+        _db.ContainerTypes.AddRange(
+            T("TB-24", "Термобокс на 24 місця", 24, 2, 8, true),
+            T("TB-48", "Термобокс на 48 місць", 48, 2, 8, true),
+            T("BAG-12", "Термосумка на 12 місць", 12, 2, 8, true),
+            T("AMB-24", "Контейнер кімнатної температури на 24 місця", 24, 15, 25, true),
+            T("PKG-10", "Одноразовий пакет на 10 місць", 10, 2, 8, false));
         await _db.SaveChangesAsync();
     }
 

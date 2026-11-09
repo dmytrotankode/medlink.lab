@@ -47,9 +47,8 @@ public sealed class NumeratorService : INumeratorService
                 $"UPDATE lab_numerator SET current_value = 0, period_key = {periodKey} WHERE code = {code} AND (period_key IS NULL OR period_key <> {periodKey})", ct);
         }
         // Атомарний інкремент (SQLite серіалізує записи; у PostgreSQL — рядкове блокування)
-        await _db.Database.ExecuteSqlInterpolatedAsync(
-            $"UPDATE lab_numerator SET current_value = current_value + 1, modified_on = {DateTime.UtcNow} WHERE code = {code}", ct);
-        var value = await _db.Numerators.AsNoTracking().Where(n => n.Code == code).Select(n => n.CurrentValue).FirstAsync(ct);
+        var value = (await _db.Database.SqlQuery<long>(
+            $"UPDATE lab_numerator SET current_value = current_value + 1, modified_on = {DateTime.UtcNow} WHERE code = {code} RETURNING current_value AS \"Value\"").ToListAsync(ct)).First();
         _db.Entry(numerator).State = EntityState.Detached;
         return ApplyMask(numerator.Mask, at, value);
     }
@@ -62,9 +61,10 @@ public sealed class NumeratorService : INumeratorService
             _db.Counters.Add(new LabCounter { CounterCode = counterCode, CounterValue = 0 });
             await _db.SaveChangesAsync(ct);
         }
-        await _db.Database.ExecuteSqlInterpolatedAsync(
-            $"UPDATE lab_counter SET counter_value = counter_value + 1 WHERE counter_code = {counterCode}", ct);
-        return await _db.Counters.AsNoTracking().Where(c => c.CounterCode == counterCode).Select(c => c.CounterValue).FirstAsync(ct);
+        // Атомарно (один оператор UPDATE … RETURNING): без дублів номерів при паралельних запитах (SQLite ≥ 3.35 і PostgreSQL)
+        var next = await _db.Database.SqlQuery<long>(
+            $"UPDATE lab_counter SET counter_value = counter_value + 1 WHERE counter_code = {counterCode} RETURNING counter_value AS \"Value\"").ToListAsync(ct);
+        return next.First();
     }
 
     public async Task<string> NextTubeBarcodeAsync(CancellationToken ct = default)

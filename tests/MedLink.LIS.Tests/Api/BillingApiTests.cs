@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using MedLink.LIS.Api.Data;
 using MedLink.LIS.Api.Data.Entities;
 using MedLink.LIS.Api.Data.Seed;
+using MedLink.LIS.Api.Services.Ehealth;
 using MedLink.LIS.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -113,13 +114,16 @@ public class BillingApiTests
         {
             var db = scope.ServiceProvider.GetRequiredService<LisDbContext>();
             var program = await db.Payers.Where(p => p.Code == "NSZU-PMG").Select(p => p.MedicalProgramId).FirstAsync();
-            db.Referrals.Add(new EheIncomingMedicalReferral
+            var mirror = new EheIncomingMedicalReferral
             {
                 RegNumber = number, OrganizationId = MedLinkDefaults.OrganizationId, PatientCardId = patient, MedicalReferralCategoryId = MedLinkDefaults.ReferralCategoryLaboratoryId,
                 StatusId = MedLinkEnums.ReferralStatusActive, ProcessingStatusInEhealthId = MedLinkEnums.ProcessingNew, PriorityId = MedLinkEnums.EmptyGuid,
                 ExpirationDate = DateTime.UtcNow.AddDays(10), MedicalServiceProgramId = program
-            });
+            };
+            db.Referrals.Add(mirror);
             await db.SaveChangesAsync();
+            // джерело істини — реєстр ЕСОЗ (мок): направлення за програмою НСЗУ
+            _f.Mock().Register(number, patient, null, program, id: mirror.Id);
         }
         var order = await Json(await reg.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = patient, ehealthReferralNumber = number, profileIds = new[] { "PROF_CBC" }, testIds = new[] { "TSH" } }));
         Assert.Equal("NSZU", S(order["payerKind"]));

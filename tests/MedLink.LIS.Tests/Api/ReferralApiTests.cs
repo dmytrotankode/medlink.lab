@@ -7,6 +7,7 @@ using MedLink.LIS.Api.Data;
 using MedLink.LIS.Api.Data.Entities;
 using MedLink.LIS.Api.Data.Seed;
 using MedLink.LIS.Api.Services;
+using MedLink.LIS.Api.Services.Ehealth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -34,18 +35,28 @@ public class ReferralApiTests
         return await f(scope.ServiceProvider.GetRequiredService<LisDbContext>());
     }
 
-    private Task<string> NewReferralAsync(string number, string? patientId = Patient, DateTime? expires = null) => Db(async db =>
+    /// <summary>Е-направлення з'являється в реєстрі мок-ЕСОЗ (джерело істини). mirror=false — рядка в дзеркалі БД немає, доки направлення не знайдено пошуком (кеш).</summary>
+    private Task<string> NewReferralAsync(string number, string? patientId = Patient, DateTime? expires = null, string? programId = null, bool mirror = true) => Db(async db =>
     {
-        var r = new EheIncomingMedicalReferral
+        string id;
+        if (mirror)
         {
-            RegNumber = number, Caption = "Біохімічний аналіз крові", OrganizationId = MedLinkDefaults.OrganizationId, PatientCardId = patientId,
-            ServiceCatalogServiceId = await db.ServiceCatalog.Where(s => s.Code == "LAB-BIOCHEM").Select(s => s.Id).FirstAsync(),
-            MedicalReferralCategoryId = MedLinkDefaults.ReferralCategoryLaboratoryId, StatusId = MedLinkEnums.ReferralStatusActive,
-            ProcessingStatusInEhealthId = MedLinkEnums.ProcessingNew, PriorityId = MedLinkEnums.EmptyGuid, ExpirationDate = expires ?? DateTime.UtcNow.AddDays(30)
-        };
-        db.Referrals.Add(r);
-        await db.SaveChangesAsync();
-        return r.Id;
+            var r = new EheIncomingMedicalReferral
+            {
+                RegNumber = number, Caption = "Біохімічний аналіз крові", OrganizationId = MedLinkDefaults.OrganizationId, PatientCardId = patientId,
+                ServiceCatalogServiceId = await db.ServiceCatalog.Where(s => s.Code == "LAB-BIOCHEM").Select(s => s.Id).FirstAsync(),
+                MedicalReferralCategoryId = MedLinkDefaults.ReferralCategoryLaboratoryId, StatusId = MedLinkEnums.ReferralStatusActive,
+                ProcessingStatusInEhealthId = MedLinkEnums.ProcessingNew, PriorityId = MedLinkEnums.EmptyGuid, ExpirationDate = expires ?? DateTime.UtcNow.AddDays(30),
+                EhealthId = null
+            };
+            db.Referrals.Add(r);
+            await db.SaveChangesAsync();
+            id = r.Id;
+        }
+        else id = Guid.NewGuid().ToString();
+        var sr = _f.Mock().Register(number, patientId, "LAB-BIOCHEM", programId, id: id);
+        sr.ExpirationDate = expires ?? DateTime.UtcNow.AddDays(30);
+        return id;
     });
 
     [Fact]
@@ -69,15 +80,33 @@ public class ReferralApiTests
     }
 
     [Fact]
-    public async Task Ehealth_referral_is_taken_released_and_completed_by_diagnostic_report()
+    public async Task Lookup_finds_referral_in_esoz_registry_without_local_mirror_row()
     {
         var reg = _f.As(DemoDataSeeder.Registrar);
-        var tech = _f.As(DemoDataSeeder.Technician);
+        var number = "T-" + Guid.NewGuid().ToString("N")[..8];
+        var srId = await NewReferralAsync(number, mirror: false);
+        Assert.False(await Db(db => db.Referrals.AnyAsync(r => r.RegNumber == number)));
+        var found = await Json(await reg.GetAsync($"/api/v1/lab/referrals/ehealth/lookup?number={number}&patientId={Patient}"));
+        Assert.Equal("ESOZ", S(found["source"]));
+        Assert.True(found["canUse"]!.GetValue<bool>());
+        // дзеркало — кеш: рядок створено за відповіддю ЕСОЗ
+        var mirror = await Db(db => db.Referrals.AsNoTracking().FirstAsync(r => r.RegNumber == number));
+        Assert.Equal(srId, mirror.EhealthId);
+        Assert.Equal("active", mirror.EhealthStatus);
+        Assert.NotNull(mirror.ServiceCatalogServiceId);
+        // ЕСОЗ не знає номера → 404
+        Assert.Equal(HttpStatusCode.NotFound, (await reg.GetAsync("/api/v1/lab/referrals/ehealth/lookup?number=NOT-IN-ESOZ")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Ehealth_referral_is_completed_only_after_report_is_registered_in_esoz()
+    {
+        var reg = _f.As(DemoDataSeeder.Registrar);
         var doctor = _f.As(DemoDataSeeder.Doctor);
         var number = "T-" + Guid.NewGuid().ToString("N")[..8];
         var refId = await NewReferralAsync(number);
 
-        // Взяти в роботу
+        // Взяти в роботу: направлення без програми — use не викликається (за схемою OpenAPI program обов'язкова), лише локальний стан
         var o1 = await Json(await reg.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = Patient, ehealthReferralNumber = number, profileIds = new[] { "PROF_BIOCHEM_BASE" } }));
         Assert.Equal("EHEALTH", S(o1["referralType"]));
         Assert.Equal(number, S(o1["referralNumber"]));
@@ -89,17 +118,19 @@ public class ReferralApiTests
         await Json(await reg.PostAsJsonAsync($"/api/v1/lab/orders/{S(o1["id"])}/cancel", new { reason = "Помилка реєстрації" }));
         Assert.Equal(MedLinkEnums.ProcessingNew, await Db(db => db.Referrals.Where(r => r.Id == refId).Select(r => r.ProcessingStatusInEhealthId).FirstAsync()));
 
-        // Нове замовлення → результат → видача → погашення висновком
-        var o2 = await Json(await reg.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = Patient, ehealthReferralId = refId, testIds = new[] { "GLU" } }));
-        var orderId = S(o2["id"]);
-        var barcode = S(o2["samples"]![0]!["barcode"]);
-        await Json(await tech.PostAsJsonAsync($"/api/v1/lab/samples/{barcode}/collect", new { volumeMl = 4.0 }));
-        await Json(await tech.PostAsJsonAsync($"/api/v1/lab/samples/{barcode}/receive", new { }));
-        var testId = S(o2["tests"]![0]!["id"]);
-        var row = await Json(await tech.PutAsJsonAsync($"/api/v1/lab/results/{testId}", new { numericValue = 5.0 }));
-        if (S(row["status"]) != "AUTO_VERIFIED") await Json(await doctor.PostAsJsonAsync($"/api/v1/lab/results/{testId}/verify", new { }));
-        await Json(await doctor.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/release", new { }));
+        // Нове замовлення → результат → видача. Направлення на цей момент ще НЕ погашене: звіту в ЕСОЗ немає
+        var orderId = await _f.ReleasedOrderAsync(_f.As, number);
         var (r, reportId) = await Db(async db => (await db.Referrals.AsNoTracking().FirstAsync(x => x.Id == refId), await db.Orders.Where(o => o.Id == orderId).Select(o => o.DiagnosticReportId).FirstAsync()));
+        Assert.Equal(MedLinkEnums.ReferralStatusActive, r.StatusId);
+        Assert.Null(r.CompleteDateInEhealth);
+        Assert.DoesNotContain(_f.Mock().Calls, c => c.Contains($"{refId}/actions/complete"));
+        Assert.Equal("active", _f.Mock().ServiceRequests[refId].Status);
+
+        // Підпис і відправка → воркер: пакет звіту (job processed) → окрема задача погашення
+        var cert = await EhealthKit.LoginAsync(doctor);
+        await EhealthKit.SignAndSubmitAsync(doctor, orderId, cert);
+        await _f.Pump();
+        r = await Db(db => db.Referrals.AsNoTracking().FirstAsync(x => x.Id == refId));
         Assert.Equal(MedLinkEnums.ReferralStatusCompleted, r.StatusId);
         Assert.Equal(MedLinkEnums.ProcessingCompleted, r.ProcessingStatusInEhealthId);
         Assert.Equal(reportId, r.CompletedWithItemEntityId);
@@ -107,21 +138,37 @@ public class ReferralApiTests
         Assert.NotNull(r.CompleteDateInEhealth);
         var report = await Db(db => db.DiagnosticReports.AsNoTracking().FirstAsync(x => x.Id == reportId));
         Assert.Equal(refId, report.EhealthIncomingMedicalReferralId);
-        // Реальні виклики API ЕСОЗ (обслуговані моком) — у журналі обміну
+        Assert.Equal("completed", _f.Mock().ServiceRequests[refId].Status);
+
+        // Порядок викликів: пакет звіту → complete; шляхи — як в OpenAPI (/api/service_requests…, без patients/service_requests)
+        var calls = _f.Mock().Calls.ToList();
+        var iPost = calls.FindIndex(c => c.StartsWith("POST") && c.EndsWith("/diagnostic_report_package"));
+        var iDone = calls.FindIndex(c => c.StartsWith("PATCH") && c.Contains($"/service_requests/{refId}/actions/complete"));
+        Assert.True(iPost >= 0 && iDone > iPost, "complete має йти після реєстрації звіту: " + string.Join(" | ", calls));
         var log = (await Json(await doctor.GetAsync("/api/v1/lab/ehealth/exchange-log?take=500")))["items"]!.AsArray();
-        Assert.True(log.Count > 0, "exchange log empty");
-        string[] Urls(string method) => log.Where(l => S(l!["method"]) == method).Select(l => S(l!["url"])).ToArray();
-        Assert.Contains(Urls("PATCH"), u => u == $"patients/service_requests/{refId}/actions/use");
-        Assert.Contains(Urls("PATCH"), u => u == $"patients/service_requests/{refId}/actions/release");
-        Assert.Contains(Urls("PATCH"), u => u == $"patients/service_requests/{refId}/actions/complete");
-        Assert.Contains(Urls("GET"), u => u.StartsWith($"patients/service_requests?requisition={number}"));
-        var complete = log.First(l => S(l!["url"]) == $"patients/service_requests/{refId}/actions/complete")!;
-        Assert.Contains("\"completed_with\"", S(complete["requestJson"]));
-        Assert.Contains(reportId!, S(complete["requestJson"]));
-        Assert.Equal(202, complete["statusCode"]!.GetValue<int>());
+        Assert.Contains(log, l => S(l!["method"]) == "GET" && S(l["url"]).Contains($"service_requests?requisition={number}"));
+        var completeLog = log.First(l => S(l!["method"]) == "PATCH" && S(l["url"]).EndsWith($"/service_requests/{refId}/actions/complete"))!;
+        Assert.DoesNotContain(log, l => S(l!["url"]).Contains("patients/service_requests"));
+        Assert.Contains("completed_with", S(completeLog["requestJson"]));
+        Assert.Equal(202, completeLog["statusCode"]!.GetValue<int>());
         // Погашене направлення використати вже не можна
         var again = await Json(await reg.GetAsync($"/api/v1/lab/referrals/ehealth/lookup?number={number}"));
         Assert.False(again["canUse"]!.GetValue<bool>());
+    }
+
+    [Fact]
+    public async Task Referral_with_program_calls_use_with_program_and_release_on_cancel()
+    {
+        var reg = _f.As(DemoDataSeeder.Registrar);
+        var number = "T-" + Guid.NewGuid().ToString("N")[..8];
+        var refId = await NewReferralAsync(number, programId: "9183a36b-4d45-4244-9339-63d81cd08d9c");
+        var o = await Json(await reg.PostAsJsonAsync("/api/v1/lab/orders", new { patientId = Patient, ehealthReferralNumber = number, testIds = new[] { "GLU" } }));
+        Assert.Contains(_f.Mock().Calls, c => c.StartsWith("PATCH") && c.Contains($"/service_requests/{refId}/actions/use"));
+        Assert.Equal("9183a36b-4d45-4244-9339-63d81cd08d9c", await Db(db => db.Referrals.Where(r => r.Id == refId).Select(r => r.EhealthProgramId).FirstAsync()));
+        Assert.Equal("in_progress", _f.Mock().ServiceRequests[refId].ProgramProcessingStatus);
+        await Json(await reg.PostAsJsonAsync($"/api/v1/lab/orders/{S(o["id"])}/cancel", new { reason = "Помилка реєстрації" }));
+        Assert.Contains(_f.Mock().Calls, c => c.StartsWith("PATCH") && c.Contains($"/service_requests/{refId}/actions/release"));
+        Assert.Null(_f.Mock().ServiceRequests[refId].UsedByLegalEntity);
     }
 
     [Fact]
