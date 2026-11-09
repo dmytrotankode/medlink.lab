@@ -151,7 +151,7 @@ export default {
     categoryLabel (c) { const x = ANALYZER_CATEGORIES.find(a => a.value === c); return x ? x.label : c; },
     refLabel (col, id) {
       if (id === null || id === undefined) return '—';
-      const map = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', antibioticId: 'antibiotics', organismId: 'organisms', testId: 'tests', analyzerTypeId: 'analyzer-types' };
+      const map = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', antibioticId: 'antibiotics', organismId: 'organisms', testId: 'tests', analyzerTypeId: 'analyzer-types', fromUnitId: 'units', toUnitId: 'units' };
       const d = map[col]; if (!d) return id;
       const it = this.$store.getters['dictionaries/byId'](d, id);
       return it ? (it.name || it.fullName || it.latinName || it.code) : id;
@@ -169,7 +169,7 @@ export default {
     async load () {
       const res = await this.callApi(() => this.$api.dictList(this.name));
       if (res !== undefined) { this.items = this.asList(res); this.$emit('loaded', this.items); }
-      const refs = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', antibioticId: 'antibiotics', organismId: 'organisms', testId: 'tests' };
+      const refs = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', antibioticId: 'antibiotics', organismId: 'organisms', testId: 'tests', fromUnitId: 'units', toUnitId: 'units' };
       const needed = new Set();
       this.schema.columns.forEach(c => { if (refs[c]) needed.add(refs[c]); });
       if (this.name === 'profiles') needed.add('tests');

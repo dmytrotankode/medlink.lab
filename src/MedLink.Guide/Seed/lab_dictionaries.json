@@ -509,6 +509,157 @@
           }
         }
       ]
+    },
+    {
+      "code": "lab.dict.units",
+      "folderCode": "dict-maint",
+      "caption": "Одиниці виміру та перерахунок",
+      "description": "Додайте одиницю виміру та правило перерахунку результату між двома одиницями.",
+      "icon": "straighten",
+      "startRoute": "/laboratory/dictionaries/units",
+      "requiredRoles": [],
+      "tags": [
+        "довідники",
+        "одиниці"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 80,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Нова одиниця",
+          "body": "Натисніть «Створити» в довіднику «Одиниці виміру»: вкажіть код, скорочений запис (ммоль/л) та величину.",
+          "route": "/laboratory/dictionaries/units",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Створити» в довіднику «Одиниці виміру»: вкажіть код, скорочений запис (ммоль/л) та величину.",
+          "anchor": {
+            "code": "lab.dict.unit-create",
+            "caption": "Кнопка створення одиниці",
+            "routePattern": "/laboratory/dictionaries/units",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictCreate\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictCreate"
+              },
+              "label": "Кнопка створення одиниці"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Збереження одиниці",
+          "body": "Збережіть одиницю — вона з’явиться у виборі норм і показників.",
+          "route": "/laboratory/dictionaries/units",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Збережіть одиницю — вона з’явиться у виборі норм і показників.",
+          "anchor": {
+            "code": "lab.dict.unit-save",
+            "caption": "Кнопка збереження одиниці",
+            "routePattern": "/laboratory/dictionaries/units",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictSave\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictSave"
+              },
+              "label": "Кнопка збереження одиниці"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Правило перерахунку",
+          "body": "У довіднику «Перерахунок одиниць» натисніть «Створити»: оберіть показник та дві одиниці.",
+          "route": "/laboratory/dictionaries/unit-conversions",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "У довіднику «Перерахунок одиниць» натисніть «Створити»: оберіть показник та дві одиниці.",
+          "anchor": {
+            "code": "lab.dict.conv-create",
+            "caption": "Кнопка створення правила",
+            "routePattern": "/laboratory/dictionaries/unit-conversions",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"dictCreate\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "dictCreate"
+              },
+              "label": "Кнопка створення правила"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Множник",
+          "body": "Вкажіть множник (до = від × множник + зсув) і збережіть правило.",
+          "route": "/laboratory/dictionaries/unit-conversions",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Вкажіть множник (до = від × множник + зсув) і збережіть правило.",
+          "anchor": {
+            "code": "lab.dict.conv-factor",
+            "caption": "Поле множника",
+            "routePattern": "/laboratory/dictionaries/unit-conversions",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"f-factor\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "f-factor"
+              },
+              "label": "Поле множника"
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
     }
   ]
 }

@@ -309,6 +309,68 @@ export const DICTIONARIES = {
       { name: 'minimumTests', label: 'Мін. запас, тестів', type: 'number', col: 3, default: 50 },
       active]
   },
+
+  // ---------- Одиниці, вікові групи, причини ----------
+  units: {
+    group: 'basic',
+    title: 'Одиниці виміру', icon: 'fas fa-ruler', description: 'Одиниці результатів показників і норм: ммоль/л, мг/дл, Од/л; величина та система (SI / традиційна)',
+    columns: ['code', 'name', 'fullName', 'dimension', 'systemKind', 'sortOrder', 'isActive'],
+    fields: [...codeName,
+      { name: 'fullName', label: 'Повна назва', type: 'text', col: 6 },
+      { name: 'dimension', label: 'Величина', type: 'select', col: 3, default: 'OTHER', options: [
+        { value: 'CONC_SUBSTANCE', label: 'Кількість речовини' }, { value: 'CONC_MASS', label: 'Маса' }, { value: 'ENZYME', label: 'Активність ферменту' }, { value: 'CELLS', label: 'Клітини' },
+        { value: 'PERCENT', label: 'Відсотки' }, { value: 'RATIO', label: 'Співвідношення' }, { value: 'TIME', label: 'Час' }, { value: 'PRESSURE', label: 'Тиск' }, { value: 'DIMENSIONLESS', label: 'Безрозмірна' }, { value: 'OTHER', label: 'Інша' }] },
+      { name: 'systemKind', label: 'Система', type: 'select', col: 3, default: 'OTHER', options: [{ value: 'SI', label: 'SI' }, { value: 'TRADITIONAL', label: 'Традиційна' }, { value: 'OTHER', label: 'Інша' }] },
+      { name: 'sortOrder', label: 'Порядок', type: 'number', col: 3, default: 100 },
+      active]
+  },
+  'unit-conversions': {
+    group: 'basic',
+    title: 'Перерахунок одиниць', icon: 'fas fa-exchange-alt', description: 'Правила перерахунку результату показника з однієї одиниці в іншу: до = від × множник + зсув',
+    columns: ['testCode', 'fromUnitId', 'toUnitId', 'factor', 'offset', 'note', 'isActive'],
+    fields: [
+      { name: 'testCode', label: 'Показник', type: 'dict', dict: 'tests', labelField: 'code', valueField: 'code', required: true, col: 6 },
+      { name: 'fromUnitId', label: 'З одиниці', type: 'dict', dict: 'units', labelField: 'name', valueField: 'id', required: true, col: 3 },
+      { name: 'toUnitId', label: 'В одиницю', type: 'dict', dict: 'units', labelField: 'name', valueField: 'id', required: true, col: 3 },
+      { name: 'factor', label: 'Множник', type: 'decimal', col: 4, default: 1, hint: 'не нуль' },
+      { name: 'offset', label: 'Зсув', type: 'decimal', col: 4, default: 0 },
+      { name: 'note', label: 'Примітка', type: 'text', col: 4 },
+      active]
+  },
+  'age-groups': {
+    group: 'basic',
+    title: 'Вікові групи', icon: 'fas fa-baby', description: 'Вікові групи для референтних норм: межі включно, в днях, місяцях або роках',
+    columns: ['code', 'name', 'ageFrom', 'ageTo', 'ageUnit', 'sortOrder', 'isActive'],
+    fields: [...codeName,
+      { name: 'ageFrom', label: 'Вік від', type: 'decimal', col: 3, default: 0 },
+      { name: 'ageTo', label: 'Вік до', type: 'decimal', col: 3, default: 120 },
+      { name: 'ageUnit', label: 'Одиниця віку', type: 'select', required: true, col: 3, default: 'YEARS', options: [{ value: 'DAYS', label: 'Дні' }, { value: 'MONTHS', label: 'Місяці' }, { value: 'YEARS', label: 'Роки' }] },
+      { name: 'sortOrder', label: 'Порядок', type: 'number', col: 3, default: 100 },
+      active]
+  },
+  'rejection-reasons': {
+    group: 'basic',
+    title: 'Причини браку', icon: 'fas fa-ban', description: 'Причини відбракування проби чи результату: забір, якість матеріалу, ідентифікація, транспортування, аналітика',
+    columns: ['code', 'name', 'category', 'requiresRecollection', 'sortOrder', 'isActive'],
+    fields: [...codeName,
+      { name: 'category', label: 'Категорія', type: 'select', col: 4, default: 'OTHER', options: [
+        { value: 'COLLECTION', label: 'Забір' }, { value: 'SAMPLE_QUALITY', label: 'Якість матеріалу' }, { value: 'IDENTIFICATION', label: 'Ідентифікація' },
+        { value: 'TRANSPORT', label: 'Транспортування' }, { value: 'ANALYTIC', label: 'Аналітика' }, { value: 'OTHER', label: 'Інше' }] },
+      { name: 'requiresRecollection', label: 'Потрібен повторний забір', type: 'toggle', default: true },
+      { name: 'sortOrder', label: 'Порядок', type: 'number', col: 4, default: 100 },
+      active]
+  },
+  'cancel-reasons': {
+    group: 'basic',
+    title: 'Причини відмови', icon: 'fas fa-times-circle', description: 'Причини відмови від замовлення або його скасування: пацієнт, лікар, лабораторія, оплата',
+    columns: ['code', 'name', 'category', 'sortOrder', 'isActive'],
+    fields: [...codeName,
+      { name: 'category', label: 'Категорія', type: 'select', col: 4, default: 'OTHER', options: [
+        { value: 'PATIENT', label: 'Пацієнт' }, { value: 'DOCTOR', label: 'Лікар' }, { value: 'LABORATORY', label: 'Лабораторія' },
+        { value: 'PAYMENT', label: 'Оплата' }, { value: 'ADMIN', label: 'Адміністративна' }, { value: 'OTHER', label: 'Інше' }] },
+      { name: 'sortOrder', label: 'Порядок', type: 'number', col: 4, default: 100 },
+      active]
+  },
 };
 
 export const DICTIONARY_GROUPS = [
@@ -323,5 +385,5 @@ export const DICTIONARY_LIST = Object.keys(DICTIONARIES).map(k => ({ name: k, ..
 export function columnLabel (dict, col) {
   const f = (dict.fields || []).find(x => x.name === col);
   if (f) return f.label;
-  return { itemsCount: 'Показників', colorCode: 'Колір', biomaterialTypeId: 'Біоматеріал', departmentId: 'Відділення', antibioticId: 'Антибіотик', organismId: 'Збудник', departmentTypeName: 'Тип підрозділу MedLink' }[col] || col;
+  return { itemsCount: 'Показників', colorCode: 'Колір', biomaterialTypeId: 'Біоматеріал', departmentId: 'Відділення', antibioticId: 'Антибіотик', organismId: 'Збудник', departmentTypeName: 'Тип підрозділу MedLink', fromUnitId: 'З одиниці', toUnitId: 'В одиницю' }[col] || col;
 }
