@@ -27,8 +27,14 @@
 
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />
 
+    <q-banner v-if="loaded && onlyActive && !filtered.length && inactiveCount" dense rounded class="bg-orange-1 text-grey-9 q-mb-sm" data-testid="dictInactiveHint">
+      <template v-slot:avatar><q-icon name="info" color="orange-8" /></template>
+      Активних записів немає, але є неактивні ({{ inactiveCount }}).
+      <template v-slot:action><q-btn flat dense no-caps color="primary" label="Показати неактивні" data-testid="dictShowInactive" @click="onlyActive = false" /></template>
+    </q-banner>
+
     <div class="medlink-card">
-      <q-table :data="filtered" :columns="columns" row-key="id" dense flat :loading="loading" :pagination.sync="pagination" :rows-per-page-options="[25, 50, 100, 0]" no-data-label="Записів немає" data-testid="dictTable" @row-click="(e, row) => openView(row)" class="cursor-pointer">
+      <q-table :data="filtered" :columns="columns" row-key="id" dense flat :loading="loading" :pagination.sync="pagination" :rows-per-page-options="[25, 50, 100, 0]" :no-data-label="loaded ? 'Записів немає' : 'Завантаження…'" data-testid="dictTable" @row-click="(e, row) => openView(row)" class="cursor-pointer">
         <template v-slot:body-cell="props">
           <q-td :props="props">
             <template v-if="props.col.name === 'colorCode' && !props.value">—</template>
@@ -126,7 +132,7 @@ export default {
   components: { DictionaryFormDialog },
   props: { name: { type: String, required: true }, allowImport: { type: Boolean, default: true } },
   data () {
-    return { items: [], search: '', onlyActive: true, formOpen: false, viewOpen: false, deleteOpen: false, importOpen: false, active: null, usedIn: [], importFile: null, importPreview: null, importing: false, importShowAll: false, importLimit: 5000, pagination: { rowsPerPage: 25, sortBy: 'code' } };
+    return { loaded: false, items: [], search: '', onlyActive: true, formOpen: false, viewOpen: false, deleteOpen: false, importOpen: false, active: null, usedIn: [], importFile: null, importPreview: null, importing: false, importShowAll: false, importLimit: 5000, pagination: { rowsPerPage: 25, sortBy: 'code' } };
   },
   computed: {
     /** Створення/правка: лікар-лаборант і адміністратор (серверна політика). Лаборант та інші ролі — лише перегляд. */
@@ -139,12 +145,13 @@ export default {
     columns () {
       return [...this.schema.columns.map(c => ({ name: c, label: columnLabel(this.schema, c), field: c === 'itemsCount' ? r => (r.items || []).length : c, align: 'left', sortable: true })), { name: 'actions', label: '', align: 'right' }];
     },
+    inactiveCount () { return this.items.filter(i => i.isActive === false).length; },
     filtered () {
       const s = (this.search || '').toLowerCase();
       return this.items.filter(i => (!this.onlyActive || i.isActive !== false) && (!s || JSON.stringify(i).toLowerCase().includes(s)));
     }
   },
-  watch: { name () { this.load(); } },
+  watch: { name () { this.loaded = false; this.items = []; this.load(); } },
   created () { this.load(); },
   methods: {
     roleLabel (r) { return ROLE[r] || r || '—'; },
@@ -169,6 +176,7 @@ export default {
     async load () {
       const res = await this.callApi(() => this.$api.dictList(this.name));
       if (res !== undefined) { this.items = this.asList(res); this.$emit('loaded', this.items); }
+      this.loaded = true;
       const refs = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', antibioticId: 'antibiotics', organismId: 'organisms', testId: 'tests', fromUnitId: 'units', toUnitId: 'units' };
       const needed = new Set();
       this.schema.columns.forEach(c => { if (refs[c]) needed.add(refs[c]); });

@@ -8,6 +8,7 @@ import * as narration from './narration.js';
 
 const RUN_KEY = 'mlg.run';
 const FIND_TIMEOUT_MS = 3000;
+const hasParam = route => /\/:[A-Za-z_]+/.test(String(route || '').split('?')[0]);
 
 export class Player {
   constructor (ctx) {
@@ -41,7 +42,8 @@ export class Player {
     if (!o.preview) this.ctx.api.progress({ scenarioId: scenarioId, versionNo: sc.version, status: 'started', lastStep: 0, mode: this.run.mode });
     const first = sc.steps[this.run.i];
     // перехід до початкового екрана сценарію незалежно від того, де зараз користувач
-    const startRoute = first.route || sc.startRoute;
+    let startRoute = first.route || sc.startRoute;
+    if (hasParam(startRoute)) startRoute = hasParam(sc.startRoute) ? '' : sc.startRoute; // з параметром не відкриваємо буквально
     if (startRoute && !routeMatches(startRoute, this.ctx.host.currentRoute())) await this.navigate(startRoute);
     this.go(this.run.i);
   }
@@ -78,6 +80,38 @@ export class Player {
       await sleep(100);
     }
     await sleep(350); // дати сторінці відрендеритись
+  }
+
+  /**
+   * Крок вимагає екрана з параметром (напр. картка справи), а користувач на ньому не був.
+   * Повертаємось до найближчого попереднього кроку «відкрити з переліку», відкриваємо перший рядок списку
+   * і чекаємо перехід. Якщо не вдалось — показуємо той крок (з підказкою відкрити елемент вручну).
+   */
+  async openParamRoute (i, stale) {
+    const steps = this.run.scenario.steps; const step = steps[i];
+    let j = -1;
+    for (let k = i - 1; k >= 0; k--) { if (steps[k].waitRoute === step.route || (steps[k].route && !hasParam(steps[k].route))) { j = k; break; } }
+    const listRoute = j >= 0 ? steps[j].route : this.run.scenario.startRoute;
+    if (listRoute && !hasParam(listRoute) && this.needNav(listRoute)) {
+      overlay.show({ title: 'Перехід…', body: 'Відкриваю список', target: null, blockOutside: true, buttons: [{ text: 'Закрити', kind: 'dng', onClick: () => this.stop() }] });
+      await this.navigate(listRoute);
+      if (stale()) return false;
+    }
+    const opener = j >= 0 && steps[j].waitRoute === step.route ? steps[j] : null;
+    if (opener && opener.anchor) {
+      const found = await this.waitFor(() => resolveAnchor(opener.anchor, undefined, true), 5000);
+      if (stale()) return false;
+      if (found && found.el) {
+        found.el.click();
+        const t0 = Date.now();
+        while (Date.now() - t0 < 6000 && this.needNav(step.route)) await sleep(120);
+        if (stale()) return false;
+        if (!this.needNav(step.route)) { await sleep(300); return true; }
+      }
+    }
+    // автоматично відкрити справу не вдалось: показуємо крок «відкрийте» (або перший крок), користувач відкриває сам
+    this.go(j >= 0 ? j : 0);
+    return false;
   }
 
   vars (t) { return interpolate(t, this.run.vars); }
@@ -147,7 +181,13 @@ export class Player {
     const stale = () => token !== this.token || this.run !== r;
 
     // 1. потрібна сторінка
-    if (this.needNav(step.route)) {
+    // Маршрут з параметром (/cases/:id) не відкривається буквально: плеєр відкриває реальну першу справу зі списку
+    if (hasParam(step.route) && this.needNav(step.route)) {
+      const ok = await this.openParamRoute(i, stale);
+      if (stale()) return;
+      if (!ok) return;
+    }
+    if (this.needNav(step.route) && !hasParam(step.route)) {
       overlay.show({ title: 'Перехід…', body: 'Відкриваю потрібний екран', target: null, blockOutside: true, buttons: [{ text: 'Закрити', kind: 'dng', onClick: () => this.stop() }] });
       await this.navigate(step.route);
       if (stale()) return;
@@ -159,7 +199,7 @@ export class Player {
     // 2. кроки без елемента
     if (type === 'navigate') {
       const target = step.waitRoute || step.route;
-      if (this.needNav(target)) await this.navigate(target);
+      if (!hasParam(target) && this.needNav(target)) await this.navigate(target);
       if (stale()) return; return this.next();
     }
     if (!step.anchor || type === 'wait') {
@@ -176,7 +216,16 @@ export class Player {
     const tFind = Date.now();
     // очікування появи елемента ~3 с (N6): довше не чекаємо, щоб користувач не дивився на порожню підказку
     const waitMs = Math.min(step.timeoutMs || FIND_TIMEOUT_MS, 5000);
-    const found = await this.waitFor(() => resolveAnchor(step.anchor, undefined, Date.now() - tFind < 1500), waitMs);
+    let revealed = false;
+    const found = await this.waitFor(() => {
+      const f = resolveAnchor(step.anchor, undefined, Date.now() - tFind < 1500);
+      // елемент може бути у згорнутій панелі (меню у вузькому вікні): просимо систему показати його один раз
+      if (!f && !revealed && Date.now() - tFind > 500 && typeof this.ctx.opts.revealAnchor === 'function') {
+        revealed = true;
+        try { this.ctx.opts.revealAnchor(step.anchor); } catch (e) { /* ignore */ }
+      }
+      return f;
+    }, waitMs);
     clearTimeout(searchTimer);
     if (stale()) return;
     if (!found) {
