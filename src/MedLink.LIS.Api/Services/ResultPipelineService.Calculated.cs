@@ -143,6 +143,15 @@ public sealed partial class ResultPipelineService
         }
     }
 
+    /// <summary>Ручний перерахунок розрахункових показників замовлення (лаборант/лікар/адмін).</summary>
+    public async Task<List<string>> RecalculateByUserAsync(string orderId)
+    {
+        _policy.Require("Перерахунок розрахункових показників", LabRoles.Admin, LabRoles.Doctor, LabRoles.Technician);
+        var warnings = new List<string>();
+        await RecalculateOrderAsync(orderId, warnings);
+        return warnings;
+    }
+
     private void InvalidateCalculated(LabOrder order, LabOrderTest ct, LabTestResult result, CalcSnapshot snap)
     {
         _db.ResultHistory.Add(new LabResultHistory

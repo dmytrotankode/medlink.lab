@@ -78,9 +78,7 @@ public sealed class WorklistController : LisControllerBase
     [HttpPost("orders/{orderId}/recalculate")]
     public async Task<IActionResult> Recalculate(string orderId)
     {
-        var warnings = new List<string>();
-        await _pipeline.RecalculateOrderAsync(orderId, warnings);
-        return Ok(new { orderId, warnings });
+        return Ok(new { orderId, warnings = await _pipeline.RecalculateByUserAsync(orderId) });
     }
 
     [HttpPost("results/{orderTestId}/reopen")]
