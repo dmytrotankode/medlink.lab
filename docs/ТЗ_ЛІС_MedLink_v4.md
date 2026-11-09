@@ -1738,6 +1738,12 @@ MedLink.LabConnector (Worker Service, .NET 8)
 - У v4: таблиця `mis_diagnostic_report` заповнюється; поле `ehealthStatus` на замовленні (`NOT_SENT`); UI показує бейдж «ЕСОЗ: не надіслано». Інтерфейс сервісу `IEhealthGateway { SubmitDiagnosticReportAsync, CancelReferralAsync }` з реалізацією-заглушкою.
 - Рішення OQ-02: внутрішня верифікація — без КЕП (аудит-токен); КЕП — лише для документів, що виходять назовні (ЕСОЗ, офіційний PDF за вимогою).
 
+<div class="chg-block" markdown="1">
+
+<span class="tag-mod">ЗМІНЕНО</span> **Схема інтеграції (09.11.2026).** Методи ЄСОЗ викликаються лише через сервіс MedLink eHealth (проксі): ЛІС передає заголовки `ClientId` і `UserId`, токен користувача зберігає проксі, прямих звернень до ЄСОЗ та токенів у ЛІС немає. Вхід користувача: кнопка «Увійти в ЄСОЗ» → портал авторизації → повернення з кодом → обмін коду на проксі. Режими: Mock (типово), Replay, MedLinkProxy. Відправка — через чергу (outbox), окреме погашення направлення після звіту. Контракт і вимоги до проксі — `docs/EHEALTH_MEDLINK_PROXY_CONTRACT.md`; контракт виведено з SDK, живої перевірки ще не було.
+
+</div>
+
 ### 10.3. Сповіщення (SMS / Viber / e-mail / push) — заглушка
 
 - `INotificationSender` з реалізацією `LoggingNotificationSender`: запис у `patient_notifications` зі статусом `QUEUED → SENT(stub)`; payload містить текст українською («Ваші результати за замовленням 2610-000481 готові…») та посилання на портал.
