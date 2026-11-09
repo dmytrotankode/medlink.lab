@@ -74,6 +74,20 @@ PGCONF
   umask 022
 fi
 
+# Публічна адреса (QR і посилання на бланках) та секрет підпису перевірки: секрет генерується один раз і не перезаписується.
+if [ ! -f /etc/systemd/system/medlink-lab.service.d/app.conf ]; then
+  mkdir -p /etc/systemd/system/medlink-lab.service.d
+  VSECRET="$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' 
+')"
+  umask 077
+  cat > /etc/systemd/system/medlink-lab.service.d/app.conf <<APPCONF
+[Service]
+Environment=Lab__PublicBaseUrl=${PUBLIC_BASE_URL:-https://med-one.avowiz.com/lab}
+Environment=Lab__VerifySecret=${VSECRET}
+APPCONF
+  umask 022
+fi
+
 # Режим визначення співробітника: на цьому dev-стенді ролі перемикаються заголовком X-MedLink-Employee-Id (Auth:Mode=Header).
 # Для бойового середовища задайте AUTH_MODE=None і підключіть вхід (docs/AUTH_PLAN.md). Наявний drop-in не перезаписується.
 mkdir -p /etc/systemd/system/medlink-lab.service.d

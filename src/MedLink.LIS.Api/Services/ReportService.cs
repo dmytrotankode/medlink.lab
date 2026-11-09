@@ -162,7 +162,7 @@ public sealed class ReportService
                 var prev = versions.FirstOrDefault(a => a.VersionNo == current - 1);
                 var reason = archivingReason ?? versions.FirstOrDefault(a => a.VersionNo == current)?.AmendReason ?? "виправлення результатів";
                 model.Mark = "AMENDED";
-                model.MarkNote = Tx(language, "amendNote", current, current - 1, prev?.CreatedOn.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—", reason);
+                model.MarkNote = Tx(language, "amendNote", current, current - 1, prev?.CreatedOn.ToLab().ToString("dd.MM.yyyy HH:mm") ?? "—", reason);
             }
         }
         return model;
@@ -241,10 +241,10 @@ public sealed class ReportService
         sb.Append($"<tr><td><b>{H(Tx(L, "patient"))}:</b></td><td>{H(p?.Caption)}</td></tr><tr><td><b>{H(Tx(L, "dob"))}:</b></td><td>{(p?.Birthday?.ToString("dd.MM.yyyy") ?? "—")} ({Age(p, o.OrderDatetime, L)}), {H(Tx(L, "sex"))}: {H(GenderText(p, L))}</td></tr>");
         sb.Append($"<tr><td><b>{H(Tx(L, "phone"))}:</b></td><td>{H(p?.Person?.Phone)}</td></tr><tr><td><b>{H(Tx(L, "referral"))}:</b></td><td>{H(o.Doctor?.Caption ?? "—")} {(o.Department != null ? "· " + H(o.Department.Caption) : "")}</td></tr></table>");
         sb.Append("<table>");
-        sb.Append($"<tr><td><b>{H(Tx(L, "ordered"))}:</b></td><td>{o.OrderDatetime.ToLocalTime():dd.MM.yyyy HH:mm}{(o.IsUrgentCito ? " <b style=\"color:#b91c1c\">CITO</b>" : "")}</td></tr>");
+        sb.Append($"<tr><td><b>{H(Tx(L, "ordered"))}:</b></td><td>{o.OrderDatetime.ToLab():dd.MM.yyyy HH:mm}{(o.IsUrgentCito ? " <b style=\"color:#b91c1c\">CITO</b>" : "")}</td></tr>");
         var collected = o.Samples.Where(s => s.CollectedAt != null).Select(s => s.CollectedAt).Min();
-        sb.Append($"<tr><td><b>{H(Tx(L, "collected"))}:</b></td><td>{(collected?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")}</td></tr>");
-        sb.Append($"<tr><td><b>{H(Tx(L, "released"))}:</b></td><td>{(o.ReleasedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—")}</td></tr><tr><td><b>{H(Tx(L, "barcodes"))}:</b></td><td>{string.Join(", ", o.Samples.Select(s => s.Barcode))}</td></tr></table></div>");
+        sb.Append($"<tr><td><b>{H(Tx(L, "collected"))}:</b></td><td>{(collected?.ToLab().ToString("dd.MM.yyyy HH:mm") ?? "—")}</td></tr>");
+        sb.Append($"<tr><td><b>{H(Tx(L, "released"))}:</b></td><td>{(o.ReleasedAt?.ToLab().ToString("dd.MM.yyyy HH:mm") ?? "—")}</td></tr><tr><td><b>{H(Tx(L, "barcodes"))}:</b></td><td>{string.Join(", ", o.Samples.Select(s => s.Barcode))}</td></tr></table></div>");
 
         sb.Append($"<table class=\"res\"><tr><th style=\"width:38%\">{H(Tx(L, "test"))}</th><th>{H(Tx(L, "result"))}</th><th>{H(Tx(L, "unit"))}</th><th>{H(Tx(L, "ref"))}</th><th>{H(Tx(L, "flag"))}</th><th>{H(Tx(L, "prev"))}</th></tr>");
         foreach (var grp in VisibleTests(m).OrderBy(t => t.DisplayOrder).GroupBy(t => GroupTitle(t, L)))
@@ -253,9 +253,9 @@ public sealed class ReportService
             foreach (var t in grp)
             {
                 var r = t.Result;
-                var val = r == null ? "—" : DtoMapper.FormatValue(r.NumericValue, r.StringValue, t.Test?.DecimalPlaces ?? 2);
+                var val = r == null ? "—" : DtoMapper.FormatValue(r.NumericValue, r.StringValue, t.Test?.DecimalPlaces ?? 2); if (r != null && r.NumericValue.HasValue && L != "en") val = val.Replace('.', ',');
                 var cls = r?.Flag ?? "";
-                var prev = r?.PreviousValue != null ? $"{r.PreviousValue.Value.ToString("0.##", CultureInfo.InvariantCulture)} ({r.PreviousAt?.ToLocalTime():dd.MM.yy}) {(r.DeltaPercent.HasValue ? $"Δ{r.DeltaPercent:+0.0;-0.0}%" : "")}" : "";
+                var prev = r?.PreviousValue != null ? $"{r.PreviousValue.Value.ToString("0.##", CultureInfo.InvariantCulture)} ({r.PreviousAt?.ToLab():dd.MM.yy}) {(r.DeltaPercent.HasValue ? $"Δ{r.DeltaPercent:+0.0;-0.0}%" : "")}" : "";
                 var unverified = r != null && !OrderTestStatuses.VerifiedAny.Contains(t.Status) ? $" <span class=\"small\">{H(Tx(L, "unverified"))}</span>" : "";
                 sb.Append($"<tr><td>{H(TestTitle(t, L))}{ExternalMark(t)}{(t.IsReflex ? " <span class=\"small\">(reflex)</span>" : "")}</td><td class=\"{cls}\">{H(val)}{unverified}{(ResultMarks(t) is { Length: > 0 } mk ? $" <span class=\"small\">({H(mk)})</span>" : "")}</td><td>{H(r?.Unit ?? t.Test?.Unit)}</td><td>{H(r?.ReferenceDisplay)}</td><td class=\"{cls}\">{FlagLabel(r?.Flag ?? "", L)}</td><td class=\"small\">{H(prev)}</td></tr>");
             }
@@ -354,10 +354,10 @@ public sealed class ReportService
                 });
                 r.RelativeItem().Column(cc =>
                 {
-                    cc.Item().Text(t => { t.Span(Tx(L, "ordered") + ": ").Bold(); t.Span($"{o.OrderDatetime.ToLocalTime():dd.MM.yyyy HH:mm}{(o.IsUrgentCito ? "  CITO" : "")}"); });
+                    cc.Item().Text(t => { t.Span(Tx(L, "ordered") + ": ").Bold(); t.Span($"{o.OrderDatetime.ToLab():dd.MM.yyyy HH:mm}{(o.IsUrgentCito ? "  CITO" : "")}"); });
                     var collected = o.Samples.Where(s => s.CollectedAt != null).Select(s => s.CollectedAt).Min();
-                    cc.Item().Text(t => { t.Span(Tx(L, "collected") + ": ").Bold(); t.Span(collected?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—"); });
-                    cc.Item().Text(t => { t.Span(Tx(L, "released") + ": ").Bold(); t.Span(o.ReleasedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "—"); });
+                    cc.Item().Text(t => { t.Span(Tx(L, "collected") + ": ").Bold(); t.Span(collected?.ToLab().ToString("dd.MM.yyyy HH:mm") ?? "—"); });
+                    cc.Item().Text(t => { t.Span(Tx(L, "released") + ": ").Bold(); t.Span(o.ReleasedAt?.ToLab().ToString("dd.MM.yyyy HH:mm") ?? "—"); });
                     cc.Item().Text(t => { t.Span(Tx(L, "barcodes") + ": ").Bold(); t.Span(string.Join(", ", o.Samples.Select(s => s.Barcode))); });
                 });
             });
@@ -376,11 +376,11 @@ public sealed class ReportService
                     foreach (var t in grp)
                     {
                         var r = t.Result;
-                        var val = r == null ? "—" : DtoMapper.FormatValue(r.NumericValue, r.StringValue, t.Test?.DecimalPlaces ?? 2);
+                        var val = r == null ? "—" : DtoMapper.FormatValue(r.NumericValue, r.StringValue, t.Test?.DecimalPlaces ?? 2); if (r != null && r.NumericValue.HasValue && L != "en") val = val.Replace('.', ',');
                         var isCrit = ResultFlags.IsCritical(r?.Flag);
                         var isAbn = ResultFlags.IsAbnormal(r?.Flag);
                         var color = isCrit ? "#b91c1c" : isAbn ? "#b45309" : "#212121";
-                        var prev = r?.PreviousValue != null ? $"{r.PreviousValue.Value.ToString("0.##", CultureInfo.InvariantCulture)} ({r.PreviousAt?.ToLocalTime():dd.MM.yy}){(r.DeltaPercent.HasValue ? $" Δ{r.DeltaPercent:+0.0;-0.0}%" : "")}" : "";
+                        var prev = r?.PreviousValue != null ? $"{r.PreviousValue.Value.ToString("0.##", CultureInfo.InvariantCulture)} ({r.PreviousAt?.ToLab():dd.MM.yy}){(r.DeltaPercent.HasValue ? $" Δ{r.DeltaPercent:+0.0;-0.0}%" : "")}" : "";
                         IContainer Cell() => table.Cell().Border(0.5f).BorderColor("#bbb").Padding(3).Background(isCrit ? "#fee2e2" : "#ffffff");
                         Cell().Text(TestTitle(t, L) + ExternalMark(t) + (t.IsReflex ? " (reflex)" : ""));
                         var marks = ResultMarks(t);
@@ -460,7 +460,7 @@ public sealed class ReportService
         await _db.SaveChangesAsync();
         var L = a.Language;
         var banner = $"<div style=\"text-align:center;margin:8px 0\"><b style=\"display:inline-block;border:3px solid #b91c1c;color:#b91c1c;padding:3px 16px;font-size:16pt\">{WebUtility.HtmlEncode(Tx(L, "duplicate"))}</b>"
-            + $"<div style=\"font-size:8.5pt;color:#555\">{WebUtility.HtmlEncode(Tx(L, "dupNote", a.VersionNo, a.CreatedOn.ToLocalTime().ToString("dd.MM.yyyy HH:mm"), a.ContentHash[..16]))}</div></div>"
+            + $"<div style=\"font-size:8.5pt;color:#555\">{WebUtility.HtmlEncode(Tx(L, "dupNote", a.VersionNo, a.CreatedOn.ToLab().ToString("dd.MM.yyyy HH:mm"), a.ContentHash[..16]))}</div></div>"
             + $"<div style=\"position:fixed;top:40%;left:10%;right:10%;text-align:center;font-size:64pt;color:rgba(185,28,28,.12);transform:rotate(-25deg);pointer-events:none;font-weight:bold\">{WebUtility.HtmlEncode(Tx(L, "duplicate"))}</div>";
         var i = a.Html.IndexOf("<body>", StringComparison.Ordinal);
         return i < 0 ? banner + a.Html : a.Html.Insert(i + 6, banner);
