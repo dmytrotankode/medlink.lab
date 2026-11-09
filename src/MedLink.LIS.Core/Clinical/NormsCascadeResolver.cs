@@ -198,25 +198,35 @@ public static class NormsCascadeResolver
 
     private static string Fmt(double v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 
+    // Українські підписи для пояснення вибору норми (користувач бачить їх на екрані)
+    private static string GenderUk(string? g) => (g ?? "").ToUpperInvariant() switch { "M" => "чоловіча", "F" => "жіноча", "ANY" => "будь-яка", _ => "не вказана" };
+    private static string AgeUnitUk(string? u) => (u ?? "").ToUpperInvariant() switch { "DAYS" => "дн.", "MONTHS" => "міс.", "YEARS" => "р.", _ => (u ?? "").ToLowerInvariant() };
+    private static string PhaseUk(string? p) => (p ?? "").ToUpperInvariant() switch
+    {
+        "FOLLICULAR" => "фолікулярна", "OVULATION" or "OVULATORY" => "овуляторна", "LUTEAL" => "лютеїнова",
+        "MENOPAUSE" or "POSTMENOPAUSE" => "менопауза", "" => "не вказана", _ => (p ?? "").ToLowerInvariant()
+    };
+    private static string AgeUk(double days) => days < 60 ? $"{Math.Floor(days)} дн." : days < 730 ? $"{Math.Floor(days / 30.4)} міс." : $"{Math.Floor(days / 365.25)} р.";
+
     private static (bool, string) Evaluate(ReferenceLayerInput layer, PatientContext ctx)
     {
         var type = (layer.LayerType ?? LayerTypes.Baseline).ToUpperInvariant();
         var gender = (ctx.Gender ?? "U").ToUpperInvariant();
 
         if (type == LayerTypes.Baseline)
-            return (true, "Універсальний базовий референс методики");
+            return (true, "Базова норма, діє для всіх пацієнтів");
 
         // Загальні умови Simplex (is_gender / is_age) діють для всіх типів, окрім BASELINE.
         if (layer.IsGender && !string.Equals(layer.Gender, "ANY", StringComparison.OrdinalIgnoreCase)
             && !string.Equals(layer.Gender, gender, StringComparison.OrdinalIgnoreCase))
-            return (false, $"Стать '{gender}' не відповідає фільтру шару '{layer.Gender}'");
+            return (false, $"Стать пацієнта ({GenderUk(gender)}) не підходить: правило для статі «{GenderUk(layer.Gender)}»");
 
         if (layer.IsAge)
         {
             var from = AgeUnits.ToDays(layer.AgeFrom, layer.AgeUnit);
             var toExclusive = AgeUnits.ToDays(layer.AgeTo + 1, layer.AgeUnit);
             if (ctx.AgeDays < from || ctx.AgeDays >= toExclusive)
-                return (false, $"Вік {Math.Floor(ctx.AgeDays)} дн. поза межами [{layer.AgeFrom}–{layer.AgeTo} {layer.AgeUnit}]");
+                return (false, $"Вік пацієнта ({AgeUk(ctx.AgeDays)}) поза діапазоном {layer.AgeFrom}–{layer.AgeTo} {AgeUnitUk(layer.AgeUnit)}");
         }
 
         switch (type)
@@ -229,16 +239,16 @@ public static class NormsCascadeResolver
                     var w = ctx.PregnancyWeek.Value;
                     if ((layer.PregnancyWeekFrom.HasValue && w < layer.PregnancyWeekFrom.Value) ||
                         (layer.PregnancyWeekTo.HasValue && w > layer.PregnancyWeekTo.Value))
-                        return (false, $"Термін {w} тиж. поза межами [{layer.PregnancyWeekFrom}–{layer.PregnancyWeekTo}] тиж.");
+                        return (false, $"Термін вагітності ({w} тиж.) поза діапазоном {layer.PregnancyWeekFrom}–{layer.PregnancyWeekTo} тиж.");
                 }
-                return (true, "Збіг за вагітністю та терміном");
+                return (true, "Збіг за вагітністю й терміном");
 
             case LayerTypes.MenstrualPhase:
                 if (gender != "F") return (false, "Застосовується лише до жінок");
                 if (ctx.IsPregnant) return (false, "Перекрито пріоритетом вагітності");
                 if (string.IsNullOrWhiteSpace(ctx.MenstrualPhase) ||
                     !string.Equals(layer.MenstrualPhase, ctx.MenstrualPhase, StringComparison.OrdinalIgnoreCase))
-                    return (false, $"Фаза циклу '{ctx.MenstrualPhase ?? "не вказано"}' ≠ '{layer.MenstrualPhase}'");
+                    return (false, $"Фаза циклу пацієнтки ({PhaseUk(ctx.MenstrualPhase)}) не збігається з фазою правила ({PhaseUk(layer.MenstrualPhase)})");
                 return (true, "Збіг за фазою циклу");
 
             case LayerTypes.ClinicalIcd10:
@@ -246,7 +256,7 @@ public static class NormsCascadeResolver
                     return (false, "Діагноз МКХ-10 не вказано");
                 // Код шару «E11» покриває уточнені «E11.9».
                 if (!ctx.Icd10Code.StartsWith(layer.Icd10Code, StringComparison.OrdinalIgnoreCase))
-                    return (false, $"Діагноз '{ctx.Icd10Code}' не входить до когорти '{layer.Icd10Code}'");
+                    return (false, $"Діагноз {ctx.Icd10Code} не входить до групи {layer.Icd10Code}");
                 return (true, "Збіг за клінічною когортою МКХ-10");
 
             default: // DEMOGRAPHIC

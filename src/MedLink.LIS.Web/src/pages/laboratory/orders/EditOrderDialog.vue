@@ -3,17 +3,17 @@
     <q-card style="min-width: 560px; max-width: 96vw" data-testid="editOrderDialog">
       <q-card-section class="row items-center bg-primary text-white q-py-sm">
         <q-icon name="edit" class="q-mr-sm" />
-        <div class="text-subtitle1 text-weight-bold">Редагування замовлення {{ order.orderNumber }}</div>
+        <div class="text-subtitle1 text-weight-bold">Редагування направлення {{ order.orderNumber }}</div>
         <q-space />
         <q-btn flat round dense icon="close" v-close-popup />
       </q-card-section>
       <q-card-section class="q-gutter-y-sm">
         <q-toggle v-model="form.isUrgentCito" color="deep-orange-5" keep-color label="CITO (терміново)" />
-        <q-select v-model="form.doctorId" outlined dense clearable label="Лікар-замовник" :options="doctorOptions" emit-value map-options />
+        <q-select v-model="form.doctorId" outlined dense clearable label="Лікар" :options="doctorOptions" emit-value map-options />
         <q-select v-model="form.departmentId" outlined dense clearable label="Відділення" :options="departmentOptions" emit-value map-options />
-        <q-input v-model="form.ehealthReferralId" outlined dense label="ID е-направлення (eHealth)" />
+        <q-input v-model="form.ehealthReferralId" outlined dense label="Номер е-направлення" />
         <q-input v-model="form.clinicalNotes" outlined dense autogrow label="Клінічні дані / коментар" />
-        <div class="text-caption text-grey-6">Склад досліджень після створення змінюється через повторне замовлення або reflex-тести (аудит).</div>
+        <div class="text-caption text-grey-6">Склад досліджень тут не змінюється: для додаткових досліджень створіть нове направлення.</div>
         <div v-if="error" class="text-negative">{{ error }}</div>
       </q-card-section>
       <q-card-actions align="right" class="bg-grey-1">
@@ -56,7 +56,7 @@ export default {
       this.error = '';
       try {
         const res = await this.$api.updateOrder(this.order.id, { ...this.form, ehealthReferralId: this.form.ehealthReferralId || null, clinicalNotes: this.form.clinicalNotes || null });
-        this.$q.notify({ type: 'positive', message: 'Замовлення оновлено' });
+        this.$q.notify({ type: 'positive', message: 'Направлення оновлено' });
         this.$emit('saved', res);
         this.$emit('input', false);
       } catch (e) {

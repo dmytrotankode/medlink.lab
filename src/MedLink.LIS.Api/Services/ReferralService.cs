@@ -317,7 +317,12 @@ public sealed class ReferralService
         var q = _db.Orders.AsNoTracking().Include(o => o.Patient).Include(o => o.Doctor).Include(o => o.Department).Include(o => o.Referral).ThenInclude(r => r!.Status)
             .Include(o => o.PaperReferral).Where(o => o.RecordState != RecordStates.Deleted);
         if (from.HasValue) q = q.Where(o => o.OrderDatetime >= from.Value);
-        if (to.HasValue) q = q.Where(o => o.OrderDatetime <= to.Value);
+        if (to.HasValue)
+        {
+            // «По» без часу — включно до кінця доби
+            var toExclusive = to.Value.TimeOfDay == TimeSpan.Zero ? to.Value.AddDays(1) : to.Value;
+            q = q.Where(o => o.OrderDatetime < toExclusive);
+        }
         if (!string.IsNullOrWhiteSpace(type)) { var t = type.Trim().ToUpperInvariant(); q = q.Where(o => o.ReferralType == t); }
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -334,8 +339,8 @@ public sealed class ReferralService
             referrer = o.ReferralType switch
             {
                 ReferralTypes.Internal => o.Doctor?.Caption,
-                ReferralTypes.Ehealth => o.Referral?.PatientShortName == null ? "ЕСОЗ" : "ЕСОЗ",
-                _ => string.Join(", ", new[] { o.ReferrerOrganizationName, o.ReferrerDoctorName }.Where(x => !string.IsNullOrWhiteSpace(x)))
+                ReferralTypes.Self => null,
+                _ => string.Join(", ", new[] { o.ReferrerOrganizationName, o.ReferrerDoctorName }.Where(x => !string.IsNullOrWhiteSpace(x))) is { Length: > 0 } who ? who : "Невідомо"
             },
             ehealthStatus = o.Referral?.Status?.Caption, ehealthCompletedAt = o.Referral?.CompleteDateInEhealth, o.TotalPrice
         }).ToList();

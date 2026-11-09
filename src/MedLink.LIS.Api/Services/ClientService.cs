@@ -185,10 +185,10 @@ public sealed class ClientService
         var gender = G("gender", "стать").ToUpperInvariant();
         return new ClientImportRow
         {
-            Line = line, LastName = G("lastname", "прізвище"), FirstName = G("firstname", "ім'я", "імя"), MiddleName = NullIf(G("middlename", "по батькові")), BirthDate = bd,
-            Gender = gender is "M" or "Ч" ? "M" : gender is "F" or "Ж" ? "F" : "U", Phone = NullIf(G("phone", "телефон")), ClinicNumber = NullIf(G("clinicnumber", "номер", "№")),
-            DoctorName = NullIf(G("doctor", "лікар")), IsCito = G("cito") is "1" or "так" or "true" or "yes",
-            Codes = G("tests", "дослідження", "коди").Split(new[] { ';', ',', '|' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(c => c.ToUpperInvariant()).Distinct().ToList()
+            Line = line, LastName = G("lastname", "прізвище"), FirstName = G("firstname", "ім'я", "імя", "ім’я"), MiddleName = NullIf(G("middlename", "по батькові")), BirthDate = bd,
+            Gender = gender is "M" or "Ч" ? "M" : gender is "F" or "Ж" ? "F" : "U", Phone = NullIf(G("phone", "телефон")), ClinicNumber = NullIf(G("clinicnumber", "номер у клініки", "номер клініки", "номер", "№")),
+            DoctorName = NullIf(G("doctor", "лікар")), IsCito = G("cito", "терміново") is "1" or "так" or "true" or "yes",
+            Codes = G("tests", "дослідження", "коди", "коди досліджень", "показники").Split(new[] { ';', ',', '|' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(c => c.ToUpperInvariant()).Distinct().ToList()
         };
     }
 
@@ -200,7 +200,12 @@ public sealed class ClientService
         var client = await ClientAsync(clientId);
         var q = _db.Orders.AsNoTracking().Include(o => o.Patient).Include(o => o.Tests).Where(o => o.PayerId == client.Id && o.RecordState != RecordStates.Deleted);
         if (from.HasValue) q = q.Where(o => o.OrderDatetime >= from.Value);
-        if (to.HasValue) q = q.Where(o => o.OrderDatetime <= to.Value);
+        if (to.HasValue)
+        {
+            // «По» без часу — включно до кінця доби
+            var toExclusive = to.Value.TimeOfDay == TimeSpan.Zero ? to.Value.AddDays(1) : to.Value;
+            q = q.Where(o => o.OrderDatetime < toExclusive);
+        }
         var list = await q.OrderByDescending(o => o.OrderDatetime).Take(1000).ToListAsync();
         return new
         {

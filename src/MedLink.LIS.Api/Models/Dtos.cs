@@ -145,6 +145,10 @@ public sealed class SampleDto
     public bool IsInsufficientVolume { get; set; }
     public string? RejectReason { get; set; }
     public List<string> TestCodes { get; set; } = new();
+    /// <summary>Номер, пацієнт і терміновість направлення — для списків пункту забору та логістики.</summary>
+    public string? OrderNumber { get; set; }
+    public string? PatientName { get; set; }
+    public bool IsUrgentCito { get; set; }
     public List<AllowedActionDto> AllowedActions { get; set; } = new();
 }
 

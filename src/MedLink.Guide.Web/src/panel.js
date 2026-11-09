@@ -41,7 +41,14 @@ export class HelpPanel {
       if (editor && cat) { // редактору показуємо повне дерево, але набори й кольори беремо з каталогу
         const byId = arr => { const m = {}; (arr || []).forEach(x => { m[x.id] = x; }); return m; };
         const cs = byId(cat.scenarios); const cf = byId(cat.folders);
-        (tree.scenarios || []).forEach(s => { const c = cs[s.id]; if (c) { s.sets = c.sets || []; s.setCodes = c.setCodes || []; } });
+        (tree.scenarios || []).forEach(s => {
+          const c = cs[s.id];
+          if (c) {
+            s.sets = c.sets || []; s.setCodes = c.setCodes || [];
+            if (!s.startRoute) s.startRoute = c.startRoute; // для блоку «Для цієї сторінки»
+            if (!s.description) s.description = c.description;
+          }
+        });
         (tree.folders || []).forEach(f => { const c = cf[f.id]; if (c) { f.sets = c.sets || []; f.setCodes = c.setCodes || []; } });
       }
       const pr = await this.ctx.api.myProgress();
@@ -123,11 +130,13 @@ export class HelpPanel {
     const open = !!this.openSets[st.id];
     const word = plural(n, ['інструкція', 'інструкції', 'інструкцій']);
     const time = st.estMinutes ? st.estMinutes + ' хв' : 'час не вказано';
+    const unavailable = st.unavailableCount || 0;
     const card = h('div', { class: 'setcard', style: { borderLeftColor: color } },
       h('div', { class: 'sh', onclick: () => { this.openSets[st.id] = !open; this.render(); } },
         h('b', { text: (st.icon && /[^\u0000-\u007f]/.test(st.icon) ? st.icon + ' ' : '') + st.caption }), h('span', { text: open ? '▾' : '▸' })),
       st.description ? h('div', { class: 'sd', text: st.description }) : null,
       h('div', { class: 'sm', text: n + ' ' + word + ' · ' + time + ' · пройдено ' + done + ' з ' + n }),
+      unavailable ? h('div', { class: 'sm', title: 'Інструкції набору, які не показуються вашій ролі або ще не опубліковані', text: 'Недоступні вашій ролі: ' + unavailable }) : null,
       h('div', { class: 'pbar' }, h('i', { style: { width: (n ? Math.round(done * 100 / n) : 0) + '%', background: color } })),
       open ? h('div', { class: 'sitems' }, list.map(s => h('div', { class: 'node', onclick: () => this.startScenario(s, 'guided') },
         h('span', { text: this.done[s.id] ? '✔' : '▶', class: this.done[s.id] ? 'ok' : '' }),

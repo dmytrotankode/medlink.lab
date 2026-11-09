@@ -1,7 +1,7 @@
 // Конструктор інструкцій для впроваджувача: вибір елемента наведенням (з вибором батьківського рівня),
 // запис реальних дій, текст пояснення з диктовкою, тестові дані, зона підсвічування, перевірка якорів, збереження/публікація.
 import { h, uid, isOurs, safeJson } from './util.js';
-import { getLayer, toast } from './ui.js';
+import { getLayer, toast, askConfirm, askText } from './ui.js';
 import { buildAnchor, resolveAnchor, climb, interactiveTarget, describe, anchorQuality } from './anchor.js';
 import * as overlay from './overlay.js';
 import { SetsEditor } from './setseditor.js';
@@ -288,7 +288,7 @@ export class Builder {
   async publish () {
     if (!(await this.save())) return;
     const bad = this.steps.filter(s => s.stepType !== 'info' && s.stepType !== 'wait' && s.stepType !== 'navigate' && !s.anchor).length;
-    if (bad && !confirm('У ' + bad + ' кроках немає елемента-якоря. Опублікувати все одно?')) return;
+    if (bad && !(await askConfirm('У ' + bad + ' кроках немає елемента-якоря. Опублікувати все одно?', 'Опублікувати', 'Не публікувати'))) return;
     try { await this.ctx.api.publish(this.sc.id, ''); this.sc.status = 'published'; toast('Опубліковано — інструкція з’явилась у меню допомоги'); const f = await this.ctx.api.getScenario(this.sc.id); this.sc.publishedVersion = f.publishedVersion; this.render(); } catch (e) { toast('Помилка публікації: ' + e.message, 5000); }
   }
 
@@ -317,8 +317,8 @@ export class Builder {
 
     bodyEls.push(field('Назва інструкції', input(sc, 'caption', 'Напр.: Як створити замовлення')));
     bodyEls.push(h('div', { class: 'grid2' },
-      field('Розділ', h('div', { class: 'row' }, folderSel, h('button', { class: 'btn sm', title: 'Новий розділ', text: '＋', onclick: async () => { const n = prompt('Назва нового розділу' + (sc.folderId ? ' (всередині вибраного)' : '')); if (!n) return; try { const f = await this.ctx.api.createFolder({ caption: n, parentId: sc.folderId || null }); this.folders.push(f); sc.folderId = f.id; this.render(); } catch (e) { toast('Помилка: ' + e.message); } } }))),
-      field('Хто бачить (ролі через кому; порожньо — усі)', bind(h('input', { class: 'inp', value: (sc.requiredRoles || []).join(', ') }), sc, 'requiredRoles', { after: v => { sc.requiredRoles = String(v).split(',').map(x => x.trim()).filter(Boolean); } }))));
+      field('Розділ', h('div', { class: 'row' }, folderSel, h('button', { class: 'btn sm', title: 'Новий розділ', text: '＋', onclick: async () => { const n = await askText('Назва нового розділу' + (sc.folderId ? ' (всередині вибраного)' : ''), 'Наприклад: Реєстрація пацієнтів'); if (!n) return; try { const f = await this.ctx.api.createFolder({ caption: n, parentId: sc.folderId || null }); this.folders.push(f); sc.folderId = f.id; this.render(); } catch (e) { toast('Помилка: ' + e.message); } } }))),
+      field('Хто бачить (порожньо — усі ролі)', this.rolesPicker(sc, bind))));
     bodyEls.push(field('Початкова сторінка (куди перейти при запуску)', h('div', { class: 'row' }, input(sc, 'startRoute', '/laboratory/orders'), h('button', { class: 'btn sm', text: 'Поточний', onclick: () => { sc.startRoute = this.ctx.host.currentRoute(); this.dirty = true; this.render(); } }))));
 
     bodyEls.push(h('div', { class: 'row' },
@@ -343,7 +343,7 @@ export class Builder {
 
     const head = h('div', { class: 'bh' }, h('b', { text: '🛠 Конструктор інструкцій' }),
       h('button', { text: this.minimized ? '▢' : '—', title: 'Згорнути', onclick: () => { this.minimized = !this.minimized; this.render(); } }),
-      h('button', { text: '✕', title: 'Закрити', onclick: () => { if (this.dirty && !confirm('Є незбережені зміни. Закрити конструктор?')) return; this.close(); } }));
+      h('button', { text: '✕', title: 'Закрити', onclick: async () => { if (this.dirty && !(await askConfirm('Є незбережені зміни. Закрити конструктор без збереження?', 'Закрити без збереження', 'Скасувати'))) return; this.close(); } }));
     this.el = h('div', { class: 'bld' }, head, this.minimized ? null : h('div', { class: 'bb' }, bodyEls));
     if (this.pos) { this.el.style.left = this.pos.x + 'px'; this.el.style.top = this.pos.y + 'px'; this.el.style.bottom = 'auto'; }
     head.addEventListener('mousedown', e => {
@@ -382,7 +382,7 @@ export class Builder {
     const ta = bind(h('textarea', { class: 'inp', 'data-k': 'body', placeholder: 'Пояснення для користувача. Можна використовувати {{змінні}}.' }, st.body || ''), st, 'body');
     const mic = h('button', { class: 'btn mic', text: '🎤 Надиктувати', onclick: () => this.toggleDictation(ta, mic) });
     const title = bind(h('input', { class: 'inp', 'data-k': 'title', placeholder: 'Заголовок кроку', value: st.title || '' }), st, 'title', { rerenderList: true });
-    const lang = h('select', { class: 'inp', 'data-k': 'lang', style: { width: 'auto' } }, h('option', { value: 'uk-UA', text: 'укр' }), h('option', { value: 'ru-RU', text: 'рус' }), h('option', { value: 'en-US', text: 'eng' }));
+    const lang = h('select', { class: 'inp', 'data-k': 'lang', style: { width: 'auto' } }, h('option', { value: 'uk-UA', text: 'Диктування: українська' }));
     return h('div', { class: 'row', style: { flexDirection: 'column', alignItems: 'stretch', borderTop: '1px solid #e5e7eb', paddingTop: '8px' } },
       h('b', { text: 'Крок ' + (this.sel + 1) }),
       field('Заголовок', title),
@@ -411,6 +411,19 @@ export class Builder {
         h('span', { style: { fontSize: '11.5px', color: '#6b7280' }, text: 'способів знайти елемент: ' + (st.anchor.strategies || []).length })) : null);
   }
 
+  /** Вибір ролей за назвами (якщо хост передав opts.roles), інакше — текстове поле з кодами. */
+  rolesPicker (sc, bind) {
+    const roles = this.ctx.opts.roles;
+    if (!roles || !roles.length) {
+      return bind(h('input', { class: 'inp', value: (sc.requiredRoles || []).join(', ') }), sc, 'requiredRoles', { after: v => { sc.requiredRoles = String(v).split(',').map(x => x.trim()).filter(Boolean); } });
+    }
+    const cur = () => sc.requiredRoles || (sc.requiredRoles = []);
+    return h('div', { class: 'row', style: { flexDirection: 'column', alignItems: 'flex-start', gap: '2px' } }, roles.map(r =>
+      h('label', { style: { color: '#1f2937', fontSize: '13px' } },
+        h('input', { type: 'checkbox', checked: cur().indexOf(r.code) >= 0, onchange: e => { const l = cur(); const i = l.indexOf(r.code); if (e.target.checked && i < 0) l.push(r.code); if (!e.target.checked && i >= 0) l.splice(i, 1); this.dirty = true; } }),
+        ' ' + r.label)));
+  }
+
   startRepick () {
     const idx = this.repick; this.startPick(); this.repickIdx = idx;
   }
@@ -418,7 +431,7 @@ export class Builder {
   varsBlock (f) {
     const { input, select } = f;
     const self = this;
-    function bindList (v) { const i = h('input', { class: 'inp', placeholder: 'A, B, C', value: ((v.options && v.options.values) || []).join(', ') }); i.addEventListener('input', () => { v.options.values = i.value.split(',').map(x => x.trim()).filter(Boolean); self.dirty = true; }); return i; }
+    function bindList (v) { const i = h('input', { class: 'inp', placeholder: 'Наприклад: Іваненко, Петренко', value: ((v.options && v.options.values) || []).join(', ') }); i.addEventListener('input', () => { v.options.values = i.value.split(',').map(x => x.trim()).filter(Boolean); self.dirty = true; }); return i; }
     const wrap = h('details', { open: this.vars.length > 0 }, h('summary', { text: 'Тестові дані (змінні сценарію): ' + this.vars.length, style: { cursor: 'pointer' } }));
     this.vars.forEach((v, i) => {
       const opts = v.options || (v.options = {});

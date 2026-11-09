@@ -148,9 +148,9 @@ public sealed class PathologyDemoSeeder
             PatientId = Pat(5), Source = ReferralSources.Ehealth, EhealthReferralNumber = "0002-2026-B8M4", Kind = PathKinds.Biopsy, Department = "Поліклініка (інший заклад)",
             MedicalCardNo = "амб-330912", DoctorName = "Ніколенко Т. В.", OperationText = "Прицільна біопсія шийки матки", MarkingText = "1 контейнер: №1 — біоптат шийки матки (6 год.)",
             ClinicalData = "Цитологія: HSIL. Кольпоскопія: ацетобіле поле на 6 год.", ClinicalDiagnosis = "N87.2 Виражена дисплазія шийки матки",
-            TemplateName = "Ендометрій · зскрібок", Form014 = Form("10.10.2026", "16:00"), Objects = { Obj("1", "Біоптат шийки матки", 24) }
+            TemplateName = "Ендометрій · зіскрібок", Form014 = Form("10.10.2026", "16:00"), Objects = { Obj("1", "Біоптат шийки матки", 24) }
         }));
-        await Gross(c398, "2 фрагменти тканини 0,4 і 0,3 см.", "Ендометрій · зскрібок", new[] { 2 });
+        await Gross(c398, "2 фрагменти тканини 0,4 і 0,3 см.", "Ендометрій · зіскрібок", new[] { 2 });
         await Advance(c398, all);
         await Sign(c398, new PathReportRequest
         {
@@ -182,8 +182,8 @@ public sealed class PathologyDemoSeeder
             PatientId = Pat(4), Source = ReferralSources.Ehealth, EhealthReferralNumber = "0002-2026-H7K2", Kind = PathKinds.Biopsy, Department = "Жіноча консультація (інший заклад)",
             MedicalCardNo = "амб-298744", DoctorName = "Іваненко Л. П.", OperationText = "Роздільне діагностичне вишкрібання", MarkingText = "Контейнери без маркування",
             ClinicalData = "Кровотеча в постменопаузі. Остання менструація — 2019 р. Початок кровотечі — 21.10.2026.", ClinicalDiagnosis = "N95.0 Постменопаузальна кровотеча",
-            TemplateName = "Ендометрій · зскрібок", Form014 = Form("29.10.2026", "16:20"),
-            Objects = { Obj("?", "Зскрібок ендометрію", 17, labeled: false), Obj("?", "Зскрібок цервікального каналу", 17, labeled: false) }
+            TemplateName = "Ендометрій · зіскрібок", Form014 = Form("29.10.2026", "16:20"),
+            Objects = { Obj("?", "Зіскрібок ендометрію", 17, labeled: false), Obj("?", "Зіскрібок цервікального каналу", 17, labeled: false) }
         });
 
         // --- реалістичні номери й дати (прототип: справи ПГД-26-0398…0421, наступний № — 0422) ---

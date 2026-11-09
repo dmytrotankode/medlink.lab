@@ -104,7 +104,7 @@
             "strategies": [
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/orders\"]",
+                "value": "a[href$=\"/laboratory/orders\"]",
                 "weight": 90
               },
               {

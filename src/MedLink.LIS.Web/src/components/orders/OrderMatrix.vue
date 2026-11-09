@@ -7,7 +7,7 @@
       <div class="col-12 col-md-7 row items-center q-gutter-xs">
         <span class="text-caption text-grey-7"><q-icon name="star" color="amber-7" /> Обране:</span>
         <q-chip v-for="f in favoriteRows" :key="'fav' + f.key" dense clickable removable color="amber-1" text-color="grey-9" :icon="isSelected(f) ? 'check_box' : 'check_box_outline_blank'" @click="toggle(f)" @remove="toggleFavorite(f)">{{ f.code }}</q-chip>
-        <span v-if="!favoriteRows.length" class="text-caption text-grey-5">немає — натисніть ☆ біля рядка</span>
+        <span v-if="!favoriteRows.length" class="text-caption text-grey-5">порожньо — натисніть на зірочку біля послуги, щоб додати в обране</span>
         <q-btn dense flat size="sm" color="grey-7" icon="clear_all" label="Очистити вибір" :disable="!selectedKeys.length" @click="clear" />
       </div>
     </div>
@@ -18,7 +18,7 @@
     <div v-else class="matrix-scroll medlink-card" :style="{ maxHeight: height }">
       <q-markup-table dense flat class="matrix-table">
         <thead>
-          <tr><th style="width: 36px" /><th style="width: 30px" /><th class="text-left">Код</th><th class="text-left">Назва</th><th class="text-left">Біоматеріал</th><th class="text-center">Пробірка</th><th class="text-right">Ціна</th><th class="text-center">TAT</th></tr>
+          <tr><th style="width: 36px" /><th style="width: 30px" /><th class="text-left">Код</th><th class="text-left">Назва</th><th class="text-left">Біоматеріал</th><th class="text-center">Пробірка</th><th class="text-right">Ціна</th><th class="text-center">Готовність</th></tr>
         </thead>
         <tbody>
           <template v-for="section in groupedRows">
@@ -31,13 +31,13 @@
                 <td class="mono">{{ row.code }}<q-badge v-if="row.kind === 'PROFILE'" color="primary" label="профіль" class="q-ml-xs" /></td>
                 <td><div>{{ row.name }}</div><div v-if="row.kind === 'PROFILE'" class="text-caption text-grey-6">{{ (row.memberTestCodes || []).join(', ') }}</div></td>
                 <td class="text-caption">{{ row.biomaterialName || '—' }}</td>
-                <td class="text-center"><div v-if="row.tubeColor" :style="{ background: row.tubeColor, width: '14px', height: '22px', borderRadius: '3px 3px 7px 7px', border: '1px solid #999', margin: '0 auto' }" :title="row.tubeName" /><span v-else class="text-grey-5">—</span></td>
+                <td class="text-center"><div v-if="row.tubeColor" :style="{ background: row.tubeColor, width: '14px', height: '22px', borderRadius: '3px 3px 7px 7px', border: '1px solid #999', margin: '0 auto' }" :title="row.tubeName || 'Пробірка'" /><span v-else class="text-grey-5">—</span></td>
                 <td class="text-right">{{ row.price | money }}</td>
                 <td class="text-center text-caption">{{ row.turnaroundHours ? row.turnaroundHours + ' год' : '—' }}</td>
               </tr>
             </template>
           </template>
-          <tr v-if="!groupedRows.length"><td colspan="8" class="text-center text-grey-6 q-pa-md">Нічого не знайдено</td></tr>
+          <tr v-if="!groupedRows.length"><td colspan="8" class="text-center text-grey-6 q-pa-md">Нічого не знайдено. Змініть пошук.</td></tr>
         </tbody>
       </q-markup-table>
     </div>
@@ -46,23 +46,23 @@
     <div class="row q-col-gutter-md q-mt-sm">
       <div class="col-12 col-md-7">
         <div class="medlink-card">
-          <div class="medlink-card__title"><span><q-icon name="science" class="q-mr-xs" />План пробірок</span><span class="text-caption text-grey-6">{{ tubePlan.length }} пробірк.</span></div>
+          <div class="medlink-card__title"><span><q-icon name="science" class="q-mr-xs" />План пробірок</span><span class="text-caption text-grey-6">{{ pluralN(tubePlan.length, 'пробірка', 'пробірки', 'пробірок') }}</span></div>
           <q-list v-if="tubePlan.length" dense separator>
             <q-item v-for="t in tubePlan" :key="t.key">
               <q-item-section avatar><div :style="{ background: t.color, width: '18px', height: '28px', borderRadius: '3px 3px 8px 8px', border: '1px solid #999' }" /></q-item-section>
-              <q-item-section><q-item-label>{{ t.tubeName }} <span class="text-grey-7">· {{ t.biomaterialName }}</span></q-item-label><q-item-label caption>{{ t.tests.join(', ') }}</q-item-label></q-item-section>
-              <q-item-section side><q-badge color="grey-7" :label="`${t.tests.length} тест.`" /></q-item-section>
+              <q-item-section><q-item-label>{{ t.tubeName }} <span class="text-grey-7">· {{ t.biomaterialName }}</span></q-item-label><q-item-label caption>{{ t.tests.map(testName).join(', ') }}</q-item-label></q-item-section>
+              <q-item-section side><q-badge color="grey-7" :label="pluralN(t.tests.length, 'показник', 'показники', 'показників')" /></q-item-section>
             </q-item>
           </q-list>
-          <div v-else class="q-pa-md text-caption text-grey-6">Оберіть показники — пробірки згрупуються автоматично.</div>
+          <div v-else class="q-pa-md text-caption text-grey-6">Оберіть послуги — тут з’явиться перелік пробірок.</div>
         </div>
       </div>
       <div class="col-12 col-md-5">
         <div class="medlink-card q-pa-md" data-testid="matrixSummary">
-          <div class="row items-center justify-between"><span class="text-grey-7">Обрано рядків</span><b data-testid="matrixCount">{{ selectedKeys.length }}</b></div>
+          <div class="row items-center justify-between"><span class="text-grey-7">Вибрано послуг</span><b data-testid="matrixCount">{{ selectedKeys.length }}</b></div>
           <div class="row items-center justify-between"><span class="text-grey-7">Показників усього</span><b>{{ allTestCodes.length }}</b></div>
           <q-separator class="q-my-sm" />
-          <div class="row items-center justify-between text-h6"><span>До сплати</span><span class="text-primary" data-testid="matrixTotal">{{ totalPrice | money }}</span></div>
+          <div class="row items-center justify-between text-h6"><span>До сплати пацієнтом</span><span class="text-primary" data-testid="matrixTotal">{{ totalPrice | money }}</span></div>
           <slot name="actions" />
         </div>
       </div>
@@ -72,11 +72,13 @@
 
 <script>
 /**
- * Матриця призначень: GET /dictionaries/order-matrix → рядки { kind: PROFILE|TEST, id, code, name, section, category,
- * biomaterialName, tubeName, tubeColor, price, turnaroundHours, memberTestIds[], memberTestCodes[] }.
+ * Матриця призначень: GET /dictionaries/order-matrix → об’єкт { sections[{ sectionName, categories[{ profiles[], tests[] }] }],
+ * other{ tests[], profiles[] }, allProfiles[] }; екран перетворює його на плоский список рядків
+ * { kind: PROFILE|TEST, id, code, name, section, biomaterialName, tubeName, tubeColor, price, turnaroundHours, memberTestCodes[] }.
  * Fallback (404): будується з довідників profiles/tests/biomaterials/tube-types.
  */
 import { LAB_SECTIONS } from '../../utils/statuses';
+import { pluralN } from '../../utils/format';
 
 export default {
   name: 'OrderMatrix',
@@ -154,8 +156,7 @@ export default {
       this.loading = true; this.error = '';
       try {
         const res = await this.$api.orderMatrix();
-        const list = Array.isArray(res) ? res : (res && (res.rows || res.items)) || [];
-        this.rows = list.map(r => this.normalize(r));
+        this.rows = this.flatten(res).map(r => this.normalize(r));
       } catch (e) {
         if (e.apiStatus === 404) await this.buildFallback();
         else if (!e.isOffline) this.error = e.userMessage;
@@ -163,11 +164,40 @@ export default {
       } finally { this.loading = false; }
       this.loadFavorites();
     },
+    /** Відповідь сервера (розділи → категорії → профілі/тести) → плоский список рядків */
+    flatten (res) {
+      if (Array.isArray(res)) return res;
+      if (!res) return [];
+      if (res.rows || res.items) return res.rows || res.items;
+      const out = []; const seen = new Set();
+      const add = (r, isProfile, sectionName) => {
+        if (!r) return;
+        const key = (isProfile ? 'P:' : 'T:') + r.id;
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push({ ...r, kind: isProfile ? 'PROFILE' : 'TEST', section: r.labSectionName || sectionName || 'Інше', category: '' });
+      };
+      (res.sections || []).forEach(s => (s.categories || []).forEach(c => (c.tests || []).forEach(t => add(t, false, s.sectionName))));
+      if (res.other) (res.other.tests || []).forEach(t => add(t, false, 'Інше'));
+      const profiles = res.allProfiles || [];
+      profiles.forEach(p => add(p, true, 'Профілі'));
+      if (!profiles.length) {
+        (res.sections || []).forEach(s => (s.categories || []).forEach(c => (c.profiles || []).forEach(p => add(p, true, s.sectionName))));
+        if (res.other) (res.other.profiles || []).forEach(p => add(p, true, 'Профілі'));
+      }
+      return out;
+    },
+    testName (code) {
+      const t = this.rows.find(r => r.kind === 'TEST' && r.code === code);
+      return t ? (t.shortName || t.name) : code;
+    },
+    pluralN,
     normalize (r) {
       const kind = (r.kind || r.type || (r.memberTestIds || r.items ? 'PROFILE' : 'TEST')).toUpperCase();
       return {
         ...r,
         kind,
+        turnaroundHours: r.turnaroundHours || r.tatHours || null,
         key: `${kind}:${r.id}`,
         memberTestIds: r.memberTestIds || (r.items || []).map(i => i.testId),
         memberTestCodes: r.memberTestCodes || (r.items || []).map(i => i.testCode).filter(Boolean),
@@ -205,13 +235,20 @@ export default {
       try {
         const res = await this.$api.orderMatrixFavorites(this.employeeId);
         const list = Array.isArray(res) ? res : (res && (res.items || res.keys || res.favorites)) || [];
-        this.favorites = list.map(f => typeof f === 'string' ? f : `${(f.kind || 'TEST').toUpperCase()}:${f.id}`);
+        const keys = [];
+        list.forEach(f => {
+          if (typeof f === 'string') keys.push(f);
+          else if (f.profileIds || f.testIds) { (f.profileIds || []).forEach(id => keys.push(`PROFILE:${id}`)); (f.testIds || []).forEach(id => keys.push(`TEST:${id}`)); } else keys.push(`${(f.kind || 'TEST').toUpperCase()}:${f.id}`);
+        });
+        this.favorites = keys;
       } catch (e) { /* 404 — обраного ще немає */ }
     },
     async toggleFavorite (r) {
       this.favorites = this.isFavorite(r) ? this.favorites.filter(k => k !== r.key) : [...this.favorites, r.key];
       try {
-        await this.$api.saveOrderMatrixFavorites(this.employeeId, { items: this.favorites.map(k => { const [kind, id] = k.split(':'); return { kind, id }; }) });
+        const ids = prefix => this.favorites.filter(k => k.startsWith(prefix)).map(k => k.slice(prefix.length));
+        // сервер зберігає набори обраного: один набір «Обране» на співробітника
+        await this.$api.saveOrderMatrixFavorites(this.employeeId, this.favorites.length ? [{ name: 'Обране', profileIds: ids('PROFILE:'), testIds: ids('TEST:'), displayOrder: 1 }] : []);
       } catch (e) { this.$q.notify({ type: 'warning', message: 'Обране не збережено на сервері: ' + (e.userMessage || '') }); }
     }
   }

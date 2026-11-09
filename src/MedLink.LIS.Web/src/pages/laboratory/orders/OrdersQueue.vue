@@ -1,6 +1,6 @@
 <template>
   <div class="orders-queue" data-testid="ordersPage">
-    <page-header title="Реєстрація направлень" icon="fas fa-file-medical" subtitle="Черга замовлень лабораторії: реєстрація, пошук, статуси, CITO" :breadcrumbs="[{ label: 'Замовлення' }]">
+    <page-header title="Реєстрація направлень" icon="fas fa-file-medical" :breadcrumbs="[{ label: 'Реєстрація направлень' }]">
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
       <q-btn unelevated color="primary" icon="add" label="Нове направлення" data-testid="ordersCreate" @click="createOpen = true" />
     </page-header>
@@ -11,7 +11,7 @@
     <div class="medlink-card q-pa-sm q-mb-md">
       <div class="row q-col-gutter-sm items-center">
         <div class="col-12 col-md-3">
-          <q-input v-model="filters.search" dense outlined clearable placeholder="№ замовлення, ПІБ, штрихкод" @keyup.enter="applyFilters" @clear="applyFilters">
+          <q-input v-model="filters.search" dense outlined clearable label="Пошук" placeholder="№ направлення, ПІБ, штрихкод" @input="onSearchInput" @keyup.enter="applyFilters" @clear="applyFilters">
             <template v-slot:prepend><q-icon name="search" /></template>
           </q-input>
         </div>
@@ -19,17 +19,23 @@
           <q-select v-model="filters.status" dense outlined clearable label="Статус" :options="statusOptions" emit-value map-options @input="applyFilters" />
         </div>
         <div class="col-6 col-md-2">
-          <q-input v-model="filters.from" dense outlined type="date" label="З" stack-label @input="applyFilters" />
+          <q-input v-model="filters.from" dense outlined type="date" label="Дата від" stack-label @input="applyFilters" />
         </div>
         <div class="col-6 col-md-2">
-          <q-input v-model="filters.to" dense outlined type="date" label="По" stack-label @input="applyFilters" />
+          <q-input v-model="filters.to" dense outlined type="date" label="Дата до" stack-label @input="applyFilters" />
         </div>
         <div class="col-6 col-md-2">
           <q-select v-model="filters.departmentId" dense outlined clearable label="Відділення" :options="departmentOptions" emit-value map-options @input="applyFilters" />
         </div>
         <div class="col-12 col-md-1 row items-center justify-end">
-          <q-toggle v-model="filters.cito" label="CITO" color="deep-orange-6" keep-color @input="applyFilters" />
+          <q-toggle v-model="filters.cito" label="Лише термінові (CITO)" color="deep-orange-6" keep-color @input="applyFilters" />
         </div>
+      </div>
+      <div class="row items-center q-gutter-xs q-mt-xs">
+        <span class="text-caption text-grey-7">Період:</span>
+        <q-btn v-for="p in periods" :key="p.key" flat dense no-caps size="sm" color="primary" :label="p.label" :class="{ 'text-weight-bold': periodKey === p.key }" @click="setPeriod(p)" />
+        <q-space />
+        <q-btn flat dense no-caps size="sm" color="grey-8" icon="filter_alt_off" label="Скинути фільтри" :disable="!filtersChanged" @click="resetFilters" />
       </div>
     </div>
 
@@ -46,8 +52,8 @@
         :rows-per-page-options="[20, 50, 100]"
         @request="onRequest"
         binary-state-sort
-        no-data-label="Замовлень не знайдено"
-        :rows-per-page-label="'Рядків на сторінці'"
+        no-data-label="Нічого не знайдено. Змініть пошук або скиньте фільтри."
+        :rows-per-page-label="'Рядків на сторінці:'"
       >
         <template v-slot:body="props">
           <q-tr :props="props" :class="rowClass(props.row)" class="cursor-pointer" @click="openOrder(props.row)">
@@ -67,22 +73,12 @@
             <q-td key="totalPrice" :props="props" class="text-right">{{ props.row.totalPrice | money }}</q-td>
             <q-td key="status" :props="props"><status-chip :value="props.row.status" type="order" icon /></q-td>
             <q-td key="actions" :props="props" @click.stop>
-              <q-btn flat dense round size="sm" icon="open_in_new" color="primary" @click="openOrder(props.row)"><q-tooltip>Картка замовлення</q-tooltip></q-btn>
+              <q-btn flat dense round size="sm" icon="open_in_new" color="primary" @click="openOrder(props.row)"><q-tooltip>Картка направлення</q-tooltip></q-btn>
               <q-btn flat dense round size="sm" icon="print" color="grey-8" @click="printLabels(props.row)"><q-tooltip>Етикетки</q-tooltip></q-btn>
             </q-td>
           </q-tr>
         </template>
       </q-table>
-    </div>
-
-    <!-- Легенда кольорів -->
-    <div class="row q-gutter-md q-mt-sm text-caption text-grey-7 items-center">
-      <span><span class="legend-box" style="background:#fff;border:1px solid #ccc" /> На виконання</span>
-      <span><span class="legend-box" style="background:#f3f4f6" /> Закрито</span>
-      <span><span class="legend-box" style="background:#fff8dc" /> Відмова</span>
-      <span><span class="legend-box" style="background:#fde8e8" /> Скасовано</span>
-      <span><span class="legend-box" style="background:#ffe0b2" /> Прострочено</span>
-      <span><span class="legend-box" style="background:#fff;box-shadow: inset 4px 0 0 #d04f45" /> CITO</span>
     </div>
 
     <create-order-dialog v-model="createOpen" @created="onCreated" />
@@ -95,7 +91,7 @@ import apiMixin from '../../../mixins/apiMixin';
 import CreateOrderDialog from './CreateOrderDialog.vue';
 import LabelsDialog from '../../../components/common/LabelsDialog.vue';
 import { ORDER_STATUS, orderRowClass, toOptions } from '../../../utils/statuses';
-import { patientDisplay, genderLabel, ageFromBirthDate, daysAgoIso, todayIso } from '../../../utils/format';
+import { patientDisplay, genderLabel, ageFromBirthDate, daysAgoIso, todayIso, pluralN } from '../../../utils/format';
 
 export default {
   name: 'OrdersQueue',
@@ -116,10 +112,16 @@ export default {
         departmentId: null,
         cito: false
       },
+      searchTimer: null,
+      periods: [
+        { key: 'today', label: 'Сьогодні', days: 0 },
+        { key: '7', label: '7 днів', days: 7 },
+        { key: '30', label: 'Місяць', days: 30 }
+      ],
       pagination: { page: 1, rowsPerPage: 20, rowsNumber: 0, sortBy: 'orderDatetime', descending: true },
       statusOptions: toOptions(ORDER_STATUS),
       columns: [
-        { name: 'orderNumber', label: '№ замовлення', field: 'orderNumber', align: 'left', sortable: true },
+        { name: 'orderNumber', label: '№ направлення', field: 'orderNumber', align: 'left', sortable: true },
         { name: 'orderDatetime', label: 'Дата', field: 'orderDatetime', align: 'left', sortable: true },
         { name: 'patient', label: 'Пацієнт', align: 'left' },
         { name: 'tests', label: 'Дослідження', align: 'left' },
@@ -132,8 +134,17 @@ export default {
   },
   computed: {
     departmentOptions () { return this.$store.getters['dictionaries/options']('departments'); },
-    departments () { return this.$store.getters['dictionaries/items']('departments'); }
+    departments () { return this.$store.getters['dictionaries/items']('departments'); },
+    periodKey () {
+      const p = this.periods.find(x => this.filters.from === daysAgoIso(x.days) && this.filters.to === todayIso());
+      return p ? p.key : null;
+    },
+    filtersChanged () {
+      const f = this.filters;
+      return !!(f.search || f.status || f.departmentId || f.cito || this.periodKey !== '7');
+    }
   },
+  beforeDestroy () { clearTimeout(this.searchTimer); },
   created () {
     if (this.$route.query.cito === 'true') this.filters.cito = true;
     if (this.$route.query.status) this.filters.status = this.$route.query.status;
@@ -152,7 +163,7 @@ export default {
     testsSummary (row) {
       const tests = row.tests || [];
       const total = row.testsTotal != null ? row.testsTotal : row.testsCount;
-      if (!tests.length) return total ? `${total} показн.${row.testsVerified != null ? ` (верифіковано ${row.testsVerified})` : ''}` : '—';
+      if (!tests.length) return total ? `${pluralN(total, 'показник', 'показники', 'показників')}${row.testsVerified != null ? `, верифіковано ${row.testsVerified}` : ''}` : 'Без послуг';
       const codes = tests.map(t => t.testCode).filter(Boolean);
       return codes.length > 6 ? `${codes.slice(0, 6).join(', ')} +${codes.length - 6}` : codes.join(', ');
     },
@@ -160,7 +171,21 @@ export default {
       const d = this.departments.find(x => String(x.id) === String(id));
       return d ? d.name : (id || '—');
     },
+    onSearchInput () {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = setTimeout(() => this.applyFilters(), 400);
+    },
+    setPeriod (p) {
+      this.filters.from = daysAgoIso(p.days);
+      this.filters.to = todayIso();
+      this.applyFilters();
+    },
+    resetFilters () {
+      this.filters = { search: '', status: null, from: daysAgoIso(7), to: todayIso(), departmentId: null, cito: false };
+      this.applyFilters();
+    },
     applyFilters () {
+      clearTimeout(this.searchTimer);
       this.pagination.page = 1;
       this.load();
     },
@@ -209,7 +234,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.legend-box { display: inline-block; width: 14px; height: 12px; vertical-align: middle; margin-right: 4px; border-radius: 2px; }
-</style>

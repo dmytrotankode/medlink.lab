@@ -2,7 +2,6 @@
   <div class="worklist-detail medlink-card" data-testid="worklistDetail">
     <div class="medlink-card__title">
       <span><q-icon name="assignment_ind" class="q-mr-xs" />Деталі дослідження</span>
-      <span v-if="row" class="text-caption text-grey-6">orderTestId: <span class="mono">{{ shortId(row.orderTestId) }}</span></span>
     </div>
     <empty-state v-if="!row" title="Оберіть рядок у черзі" icon="touch_app" hint="Подвійний клік або Enter — введення результату; Esc — скасувати" />
     <div v-else class="row q-col-gutter-md q-pa-md">
@@ -14,7 +13,7 @@
         <q-list dense class="q-mt-sm">
           <q-item class="q-px-none"><q-item-section><q-item-label caption>Замовлення</q-item-label><q-item-label><a href="#" class="text-primary" @click.prevent="$emit('open-order', row)">{{ row.orderNumber }}</a> <q-badge v-if="row.isCito" color="deep-orange-6" label="CITO" /></q-item-label></q-item-section></q-item>
           <q-item class="q-px-none"><q-item-section><q-item-label caption>Проба</q-item-label><q-item-label class="mono">{{ row.barcode }}</q-item-label></q-item-section></q-item>
-          <q-item class="q-px-none"><q-item-section><q-item-label caption>Аналізатор</q-item-label><q-item-label>{{ row.analyzerName || 'ручне введення' }} <q-badge v-if="row.isLockedOut" color="purple-6"><q-icon name="lock" size="10px" /> Lockout ВКЯ</q-badge></q-item-label></q-item-section></q-item>
+          <q-item class="q-px-none"><q-item-section><q-item-label caption>Аналізатор</q-item-label><q-item-label>{{ row.analyzerName || 'Вручну' }} <q-badge v-if="row.isLockedOut" color="purple-6"><q-icon name="lock" size="10px" class="q-mr-xs" />Блокування ВКЯ</q-badge></q-item-label></q-item-section></q-item>
           <q-item class="q-px-none"><q-item-section><q-item-label caption>Введено / верифіковано</q-item-label><q-item-label>{{ row.enteredAt | datetime }} / {{ row.verifiedAt | datetime }}</q-item-label></q-item-section></q-item>
         </q-list>
         <div class="section-title q-mt-sm">Дії процесу</div>
@@ -25,7 +24,7 @@
         <div class="row items-center justify-between">
           <div>
             <div class="text-caption text-grey-7">Показник</div>
-            <div class="text-subtitle1 text-weight-bold">{{ row.testName }} <span class="text-grey-7">({{ row.testCode }})</span></div>
+            <div class="text-subtitle1 text-weight-bold">{{ testTitle }}</div>
           </div>
           <status-chip :value="row.status" type="test" icon />
         </div>
@@ -45,16 +44,25 @@
             </div>
           </div>
         </div>
-        <q-banner v-if="row.isLockedOut" dense rounded class="bg-purple-1 text-purple-9 q-mt-sm"><q-icon name="lock" /> Активний Lockout ВКЯ для аналізатора/тесту — автоверифікація заблокована, верифікація лише з override.</q-banner>
-        <q-banner v-if="row.deltaAlert" dense rounded class="bg-orange-1 text-orange-9 q-mt-sm"><q-icon name="trending_up" /> Delta-check: відхилення від попереднього результату перевищує поріг — потрібна перевірка лікарем.</q-banner>
+        <q-banner v-if="row.isLockedOut" dense rounded class="bg-purple-1 text-purple-9 q-mt-sm"><q-icon name="lock" /> Аналізатор заблоковано контролем якості: автоверифікація недоступна, верифікація можлива лише з підтвердженням винятку.</q-banner>
+        <q-banner v-if="row.deltaAlert" dense rounded class="bg-orange-1 text-orange-9 q-mt-sm"><q-icon name="trending_up" /> Різка зміна відносно попереднього результату — потрібна перевірка лікарем.</q-banner>
         <div v-if="row.operatorComment || row.verificationComment" class="q-mt-sm text-caption">
           <div v-if="row.operatorComment"><b>Оператор:</b> {{ row.operatorComment }}</div>
           <div v-if="row.verificationComment"><b>Лікар:</b> {{ row.verificationComment }}</div>
         </div>
         <div class="row q-gutter-sm q-mt-md">
-          <q-btn color="primary" icon="edit_note" label="Ввести / змінити" no-caps data-testid="detailEdit" @click="$emit('edit', row)" />
-          <q-btn outline color="green-8" icon="how_to_reg" label="Верифікувати" no-caps :disable="!['RESULTED', 'NEEDS_REVIEW'].includes(row.status)" @click="$emit('verify', row)" />
-          <q-btn outline color="teal-7" icon="verified" label="Автоверифікація" no-caps :disable="row.status !== 'RESULTED'" @click="$emit('autoverify', row)" />
+          <span class="inline-block">
+            <q-btn color="primary" icon="edit_note" label="Ввести / змінити" no-caps data-testid="detailEdit" :disable="!!enterReason" @click="$emit('edit', row)" />
+            <q-tooltip v-if="enterReason">{{ enterReason }}</q-tooltip>
+          </span>
+          <span class="inline-block">
+            <q-btn outline color="green-8" icon="how_to_reg" label="Верифікувати" no-caps :disable="!!verifyReason" @click="$emit('verify', row)" />
+            <q-tooltip v-if="verifyReason">{{ verifyReason }}</q-tooltip>
+          </span>
+          <span class="inline-block">
+            <q-btn outline color="teal-7" icon="verified" label="Автоверифікація" no-caps :disable="!!autoReason" @click="$emit('autoverify', row)" />
+            <q-tooltip v-if="autoReason">{{ autoReason }}</q-tooltip>
+          </span>
           <q-btn flat color="grey-8" icon="history" label="Історія" no-caps @click="$emit('history', row)" />
         </div>
       </div>
@@ -67,15 +75,36 @@ import OrderActionsBar from '../../../components/orders/OrderActionsBar.vue';
 import { flagMeta } from '../../../utils/statuses';
 import { referenceDisplay, formatNumber } from '../../../utils/format';
 import { resolveActions } from '../../../utils/orderActions';
+import roleMixin from '../../../mixins/roleMixin';
+import { enterBlockReason, roleBlockReason, VERIFY_ROLES, ENTER_ROLES } from '../../../utils/resultRules';
 
 export default {
   name: 'WorklistDetail',
+  mixins: [roleMixin],
   components: { OrderActionsBar },
   props: {
     row: { type: Object, default: null },
     order: { type: Object, default: null }
   },
   computed: {
+    /** «Лейкоцити (WBC)»: код дописуємо лише якщо його ще немає в назві */
+    testTitle () {
+      const r = this.row;
+      if (!r) return '';
+      const name = r.testName || r.testCode || '';
+      return r.testCode && !name.includes(`(${r.testCode})`) && name !== r.testCode ? `${name} (${r.testCode})` : name;
+    },
+    enterReason () { return this.row ? enterBlockReason(this.row, this.currentLabRole) : ''; },
+    verifyReason () {
+      if (!this.row) return '';
+      if (roleBlockReason(this.currentLabRole, VERIFY_ROLES)) return 'Верифікує лише лікар-лаборант (або адміністратор лабораторії)';
+      return ['RESULTED', 'NEEDS_REVIEW'].includes(this.row.status) ? '' : 'Верифікувати можна показник зі статусом «Є результат» або «Очікує лікаря»';
+    },
+    autoReason () {
+      if (!this.row) return '';
+      if (roleBlockReason(this.currentLabRole, ENTER_ROLES)) return this.roleHint(...ENTER_ROLES);
+      return this.row.status === 'RESULTED' ? '' : 'Автоверифікація доступна для показника зі статусом «Є результат»';
+    },
     displayValue () {
       const v = this.row && this.row.value;
       if (v === null || v === undefined || v === '') return '—';
@@ -91,8 +120,7 @@ export default {
     actionsSource () { return this.resolved.source; }
   },
   methods: {
-    referenceDisplay,
-    shortId (id) { return id ? String(id).slice(0, 8) : ''; }
+    referenceDisplay
   }
 };
 </script>

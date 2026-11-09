@@ -51,7 +51,7 @@ export const CSS_TEXT = `
 /* набори */
 .setcard{margin:6px 4px 10px;padding:10px 12px 10px 14px;border-radius:10px;background:#f9fafb;border:1px solid #e5e7eb;border-left:6px solid #2f7de1}
 .setcard .sh{display:flex;align-items:flex-start;gap:8px;cursor:pointer}.setcard .sh b{flex:1;font-size:14.5px}
-.setcard .sm{font-size:12px;color:#6b7280;margin:2px 0 6px}.setcard .sd{font-size:12.5px;color:#4b5563;margin-bottom:6px}
+.setcard .sm:not(.btn){font-size:12px;color:#6b7280;margin:2px 0 6px}.setcard .sd{font-size:12.5px;color:#4b5563;margin-bottom:6px}
 .setcard .pbar{height:5px;border-radius:3px;background:#e5e7eb;margin:4px 0 8px;overflow:hidden}.setcard .pbar>i{display:block;height:100%}
 .setcard .sitems{margin:2px 0 8px}.setcard .sitems .node{padding:3px 4px;font-size:13px}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
@@ -70,6 +70,9 @@ export const CSS_TEXT = `
 .st .q{font-size:10.5px;border-radius:4px;padding:1px 4px}.q.high{background:#dcfce7;color:#166534}.q.medium{background:#fef9c3;color:#854d0e}.q.low{background:#fee2e2;color:#991b1b}
 .mode{padding:6px 9px;border-radius:8px;background:#fef3c7;color:#92400e;font-size:12.5px}
 .mic.on{background:#dc2626;color:#fff;border-color:#dc2626}
+.mdl-back{position:fixed;inset:0;background:rgba(15,23,42,.5);pointer-events:auto;z-index:20;display:flex;align-items:center;justify-content:center}
+.mdl{background:#fff;color:#1f2937;border-radius:12px;padding:16px;width:min(400px,calc(100vw - 24px));box-shadow:0 12px 40px rgba(0,0,0,.4);font-size:14px;line-height:1.45}
+.mdl .mt{font-weight:700;font-size:16px;margin-bottom:8px}.mdl .mb{margin-bottom:12px;white-space:pre-wrap}.mdl .mf{display:flex;gap:8px;justify-content:flex-end}
 .hover{position:fixed;border:2px solid #f59e0b;background:rgba(245,158,11,.14);pointer-events:none;z-index:2;border-radius:4px}
 .hover.sel{border-color:#2f7de1;background:rgba(47,125,225,.14)}
 .crumbs{position:fixed;z-index:9;pointer-events:auto;background:#1f2937;color:#fff;border-radius:8px;padding:4px 6px;display:flex;gap:2px;font-size:12px;max-width:90vw;flex-wrap:wrap;box-shadow:0 4px 14px rgba(0,0,0,.4)}
@@ -103,4 +106,41 @@ export function toast (text, ms) {
   const old = r.querySelector('.toast'); if (old) old.remove();
   const t = document.createElement('div'); t.className = 'toast'; t.textContent = text; r.appendChild(t);
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), ms || 2600);
+}
+
+/** Власне вікно підтвердження замість window.confirm (кнопки українською). Повертає Promise<boolean>. */
+export function askConfirm (text, okText, cancelText, title) {
+  const r = getRoot();
+  return new Promise(resolve => {
+    const back = document.createElement('div'); back.className = 'mdl-back';
+    const box = document.createElement('div'); box.className = 'mdl';
+    const done = v => { back.remove(); resolve(v); };
+    if (title) { const t = document.createElement('div'); t.className = 'mt'; t.textContent = title; box.appendChild(t); }
+    const b = document.createElement('div'); b.className = 'mb'; b.textContent = text; box.appendChild(b);
+    const f = document.createElement('div'); f.className = 'mf';
+    const no = document.createElement('button'); no.className = 'btn'; no.textContent = cancelText || 'Скасувати'; no.onclick = () => done(false);
+    const yes = document.createElement('button'); yes.className = 'btn pri'; yes.textContent = okText || 'Гаразд'; yes.onclick = () => done(true);
+    f.appendChild(no); f.appendChild(yes); box.appendChild(f); back.appendChild(box);
+    back.addEventListener('keydown', e => { if (e.key === 'Escape') done(false); });
+    r.appendChild(back); yes.focus();
+  });
+}
+
+/** Власне вікно введення тексту замість window.prompt. Повертає Promise<string|null> (null — скасовано). */
+export function askText (title, placeholder, okText) {
+  const r = getRoot();
+  return new Promise(resolve => {
+    const back = document.createElement('div'); back.className = 'mdl-back';
+    const box = document.createElement('div'); box.className = 'mdl';
+    const done = v => { back.remove(); resolve(v); };
+    const t = document.createElement('div'); t.className = 'mt'; t.textContent = title; box.appendChild(t);
+    const inp = document.createElement('input'); inp.className = 'inp'; inp.placeholder = placeholder || ''; inp.style.marginBottom = '12px';
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') done(inp.value.trim() || null); if (e.key === 'Escape') done(null); });
+    box.appendChild(inp);
+    const f = document.createElement('div'); f.className = 'mf';
+    const no = document.createElement('button'); no.className = 'btn'; no.textContent = 'Скасувати'; no.onclick = () => done(null);
+    const yes = document.createElement('button'); yes.className = 'btn pri'; yes.textContent = okText || 'Створити'; yes.onclick = () => done(inp.value.trim() || null);
+    f.appendChild(no); f.appendChild(yes); box.appendChild(f); back.appendChild(box);
+    r.appendChild(back); inp.focus();
+  });
 }

@@ -19,7 +19,7 @@
     </div>
 
     <div class="medlink-card">
-      <q-table :data="containers" :columns="columns" row-key="id" dense flat :loading="loading" :pagination.sync="pagination" :rows-per-page-options="[15, 50]" no-data-label="Контейнерів немає" data-testid="containersTable">
+      <q-table :data="containers" :columns="columns" row-key="id" dense flat :loading="loading" :pagination.sync="pagination" :rows-per-page-options="[15, 50]" no-data-label="Контейнерів ще немає. Натисніть «Новий контейнер»." data-testid="containersTable">
         <template v-slot:body="props">
           <q-tr :props="props" :class="{ 'bg-red-1': props.row.isColdChainViolated, 'bg-orange-1': !props.row.isColdChainViolated && props.row.hasDiscrepancies }" class="cursor-pointer" :data-testid="'containerRow-' + props.row.barcode" @click="openCard(props.row)">
             <q-td key="barcode" :props="props"><span class="mono text-weight-bold">{{ props.row.barcode }}</span></q-td>
@@ -51,12 +51,13 @@
         <q-card-section class="q-gutter-y-sm">
           <q-select v-model="createForm.typeId" outlined dense label="Тип тари *" :options="typeOptions" emit-value map-options data-testid="containerTypeSelect" />
           <q-select v-model="createForm.originDepartmentId" outlined dense label="Звідки (пункт відправлення) *" :options="depOptions" emit-value map-options data-testid="containerOrigin" />
-          <q-select v-model="createForm.destinationDepartmentId" outlined dense label="Куди (пункт призначення) *" :options="depOptions" emit-value map-options data-testid="containerDestination" />
+          <q-select v-model="createForm.destinationDepartmentId" outlined dense label="Куди (пункт призначення) *" :options="destinationOptions" emit-value map-options data-testid="containerDestination" />
+          <div v-if="!createValid" class="text-caption text-grey-7">Не заповнено: {{ createMissing.join(', ') }}</div>
           <div v-if="createError" class="text-negative">{{ createError }}</div>
         </q-card-section>
         <q-card-actions align="right" class="bg-grey-1">
           <q-btn flat label="Скасувати" v-close-popup />
-          <q-btn color="primary" icon="add" label="Створити" :loading="saving" :disable="!createForm.typeId || !createForm.originDepartmentId || !createForm.destinationDepartmentId" data-testid="containerCreateConfirm" @click="doCreate" />
+          <q-btn color="primary" icon="add" label="Створити" :loading="saving" :disable="!createValid" data-testid="containerCreateConfirm" @click="doCreate" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -85,7 +86,7 @@
             <div class="col-6">Маршрут: <b>{{ active.originDepartmentName }} → {{ active.destinationDepartmentName }}</b></div>
             <div class="col-6">Температурний режим: <b>{{ regime(active) }}</b></div>
             <div class="col-6" v-if="active.sealedAt">Запечатано: {{ active.sealedAt | datetime }} · {{ fmtTemp(active.temperatureSeal) }}</div>
-            <div class="col-6" v-if="active.manifestNumber">Маніфест: <b class="mono">{{ active.manifestNumber }}</b></div>
+            <div class="col-6" v-if="active.manifestNumber">Маршрутний лист: <b class="mono">{{ active.manifestNumber }}</b></div>
             <div class="col-6" v-if="active.receivedAt">Прийнято: {{ active.receivedAt | datetime }} · {{ fmtTemp(active.temperatureReceipt) }}</div>
             <div class="col-6" v-if="active.returnedAt">Тару повернуто: {{ active.returnedAt | datetime }}</div>
           </div>
@@ -102,7 +103,7 @@
           </div>
 
           <!-- Сітка місць -->
-          <div class="slots-grid" data-testid="containerSlots">
+          <div class="slots-grid" data-testid="containerSlots" :style="{ gridTemplateColumns: 'repeat(' + gridCols + ', minmax(0, 1fr))' }">
             <div
               v-for="s in slots" :key="s.position"
               class="slot" :class="slotClass(s)"
@@ -111,7 +112,7 @@
             >
               <div class="slot-no">{{ s.position }}</div>
               <div class="slot-bc mono">{{ s.item ? s.item.barcode : '' }}</div>
-              <q-tooltip v-if="s.item && canDo('UNPACK')">Клік — зняти пробірку з місця</q-tooltip>
+              <q-tooltip v-if="s.item">{{ [s.item.barcode, s.item.patientName, s.item.tubeName].filter(Boolean).join(' · ') }}<span v-if="canDo('UNPACK')"> — клік зніме пробірку з місця</span></q-tooltip>
             </div>
           </div>
 
@@ -148,7 +149,9 @@
           <q-space /><q-btn flat round dense icon="close" v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-y-sm">
-          <q-input v-model="sealTemp" outlined dense autofocus label="Температура в контейнері, °C *" inputmode="decimal" data-testid="sealTemperature" :hint="'Режим: ' + (active ? regime(active) : '')" :error="sealOut" error-message="Поза режимом — буде зафіксовано порушення холодового ланцюга" @keyup.enter="doSeal" />
+          <q-input v-model="sealTemp" outlined dense autofocus label="Температура в контейнері, °C *" inputmode="decimal" data-testid="sealTemperature" :hint="'Режим: ' + (active ? regime(active) : '')" @keyup.enter="doSeal" />
+          <q-banner v-if="sealOut" dense rounded class="bg-orange-1 text-deep-orange-9"><template v-slot:avatar><q-icon name="warning" color="deep-orange" /></template>Поза режимом — буде зафіксовано порушення холодового ланцюга.</q-banner>
+          <div class="text-caption text-grey-7">Після запечатування проби не можна змінити; буде створено маршрутний лист.</div>
           <div v-if="sealError" class="text-negative">{{ sealError }}</div>
         </q-card-section>
         <q-card-actions align="right" class="bg-grey-1">
@@ -167,13 +170,13 @@
           <q-space /><q-btn flat round dense icon="close" v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-y-sm">
-          <q-input v-model="courier.name" outlined dense autofocus label="Кур’єр" data-testid="containerCourierName" />
+          <q-input v-model="courier.name" outlined dense autofocus label="Кур’єр *" data-testid="containerCourierName" />
           <q-input v-model="courier.phone" outlined dense label="Телефон" data-testid="containerCourierPhone" @keyup.enter="doDispatch" />
           <div v-if="dispatchError" class="text-negative">{{ dispatchError }}</div>
         </q-card-section>
         <q-card-actions align="right" class="bg-grey-1">
           <q-btn flat label="Скасувати" v-close-popup />
-          <q-btn color="indigo-5" icon="local_shipping" label="Відправити" :loading="saving" data-testid="dispatchConfirm" @click="doDispatch" />
+          <q-btn color="indigo-5" icon="local_shipping" label="Відправити" :loading="saving" :disable="!courier.name" data-testid="dispatchConfirm" @click="doDispatch"><q-tooltip v-if="!courier.name">Вкажіть кур’єра</q-tooltip></q-btn>
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -189,7 +192,7 @@
 
         <!-- Крок 1: скан контейнера -->
         <q-card-section v-if="!rcv">
-          <q-input v-model="rcvContainerScan" outlined dense autofocus label="Скануйте штрихкод контейнера" data-testid="receiveContainerScan" @keyup.enter="findContainer">
+          <q-input v-model="rcvContainerScan" outlined dense autofocus label="1. Скануйте штрихкод контейнера" data-testid="receiveContainerScan" @keyup.enter="findContainer">
             <template v-slot:prepend><q-icon name="qr_code_scanner" /></template>
           </q-input>
           <div v-if="rcvError" class="text-negative text-caption q-mt-xs" data-testid="receiveContainerError">{{ rcvError }}</div>
@@ -198,7 +201,7 @@
         <!-- Крок 2: скан проб -->
         <q-card-section v-else class="q-gutter-y-sm">
           <div class="text-body2">{{ rcv.originDepartmentName }} → {{ rcv.destinationDepartmentName }} · {{ rcv.typeName }} · режим <b>{{ regime(rcv) }}</b></div>
-          <q-input ref="rcvScan" v-model="rcvSampleScan" outlined dense autofocus label="Скануйте пробірки з контейнера" data-testid="receiveSampleScan" @keyup.enter="scanSample">
+          <q-input ref="rcvScan" v-model="rcvSampleScan" outlined dense autofocus label="2. Скануйте пробірки з контейнера" data-testid="receiveSampleScan" @keyup.enter="scanSample">
             <template v-slot:prepend><q-icon name="qr_code_scanner" /></template>
           </q-input>
           <div v-if="rcvError" class="text-negative text-caption" data-testid="receiveSampleError">{{ rcvError }}</div>
@@ -237,17 +240,18 @@
           </div>
 
           <div class="row q-col-gutter-sm">
-            <div class="col-12 col-md-4">
-              <q-input v-model="rcvTemp" outlined dense label="Температура при прийомі, °C *" inputmode="decimal" data-testid="receiveTemperature" :hint="'Режим: ' + regime(rcv)" :error="rcvTempOut" error-message="Поза режимом — буде зафіксовано порушення холодового ланцюга" />
+            <div class="col-12 col-md-5">
+              <q-input v-model="rcvTemp" outlined dense label="3. Температура при прийомі, °C *" inputmode="decimal" data-testid="receiveTemperature" :hint="'Режим: ' + regime(rcv)" />
+              <q-banner v-if="rcvTempOut" dense rounded class="bg-orange-1 text-deep-orange-9 q-mt-xs"><template v-slot:avatar><q-icon name="warning" color="deep-orange" /></template>Поза режимом — буде зафіксовано порушення холодового ланцюга.</q-banner>
             </div>
-            <div class="col-12 col-md-8">
+            <div class="col-12 col-md-7">
               <q-input v-model="rcvNotes" outlined dense autogrow label="Примітки" data-testid="receiveNotes" />
             </div>
           </div>
         </q-card-section>
         <q-card-actions align="right" class="bg-grey-1">
           <q-btn flat label="Скасувати" v-close-popup />
-          <q-btn v-if="rcv" :color="rcvHasDiscrepancies ? 'orange-8' : 'cyan-7'" icon="check" :label="rcvHasDiscrepancies ? 'Прийняти з розбіжностями' : 'Прийняти'" :loading="saving" :disable="parseTemp(rcvTemp) === null" data-testid="receiveContainerConfirm" @click="doReceive" />
+          <q-btn v-if="rcv" :color="rcvHasDiscrepancies ? 'orange-8' : 'cyan-7'" icon="check" :label="rcvHasDiscrepancies ? 'Прийняти з розбіжностями' : 'Прийняти'" :loading="saving" :disable="parseTemp(rcvTemp) === null || scannedExpectedCount + extraList.length === 0" data-testid="receiveContainerConfirm" @click="doReceive" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -273,19 +277,21 @@
               </q-tr>
             </template>
           </q-table>
+          <div class="text-caption text-grey-7 q-mt-xs">Клік по рядку — редагувати тип.</div>
           <div class="section-title q-mt-md">{{ typeForm.id ? 'Редагування типу' : 'Новий тип' }}</div>
           <div class="row q-col-gutter-sm">
             <div class="col-4 col-md-2"><q-input v-model="typeForm.code" outlined dense label="Код *" data-testid="typeCode" /></div>
             <div class="col-8 col-md-4"><q-input v-model="typeForm.name" outlined dense label="Назва *" data-testid="typeName" /></div>
             <div class="col-4 col-md-2"><q-input v-model="typeForm.capacity" outlined dense label="Місць *" inputmode="numeric" data-testid="typeCapacity" /></div>
-            <div class="col-4 col-md-2"><q-input v-model="typeForm.tempMinC" outlined dense label="t° від" inputmode="decimal" data-testid="typeTempMin" /></div>
-            <div class="col-4 col-md-2"><q-input v-model="typeForm.tempMaxC" outlined dense label="t° до" inputmode="decimal" data-testid="typeTempMax" /></div>
-            <div class="col-6"><q-toggle v-model="typeForm.isReusable" label="Багаторазова" data-testid="typeReusable" /></div>
-            <div class="col-6"><q-toggle v-model="typeForm.isActive" label="Активна" data-testid="typeActive" /></div>
+            <div class="col-4 col-md-2"><q-input v-model="typeForm.tempMinC" outlined dense label="Мін. температура, °C" inputmode="decimal" data-testid="typeTempMin" /></div>
+            <div class="col-4 col-md-2"><q-input v-model="typeForm.tempMaxC" outlined dense label="Макс. температура, °C" inputmode="decimal" data-testid="typeTempMax" /></div>
+            <div class="col-6"><q-toggle v-model="typeForm.isReusable" :label="typeForm.isReusable ? 'Багаторазова: так' : 'Багаторазова: ні'" data-testid="typeReusable" /></div>
+            <div class="col-6"><q-toggle v-model="typeForm.isActive" :label="typeForm.isActive ? 'Активна: так' : 'Активна: ні'" data-testid="typeActive" /></div>
           </div>
           <div v-if="typeError" class="text-negative q-mt-xs">{{ typeError }}</div>
         </q-card-section>
         <q-card-actions align="right" class="bg-grey-1">
+          <q-btn flat label="Закрити" v-close-popup />
           <q-btn v-if="typeForm.id" flat label="Новий тип" @click="resetTypeForm" />
           <q-btn color="primary" icon="save" label="Зберегти" :loading="saving" :disable="!typeForm.code || !typeForm.name || !typeForm.capacity" data-testid="typeSave" @click="saveType" />
         </q-card-actions>
@@ -331,8 +337,8 @@ export default {
         { name: 'barcode', label: 'Штрихкод', align: 'left' },
         { name: 'type', label: 'Тип тари', align: 'left' },
         { name: 'route', label: 'Маршрут', align: 'left' },
-        { name: 'items', label: 'Проб', align: 'center' },
-        { name: 'temp', label: 't° запеч. → прийом', align: 'center' },
+        { name: 'items', label: 'Проби', align: 'center' },
+        { name: 'temp', label: 't° запечатування → прийому', align: 'center' },
         { name: 'status', label: 'Статус', align: 'left' },
         { name: 'createdOn', label: 'Створено', align: 'left' }
       ],
@@ -348,7 +354,23 @@ export default {
   },
   computed: {
     depOptions () { return this.$store.getters['dictionaries/options']('departments'); },
-    typeOptions () { return this.types.map(t => ({ value: t.id, label: `${t.name} (${t.capacity})` })); },
+    typeOptions () { return this.types.map(t => ({ value: t.id, label: t.name })); },
+    destinationOptions () { return this.depOptions.filter(o => o.value !== this.createForm.originDepartmentId); },
+    createMissing () {
+      const m = [];
+      if (!this.createForm.typeId) m.push('тип тари');
+      if (!this.createForm.originDepartmentId) m.push('звідки');
+      if (!this.createForm.destinationDepartmentId) m.push('куди');
+      return m;
+    },
+    createValid () { return !this.createMissing.length; },
+    gridCols () {
+      const cap = (this.active && this.active.capacity) || 24;
+      if (cap <= 6) return cap;
+      if (cap <= 24) return 6;
+      if (cap <= 48) return 8;
+      return 10;
+    },
     slots () {
       if (!this.active) return [];
       const byPos = {};
@@ -400,7 +422,7 @@ export default {
 
     // ---------- створення ----------
     openCreate () {
-      this.createForm = { typeId: this.types.length ? this.types[0].id : null, originDepartmentId: null, destinationDepartmentId: null };
+      this.createForm = { typeId: null, originDepartmentId: null, destinationDepartmentId: null };
       this.createError = ''; this.createOpen = true;
       this.loadTypes();
     },
@@ -466,17 +488,21 @@ export default {
         const c = await this.$api.sealContainer(this.active.id, { temperatureSeal: t });
         this.sealOpen = false;
         if (c.isColdChainViolated) this.$q.notify({ type: 'warning', message: 'Контейнер запечатано з порушенням температурного режиму', timeout: 5000 });
-        else this.notifyOk('Контейнер запечатано, сформовано маніфест ' + c.manifestNumber);
+        else this.notifyOk('Контейнер запечатано, сформовано маршрутний лист ' + c.manifestNumber);
         this.applyContainer(c);
       } catch (e) { this.sealError = e.userMessage || 'Помилка запечатування'; } finally { this.saving = false; }
     },
-    openDispatch () { this.courier = { name: '', phone: '' }; this.dispatchError = ''; this.dispatchOpen = true; },
+    openDispatch () {
+      this.courier = { name: '', phone: '' };
+      const me = this.$store.getters['context/currentEmployee'];
+      if (me && this.$store.getters['context/currentRole'] === 'LOGISTICS_COURIER') this.courier = { name: me.fullName || me.name || '', phone: me.phone || '' }; this.dispatchError = ''; this.dispatchOpen = true;
+    },
     async doDispatch () {
       this.saving = true; this.dispatchError = '';
       try {
         const c = await this.$api.dispatchContainer(this.active.id, { courierName: this.courier.name || null, courierPhone: this.courier.phone || null });
         this.dispatchOpen = false;
-        this.notifyOk('Контейнер відправлено, проби → IN_TRANSIT');
+        this.notifyOk('Контейнер відправлено, проби у дорозі');
         this.applyContainer(c);
       } catch (e) { this.dispatchError = e.userMessage || 'Помилка відправки'; } finally { this.saving = false; }
     },
@@ -539,9 +565,9 @@ export default {
       try {
         const c = await this.$api.receiveContainer(this.rcv.id, { temperatureReceipt: t, scannedBarcodes: scanned, damagedBarcodes: this.damagedList, notes: this.rcvNotes || null });
         this.receiveOpen = false;
-        if (c.isColdChainViolated) this.$q.notify({ type: 'warning', message: 'Контейнер прийнято з порушенням холодового ланцюга', timeout: 5000 });
+        if (c.isColdChainViolated) this.$q.notify({ type: 'warning', message: 'Контейнер прийнято з порушенням холодового ланцюга', timeout: 5000, position: 'bottom' });
         else if (c.hasDiscrepancies) this.$q.notify({ type: 'warning', message: 'Контейнер прийнято з розбіжностями', timeout: 5000 });
-        else this.notifyOk('Контейнер прийнято, проби → RECEIVED');
+        else this.notifyOk('Контейнер прийнято, проби прийняті в лабораторії');
         this.applyContainer(c);
         this.openCard(c);
       } catch (e) { this.rcvError = e.userMessage || 'Помилка прийому'; } finally { this.saving = false; }
@@ -600,12 +626,12 @@ export default {
 </script>
 
 <style scoped>
-.slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; }
-.slot { border: 1px solid #cfd8dc; border-radius: 4px; padding: 4px 6px; min-height: 46px; background: #fff; }
+.slots-grid { display: grid; gap: 6px; }
+.slot { border: 1px solid #90a4ae; border-radius: 4px; padding: 4px 6px; min-height: 46px; background: #fff; }
 .slot-no { font-size: 10px; color: #78909c; }
 .slot-bc { font-size: 12px; font-weight: 600; min-height: 16px; }
-.slot--free { background: #fafafa; border-style: dashed; }
-.slot--packed { background: #e3f2fd; border-color: #64b5f6; }
+.slot--free { background: #eceff1; border-style: dashed; border-color: #78909c; }
+.slot--packed { background: #bbdefb; border-color: #1e88e5; }
 .slot--clickable { cursor: pointer; }
 .slot--clickable:hover { background: #bbdefb; }
 .slot--ok { background: #e8f5e9; border-color: #81c784; }

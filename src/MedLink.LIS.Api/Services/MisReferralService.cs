@@ -379,7 +379,13 @@ public sealed class MisReferralService
         if (o.DistributionStatus == "NEEDS_SELECTION") return "Потрібен вибір показників";
         var active = o.Tests.Where(t => t.Status != OrderTestStatuses.Rejected).ToList();
         if (active.Any(t => t.RoutingStatus == RoutingStatuses.NoEquipment)) return "Є показники без обладнання";
-        if (o.DistributionStatus == "PROPOSED") return $"Запропоновано: {active.Where(t => t.AssignedAnalyzerId != null).Select(t => t.AssignedAnalyzerId).Distinct().Count()} аналізатор(и)";
+        if (o.DistributionStatus == "PROPOSED")
+        {
+            var n = active.Where(t => t.AssignedAnalyzerId != null).Select(t => t.AssignedAnalyzerId).Distinct().Count();
+            var m100 = n % 100; var m10 = n % 10;
+            var word = m100 is > 10 and < 20 ? "аналізаторів" : m10 == 1 ? "аналізатор" : m10 is > 1 and < 5 ? "аналізатори" : "аналізаторів";
+            return $"Запропоновано: {n} {word}";
+        }
         return "Підтверджено";
     }
 

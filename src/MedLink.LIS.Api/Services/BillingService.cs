@@ -422,6 +422,8 @@ public sealed class BillingService
     {
         _policy.Require("Прайс-листи", LabRoles.Admin);
         if (string.IsNullOrWhiteSpace(req.Code) || string.IsNullOrWhiteSpace(req.Name)) throw new ValidationException("Код і назва прайс-листа обов'язкові");
+        if (req.Items != null && req.Items.Values.Any(v => v < 0)) throw new ValidationException("Ціна не може бути від’ємною");
+        if (req.Packages != null && req.Packages.Any(pk => pk.Price < 0)) throw new ValidationException("Ціна пакета не може бути від’ємною");
         var code = req.Code.Trim().ToUpperInvariant();
         if (await _db.PriceLists.AnyAsync(l => l.Code == code && l.Id != id && l.RecordState != RecordStates.Deleted)) throw new ConflictException($"Прайс-лист {code} вже існує");
         LabPriceList l;

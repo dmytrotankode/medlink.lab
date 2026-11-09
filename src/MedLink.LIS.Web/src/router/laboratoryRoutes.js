@@ -46,21 +46,21 @@ export default [
       lab('pathology', 'lab-path-cases', 'Журнал справ ПГД', () => import('pages/laboratory/pathology/PathologyCasesPage.vue'), { meta: { group: 'hist' } }),
       lab('cytology', 'lab-cyto-cases', 'Журнал цитології', () => import('pages/laboratory/pathology/PathologyCasesPage.vue'), { meta: { group: 'cyto' } }),
       lab('pathology/intake', 'lab-path-intake', 'Прийом матеріалу', () => import('pages/laboratory/pathology/PathologyIntakePage.vue')),
-      lab('pathology/cito', 'lab-path-cito', 'Інтраопераційні (CITO)', () => import('pages/laboratory/pathology/PathologyCasesPage.vue'), { meta: { cito: true } }),
+      lab('pathology/cito', 'lab-path-cito', 'Термінові інтраопераційні (CITO)', () => import('pages/laboratory/pathology/PathologyCasesPage.vue'), { meta: { cito: true } }),
       lab('pathology/archive', 'lab-path-archive', 'Архів блоків і скелець', () => import('pages/laboratory/pathology/PathologyArchivePage.vue')),
       lab('pathology/dictionaries', 'lab-path-dictionaries', 'Довідники патоморфології', () => import('pages/laboratory/pathology/PathologyDictionariesPage.vue')),
       lab('pathology/cases/:id', 'lab-path-case', 'Справа ПГД', () => import('pages/laboratory/pathology/PathologyCasePage.vue'), { props: true }),
-      lab('analytics-tat', 'lab-analytics-tat', 'Аналітика TAT', () => import('pages/laboratory/LabAnalyticsTat.vue')),
+      lab('analytics-tat', 'lab-analytics-tat', 'Аналітика часу виконання', () => import('pages/laboratory/LabAnalyticsTat.vue')),
 
       // ----- Довідники -----
       lab('pricing', 'lab-pricing', 'Прайси та платники', () => import('pages/laboratory/PricingPage.vue')),
-      lab('norms', 'lab-norms', 'Довідник послуг та норми', () => import('pages/laboratory/norms/NormsCatalog.vue')),
+      lab('norms', 'lab-norms', 'Послуги та норми', () => import('pages/laboratory/norms/NormsCatalog.vue')),
       lab('dictionaries', 'lab-dictionaries', 'Довідники', () => import('pages/dictionaries/DictionariesHome.vue')),
       lab('dictionaries/:name', 'lab-dictionary', 'Довідник', () => import('pages/dictionaries/DictionaryPage.vue'), { props: true }),
 
       // ----- Інтеграції -----
       lab('analyzers', 'lab-analyzers', 'Аналізатори та коннектори', () => import('pages/laboratory/analyzers/AnalyzersPage.vue')),
-      lab('analyzer-services', 'lab-analyzer-services', 'Послуги ЕСОЗ × аналізатори', () => import('pages/laboratory/mis/AnalyzerServicesPage.vue')),
+      lab('analyzer-services', 'lab-analyzer-services', 'Послуги ЕСОЗ та аналізатори', () => import('pages/laboratory/mis/AnalyzerServicesPage.vue')),
       lab('analyzers/messages', 'lab-analyzer-messages', 'Журнал обміну з аналізаторами', () => import('pages/laboratory/analyzers/AnalyzerMessages.vue')),
       lab('import', 'lab-import', 'Імпорт результатів', () => import('pages/laboratory/ImportResults.vue')),
 

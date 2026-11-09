@@ -172,7 +172,7 @@
             "strategies": [
               {
                 "type": "css",
-                "value": "#main-header a[href=\"/laboratory/dashboard\"]",
+                "value": "#main-header a[href$=\"/laboratory/dashboard\"]",
                 "weight": 85
               },
               {
@@ -215,9 +215,9 @@
         },
         {
           "stepType": "info",
-          "title": "Чип «Шлюз»",
-          "body": "Показує, скільки коннекторів аналізаторів онлайн. Зелений — усі, жовтий — частина, червоний — жоден.",
-          "transcript": "Чип Шлюз. Показує, скільки коннекторів аналізаторів онлайн. Зелений — усі, жовтий — частина, червоний — жоден.",
+          "title": "Чип «Шлюз аналізаторів»",
+          "body": "Показує, скільки коннекторів аналізаторів онлайн. Зелений — усі, жовтий — частина, червоний — жоден. На вузькому екрані лишається значок і число.",
+          "transcript": "Чип «Шлюз аналізаторів». Показує, скільки коннекторів аналізаторів онлайн. Зелений — усі, жовтий — частина, червоний — жоден. На вузькому екрані лишається значок і число.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
@@ -231,8 +231,13 @@
             "routePattern": "*",
             "strategies": [
               {
+                "type": "testid",
+                "value": "[data-testid=\"headerGateway\"]",
+                "weight": 100
+              },
+              {
                 "type": "css",
-                "value": "#main-header a[href=\"/laboratory/analyzers\"]",
+                "value": "#main-header a[href$=\"/laboratory/analyzers\"]",
                 "weight": 85
               }
             ]
@@ -306,8 +311,13 @@
             "routePattern": "*",
             "strategies": [
               {
+                "type": "testid",
+                "value": "[data-testid=\"headerPanic\"]",
+                "weight": 100
+              },
+              {
                 "type": "css",
-                "value": "#main-header a[href^=\"/laboratory/validation\"]",
+                "value": "#main-header a[href*=\"/laboratory/validation\"]",
                 "weight": 85
               }
             ]
@@ -316,8 +326,8 @@
         {
           "stepType": "info",
           "title": "Перемикач «Працюю як…»",
-          "body": "Оберіть співробітника, від імені якого працюєте. Пароль не потрібен, роль впливає на доступні дії.",
-          "transcript": "Перемикач Працюю як. Оберіть співробітника, від імені якого працюєте. Пароль не потрібен, роль впливає на доступні дії.",
+          "body": "Оберіть співробітника, від імені якого працюєте. Пароль не потрібен; роль визначає, які розділи й кнопки доступні.",
+          "transcript": "Перемикач «Працюю як…». Оберіть співробітника, від імені якого працюєте. Пароль не потрібен; роль визначає, які розділи й кнопки доступні.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
@@ -349,7 +359,7 @@
       "code": "lab.nav.drawer-groups",
       "folderCode": "nav-start",
       "caption": "Бічне меню: групи й бейджі",
-      "description": "Як знайти потрібний розділ: Процеси, Довідники, Інтеграції, Адміністрування та лічильники біля пунктів.",
+      "description": "Як знайти потрібний розділ: Процеси, Довідники, Інтеграції, Адміністрування та лічильники біля пунктів. Розділи, недоступні вашій ролі, у меню не показуються.",
       "icon": "menu_open",
       "startRoute": "/laboratory/dashboard",
       "requiredRoles": [],
@@ -413,7 +423,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/dashboard\"]",
+                "value": "a[href$=\"/laboratory/dashboard\"]",
                 "weight": 80
               }
             ]
@@ -443,7 +453,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/refs\"]",
+                "value": "a[href$=\"/laboratory/refs\"]",
                 "weight": 80
               }
             ]
@@ -452,8 +462,8 @@
         {
           "stepType": "info",
           "title": "Бейдж «Валідація»",
-          "body": "Червоний бейдж CITO показує кількість критичних результатів без дзвінка.",
-          "transcript": "Бейдж Валідація. Червоний бейдж CITO показує кількість критичних результатів без дзвінка.",
+          "body": "Червоний бейдж показує кількість критичних результатів без зареєстрованого дзвінка.",
+          "transcript": "Бейдж «Валідація». Червоний бейдж показує кількість критичних результатів без зареєстрованого дзвінка.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "right",
@@ -473,7 +483,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/validation\"]",
+                "value": "a[href$=\"/laboratory/validation\"]",
                 "weight": 80
               }
             ]
@@ -482,8 +492,8 @@
         {
           "stepType": "info",
           "title": "Бейдж «Контроль якості»",
-          "body": "Фіолетовий бейдж Lock з'являється, коли є активне блокування аналізатора.",
-          "transcript": "Бейдж Контроль якості. Фіолетовий бейдж Lock з'являється, коли є активне блокування аналізатора.",
+          "body": "Фіолетовий бейдж показує кількість активних блокувань аналізаторів за результатами ВКЯ.",
+          "transcript": "Бейдж «Контроль якості». Фіолетовий бейдж показує кількість активних блокувань аналізаторів за результатами ВКЯ.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "right",
@@ -503,7 +513,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/quality-control\"]",
+                "value": "a[href$=\"/laboratory/quality-control\"]",
                 "weight": 80
               }
             ]
@@ -533,7 +543,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/pricing\"]",
+                "value": "a[href$=\"/laboratory/pricing\"]",
                 "weight": 80
               }
             ]
@@ -542,8 +552,8 @@
         {
           "stepType": "info",
           "title": "Група «Інтеграції»",
-          "body": "Аналізатори, послуги ЕСОЗ × аналізатори, журнал обміну, імпорт результатів.",
-          "transcript": "Група Інтеграції. Аналізатори, послуги ЕСОЗ на аналізатори, журнал обміну, імпорт результатів.",
+          "body": "Аналізатори, послуги ЕСОЗ та аналізатори, журнал обміну, імпорт результатів.",
+          "transcript": "Група «Інтеграції». Аналізатори, послуги ЕСОЗ та аналізатори, журнал обміну, імпорт результатів.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "right",
@@ -563,7 +573,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/analyzers\"]",
+                "value": "a[href$=\"/laboratory/analyzers\"]",
                 "weight": 80
               }
             ]
@@ -593,7 +603,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/admin/settings\"]",
+                "value": "a[href$=\"/laboratory/admin/settings\"]",
                 "weight": 80
               }
             ]
@@ -623,7 +633,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/orders\"]",
+                "value": "a[href$=\"/laboratory/orders\"]",
                 "weight": 80
               }
             ]
@@ -739,7 +749,7 @@
       "code": "lab.nav.switch-role",
       "folderCode": "nav-start",
       "caption": "Перемкнути «Працюю як…»",
-      "description": "Змініть співробітника та роль без пароля, щоб побачити екрани й дії для іншої посади.",
+      "description": "Змініть співробітника та роль без пароля, щоб побачити розділи й дії іншої посади.",
       "icon": "switch_account",
       "startRoute": "/laboratory/dashboard",
       "requiredRoles": [],
@@ -755,8 +765,8 @@
         {
           "stepType": "info",
           "title": "Хто ви зараз",
-          "body": "У шапці видно ПІБ і роль поточного співробітника. Від цього залежать доступні кнопки дій.",
-          "transcript": "Хто ви зараз. У шапці видно ПІБ і роль поточного співробітника. Від цього залежать доступні кнопки дій.",
+          "body": "У шапці видно ПІБ і роль поточного співробітника. Від ролі залежать розділи меню та кнопки дій.",
+          "transcript": "Хто ви зараз. У шапці видно ПІБ і роль поточного співробітника. Від ролі залежать розділи меню та кнопки дій.",
           "route": "/laboratory/dashboard",
           "highlight": "element",
           "parentLevels": 0,
@@ -846,8 +856,8 @@
         {
           "stepType": "info",
           "title": "Що змінюється",
-          "body": "Усі нові запити йдуть від обраного співробітника, аудит записує його роль. Недоступні дії стають неактивними з підказкою.",
-          "transcript": "Що змінюється. Усі нові запити йдуть від обраного співробітника, аудит записує його роль. Недоступні дії стають неактивними з підказкою.",
+          "body": "Усі нові запити йдуть від обраного співробітника, аудит записує його роль. Розділи меню й кнопки, недоступні цій ролі, приховуються.",
+          "transcript": "Що змінюється. Усі нові запити йдуть від обраного співробітника, аудит записує його роль. Розділи меню й кнопки, недоступні цій ролі, приховуються.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "auto",
@@ -1012,8 +1022,8 @@
         {
           "stepType": "info",
           "title": "Нічого не знайдено",
-          "body": "Якщо з'явилось повідомлення, що пробірку не знайдено, перевірте цифри або введіть номер замовлення.",
-          "transcript": "Нічого не знайдено. Якщо з'явилось повідомлення, що пробірку не знайдено, перевірте цифри або введіть номер замовлення.",
+          "body": "Якщо з’явилось повідомлення, що пробірку чи замовлення не знайдено, поле підсвітиться червоним. Перевірте цифри або введіть номер замовлення.",
+          "transcript": "Нічого не знайдено. Якщо з’явилось повідомлення, що пробірку чи замовлення не знайдено, поле підсвітиться червоним. Перевірте цифри або введіть номер замовлення.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "auto",
@@ -1085,8 +1095,13 @@
             "routePattern": "*",
             "strategies": [
               {
+                "type": "testid",
+                "value": "[data-testid=\"headerGateway\"]",
+                "weight": 100
+              },
+              {
                 "type": "css",
-                "value": "#main-header a[href=\"/laboratory/analyzers\"]",
+                "value": "#main-header a[href$=\"/laboratory/analyzers\"]",
                 "weight": 85
               }
             ]
@@ -1110,8 +1125,13 @@
             "routePattern": "*",
             "strategies": [
               {
+                "type": "testid",
+                "value": "[data-testid=\"headerGateway\"]",
+                "weight": 100
+              },
+              {
                 "type": "css",
-                "value": "#main-header a[href=\"/laboratory/analyzers\"]",
+                "value": "#main-header a[href$=\"/laboratory/analyzers\"]",
                 "weight": 85
               }
             ]
@@ -1135,8 +1155,13 @@
             "routePattern": "*",
             "strategies": [
               {
+                "type": "testid",
+                "value": "[data-testid=\"headerGateway\"]",
+                "weight": 100
+              },
+              {
                 "type": "css",
-                "value": "#main-header a[href=\"/laboratory/analyzers\"]",
+                "value": "#main-header a[href$=\"/laboratory/analyzers\"]",
                 "weight": 85
               }
             ]
@@ -1180,8 +1205,13 @@
             "routePattern": "*",
             "strategies": [
               {
+                "type": "testid",
+                "value": "[data-testid=\"headerPanic\"]",
+                "weight": 100
+              },
+              {
                 "type": "css",
-                "value": "#main-header a[href^=\"/laboratory/validation\"]",
+                "value": "#main-header a[href*=\"/laboratory/validation\"]",
                 "weight": 85
               }
             ]
@@ -1205,8 +1235,13 @@
             "routePattern": "*",
             "strategies": [
               {
+                "type": "testid",
+                "value": "[data-testid=\"headerPanic\"]",
+                "weight": 100
+              },
+              {
                 "type": "css",
-                "value": "#main-header a[href^=\"/laboratory/validation\"]",
+                "value": "#main-header a[href*=\"/laboratory/validation\"]",
                 "weight": 85
               }
             ]
@@ -1276,8 +1311,13 @@
             "routePattern": "*",
             "strategies": [
               {
+                "type": "testid",
+                "value": "[data-testid=\"headerLockout\"]",
+                "weight": 100
+              },
+              {
                 "type": "css",
-                "value": "#main-header a[href^=\"/laboratory/quality-control\"]",
+                "value": "#main-header a[href*=\"/laboratory/quality-control\"]",
                 "weight": 85
               }
             ]
@@ -1301,8 +1341,13 @@
             "routePattern": "*",
             "strategies": [
               {
+                "type": "testid",
+                "value": "[data-testid=\"headerLockout\"]",
+                "weight": 100
+              },
+              {
                 "type": "css",
-                "value": "#main-header a[href^=\"/laboratory/quality-control\"]",
+                "value": "#main-header a[href*=\"/laboratory/quality-control\"]",
                 "weight": 85
               }
             ]
@@ -1583,8 +1628,8 @@
         {
           "stepType": "info",
           "title": "Фільтр за роллю",
-          "body": "Бачите лише ті інструкції, що підходять ролі поточного співробітника. Змініть «Працюю як…», щоб побачити інші.",
-          "transcript": "Фільтр за роллю. Бачите лише ті інструкції, що підходять ролі поточного співробітника. Змініть Працюю як, щоб побачити інші.",
+          "body": "Ви бачите лише ті інструкції, що підходять ролі поточного співробітника. Змініть «Працюю як…», щоб побачити інші.",
+          "transcript": "Фільтр за роллю. Ви бачите лише ті інструкції, що підходять ролі поточного співробітника. Змініть «Працюю як…», щоб побачити інші.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
@@ -2219,7 +2264,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/pricing\"]",
+                "value": "a[href$=\"/laboratory/pricing\"]",
                 "weight": 80
               }
             ]
@@ -3775,7 +3820,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/refs\"]",
+                "value": "a[href$=\"/laboratory/refs\"]",
                 "weight": 80
               }
             ]
@@ -5792,7 +5837,7 @@
         {
           "stepType": "click",
           "title": "Відкрийте розділ",
-          "body": "У меню, у групі «Інтеграції», клікніть «Послуги ЕСОЗ × аналізатори».",
+          "body": "У меню, у групі «Інтеграції», клікніть «Послуги ЕСОЗ та аналізатори».",
           "transcript": "Відкрийте розділ. У меню, у групі Інтеграції, клікніть Послуги ЕСОЗ на аналізатори.",
           "route": "/laboratory/dashboard",
           "highlight": "element",
@@ -5814,7 +5859,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/analyzer-services\"]",
+                "value": "a[href$=\"/laboratory/analyzer-services\"]",
                 "weight": 80
               }
             ]
@@ -6701,7 +6746,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/work\"]",
+                "value": "a[href$=\"/laboratory/work\"]",
                 "weight": 80
               }
             ]
@@ -8524,7 +8569,7 @@
       "code": "lab.esoz.journal",
       "folderCode": "esoz-submit",
       "caption": "Реєстр відправлень в ЕСОЗ",
-      "description": "Огляд усіх звітів: не надіслані, помилки, черга повторів, зареєстровані й анульовані.",
+      "description": "Огляд усіх задач відправки: не надіслані, у черзі, помилки, виконані й зупинені.",
       "icon": "list_alt",
       "startRoute": "/laboratory/ehealth",
       "requiredRoles": [],
@@ -8562,7 +8607,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/ehealth\"]",
+                "value": "a[href$=\"/laboratory/ehealth\"]",
                 "weight": 80
               }
             ]
@@ -8571,8 +8616,8 @@
         {
           "stepType": "info",
           "title": "Реєстр",
-          "body": "Таблиця звітів: замовлення, пацієнт, дія, статус, хто підписав, кількість спроб і наступна спроба.",
-          "transcript": "Реєстр. Таблиця звітів: замовлення, пацієнт, дія, статус, хто підписав, кількість спроб і наступна спроба.",
+          "body": "Таблиця задач: замовлення, направлення, пацієнт, дія, статус, кількість спроб, наступна спроба, номер завдання й остання помилка.",
+          "transcript": "Реєстр. Таблиця задач: замовлення, направлення, пацієнт, дія, статус, кількість спроб, наступна спроба, номер завдання й остання помилка.",
           "route": "/laboratory/ehealth",
           "highlight": "element",
           "parentLevels": 0,
@@ -8597,8 +8642,8 @@
         {
           "stepType": "info",
           "title": "Фільтр «Статус»",
-          "body": "Оберіть статус: не надіслано, готово до підпису, помилка, потрібен вхід, зареєстровано, погашено.",
-          "transcript": "Фільтр Статус. Оберіть статус: не надіслано, готово до підпису, помилка, потрібен вхід, зареєстровано, погашено.",
+          "body": "Оберіть статус: не надіслано, у черзі, відправляється, очікує обробки в ЕСОЗ, виконано, помилка або зупинено.",
+          "transcript": "Фільтр «Статус». Оберіть статус: не надіслано, у черзі, відправляється, очікує обробки в ЕСОЗ, виконано, помилка або зупинено.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
@@ -8622,8 +8667,8 @@
         {
           "stepType": "info",
           "title": "Помилки",
-          "body": "У рядку з помилкою під статусом показано її текст червоним.",
-          "transcript": "Помилки. У рядку з помилкою під статусом показано її текст червоним.",
+          "body": "Текст помилки показано в окремій колонці «Остання помилка» червоним кольором.",
+          "transcript": "Помилки. Текст помилки показано в окремій колонці «Остання помилка» червоним кольором.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "top",
@@ -8632,14 +8677,19 @@
           "inputMode": "show",
           "optional": false,
           "anchor": {
-            "code": "lab.x.es.table",
-            "caption": "Реєстр відправлень",
+            "code": "lab.x.es.error-col",
+            "caption": "Колонка «Остання помилка»",
             "routePattern": "*",
             "strategies": [
               {
+                "type": "testid",
+                "value": "[data-testid^=\"ehealthError-\"]",
+                "weight": 100
+              },
+              {
                 "type": "css",
                 "value": "[data-testid=\"ehealthSubmissionsPage\"] .q-table",
-                "weight": 70
+                "weight": 50
               }
             ]
           }
@@ -8691,8 +8741,8 @@
         {
           "stepType": "info",
           "title": "Статус «Не надіслано»",
-          "body": "Звіти, що ще не надсилались, мають статус «Не надіслано» або «Готово до підпису».",
-          "transcript": "Статус Не надіслано. Звіти, що ще не надсилались, мають статус Не надіслано або Готово до підпису.",
+          "body": "Звіти, що ще не надсилались, мають статус «Не надіслано». Підписати їх можна в картці замовлення.",
+          "transcript": "Статус «Не надіслано». Звіти, що ще не надсилались, мають статус «Не надіслано». Підписати їх можна в картці замовлення.",
           "route": "/laboratory/ehealth",
           "highlight": "element",
           "parentLevels": 0,
@@ -8770,7 +8820,7 @@
       "code": "lab.esoz.retry",
       "folderCode": "esoz-submit",
       "caption": "Повторити відправку після помилки",
-      "description": "Якщо відправка не пройшла через мережу чи завершилась сесія, повторіть її.",
+      "description": "Якщо відправка не пройшла через мережу чи закінчилась сесія ЕСОЗ, повторіть її.",
       "icon": "replay",
       "startRoute": "/laboratory/ehealth",
       "requiredRoles": [],
@@ -8786,8 +8836,8 @@
         {
           "stepType": "click",
           "title": "Фільтр «Статус»",
-          "body": "Оберіть статус «Помилка (черга повторів)» або «Потрібен вхід в ЕСОЗ».",
-          "transcript": "Фільтр Статус. Оберіть статус Помилка (черга повторів) або Потрібен вхід в ЕСОЗ.",
+          "body": "Оберіть статус «Помилка» або «Зупинено» — саме для них доступна кнопка «Повторити».",
+          "transcript": "Фільтр «Статус». Оберіть статус «Помилка» або «Зупинено» — саме для них доступна кнопка «Повторити».",
           "route": "/laboratory/ehealth",
           "highlight": "element",
           "parentLevels": 0,
@@ -8837,8 +8887,8 @@
         {
           "stepType": "info",
           "title": "Потрібен вхід",
-          "body": "Коли сесія закінчилась, статус стає «Потрібен вхід в ЕСОЗ». Увійдіть і підтвердьте особу.",
-          "transcript": "Потрібен вхід. Коли сесія закінчилась, статус стає Потрібен вхід в ЕСОЗ. Увійдіть і підтвердьте особу.",
+          "body": "Якщо сесія ЕСОЗ закінчилась, повтор не вдасться: значок «ЕСОЗ» у шапці покаже, що ви не підключені. Увійдіть і підтвердьте особу.",
+          "transcript": "Потрібен вхід. Якщо сесія ЕСОЗ закінчилась, повтор не вдасться: значок «ЕСОЗ» у шапці покаже, що ви не підключені. Увійдіть і підтвердьте особу.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "bottom",
@@ -8982,8 +9032,8 @@
         {
           "stepType": "info",
           "title": "Причина",
-          "body": "Введіть причину. Анулювання підписується КЕП, тому потрібна сесія рівня L2.",
-          "transcript": "Причина. Введіть причину. Анулювання підписується КЕП, тому потрібна сесія рівня L2.",
+          "body": "Введіть причину. Анулювання підписується КЕП, тому потрібна підтверджена сесія ЕСОЗ: вхід і підтвердження особи.",
+          "transcript": "Причина. Введіть причину. Анулювання підписується КЕП, тому потрібна підтверджена сесія ЕСОЗ: вхід і підтвердження особи.",
           "highlight": "element",
           "parentLevels": 0,
           "placement": "auto",
@@ -9269,7 +9319,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/dictionaries/tests\"]",
+                "value": "a[href$=\"/laboratory/dictionaries/tests\"]",
                 "weight": 80
               }
             ]
@@ -9347,7 +9397,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/dictionaries/tests\"]",
+                "value": "a[href$=\"/laboratory/dictionaries/tests\"]",
                 "weight": 80
               }
             ]
@@ -10116,7 +10166,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/dictionaries/biomaterials\"]",
+                "value": "a[href$=\"/laboratory/dictionaries/biomaterials\"]",
                 "weight": 80
               }
             ]
@@ -10317,7 +10367,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/dictionaries/tube-types\"]",
+                "value": "a[href$=\"/laboratory/dictionaries/tube-types\"]",
                 "weight": 80
               }
             ]
@@ -10543,7 +10593,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/dictionaries/method-types\"]",
+                "value": "a[href$=\"/laboratory/dictionaries/method-types\"]",
                 "weight": 80
               }
             ]
@@ -10644,7 +10694,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/dictionaries/analyzer-types\"]",
+                "value": "a[href$=\"/laboratory/dictionaries/analyzer-types\"]",
                 "weight": 80
               }
             ]
@@ -10931,8 +10981,8 @@
         {
           "stepType": "click",
           "title": "Відкрийте довідник",
-          "body": "У меню клікніть «Reflex-правила».",
-          "transcript": "Відкрийте довідник. У меню клікніть Reflex-правила.",
+          "body": "У меню клікніть «Правила повторного тесту».",
+          "transcript": "Відкрийте довідник. У меню клікніть Правила повторного тесту.",
           "route": "/laboratory/dashboard",
           "highlight": "element",
           "parentLevels": 0,
@@ -10953,7 +11003,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/dictionaries/reflex-rules\"]",
+                "value": "a[href$=\"/laboratory/dictionaries/reflex-rules\"]",
                 "weight": 80
               }
             ]
@@ -11154,7 +11204,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/dictionaries/organisms\"]",
+                "value": "a[href$=\"/laboratory/dictionaries/organisms\"]",
                 "weight": 80
               }
             ]
@@ -11414,7 +11464,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/norms\"]",
+                "value": "a[href$=\"/laboratory/norms\"]",
                 "weight": 80
               }
             ]
@@ -12150,7 +12200,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/admin/settings\"]",
+                "value": "a[href$=\"/laboratory/admin/settings\"]",
                 "weight": 80
               }
             ]
@@ -12730,7 +12780,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/admin/users\"]",
+                "value": "a[href$=\"/laboratory/admin/users\"]",
                 "weight": 80
               }
             ]
@@ -12881,7 +12931,7 @@
               },
               {
                 "type": "css",
-                "value": "a[href=\"/laboratory/audit\"]",
+                "value": "a[href$=\"/laboratory/audit\"]",
                 "weight": 80
               }
             ]

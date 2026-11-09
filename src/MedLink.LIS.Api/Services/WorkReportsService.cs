@@ -226,7 +226,7 @@ public sealed class WorkReportsService
         {
             Title = "Робота за направленнями",
             Columns = new() { new("order", "Замовлення"), new("barcode", "Штрихкод"), new("patient", "Пацієнт"), new("source", "Джерело"), new("package", "Пакет"), new("department", "Відділення"),
-                new("service", "Дослідження"), new("test", "Показник"), new("analyzer", "Прилад"), new("status", "Статус"), new("cito", "CITO") },
+                new("service", "Дослідження"), new("test", "Показник"), new("analyzer", "Прилад"), new("status", "Статус"), new("cito", "Терміново") },
             Rows = tests.Select(t => new Dictionary<string, object?>
             {
                 ["order"] = t.Order!.OrderNumber, ["barcode"] = t.Sample?.Barcode, ["patient"] = t.Order.Patient?.Caption, ["source"] = ReferralSources.Label(ReferralSources.Of(t.Order)),
@@ -241,11 +241,20 @@ public sealed class WorkReportsService
     public static readonly (string Type, string Title, string Release)[] Catalog =
     {
         ("cumulative", "Кумулятивний звіт пацієнта", "R1.2"), ("load", "Навантаження аналізаторів", "R1.2"), ("sources", "Направлення за джерелами", "R1.2"),
-        ("indicators", "Використання показників у послугах", "R1.2"), ("tat", "TAT за дослідженнями й аналізаторами", "R1.2"), ("distribution", "Розподіл і перенаправлення", "R1.2"),
+        ("indicators", "Використання показників у послугах", "R1.2"), ("tat", "Терміни виконання за дослідженнями й аналізаторами", "R1.2"), ("distribution", "Розподіл і перенаправлення", "R1.2"),
         ("unperformed", "Невиконані показники", "R1.2"), ("packages", "Пакети послуг", "R1.2")
     };
 
-    public object List() => Catalog.Select(c => new { type = c.Type, title = c.Title, release = c.Release });
+    // Короткі описи звітів для списку (другий рядок під назвою)
+    private static readonly Dictionary<string, string> Descriptions = new()
+    {
+        ["cumulative"] = "Динаміка результатів пацієнта в одній таблиці", ["load"] = "Скільки тестів виконав кожен аналізатор і скільки в черзі",
+        ["sources"] = "Направлення за джерелами: стаціонар, поліклініка, ЕСОЗ, партнери", ["indicators"] = "Які показники входять до замовлених послуг",
+        ["tat"] = "Час від приймання проби до результату", ["distribution"] = "Куди направлено тести і які перенаправлено вручну",
+        ["unperformed"] = "Показники, що ще не виконано", ["packages"] = "Склад і виконання пакетів послуг"
+    };
+
+    public object List() => Catalog.Select(c => new { type = c.Type, title = c.Title, description = Descriptions.GetValueOrDefault(c.Type, ""), release = c.Release });
 
     private async Task LogRunAsync(string type, object parameters, string format, int rows, string? patientId = null)
     {
@@ -309,9 +318,9 @@ public sealed class WorkReportsService
         }).OrderByDescending(r => r["tests"]).ToList();
         return new ReportTable
         {
-            Columns = new() { new("analyzer", "Аналізатор"), new("tests", "Тестів", true), new("cito", "CITO", true), new("inpatient", "Стаціонар", true), new("polyclinic", "Поліклініка", true),
-                new("ehealth", "ЕСОЗ", true), new("reruns", "Повтори", true), new("manual", "Перенаправлено вручну", true), new("tatMedian", "TAT медіана, хв", true), new("lockoutHours", "Lockout, год", true), new("queueNow", "Черга зараз", true) },
-            Rows = rows, Note = "Тести рахуються за фактичним виконавцем з урахуванням перенаправлень (S-56)"
+            Columns = new() { new("analyzer", "Аналізатор"), new("tests", "Тестів", true), new("cito", "Термінових", true), new("inpatient", "Стаціонар", true), new("polyclinic", "Поліклініка", true),
+                new("ehealth", "ЕСОЗ", true), new("reruns", "Повтори", true), new("manual", "Перенаправлено вручну", true), new("tatMedian", "Час виконання (медіана), хв", true), new("lockoutHours", "Блокування, год", true), new("queueNow", "У черзі зараз", true) },
+            Rows = rows, Note = "Тести рахуються за фактичним виконавцем з урахуванням перенаправлень"
         };
     }
 
@@ -370,9 +379,9 @@ public sealed class WorkReportsService
         }).OrderBy(r => r["service"]).ToList();
         return new ReportTable
         {
-            Columns = new() { new("service", "Дослідження"), new("analyzer", "Аналізатор"), new("tests", "Тестів", true), new("p50", "Медіана (планові), хв", true), new("p90", "P90 (планові), хв", true),
-                new("citoP50", "Медіана CITO, хв", true), new("inNorm", "У нормативі, %", true) },
-            Rows = rows, Note = "TAT — від приймання проби до результату"
+            Columns = new() { new("service", "Дослідження"), new("analyzer", "Аналізатор"), new("tests", "Тестів", true), new("p50", "Медіана (планові), хв", true), new("p90", "90-й процентиль (планові), хв", true),
+                new("citoP50", "Медіана термінових, хв", true), new("inNorm", "У нормативі, %", true) },
+            Rows = rows, Note = "Час виконання — від приймання проби до результату"
         };
     }
 

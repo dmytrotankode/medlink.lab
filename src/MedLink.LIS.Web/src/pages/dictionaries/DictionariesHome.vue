@@ -1,6 +1,6 @@
 <template>
   <div class="dictionaries-home">
-    <page-header title="Довідники лабораторії" icon="fas fa-book-medical" subtitle="Номенклатура ЛІС: біоматеріали, пробірки, методики, показники, послуги, моделі аналізаторів, reflex-правила, мікробіологія, організаційна структура" :breadcrumbs="[{ label: 'Довідники' }]" />
+    <page-header title="Довідники лабораторії" icon="fas fa-book-medical" subtitle="Номенклатура ЛІС: біоматеріали, пробірки, методики, показники, послуги, моделі аналізаторів, правила повторного тесту, мікробіологія, організаційна структура" :breadcrumbs="[{ label: 'Довідники' }]" />
     <div class="row q-col-gutter-md">
       <div v-for="d in list" :key="d.name" class="col-12 col-sm-6 col-lg-4">
         <router-link :to="{ name: 'lab-dictionary', params: { name: d.name } }" style="text-decoration: none">
@@ -20,7 +20,7 @@
           <div class="medlink-card q-pa-md dict-card">
             <div class="row items-center no-wrap">
               <q-avatar color="teal-1" text-color="teal-8" icon="fas fa-sliders-h" size="44px" class="q-mr-md" />
-              <div><div class="text-subtitle1 text-weight-bold text-grey-9">Норми та каскад референсів</div><div class="text-caption text-grey-7">Картка послуги, шари норм за статтю/віком/вагітністю/МКХ-10, резолвер</div></div>
+              <div><div class="text-subtitle1 text-weight-bold text-grey-9">Норми та каскад референсів</div><div class="text-caption text-grey-7">Картка послуги, шари норм за статтю, віком, вагітністю та МКХ-10, перевірка норм</div></div>
             </div>
           </div>
         </router-link>

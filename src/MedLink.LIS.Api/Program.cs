@@ -45,6 +45,24 @@ builder.Services.AddGuide(builder.Configuration, o =>
 });
 
 // --- MVC / JSON / ProblemDetails ---
+static string LocalizeModelKey(string key)
+{
+    var k = (key ?? "").TrimStart('$', '.');
+    return k is "req" or "request" or "dto" or "body" ? "" : k;
+}
+
+static string LocalizeModelError(string? message)
+{
+    var m = message ?? "";
+    if (m.Contains("could not be converted to System.Decimal") || m.Contains("System.Double") || m.Contains("System.Int"))
+        return "Невірний формат числа: введіть число, наприклад 550 або 550,50";
+    if (m.Contains("System.DateTime") || m.Contains("System.DateOnly")) return "Невірний формат дати";
+    if (m.Contains("System.Boolean")) return "Очікується значення «так» або «ні»";
+    if (m.Contains("is required") || m.Contains("field is required")) return "Не заповнено обов’язкове поле";
+    if (m.Length == 0 || !m.Any(c => c >= 'Ѐ' && c <= 'ӿ')) return "Некоректне значення";
+    return m;
+}
+
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
     {
@@ -56,9 +74,12 @@ builder.Services.AddControllers()
     {
         o.InvalidModelStateResponseFactory = ctx =>
         {
+            // Тексти стандартного зв'язування моделі (англійські, з технічними шляхами) замінюються українськими:
+            // користувач не має бачити «The JSON value could not be converted to System.Decimal. Path: $.amount».
             var errors = ctx.ModelState.Where(kv => kv.Value?.Errors.Count > 0)
-                .ToDictionary(kv => kv.Key, kv => kv.Value!.Errors.Select(e => string.IsNullOrEmpty(e.ErrorMessage) ? "Некоректне значення" : e.ErrorMessage).ToArray());
-            var pd = new ProblemDetails { Type = "https://httpstatuses.com/400", Title = "Помилка валідації", Status = 400, Detail = "Перевірте поля запиту", Instance = ctx.HttpContext.Request.Path };
+                .GroupBy(kv => LocalizeModelKey(kv.Key))
+                .ToDictionary(g => g.Key, g => g.SelectMany(kv => kv.Value!.Errors.Select(e => LocalizeModelError(e.ErrorMessage))).Distinct().ToArray());
+            var pd = new ProblemDetails { Type = "https://httpstatuses.com/400", Title = "Помилка валідації", Status = 400, Detail = "Перевірте введені значення", Instance = ctx.HttpContext.Request.Path };
             pd.Extensions["errors"] = errors;
             return new BadRequestObjectResult(pd) { ContentTypes = { "application/problem+json" } };
         };

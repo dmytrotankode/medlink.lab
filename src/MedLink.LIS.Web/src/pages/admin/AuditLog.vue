@@ -1,30 +1,30 @@
 <template>
   <div class="audit-page" data-testid="auditPage">
-    <page-header title="Аудит" icon="fas fa-history" subtitle="lab_audit_log: хто, що, коли змінив; стан до/після (JSON diff), IP" :breadcrumbs="[{ label: 'Адміністрування' }, { label: 'Аудит' }]">
+    <page-header title="Аудит" icon="fas fa-history" subtitle="Хто, що і коли змінив; стан до і після зміни" :breadcrumbs="[{ label: 'Адміністрування' }, { label: 'Аудит' }]">
       <q-btn flat dense color="primary" icon="refresh" :loading="loading" @click="load" />
     </page-header>
 
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />
 
     <div class="medlink-card q-pa-sm q-mb-sm row q-col-gutter-sm items-center">
-      <div class="col-6 col-md-2"><q-select v-model="filters.entity" dense outlined clearable label="Сутність" :options="entities" use-input new-value-mode="add-unique" @input="apply" /></div>
-      <div class="col-6 col-md-3"><q-input v-model="filters.entityId" dense outlined clearable label="ID сутності" @keyup.enter="apply" @clear="apply" /></div>
+      <div class="col-6 col-md-2"><q-select v-model="filters.entity" dense outlined clearable label="Об’єкт" :options="entityOptions" emit-value map-options @input="apply" /></div>
+      <div class="col-6 col-md-3"><q-input v-model="filters.entityId" dense outlined clearable label="ID об’єкта" @keyup.enter="apply" @clear="apply" /></div>
       <div class="col-6 col-md-3"><q-select v-model="filters.userId" dense outlined clearable label="Користувач" :options="employeeOptions" emit-value map-options @input="apply" /></div>
-      <div class="col-6 col-md-2"><q-input v-model="filters.from" dense outlined type="date" stack-label label="З" @input="apply" /></div>
-      <div class="col-6 col-md-2"><q-input v-model="filters.to" dense outlined type="date" stack-label label="По" @input="apply" /></div>
+      <div class="col-6 col-md-2"><q-input v-model="filters.from" dense outlined type="date" stack-label label="Дата з" @input="apply" /></div>
+      <div class="col-6 col-md-2"><q-input v-model="filters.to" dense outlined type="date" stack-label label="Дата по" @input="apply" /></div>
     </div>
 
     <div class="row q-col-gutter-md">
       <div class="col-12 col-lg-7">
         <div class="medlink-card">
-          <q-table :data="rows" :columns="columns" row-key="id" dense flat :loading="loading" :pagination.sync="pagination" :rows-per-page-options="[25, 50, 100]" @request="onRequest" no-data-label="Подій аудиту немає" data-testid="auditTable">
+          <q-table :data="rows" :columns="columns" row-key="id" dense flat :loading="loading" :pagination.sync="pagination" :rows-per-page-options="[25, 50, 100]" @request="onRequest" no-data-label="За вибраний період подій немає" data-testid="auditTable">
             <template v-slot:body="props">
               <q-tr :props="props" :class="{ 'row-selected': active && active.id === props.row.id }" class="cursor-pointer" @click="active = props.row">
                 <q-td key="at" :props="props">{{ props.row.at | datetime }}</q-td>
                 <q-td key="user" :props="props">{{ userName(props.row.userId) }}</q-td>
-                <q-td key="action" :props="props"><q-badge :color="actionColor(props.row.action)" :label="props.row.action" /></q-td>
-                <q-td key="entity" :props="props">{{ props.row.entity }}</q-td>
-                <q-td key="entityId" :props="props" class="mono text-caption">{{ shortId(props.row.entityId) }}</q-td>
+                <q-td key="action" :props="props"><q-badge :color="actionColor(props.row.action)" :label="actionLabel(props.row.action)"><q-tooltip>{{ props.row.action }}</q-tooltip></q-badge></q-td>
+                <q-td key="entity" :props="props">{{ entityLabel(props.row.entity) }}<q-tooltip>{{ props.row.entity }}</q-tooltip></q-td>
+                <q-td key="entityId" :props="props" class="mono text-caption">{{ shortId(props.row.entityId) }}<q-tooltip>{{ props.row.entityId }}</q-tooltip></q-td>
                 <q-td key="ip" :props="props" class="text-caption">{{ props.row.ip }}</q-td>
               </q-tr>
             </template>
@@ -33,14 +33,14 @@
       </div>
       <div class="col-12 col-lg-5">
         <div class="medlink-card" data-testid="auditDiff">
-          <div class="medlink-card__title"><span>Зміни (до / після)</span><span v-if="active" class="text-caption text-grey-6">{{ active.entity }} · {{ active.action }}</span></div>
+          <div class="medlink-card__title"><span>Зміни (до / після)</span><span v-if="active" class="text-caption text-grey-6">{{ entityLabel(active.entity) }} · {{ actionLabel(active.action) }}</span></div>
           <div v-if="active" class="q-pa-sm">
             <div class="text-caption q-mb-sm">{{ active.at | datetime }} · {{ userName(active.userId) }} · <span class="mono">{{ active.entityId }}</span>
               <q-btn v-if="active.entity === 'LabOrder'" flat dense size="sm" color="primary" label="Відкрити замовлення" :to="{ name: 'lab-order-card', params: { id: active.entityId } }" />
             </div>
             <json-diff-viewer :before="active.before" :after="active.after" />
           </div>
-          <empty-state v-else title="Оберіть подію" icon="compare" />
+          <empty-state v-else title="Оберіть подію" hint="Оберіть подію зі списку ліворуч, щоб побачити зміни до і після" icon="compare" />
         </div>
       </div>
     </div>
@@ -51,6 +51,7 @@
 import apiMixin from '../../mixins/apiMixin';
 import JsonDiffViewer from '../../components/common/JsonDiffViewer.vue';
 import { daysAgoIso, todayIso } from '../../utils/format';
+import { actionLabel, entityLabel } from '../../utils/auditLabels';
 
 export default {
   name: 'AuditLog',
@@ -66,13 +67,14 @@ export default {
         { name: 'at', label: 'Час', field: 'at', align: 'left' },
         { name: 'user', label: 'Користувач', align: 'left' },
         { name: 'action', label: 'Дія', field: 'action', align: 'left' },
-        { name: 'entity', label: 'Сутність', field: 'entity', align: 'left' },
+        { name: 'entity', label: 'Об’єкт', field: 'entity', align: 'left' },
         { name: 'entityId', label: 'ID', field: 'entityId', align: 'left' },
         { name: 'ip', label: 'IP', field: 'ip', align: 'left' }
       ]
     };
   },
   computed: {
+    entityOptions () { return this.entities.map(e => ({ value: e, label: entityLabel(e) })); },
     employees () { return this.$store.state.context.employees; },
     employeeOptions () { return this.employees.map(e => ({ value: e.id, label: e.fullName || e.name })); }
   },
@@ -82,6 +84,8 @@ export default {
     this.load();
   },
   methods: {
+    actionLabel,
+    entityLabel,
     shortId (id) { return id ? String(id).slice(0, 8) : ''; },
     userName (id) { const e = this.employees.find(x => x.id === id); return e ? (e.fullName || e.name) : (id ? String(id).slice(0, 8) : 'система'); },
     actionColor (a) { const k = String(a || '').toUpperCase(); if (k.includes('DELETE') || k.includes('REJECT') || k.includes('CANCEL')) return 'negative'; if (k.includes('CREATE')) return 'positive'; if (k.includes('VERIFY') || k.includes('RELEASE')) return 'green-8'; return 'primary'; },

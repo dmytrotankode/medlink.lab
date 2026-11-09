@@ -8,12 +8,18 @@ export default {
   data () {
     return {
       loading: false,
-      apiError: null
+      apiError: null,
+      apiErrorStatus: 0
     };
   },
   computed: {
     apiOffline () {
       return this.$store.state.laboratory.apiOffline;
+    },
+    /** Повтор того самого запиту має сенс лише для збою сервера/мережі, а не для помилок перевірки чи прав */
+    apiErrorRetryable () {
+      const s = this.apiErrorStatus;
+      return s === 0 || s === 408 || s >= 500;
     }
   },
   methods: {
@@ -27,7 +33,10 @@ export default {
         return result;
       } catch (e) {
         const info = describeApiError(e);
-        if (!silent) this.apiError = info.message;
+        this.apiErrorStatus = info.status;
+        // Помилки перевірки, прав і конфлікти (4xx, крім 404/408) показуємо одним тостом — без дублювального банера
+        const actionError = !info.offline && info.status >= 400 && info.status < 500 && info.status !== 404 && info.status !== 408;
+        if (!silent) this.apiError = actionError ? null : info.message;
         if (!info.offline && !silent) {
           this.$q.notify({ type: 'negative', message: info.message, timeout: 4000 });
         }

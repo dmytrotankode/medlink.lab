@@ -1,8 +1,9 @@
 <template>
   <div class="barcode-sticker" :class="{ 'barcode-sticker--print': print }">
     <div class="row items-center justify-between no-wrap" style="font-size: 11px">
-      <span class="text-weight-bold ellipsis" style="max-width: 200px">{{ labelName }}</span>
-      <span>{{ labelDate }}</span>
+      <span class="text-weight-bold ellipsis" :style="{ maxWidth: label.isCito ? '140px' : '200px' }">{{ labelName }}</span>
+      <span v-if="label.isCito" class="text-weight-bold bg-black text-white q-px-xs" style="letter-spacing: 0.08em" data-testid="labelCito">CITO</span>
+      <span v-else>{{ labelDate }}</span>
     </div>
     <div class="row items-center justify-between no-wrap" style="font-size: 10px">
       <span class="ellipsis">{{ label.patientBirthDate ? ('нар. ' + formatDate(label.patientBirthDate)) : (label.orderNumber ? '№ ' + label.orderNumber : '') }}</span>

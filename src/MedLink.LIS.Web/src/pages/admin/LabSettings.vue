@@ -1,6 +1,6 @@
 <template>
   <div class="settings-page" data-testid="settingsPage">
-    <page-header title="Налаштування лабораторії" icon="fas fa-cog" subtitle="Реквізити, логотип, нумератори, принтер етикеток, бланки, телефон для критичних значень, retention" :breadcrumbs="[{ label: 'Адміністрування' }, { label: 'Налаштування' }]">
+    <page-header title="Налаштування лабораторії" icon="fas fa-cog" subtitle="Реквізити, логотип, нумерація, друк етикеток, бланки, контакти для критичних значень, строки зберігання" :breadcrumbs="[{ label: 'Адміністрування' }, { label: 'Налаштування' }]">
       <q-btn flat dense color="primary" icon="refresh" :loading="loading" @click="load" />
       <q-btn unelevated dense color="primary" icon="save" label="Зберегти" :loading="saving" data-testid="settingsSave" @click="save" />
     </page-header>
@@ -34,7 +34,7 @@
               </div>
             </div>
             <div class="col">
-              <q-file v-model="logoFile" outlined dense label="PNG / SVG / JPG до 300 КБ" accept="image/*" @input="readLogo" />
+              <q-file v-model="logoFile" outlined dense label="Логотип (PNG, SVG або JPG до 300 КБ)" accept="image/*" @input="readLogo" />
               <q-btn v-if="form.logoBase64" flat dense color="negative" label="Прибрати" class="q-mt-xs" @click="form.logoBase64 = null" />
             </div>
           </div>
@@ -43,13 +43,13 @@
         <div class="medlink-card q-pa-md q-mb-md">
           <div class="section-title">Нумерація та штрихкоди</div>
           <div class="row q-col-gutter-sm">
-            <div class="col-6"><q-input v-model="form.orderNumberMask" outlined dense label="Маска номера замовлення" hint="{yyMM}-{000000}" /></div>
+            <div class="col-6"><q-input v-model="form.orderNumberMask" outlined dense label="Маска номера замовлення" hint="{yyMM} — рік і місяць, {000000} — порядковий номер. Приклад: 2611-000481" /></div>
             <div class="col-6"><q-input v-model="form.barcodePrefix" outlined dense label="Префікс штрихкоду" /></div>
           </div>
           <div v-if="numerators" class="q-mt-sm">
-            <div class="text-caption text-grey-7">Нумератори (/settings/numerators)</div>
+            <div class="text-caption text-grey-7">Нумератори</div>
             <q-markup-table dense flat bordered>
-              <thead><tr><th class="text-left">Лічильник</th><th>Поточне значення</th></tr></thead>
+              <thead><tr><th class="text-left">Лічильник</th><th class="text-center">Поточне значення</th></tr></thead>
               <tbody>
                 <tr v-for="(v, k) in numeratorRows" :key="k"><td>{{ k }}</td><td class="text-center"><q-input v-model.number="numeratorRows[k]" dense borderless type="number" input-class="text-center" /></td></tr>
               </tbody>
@@ -85,7 +85,7 @@
         </div>
 
         <div class="medlink-card q-pa-md q-mb-md" data-testid="retentionSettings">
-          <div class="section-title"><q-icon name="auto_delete" class="q-mr-xs" />Зберігання журналів (retention)</div>
+          <div class="section-title"><q-icon name="auto_delete" class="q-mr-xs" />Зберігання журналів</div>
           <div class="row q-col-gutter-sm">
             <div class="col-6"><q-input v-model.number="form.messageRetentionDays" outlined dense type="number" label="Повідомлення аналізаторів, днів" hint="журнал обміну ASTM/HL7" /></div>
             <div class="col-6"><q-input v-model.number="form.connectorLogRetentionDays" outlined dense type="number" label="Логи коннектора, днів" /></div>

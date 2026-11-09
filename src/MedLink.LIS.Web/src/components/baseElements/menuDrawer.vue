@@ -24,7 +24,7 @@
 
     <q-scroll-area style="height: calc(100% - 52px)">
       <q-list dense padding>
-        <template v-for="group in groups">
+        <template v-for="group in visibleGroups">
           <q-item-label :key="group.title" header>{{ group.title }}</q-item-label>
           <q-item
             v-for="item in group.items"
@@ -43,7 +43,9 @@
               <q-item-label>{{ item.label }}</q-item-label>
             </q-item-section>
             <q-item-section v-if="badge(item)" side>
-              <q-badge :color="badge(item).color" :text-color="badge(item).textColor || 'white'" :label="badge(item).label" />
+              <q-badge :color="badge(item).color" :text-color="badge(item).textColor || 'white'" :label="badge(item).label">
+                <q-tooltip v-if="badge(item).hint">{{ badge(item).hint }}</q-tooltip>
+              </q-badge>
             </q-item-section>
           </q-item>
           <q-separator :key="group.title + '-sep'" class="q-my-xs" />
@@ -67,15 +69,25 @@
 
 <script>
 import { mapGetters, mapState } from 'vuex';
+import roleMixin from '../../mixins/roleMixin';
+import { routeAllowed } from '../../utils/menuAccess';
 
 export default {
   name: 'MenuDrawer',
+  mixins: [roleMixin],
   props: {
     value: { type: Boolean, default: true }
   },
   computed: {
     ...mapGetters('laboratory', ['panicCount', 'citoCount', 'needsReviewCount', 'lockoutCount']),
     ...mapState('laboratory', ['lastRefreshAt', 'summary']),
+    /** Пункти, недоступні ролі поточного співробітника, ховаються (таблиця — utils/menuAccess.js) */
+    visibleGroups () {
+      const role = this.currentLabRole;
+      return this.groups
+        .map(g => ({ ...g, items: g.items.filter(i => routeAllowed(i.to && i.to.name, role)) }))
+        .filter(g => g.items.length);
+    },
     groups () {
       return [
         {
@@ -98,7 +110,7 @@ export default {
             { name: 'biobank', label: 'Біобанк', icon: 'fas fa-snowflake', to: { name: 'lab-biobank' } },
             { name: 'reagents', label: 'Реагенти', icon: 'fas fa-boxes', to: { name: 'lab-reagents' } },
             { name: 'microbiology', label: 'Мікробіологія', icon: 'fas fa-bacterium', to: { name: 'lab-microbiology' } },
-            { name: 'tat', label: 'Аналітика TAT', icon: 'fas fa-chart-pie', to: { name: 'lab-analytics-tat' } },
+            { name: 'tat', label: 'Аналітика часу виконання', icon: 'fas fa-chart-pie', to: { name: 'lab-analytics-tat' } },
             { name: 'reports', label: 'Звіти лабораторії', icon: 'fas fa-file-alt', to: { name: 'lab-reports' } },
             { name: 'ehealth', label: 'Відправка в ЕСОЗ', icon: 'fas fa-cloud-upload-alt', to: { name: 'lab-ehealth' } }
           ]
@@ -108,7 +120,7 @@ export default {
           items: [
             { name: 'path-cases', label: 'Журнал справ', icon: 'fas fa-folder-open', to: { name: 'lab-path-cases' }, exact: true, badgeKey: 'pathOverdue' },
             { name: 'path-intake', label: 'Прийом матеріалу', icon: 'fas fa-box-open', to: { name: 'lab-path-intake' }, badgeKey: 'pathIncoming' },
-            { name: 'path-cito', label: 'Інтраопераційні (CITO)', icon: 'fas fa-stopwatch', to: { name: 'lab-path-cito' }, badgeKey: 'pathCito' },
+            { name: 'path-cito', label: 'Термінові інтраопераційні (CITO)', icon: 'fas fa-stopwatch', to: { name: 'lab-path-cito' }, badgeKey: 'pathCito' },
             { name: 'path-archive', label: 'Архів блоків і скелець', icon: 'fas fa-archive', to: { name: 'lab-path-archive' } }
           ]
         },
@@ -116,7 +128,7 @@ export default {
           title: 'Цитологія',
           items: [
             { name: 'cyto-cases', label: 'Журнал цитології', icon: 'fas fa-microscope', to: { name: 'lab-cyto-cases' }, exact: true },
-            { name: 'cyto-intake', label: 'Прийом матеріалу', icon: 'fas fa-box-open', to: { name: 'lab-path-intake' } }
+            { name: 'cyto-intake', label: 'Прийом цитології', icon: 'fas fa-box-open', to: { name: 'lab-path-intake', query: { kind: 'cyto' } } }
           ]
         },
         {
@@ -130,17 +142,17 @@ export default {
             { name: 'd-tubes', label: 'Пробірки', icon: 'fas fa-vial', to: { name: 'lab-dictionary', params: { name: 'tube-types' } } },
             { name: 'd-methods', label: 'Методики', icon: 'fas fa-flask', to: { name: 'lab-dictionary', params: { name: 'method-types' } } },
             { name: 'd-atypes', label: 'Моделі аналізаторів', icon: 'fas fa-server', to: { name: 'lab-dictionary', params: { name: 'analyzer-types' } } },
-            { name: 'd-reflex', label: 'Reflex-правила', icon: 'fas fa-random', to: { name: 'lab-dictionary', params: { name: 'reflex-rules' } } },
+            { name: 'd-reflex', label: 'Правила повторного тесту', icon: 'fas fa-random', to: { name: 'lab-dictionary', params: { name: 'reflex-rules' } } },
             { name: 'path-dict', label: 'Довідники патоморфології', icon: 'fas fa-book-medical', to: { name: 'lab-path-dictionaries' } },
-            { name: 'd-micro', label: 'Мікроорганізми / антибіотики', icon: 'fas fa-disease', to: { name: 'lab-dictionary', params: { name: 'organisms' } } }
+            { name: 'd-micro', label: 'Мікроорганізми та антибіотики', icon: 'fas fa-disease', to: { name: 'lab-dictionary', params: { name: 'organisms' } } }
           ]
         },
         {
           title: 'Інтеграції',
           items: [
             { name: 'analyzers', label: 'Аналізатори та коннектори', icon: 'fas fa-network-wired', to: { name: 'lab-analyzers' }, exact: true },
-            { name: 'analyzer-services', label: 'Послуги ЕСОЗ × аналізатори', icon: 'fas fa-project-diagram', to: { name: 'lab-analyzer-services' } },
-            { name: 'messages', label: 'Журнал обміну', icon: 'fas fa-exchange-alt', to: { name: 'lab-analyzer-messages' } },
+            { name: 'analyzer-services', label: 'Послуги ЕСОЗ та аналізатори', icon: 'fas fa-project-diagram', to: { name: 'lab-analyzer-services' } },
+            { name: 'messages', label: 'Журнал обміну з аналізаторами', icon: 'fas fa-exchange-alt', to: { name: 'lab-analyzer-messages' } },
             { name: 'import', label: 'Імпорт результатів', icon: 'fas fa-file-import', to: { name: 'lab-import' } }
           ]
         },
@@ -159,9 +171,9 @@ export default {
     badge (item) {
       switch (item.badgeKey) {
         case 'panic':
-          return this.panicCount > 0 ? { label: `${this.panicCount} CITO`, color: 'negative' } : null;
+          return this.panicCount > 0 ? { label: String(this.panicCount), color: 'negative', hint: 'Критичні результати без зареєстрованого дзвінка' } : null;
         case 'cito':
-          return this.citoCount > 0 ? { label: String(this.citoCount), color: 'deep-orange-6' } : null;
+          return this.citoCount > 0 ? { label: String(this.citoCount), color: 'deep-orange-6', hint: 'Термінові замовлення (CITO)' } : null;
         case 'pending': {
           const n = Number(this.summary && this.summary.pending) || 0;
           return n > 0 ? { label: String(n), color: 'teal-6' } : null;
@@ -176,10 +188,11 @@ export default {
           const key = { pathIncoming: 'pathologyIncoming', pathCito: 'pathologyCito', pathOverdue: 'pathologyOverdue' }[item.badgeKey];
           const n = Number(this.summary && this.summary[key]) || 0;
           const color = { pathIncoming: 'orange-7', pathCito: 'negative', pathOverdue: 'red-5' }[item.badgeKey];
-          return n > 0 ? { label: String(n), color } : null;
+          const hint = { pathIncoming: 'Направлень у черзі прийому', pathCito: 'Термінових справ у роботі', pathOverdue: 'Прострочених справ' }[item.badgeKey];
+          return n > 0 ? { label: String(n), color, hint } : null;
         }
         case 'lockout':
-          return this.lockoutCount > 0 ? { label: 'Lock', color: 'purple-6' } : null;
+          return this.lockoutCount > 0 ? { label: String(this.lockoutCount), color: 'purple-6', hint: 'Активні блокування за ВКЯ' } : null;
         default:
           return null;
       }

@@ -1,7 +1,7 @@
 <template>
   <div data-testid="sendOutPage">
-    <page-header title="Зовнішні лабораторії" icon="fas fa-share-square" subtitle="Тести, які виконують партнерські лабораторії: черга → реєстр → відправка → приймання → результати (ручний ввід, файл, PDF-бланк) → верифікація" :breadcrumbs="[{ label: 'Зовнішні лабораторії' }]">
-      <q-select v-model="performerId" dense outlined clearable emit-value map-options :options="performerOptions" label="Лабораторія" style="min-width: 260px" class="q-mr-sm" />
+    <page-header title="Зовнішні лабораторії" icon="fas fa-share-square" :breadcrumbs="[{ label: 'Зовнішні лабораторії' }]">
+      <q-select v-if="tab !== 'performers'" v-model="performerId" dense outlined clearable emit-value map-options :options="performerOptions" label="Лабораторія" style="min-width: 260px" class="q-mr-sm" />
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="loadAll" />
     </page-header>
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="loadAll" />
@@ -20,9 +20,9 @@
           <q-btn unelevated color="primary" icon="post_add" label="Сформувати реєстр" :disable="!canCreateBatch" data-testid="createBatch" @click="createBatch" />
           <span v-if="selected.length && !sameLab" class="text-negative text-caption">Оберіть тести однієї лабораторії</span>
           <span v-else-if="selected.some(r => !r.sampleReady)" class="text-negative text-caption">Є проби, ще не прийняті в лабораторії</span>
-          <span v-else class="text-grey-7 text-caption">Тести потрапляють у чергу за маршрутом довідника або після ручного перенаправлення в картці замовлення</span>
+          <span v-else class="text-grey-7 text-caption">Тести потрапляють у чергу за маршрутом із прайсу лабораторії або після вибору виконавця в картці направлення («⋮» біля показника → «Виконати в іншій лабораторії»)</span>
         </div>
-        <q-table :data="queue" :columns="queueColumns" row-key="orderTestId" dense flat selection="multiple" :selected.sync="selected" :pagination="{ rowsPerPage: 30 }" no-data-label="Черга порожня">
+        <q-table :data="queue" :columns="queueColumns" row-key="orderTestId" dense flat selection="multiple" :selected.sync="selected" :pagination="{ rowsPerPage: 30 }" no-data-label="Тестів до відправки немає. Виберіть зовнішню лабораторію для показника в картці направлення.">
           <template v-slot:body-cell-order="props">
             <q-td :props="props"><router-link :to="{ name: 'lab-order-card', params: { id: props.row.orderId } }" class="text-primary">{{ props.row.orderNumber }}</router-link> <q-badge v-if="props.row.isCito" color="deep-orange-6" label="CITO" /></q-td>
           </template>
@@ -53,13 +53,13 @@
                 <q-btn dense flat color="grey-8" icon="print" label="Друк реєстру" @click="printBatch(b)" />
               </div>
               <q-markup-table dense flat bordered>
-                <thead><tr><th class="text-left">Замовлення</th><th class="text-left">Пацієнт</th><th class="text-left">Проба</th><th class="text-left">Тест</th><th class="text-left">Код у лабораторії</th><th class="text-left">№ у лабораторії</th><th class="text-left">Термін</th><th class="text-left">Результат</th><th class="text-left">Статус</th><th></th></tr></thead>
+                <thead><tr><th class="text-left">Направлення</th><th class="text-left">Пацієнт</th><th class="text-left">Проба</th><th class="text-left">Показник</th><th class="text-left">Код у лабораторії</th><th class="text-left">№ у лабораторії</th><th class="text-left">Очікуваний термін</th><th class="text-left">Результат</th><th class="text-left">Статус</th><th></th></tr></thead>
                 <tbody>
                   <tr v-for="i in b.items" :key="i.id" :class="i.isOverdue ? 'bg-red-1' : ''">
                     <td><router-link :to="{ name: 'lab-order-card', params: { id: i.orderId } }" class="text-primary">{{ i.orderNumber }}</router-link></td>
                     <td>{{ i.patientName }}</td>
                     <td class="mono">{{ i.barcode }}</td>
-                    <td><b>{{ i.testCode }}</b> <span class="text-grey-7">{{ i.testName }}</span></td>
+                    <td><b>{{ i.testName }}</b></td>
                     <td>{{ i.externalCode || '—' }}</td>
                     <td>{{ i.externalOrderNumber || '—' }}</td>
                     <td>{{ fmt(i.dueAt) }}</td>
@@ -76,7 +76,7 @@
             </div>
           </q-expansion-item>
         </q-list>
-        <empty-state v-if="!batches.length" title="Реєстрів немає" hint="Сформуйте реєстр на вкладці «До відправки»" icon="local_shipping" />
+        <empty-state v-if="!batches.length" title="Реєстрів немає" hint="Позначте тести на вкладці «До відправки» й натисніть «Сформувати реєстр»" icon="inbox" />
       </div>
 
       <!-- Лабораторії -->
@@ -86,27 +86,27 @@
             <template v-slot:header>
               <q-item-section avatar><q-icon :name="p.kind === 'INTERNAL' ? 'home' : 'apartment'" :color="p.kind === 'INTERNAL' ? 'positive' : 'primary'" /></q-item-section>
               <q-item-section>
-                <q-item-label><b>{{ p.name }}</b> <span class="text-grey-7">({{ p.code }})</span></q-item-label>
-                <q-item-label caption>{{ p.kind === 'INTERNAL' ? 'Власна лабораторія' : 'Зовнішня лабораторія' }} · обмін: {{ modeLabel(p.exchangeMode) }} · TAT {{ p.defaultTatHours }} год<span v-if="p.contractNumber"> · договір {{ p.contractNumber }}</span></q-item-label>
+                <q-item-label><b>{{ p.kind === 'INTERNAL' ? 'Наша лабораторія' : p.name }}</b></q-item-label>
+                <q-item-label caption>{{ p.kind === 'INTERNAL' ? 'Виконуємо самі' : 'Зовнішня лабораторія' }} · обмін: {{ modeLabel(p.exchangeMode) }} · термін {{ p.defaultTatHours }} год<span v-if="p.contractNumber"> · договір {{ p.contractNumber }}</span></q-item-label>
               </q-item-section>
-              <q-item-section side><q-badge v-if="p.medlinkProvider" color="purple-6" :label="`інтеграція MedLink: ${p.medlinkProvider}`" /></q-item-section>
+              <q-item-section side><q-badge v-if="p.medlinkProvider" color="purple-6" label="Електронна інтеграція" /></q-item-section>
             </template>
             <div class="q-pa-sm bg-grey-1">
               <div v-if="p.reportNote" class="text-caption q-mb-sm"><q-icon name="info" /> На бланку: {{ p.reportNote }}</div>
               <q-markup-table v-if="p.tests.length" dense flat bordered>
-                <thead><tr><th class="text-left">Показник</th><th class="text-left">Код / назва в прайсі</th><th class="text-right">Вартість</th><th class="text-right">TAT, год</th><th class="text-left">Маршрут</th><th class="text-left">Вимоги до зразка</th></tr></thead>
+                <thead><tr><th class="text-left">Показник</th><th class="text-left">Назва в прайсі лабораторії</th><th class="text-right">Вартість</th><th class="text-right">Термін, год</th><th class="text-left">Маршрут</th><th class="text-left">Вимоги до зразка</th></tr></thead>
                 <tbody>
                   <tr v-for="t in p.tests" :key="t.id">
-                    <td><b>{{ t.testCode }}</b> {{ t.testName }}</td>
+                    <td><b>{{ t.testName }}</b></td>
                     <td>{{ t.externalCode }} {{ t.externalName }}</td>
                     <td class="text-right">{{ t.cost | money }}</td>
                     <td class="text-right">{{ t.tatHours || p.defaultTatHours }}</td>
-                    <td><q-badge :color="t.isDefaultRoute ? 'primary' : 'grey-5'" :label="t.isDefaultRoute ? 'за замовчуванням' : 'вручну'" /></td>
+                    <td><q-badge :color="t.isDefaultRoute ? 'primary' : 'grey-5'" :label="t.isDefaultRoute ? 'основний виконавець' : 'вибирається вручну'" /></td>
                     <td class="text-caption">{{ t.specimenRequirements }}</td>
                   </tr>
                 </tbody>
               </q-markup-table>
-              <div v-else class="text-caption text-grey-7">{{ p.medlinkProvider ? 'Направлення оформлюються в МІС MedLink; ЛІС лише фіксує виконавця.' : 'Прайс не заповнено' }}</div>
+              <div v-else class="text-caption text-grey-7">{{ p.medlinkProvider ? 'Направлення оформлюються в медичній інформаційній системі; тут фіксується лише виконавець.' : 'Прайс лабораторії не заповнено' }}</div>
             </div>
           </q-expansion-item>
         </q-list>
@@ -116,7 +116,7 @@
     <!-- Результат зовнішньої лабораторії -->
     <q-dialog v-model="resultOpen">
       <q-card style="width: 460px">
-        <q-card-section class="text-subtitle1 text-weight-bold">Результат: {{ resultItem && resultItem.testCode }} · {{ resultItem && resultItem.patientName }}</q-card-section>
+        <q-card-section class="text-subtitle1 text-weight-bold">Результат: {{ resultItem && resultItem.testName }} · {{ resultItem && resultItem.patientName }}</q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-input v-model="resultForm.value" outlined dense label="Значення *" autofocus data-testid="extValue" />
           <q-input v-model="resultForm.unit" outlined dense label="Одиниці (як у бланку)" />
@@ -152,14 +152,14 @@ export default {
       tab: 'queue', performerId: null, performers: [], queue: [], batches: [], selected: [], current: null,
       resultOpen: false, resultItem: null, resultForm: {}, importBatch: null, pdfTarget: null,
       queueColumns: [
-        { name: 'order', label: '№ замовлення', field: 'orderNumber', align: 'left', sortable: true },
+        { name: 'order', label: '№ направлення', field: 'orderNumber', align: 'left', sortable: true },
         { name: 'patient', label: 'Пацієнт', field: 'patientName', align: 'left' },
-        { name: 'test', label: 'Тест', field: r => `${r.testCode} — ${r.testName}`, align: 'left' },
+        { name: 'test', label: 'Показник', field: r => r.testName, align: 'left' },
         { name: 'performer', label: 'Лабораторія', field: 'performerName', align: 'left' },
         { name: 'ext', label: 'Код у прайсі', field: r => r.externalCode || '—', align: 'left' },
         { name: 'sample', label: 'Проба', field: 'barcode', align: 'left' },
         { name: 'req', label: 'Вимоги до зразка', field: r => r.specimenRequirements || '', align: 'left', classes: 'text-caption' },
-        { name: 'tat', label: 'TAT, год', field: 'tatHours', align: 'right' }
+        { name: 'tat', label: 'Термін, год', field: 'tatHours', align: 'right' }
       ]
     };
   },
@@ -202,7 +202,7 @@ export default {
         .onOk(async r => { await this.callApi(() => this.$api.cancelSendOut(b.id, r), { success: 'Реєстр скасовано' }); this.loadAll(); });
     },
     rejectItem (i) {
-      this.$q.dialog({ title: `Відмова лабораторії: ${i.testCode}`, prompt: { model: '', type: 'text', label: 'Причина (гемоліз, недостатній об’єм…)' }, cancel: true })
+      this.$q.dialog({ title: `Відмова лабораторії: ${i.testName}`, prompt: { model: '', type: 'text', label: 'Причина (гемоліз, недостатній об’єм…)' }, cancel: true })
         .onOk(async r => { if (!r) return; await this.callApi(() => this.$api.sendOutRejectItem(i.id, r, true), { success: 'Тест повернуто в чергу' }); this.loadAll(); });
     },
     openResult (b, i) { this.resultItem = i; this.resultForm = { value: '', unit: '', referenceText: '', externalReference: i.externalOrderNumber || '', comment: '' }; this.resultOpen = true; },
@@ -225,13 +225,13 @@ export default {
     async doPdf (e) {
       const file = e.target.files[0]; if (!file) return;
       const f = new FormData(); f.append('file', file);
-      await this.callApi(() => this.$api.uploadAttachment(this.pdfTarget.item.orderId, f, this.pdfTarget.batch.id), { success: 'Бланк завантажено до замовлення' });
+      await this.callApi(() => this.$api.uploadAttachment(this.pdfTarget.item.orderId, f, this.pdfTarget.batch.id), { success: 'Бланк завантажено до направлення' });
     },
     printBatch (b) {
-      const rows = b.items.map((i, n) => `<tr><td>${n + 1}</td><td>${i.orderNumber}</td><td>${i.patientName || ''}</td><td>${i.barcode || ''}</td><td>${i.externalCode || ''}</td><td>${i.testCode} ${i.testName}</td></tr>`).join('');
+      const rows = b.items.map((i, n) => `<tr><td>${n + 1}</td><td>${i.orderNumber}</td><td>${i.patientName || ''}</td><td>${i.barcode || ''}</td><td>${i.externalCode || ''}</td><td>${i.testName}</td></tr>`).join('');
       const w = window.open('', '_blank');
       if (!w) return;
-      w.document.write(`<html><head><meta charset="utf-8"><title>${b.number}</title><style>body{font-family:sans-serif;font-size:12px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:4px}</style></head><body><h3>Реєстр відправки ${b.number}</h3><p>Виконавець: <b>${b.performerName}</b> · сформовано ${this.fmt(b.createdAt)}${b.dispatchedAt ? ' · відправлено ' + this.fmt(b.dispatchedAt) : ''}</p><table><tr><th>№</th><th>Замовлення</th><th>Пацієнт</th><th>Штрихкод</th><th>Код</th><th>Дослідження</th></tr>${rows}</table><p>Передав: __________________ &nbsp;&nbsp; Прийняв: __________________</p></body></html>`);
+      w.document.write(`<html><head><meta charset="utf-8"><title>${b.number}</title><style>body{font-family:sans-serif;font-size:12px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:4px}</style></head><body><h3>Реєстр відправки ${b.number}</h3><p>Виконавець: <b>${b.performerName}</b> · сформовано ${this.fmt(b.createdAt)}${b.dispatchedAt ? ' · відправлено ' + this.fmt(b.dispatchedAt) : ''}</p><table><tr><th>№</th><th>Направлення</th><th>Пацієнт</th><th>Штрихкод</th><th>Код у лабораторії</th><th>Показник</th></tr>${rows}</table><p>Передав: __________________ &nbsp;&nbsp; Прийняв: __________________</p></body></html>`);
       w.document.close(); w.print();
     }
   }

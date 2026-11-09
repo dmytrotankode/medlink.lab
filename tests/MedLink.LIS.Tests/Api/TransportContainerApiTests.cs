@@ -172,7 +172,7 @@ public class TransportContainerApiTests
 
         // Проба не зібрана (замовлення без забору) та невідомий штрихкод
         var fresh = await Json(await _f.As(DemoDataSeeder.Registrar).PostAsJsonAsync("/api/v1/lab/orders", new { patientId = Patient, departmentId = DemoDataSeeder.CollectionPoint, profileIds = new[] { "PROF_BIOCHEM_BASE" } }));
-        await AssertProblem(await nurse.PostAsJsonAsync($"{Base}/containers/{secondId}/pack", new { barcode = fresh["samples"]![0]!["barcode"]!.GetValue<string>() }), HttpStatusCode.Conflict, "COLLECTED");
+        await AssertProblem(await nurse.PostAsJsonAsync($"{Base}/containers/{secondId}/pack", new { barcode = fresh["samples"]![0]!["barcode"]!.GetValue<string>() }), HttpStatusCode.Conflict, "ще не забрана");
         await AssertProblem(await nurse.PostAsJsonAsync($"{Base}/containers/{secondId}/pack", new { barcode = "00000000" }), HttpStatusCode.NotFound);
         await AssertProblem(await nurse.PostAsJsonAsync($"{Base}/containers/{secondId}/pack", new { barcode = "" }), HttpStatusCode.BadRequest);
 

@@ -4,7 +4,7 @@
 -->
 <template>
   <div data-testid="labReportsPage">
-    <page-header title="Звіти лабораторії" icon="fas fa-file-alt" subtitle="Кумулятивний звіт пацієнта і звіти роботи лабораторії за період; експорт XLSX і PDF" :breadcrumbs="[{ label: 'Звіти' }]" />
+    <page-header title="Звіти лабораторії" icon="fas fa-file-alt" subtitle="Кумулятивний звіт пацієнта і звіти роботи лабораторії за період; завантаження в XLSX і PDF" :breadcrumbs="[{ label: 'Звіти' }]" />
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="run" />
 
     <div class="row q-col-gutter-md">
@@ -13,7 +13,7 @@
           <q-list dense separator>
             <q-item v-for="r in list" :key="r.type" clickable :active="type === r.type" active-class="bg-blue-1" :data-testid="`report-${r.type}`" @click="select(r.type)">
               <q-item-section avatar><q-icon :name="r.type === 'cumulative' ? 'timeline' : 'table_chart'" color="primary" /></q-item-section>
-              <q-item-section><q-item-label>{{ r.title }}</q-item-label><q-item-label caption>{{ r.release }}</q-item-label></q-item-section>
+              <q-item-section><q-item-label>{{ r.title }}</q-item-label><q-item-label v-if="r.description" caption>{{ r.description }}</q-item-label></q-item-section>
             </q-item>
           </q-list>
         </div>
@@ -29,10 +29,19 @@
             <q-toggle v-model="abnormalOnly" dense label="Лише відхилення" />
           </template>
           <q-select v-else v-model="source" dense outlined clearable emit-value map-options :options="sourceOptions" label="Джерело" style="min-width: 170px" />
-          <q-btn unelevated color="primary" icon="play_arrow" label="Сформувати" :loading="loading" :disable="type === 'cumulative' && !patientId" data-testid="runReport" @click="run" />
+          <span class="inline-block">
+            <q-btn unelevated color="primary" icon="play_arrow" label="Сформувати" :loading="loading" :disable="type === 'cumulative' && !patientId" data-testid="runReport" @click="run" />
+            <q-tooltip v-if="type === 'cumulative' && !patientId">Оберіть пацієнта</q-tooltip>
+          </span>
           <q-space />
-          <q-btn flat dense color="primary" icon="grid_on" label="XLSX" type="a" :href="fileUrl('xlsx')" :disable="!canExport" />
-          <q-btn flat dense color="primary" icon="picture_as_pdf" label="PDF" type="a" :href="fileUrl('pdf')" :disable="!canExport" />
+          <span class="inline-block">
+            <q-btn flat dense color="primary" icon="grid_on" label="Завантажити XLSX" type="a" :href="fileUrl('xlsx')" :disable="!canExport" />
+            <q-tooltip v-if="!canExport">{{ exportHint }}</q-tooltip>
+          </span>
+          <span class="inline-block">
+            <q-btn flat dense color="primary" icon="picture_as_pdf" label="Завантажити PDF" type="a" :href="fileUrl('pdf')" :disable="!canExport" />
+            <q-tooltip v-if="!canExport">{{ exportHint }}</q-tooltip>
+          </span>
         </div>
 
         <!-- Кумулятивний -->
@@ -46,7 +55,7 @@
             <div class="text-weight-bold q-mb-xs">{{ g.service }}<span v-if="g.analyzer" class="text-grey-7"> · {{ g.analyzer }}</span></div>
             <q-markup-table dense flat bordered>
               <thead>
-                <tr><th class="text-left">Показник</th><th class="text-left">Од.</th><th class="text-left">Норма</th><th v-for="(p, pi) in g.points" :key="pi">{{ p.at | datetime }}<div class="text-caption text-grey-7">{{ p.analyzer }}</div></th></tr>
+                <tr><th class="text-left">Показник</th><th class="text-left">Од. вим.</th><th class="text-left">Норма</th><th v-for="(p, pi) in g.points" :key="pi">{{ p.at | datetime }}<div class="text-caption text-grey-7">{{ p.analyzer }}</div></th></tr>
               </thead>
               <tbody>
                 <tr v-for="r in g.rows" :key="r.code">
@@ -70,6 +79,9 @@
           <q-table :data="table.rows" :columns="tableColumns" row-key="__i" dense flat :pagination="{ rowsPerPage: 50 }" no-data-label="Даних за період немає" />
         </div>
         <empty-state v-if="!type" title="Оберіть звіт" icon="description" />
+        <div v-else-if="(type === 'cumulative' && !cumulative) || (type !== 'cumulative' && !table && !loading)" class="medlink-card">
+          <empty-state title="Звіт ще не сформовано" icon="description" :hint="type === 'cumulative' ? 'Оберіть пацієнта й період та натисніть «Сформувати»' : 'Оберіть параметри й натисніть «Сформувати»'" />
+        </div>
       </div>
     </div>
   </div>
@@ -101,6 +113,7 @@ export default {
       return this.type === 'cumulative' ? { ...p, group: this.group, abnormalOnly: this.abnormalOnly } : { ...p, source: this.source };
     },
     canExport () { return this.type === 'cumulative' ? !!this.patientId : !!this.type; },
+    exportHint () { return this.type === 'cumulative' ? 'Оберіть пацієнта' : 'Спершу сформуйте звіт'; },
     tableColumns () {
       return this.table ? this.table.columns.map(c => ({ name: c.key, label: c.label, field: r => this.cell(r[c.key]), align: c.numeric ? 'right' : 'left', sortable: true })) : [];
     }

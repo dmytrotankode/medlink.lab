@@ -5,7 +5,7 @@
         <q-icon name="medical_services" class="q-mr-sm" />
         <div>
           <div class="text-subtitle1 text-weight-bold">{{ profile ? profile.name : 'Картка послуги' }} <q-badge v-if="profile" color="white" text-color="primary" :label="profile.code" /></div>
-          <div class="text-caption">{{ profile && profile.category }} · TAT {{ profile && profile.turnaroundHours }} год · {{ profile && profile.price | money }}</div>
+          <div class="text-caption">{{ profile && profile.category }} · час виконання {{ profile && profile.turnaroundHours }} год · {{ profile && profile.price | money }}</div>
         </div>
         <q-space />
         <q-btn flat dense no-caps icon="edit" label="Редагувати" @click="$emit('edit', profile)" />
@@ -17,7 +17,7 @@
         <q-tab name="tests" :label="`Показники (${tests.length})`" data-testid="sc-tests" />
         <q-tab name="norms" :label="`Норми (${layers.length})`" data-testid="sc-norms" />
         <q-tab name="lab" label="Лабораторія" data-testid="sc-lab" />
-        <q-tab name="resolver" label="Резолвер" data-testid="sc-resolver" />
+        <q-tab name="resolver" label="Перевірка норм" data-testid="sc-resolver" />
       </q-tabs>
       <q-separator />
       <q-card-section class="col scroll bg-grey-2">
@@ -28,7 +28,7 @@
             <div class="row q-col-gutter-md">
               <div class="col-12 col-md-6">
                 <div class="medlink-card q-pa-md">
-                  <q-banner v-if="profile && profile.organizationServiceId" dense rounded class="bg-blue-1 text-grey-9 q-mb-sm"><q-icon name="link" color="primary" /> Джерело: прайс послуг MedLink (org_organization_service, ID {{ profile.organizationServiceId }}). Назва та ціна — лише для читання; лабораторні атрибути редагуються тут.</q-banner>
+                  <q-banner v-if="profile && profile.organizationServiceId" dense rounded class="bg-blue-1 text-grey-9 q-mb-sm"><q-icon name="link" color="primary" /> Джерело: прайс послуг MedLink. Назва та ціна — лише для читання; лабораторні атрибути редагуються тут.</q-banner>
                   <q-markup-table dense flat>
                     <tbody>
                       <tr><td class="text-grey-7">Код</td><td class="mono">{{ profile && profile.code }}</td></tr>
@@ -77,7 +77,7 @@
             <div class="medlink-card q-pa-sm q-mb-sm row items-center q-col-gutter-sm">
               <div class="col-12 col-md-4"><q-select v-model="normsTest" dense outlined clearable label="Показник" :options="tests.map(t => ({ value: t.code, label: `${t.code} — ${t.name}` }))" emit-value map-options /></div>
               <div class="col-12 col-md-5 text-caption text-grey-7">Каскад: шари сортуються за пріоритетом (100 вагітність → 80 фаза → 60 МКХ → 40 демографія → 10 базова); перший збіг перемагає.</div>
-              <div class="col-12 col-md-3 text-right"><q-btn color="primary" icon="add" label="Додати шар" :disable="!normsTest && tests.length !== 1" data-testid="layerAdd" @click="openLayer(null)" /></div>
+              <div class="col-12 col-md-3 text-right"><q-btn color="primary" icon="add" label="Додати правило" :disable="!normsTest && tests.length !== 1" data-testid="layerAdd" @click="openLayer(null)" /></div>
             </div>
             <div v-for="group in groupedLayers" :key="group.key" class="medlink-card q-mb-sm">
               <div class="medlink-card__title"><span><b>{{ group.testCode }}</b> <span class="text-grey-7">{{ group.testName }}</span> · методика: {{ group.methodName || group.methodCode || 'будь-яка' }}</span><span class="text-caption text-grey-6">{{ group.layers.length }} шар.</span></div>
@@ -100,7 +100,7 @@
                 </tbody>
               </q-markup-table>
             </div>
-            <div v-if="!groupedLayers.length" class="medlink-card"><empty-state title="Шарів норм немає" icon="layers_clear" hint="Додайте базовий шар (BASELINE), а потім демографічні/клінічні" /></div>
+            <div v-if="!groupedLayers.length" class="medlink-card"><empty-state title="Правил норм немає" icon="layers_clear" hint="Додайте базове правило, а потім правила за статтю, віком чи діагнозом" /></div>
           </q-tab-panel>
 
           <!-- Лабораторія -->
@@ -144,7 +144,7 @@
     </q-card>
 
     <norm-layer-dialog v-model="layerOpen" :layer="activeLayer" :test-code="normsTest || (tests[0] && tests[0].code) || ''" :test-id="testIdFor(normsTest)" :unit="unitFor(normsTest)" @saved="loadLayers" />
-    <confirm-dialog v-model="deleteLayerOpen" title="Видалити шар норми" message="Шар буде видалено з каскаду." ok-label="Видалити" color="negative" icon="delete" @confirm="doDeleteLayer" />
+    <confirm-dialog v-model="deleteLayerOpen" title="Видалити правило норми?" message="Правило буде видалено; норми, що спиралися на нього, підберуться за іншими правилами." ok-label="Видалити" color="negative" icon="delete" @confirm="doDeleteLayer" />
   </q-dialog>
 </template>
 
@@ -169,7 +169,7 @@ export default {
         { name: 'biomaterial', label: 'Біоматеріал', field: r => this.bioName(r.biomaterialTypeId), align: 'left' },
         { name: 'method', label: 'Методика', field: r => this.methodName(r.methodId), align: 'left' },
         { name: 'flags', label: 'Ознаки', align: 'left' },
-        { name: 'layers', label: 'Шарів норм', align: 'center' }
+        { name: 'layers', label: 'Правил норм', align: 'center' }
       ]
     };
   },
@@ -244,7 +244,7 @@ export default {
     },
     openLayer (l) { this.activeLayer = l; if (!this.normsTest && this.tests.length === 1) this.normsTest = this.tests[0].code; this.layerOpen = true; },
     askDeleteLayer (l) { this.activeLayer = l; this.deleteLayerOpen = true; },
-    async doDeleteLayer () { try { await this.$api.deleteNormCombination(this.activeLayer.id); this.$q.notify({ type: 'positive', message: 'Шар видалено' }); this.loadLayers(); } catch (e) { this.$q.notify({ type: 'negative', message: e.userMessage || 'Помилка' }); } }
+    async doDeleteLayer () { try { await this.$api.deleteNormCombination(this.activeLayer.id); this.$q.notify({ type: 'positive', message: 'Правило норми видалено' }); this.loadLayers(); } catch (e) { this.$q.notify({ type: 'negative', message: e.userMessage || 'Помилка' }); } }
   }
 };
 </script>

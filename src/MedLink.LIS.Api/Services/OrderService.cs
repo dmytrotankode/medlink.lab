@@ -71,7 +71,12 @@ public sealed class OrderService
             q = q.Where(o => statuses.Contains(o.Status));
         }
         if (from.HasValue) q = q.Where(o => o.OrderDatetime >= from.Value);
-        if (to.HasValue) q = q.Where(o => o.OrderDatetime <= to.Value);
+        if (to.HasValue)
+        {
+            // «По» задано датою без часу — межа включає всю добу (сьогоднішні направлення не відсікаються)
+            var toExclusive = to.Value.TimeOfDay == TimeSpan.Zero ? to.Value.AddDays(1) : to.Value;
+            q = q.Where(o => o.OrderDatetime < toExclusive);
+        }
         if (cito.HasValue) q = q.Where(o => o.IsUrgentCito == cito.Value);
         if (!string.IsNullOrWhiteSpace(departmentId)) q = q.Where(o => o.DepartmentId == departmentId);
         if (!string.IsNullOrWhiteSpace(patientId)) q = q.Where(o => o.PatientId == patientId);

@@ -2,7 +2,7 @@
   <div class="dictionary-crud" :data-testid="`dict-${name}`">
     <div class="medlink-card q-pa-sm q-mb-sm row q-col-gutter-sm items-center">
       <div class="col-12 col-md-4"><q-input v-model="search" dense outlined clearable placeholder="Пошук…" data-testid="dictSearch"><template v-slot:prepend><q-icon name="search" /></template></q-input></div>
-      <div class="col-6 col-md-3"><q-toggle v-model="onlyActive" label="Тільки активні" color="primary" /></div>
+      <div class="col-6 col-md-3"><q-toggle v-model="onlyActive" label="Тільки активні" color="primary"><q-tooltip>Лише активні записи; вимкніть, щоб побачити й неактивні</q-tooltip></q-toggle></div>
       <div class="col-6 col-md-5 row justify-end q-gutter-xs">
         <q-btn flat dense color="primary" icon="refresh" :loading="loading" @click="load" />
         <q-btn v-if="allowImport" outline dense color="grey-8" icon="upload_file" label="Імпорт" @click="importOpen = true" />
@@ -16,7 +16,8 @@
       <q-table :data="filtered" :columns="columns" row-key="id" dense flat :loading="loading" :pagination.sync="pagination" :rows-per-page-options="[25, 50, 100, 0]" no-data-label="Записів немає" data-testid="dictTable" @row-click="(e, row) => openView(row)" class="cursor-pointer">
         <template v-slot:body-cell="props">
           <q-td :props="props">
-            <template v-if="props.col.name === 'colorCode'"><div :style="{ background: props.value || '#ccc', width: '18px', height: '18px', borderRadius: '50%', border: '1px solid #999' }" :title="props.value" /></template>
+            <template v-if="props.col.name === 'colorCode' && !props.value">—</template>
+            <template v-else-if="props.col.name === 'colorCode'"><div :style="{ background: props.value || '#ccc', width: '18px', height: '18px', borderRadius: '50%', border: '1px solid #999' }" :title="props.value" /></template>
             <template v-else-if="props.col.name === 'exchType'"><q-badge color="teal-7" :label="props.value" /></template>
             <template v-else-if="props.col.name === 'labRole'">{{ roleLabel(props.value) }}</template>
             <template v-else-if="props.col.name === 'category' && name === 'analyzer-types'">{{ categoryLabel(props.value) }}</template>
@@ -30,8 +31,8 @@
         <template v-slot:body-cell-actions="props">
           <q-td :props="props" class="text-right no-wrap" @click.stop>
             <q-btn flat dense round size="sm" icon="visibility" color="grey-8" @click="openView(props.row)"><q-tooltip>Картка</q-tooltip></q-btn>
-            <q-btn flat dense round size="sm" icon="edit" color="primary" :data-testid="`edit-${props.row.code || props.row.id}`" @click="openForm(props.row)" />
-            <q-btn flat dense round size="sm" icon="delete" color="grey-7" :data-testid="`delete-${props.row.code || props.row.id}`" @click="askDelete(props.row)" />
+            <q-btn flat dense round size="sm" icon="edit" color="primary" :data-testid="`edit-${props.row.code || props.row.id}`" @click="openForm(props.row)"><q-tooltip>Редагувати</q-tooltip></q-btn>
+            <q-btn flat dense round size="sm" icon="delete" color="grey-7" :data-testid="`delete-${props.row.code || props.row.id}`" @click="askDelete(props.row)"><q-tooltip>Зробити неактивним</q-tooltip></q-btn>
           </q-td>
         </template>
       </q-table>
@@ -60,13 +61,13 @@
         <q-card-section class="row items-center bg-primary text-white q-py-sm"><div class="text-subtitle1 text-weight-bold">Імпорт довідника «{{ schema.title }}» (JSON/CSV)</div><q-space /><q-btn flat round dense icon="close" v-close-popup /></q-card-section>
         <q-card-section class="q-gutter-y-sm">
           <q-file v-model="importFile" outlined dense label="Файл JSON або CSV" accept=".json,.csv" />
-          <div class="row q-gutter-sm"><q-btn outline color="primary" label="Попередній перегляд (dryRun)" :disable="!importFile" :loading="importing" @click="runImport(true)" /><q-btn color="primary" label="Імпортувати" :disable="!importFile || !importPreview" :loading="importing" @click="runImport(false)" /></div>
+          <div class="row q-gutter-sm"><q-btn outline color="primary" label="Попередній перегляд" :disable="!importFile" :loading="importing" @click="runImport(true)" /><q-btn color="primary" label="Імпортувати" :disable="!importFile || !importPreview" :loading="importing" @click="runImport(false)" /></div>
           <pre v-if="importPreview" class="mono bg-grey-2 q-pa-sm" style="max-height: 240px; overflow: auto; font-size: 11px">{{ JSON.stringify(importPreview, null, 2) }}</pre>
         </q-card-section>
       </q-card>
     </q-dialog>
 
-    <confirm-dialog v-model="deleteOpen" title="Видалити запис" :message="`«${active && (active.name || active.fullName || active.code)}» буде деактивовано (soft delete). За наявності залежностей API поверне 409.`" ok-label="Видалити" color="negative" icon="delete" @confirm="doDelete" />
+    <confirm-dialog v-model="deleteOpen" title="Зробити запис неактивним?" :message="`Зробити запис «${active && (active.name || active.fullName || active.code)}» неактивним? Він зникне зі списків вибору, історія збережеться.`" ok-label="Зробити неактивним" color="negative" icon="visibility_off" @confirm="doDelete" />
   </div>
 </template>
 
@@ -132,7 +133,10 @@ export default {
     },
     askDelete (item) { this.active = item; this.deleteOpen = true; },
     async doDelete () {
-      try { await this.$api.dictDelete(this.name, this.active.id); this.notifyOk('Запис видалено'); this.$store.dispatch('dictionaries/invalidate', this.name); this.load(); } catch (e) { this.notifyError(e); }
+      try { await this.$api.dictDelete(this.name, this.active.id); this.notifyOk('Запис зроблено неактивним'); this.$store.dispatch('dictionaries/invalidate', this.name); this.load(); } catch (e) {
+        if (e && e.apiStatus === 409) this.$q.notify({ type: 'negative', message: 'Запис використовується в замовленнях і не може бути видалений', timeout: 4000 });
+        else this.notifyError(e);
+      }
     },
     async runImport (dryRun) {
       this.importing = true;

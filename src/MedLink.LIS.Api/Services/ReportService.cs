@@ -75,7 +75,7 @@ public sealed class ReportService
     {
         var order = await _orders.LoadAsync(orderId);
         if (order.Status is OrderStatuses.New or OrderStatuses.Collected or OrderStatuses.InTransit or OrderStatuses.Received)
-            throw new ConflictException($"Бланк недоступний: замовлення {order.OrderNumber} у статусі {order.Status} (немає результатів)");
+            throw new ConflictException($"Бланк недоступний: направлення {order.OrderNumber} має статус «{MedLink.LIS.Api.Domain.UkLabels.Status(MedLink.LIS.Api.Domain.LisEntities.Order, order.Status)}» (немає результатів)");
         var lab = await _db.Settings.AsNoTracking().FirstOrDefaultAsync() ?? new LabSettings();
         var employees = await _db.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => e.Caption ?? "");
         var baseUrl = (_config["Lab:PublicBaseUrl"] ?? (host != null ? $"http://{host}" : "http://localhost:5055")).TrimEnd('/');

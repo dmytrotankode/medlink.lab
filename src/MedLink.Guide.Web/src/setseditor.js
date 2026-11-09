@@ -1,7 +1,7 @@
 // Мінімальне керування наборами інструкцій у конструкторі: створити / перейменувати / колір / додати-прибрати інструкції та розділи / порядок.
 // Вікно відкривається з конструктора (кнопка «Набори») або з панелі допомоги (для редакторів). Зміни складу набору зберігаються одразу.
 import { h } from './util.js';
-import { getLayer, toast } from './ui.js';
+import { getLayer, toast, askConfirm, askText } from './ui.js';
 
 const PALETTE = '#2f7de1';
 
@@ -28,7 +28,7 @@ export class SetsEditor {
   }
 
   async create () {
-    const name = prompt('Назва нового набору'); if (!name || !name.trim()) return;
+    const name = await askText('Назва нового набору', 'Наприклад: Огляд для нових співробітників'); if (!name) return;
     try {
       const code = 'set-' + Date.now().toString(36);
       const s = await this.ctx.api.createSet({ caption: name.trim(), code: code, color: PALETTE, sortOrder: this.sets.length });
@@ -46,7 +46,7 @@ export class SetsEditor {
   }
 
   async remove () {
-    const s = this.cur(); if (!s || !confirm('Видалити набір «' + s.caption + '»? Самі інструкції залишаться.')) return;
+    const s = this.cur(); if (!s || !(await askConfirm('Видалити набір «' + s.caption + '»? Самі інструкції залишаться. Дію не можна відмінити.', 'Видалити набір', 'Скасувати'))) return;
     try { await this.ctx.api.deleteSet(s.id); this.sets = this.sets.filter(x => x.id !== s.id); this.sel = this.sets[0] ? this.sets[0].id : null; this.render(); } catch (e) { toast('Помилка: ' + e.message, 5000); }
   }
 
@@ -90,9 +90,19 @@ export class SetsEditor {
       body.push(h('div', null, h('label', { text: 'Склад набору (порядок = порядок показу)' }), list));
 
       const used = it => items.some(x => (it.scenarioId && x.scenarioId === it.scenarioId) || (it.folderId && x.folderId === it.folderId));
-      const addSel = h('select', { class: 'inp' }, h('option', { value: '', text: '— додати розділ або інструкцію —' }),
-        h('optgroup', { label: 'Розділи' }, this.folders.filter(f => !used({ folderId: f.id })).map(f => h('option', { value: 'f:' + f.id, text: f.caption }))),
-        h('optgroup', { label: 'Інструкції' }, this.scenarios.filter(x => !used({ scenarioId: x.id })).map(x => h('option', { value: 's:' + x.id, text: x.caption + (x.status !== 'published' ? ' (чернетка)' : '') }))));
+      const filt = h('input', { class: 'inp', placeholder: 'Пошук інструкції або розділу', value: this.filter || '' });
+      const addSel = h('select', { class: 'inp' });
+      const fillOptions = () => {
+        const q = (this.filter || '').trim().toLowerCase();
+        const ok = t => !q || String(t).toLowerCase().indexOf(q) >= 0;
+        addSel.innerHTML = '';
+        addSel.appendChild(h('option', { value: '', text: '— додати розділ або інструкцію (знайдено: ' + (this.folders.filter(f => !used({ folderId: f.id }) && ok(f.caption)).length + this.scenarios.filter(x => !used({ scenarioId: x.id }) && ok(x.caption)).length) + ') —' }));
+        addSel.appendChild(h('optgroup', { label: 'Розділи' }, this.folders.filter(f => !used({ folderId: f.id }) && ok(f.caption)).map(f => h('option', { value: 'f:' + f.id, text: f.caption }))));
+        addSel.appendChild(h('optgroup', { label: 'Інструкції' }, this.scenarios.filter(x => !used({ scenarioId: x.id }) && ok(x.caption)).map(x => h('option', { value: 's:' + x.id, text: x.caption + (x.status !== 'published' ? ' (чернетка)' : '') }))));
+      };
+      filt.addEventListener('input', () => { this.filter = filt.value; fillOptions(); });
+      fillOptions();
+      body.push(h('div', null, filt));
       body.push(h('div', { class: 'row' }, addSel, h('button', { class: 'btn pri', text: '＋ Додати', onclick: () => {
         const v = addSel.value; if (!v) return;
         items.push(v[0] === 'f' ? { folderId: v.slice(2) } : { scenarioId: v.slice(2) }); this.saveItems(items);

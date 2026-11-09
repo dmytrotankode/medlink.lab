@@ -11,6 +11,10 @@ import ConfirmDialog from '../components/common/ConfirmDialog.vue';
 import { formatDate, formatDateTime, formatNumber, formatMoney, formatPercent, formatMinutes } from '../utils/format';
 
 export default ({ Vue }) => {
+  // Порожня таблиця — нейтральна піктограма «порожня скринька» замість трикутника-попередження, що читається як помилка
+  const q = Vue.prototype.$q;
+  if (q && q.iconSet && q.iconSet.table) q.iconSet.table.warning = 'inbox';
+
   Vue.component('StatusChip', StatusChip);
   Vue.component('FlagMarker', FlagMarker);
   Vue.component('PageHeader', PageHeader);

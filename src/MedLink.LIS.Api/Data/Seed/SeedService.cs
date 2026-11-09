@@ -398,8 +398,33 @@ public sealed class SeedService
     }
 
     /// <summary>Довідники патоморфології (ТЗ 22.10): шаблони, МКХ-О, методики, reflex ІГХ, типи матеріалу, фіксатори, причини відмови.</summary>
+    /// <summary>Виправлення довідників патоморфології в уже створених базах (ідемпотентно): правопис, шаблони без чужих розмірів, тип «Цитологія», єдина назва CITO.</summary>
+    private async Task RepairPathologyReferenceAsync()
+    {
+        if (!await _db.PathMaterialTypes.AnyAsync()) return;
+        const string oldEndo = "Ендометрій · зскрібок", newEndo = "Ендометрій · зіскрібок";
+        var endo = await _db.PathTemplates.FirstOrDefaultAsync(t => t.Name == oldEndo);
+        if (endo != null)
+        {
+            endo.Name = newEndo;
+            endo.Macro = endo.Macro?.Replace("Зскрібок", "Зіскрібок");
+            if ((endo.Micro ?? "").Trim() == "{x}") endo.Micro = "Фрагменти ендометрію: {x}. Атипія та злоякісні клітини: {y}.";
+            foreach (var r in await _db.PathReferrals.Where(r => r.TemplateName == oldEndo).ToListAsync()) r.TemplateName = newEndo;
+        }
+        var node = await _db.PathTemplates.FirstOrDefaultAsync(t => t.Name == "Лімфатичний вузол · сторожовий");
+        if (node?.Macro != null && node.Macro.Contains("1,2×0,8×0,6")) node.Macro = node.Macro.Replace("1,2×0,8×0,6", "{a}×{b}×{c}");
+        foreach (var o in await _db.PathObjects.Where(o => o.Description != null && (o.Description.Contains("Зскрібок") || o.Description.Contains("зскрібок"))).ToListAsync())
+            o.Description = o.Description!.Replace("Зскрібок", "Зіскрібок").Replace("зскрібок", "зіскрібок");
+        var cito = await _db.PathMaterialTypes.FirstOrDefaultAsync(t => t.Code == "CITO");
+        if (cito != null && cito.Name == "Біопсія термінова (інтраопераційна)") cito.Name = "Термінова інтраопераційна (CITO)";
+        if (!await _db.PathMaterialTypes.AnyAsync(t => t.Code == "CYTO"))
+            _db.PathMaterialTypes.Add(new LabPathMaterialType { Id = DeterministicGuid.For("path-kind:CYTO"), Code = "CYTO", Name = "Цитологічне дослідження", SlaDays = 3, ServiceGroup = "21729", BasePrice = PathPrices.CytoSlide });
+        await _db.SaveChangesAsync();
+    }
+
     private async Task SeedPathologyAsync()
     {
+        await RepairPathologyReferenceAsync();
         if (await _db.PathMaterialTypes.AnyAsync()) return;
         var m = ReadResource<JsonElement>("pathology.json");
         List<T> Read<T>(string name) => JsonSerializer.Deserialize<List<T>>(m.GetProperty(name).GetRawText(), Json)!;

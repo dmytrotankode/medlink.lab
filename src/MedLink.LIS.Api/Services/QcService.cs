@@ -300,7 +300,7 @@ public sealed class QcService
         var t = to ?? DateTime.UtcNow;
         var results = await _db.QcResults.AsNoTracking().Include(r => r.Material).ThenInclude(m => m!.Analyzer)
             .Where(r => r.RunAt >= f && r.RunAt <= t && (analyzerId == null || r.AnalyzerId == analyzerId)).ToListAsync();
-        var lockouts = await _db.Lockouts.AsNoTracking().Include(l => l.Analyzer).Where(l => l.StartedAt >= f && l.StartedAt <= t && (analyzerId == null || l.AnalyzerId == analyzerId)).ToListAsync();
+        var lockouts = await _db.Lockouts.AsNoTracking().Include(l => l.Analyzer).Where(l => l.StartedAt <= t && (l.ResolvedAt == null || l.ResolvedAt >= f) && (analyzerId == null || l.AnalyzerId == analyzerId)).ToListAsync(); // блокування, що перетинають період (зокрема активні, розпочаті раніше)
         var groups = results.GroupBy(r => new { r.AnalyzerId, analyzerName = r.Material?.Analyzer?.Name, r.QcMaterialId, materialName = r.Material?.Name, r.Material?.Level, r.Material?.LotNumber, r.TestCode })
             .Select(g =>
             {
@@ -316,7 +316,7 @@ public sealed class QcService
         return new
         {
             from = f, to = t, analyzerId, totalRuns = results.Count, totalWarnings = results.Count(r => r.IsWarning), totalRejections = results.Count(r => r.IsRejection),
-            lockouts = lockouts.Select(l => new { l.Id, l.AnalyzerId, analyzerName = l.Analyzer?.Name, l.TestCode, l.Reason, l.StartedAt, l.ResolvedAt, l.Cause, l.Action, durationMin = l.ResolvedAt.HasValue ? Math.Round((l.ResolvedAt.Value - l.StartedAt).TotalMinutes) : (double?)null }),
+            lockouts = lockouts.Select(l => new { l.Id, l.AnalyzerId, analyzerName = l.Analyzer?.Name, l.TestCode, l.Reason, l.StartedAt, l.ResolvedAt, l.Cause, l.Action, durationMin = Math.Round(((l.ResolvedAt ?? DateTime.UtcNow) - l.StartedAt).TotalMinutes) }),
             series = groups
         };
     }

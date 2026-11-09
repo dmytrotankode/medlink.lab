@@ -8,7 +8,7 @@
           <div class="col-12"><q-select v-model="ctx.methodCode" outlined dense clearable label="Методика" :options="methodOptions" emit-value map-options /></div>
           <div class="col-4"><q-select v-model="ctx.gender" outlined dense label="Стать" :options="[{ value: 'M', label: 'Чол.' }, { value: 'F', label: 'Жін.' }]" emit-value map-options data-testid="rpGender" /></div>
           <div class="col-4"><q-input v-model.number="ctx.age" outlined dense type="number" label="Вік" data-testid="rpAge" /></div>
-          <div class="col-4"><q-select v-model="ctx.ageUnit" outlined dense label="Од." :options="ageUnits" emit-value map-options /></div>
+          <div class="col-4"><q-select v-model="ctx.ageUnit" outlined dense label="Одиниця віку" :options="ageUnits" emit-value map-options /></div>
           <template v-if="ctx.gender === 'F'">
             <div class="col-5"><q-toggle v-model="ctx.isPregnant" label="Вагітність" color="deep-orange-6" /></div>
             <div class="col-7"><q-input v-if="ctx.isPregnant" v-model.number="ctx.pregnancyWeek" outlined dense type="number" label="Тиждень вагітності" /></div>
@@ -16,49 +16,49 @@
           </template>
           <div class="col-12"><q-input v-model="ctx.icd10Code" outlined dense label="МКХ-10 (клінічний контекст)" /></div>
           <div class="col-6"><q-input v-model="ctx.measuredValue" outlined dense label="Виміряне значення" inputmode="decimal" data-testid="rpValue" /></div>
-          <div class="col-6"><q-input v-model="ctx.previousValue" outlined dense label="Попереднє значення (delta)" inputmode="decimal" /></div>
+          <div class="col-6"><q-input v-model="ctx.previousValue" outlined dense label="Попереднє значення" inputmode="decimal" /></div>
         </div>
-        <q-btn color="primary" icon="play_arrow" label="Розв’язати каскад" class="full-width q-mt-md" :loading="loading" :disable="!ctx.testCode" data-testid="rpResolve" @click="resolve" />
+        <q-btn color="primary" icon="play_arrow" label="Підібрати норму" class="full-width q-mt-md" :loading="loading" :disable="!ctx.testCode" data-testid="rpResolve" @click="resolve" />
         <div v-if="error" class="text-negative q-mt-sm">{{ error }}</div>
       </div>
     </div>
     <div class="col-12 col-md-7">
       <div class="medlink-card q-pa-md" v-if="result" data-testid="rpResult">
         <div class="row items-center justify-between q-mb-sm">
-          <div class="text-subtitle1 text-weight-bold">Результат резолвера</div>
+          <div class="text-subtitle1 text-weight-bold">Застосована норма</div>
           <flag-marker v-if="result.statusFlag" :flag="result.statusFlag" show-label />
         </div>
         <div class="row q-col-gutter-sm">
           <div class="col-6 col-md-3"><div class="kpi-tile kpi-tile--positive"><div class="kpi-tile__label">Норма</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.normLow | num }} – {{ result.normHigh | num }}</div><div class="kpi-tile__hint">{{ result.unit }}</div></div></div>
-          <div class="col-6 col-md-3"><div class="kpi-tile kpi-tile--negative"><div class="kpi-tile__label">Критичні</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.critLow | num }} / {{ result.critHigh | num }}</div></div></div>
-          <div class="col-6 col-md-3"><div class="kpi-tile" :class="result.isPanicCito ? 'kpi-tile--negative' : ''"><div class="kpi-tile__label">Критичні / CITO</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.isPanicCito ? 'ТАК' : 'ні' }}</div></div></div>
-          <div class="col-6 col-md-3"><div class="kpi-tile" :class="result.isDeltaAlert ? 'kpi-tile--warning' : ''"><div class="kpi-tile__label">Delta</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.deltaPercent | pct }}</div><div class="kpi-tile__hint">{{ result.isDeltaAlert ? 'перевищено поріг' : 'у межах' }}</div></div></div>
+          <div class="col-6 col-md-3"><div class="kpi-tile kpi-tile--negative"><div class="kpi-tile__label">Критичні межі</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.critLow | num }} / {{ result.critHigh | num }}</div></div></div>
+          <div class="col-6 col-md-3"><div class="kpi-tile" :class="result.isPanicCito ? 'kpi-tile--negative' : ''"><div class="kpi-tile__label">Критичний результат</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.isPanicCito ? 'так' : 'ні' }}</div></div></div>
+          <div class="col-6 col-md-3"><div class="kpi-tile" :class="result.isDeltaAlert ? 'kpi-tile--warning' : ''"><div class="kpi-tile__label">Зміна від попереднього</div><div class="kpi-tile__value" style="font-size: 18px">{{ result.deltaPercent | pct }}</div><div class="kpi-tile__hint">{{ result.isDeltaAlert ? 'перевищено поріг' : 'у межах' }}</div></div></div>
         </div>
         <div v-if="result.winningLayer" class="q-mt-md">
-          <div class="section-title">Переможний шар</div>
+          <div class="section-title">Застосоване правило</div>
           <q-banner dense rounded class="bg-blue-1">
             <q-badge :color="layerColor(result.winningLayer.layerType)" :label="layerLabel(result.winningLayer.layerType)" class="q-mr-sm" />
             <b>{{ result.winningLayer.normName || result.winningLayer.id }}</b> · пріоритет {{ result.winningLayer.priorityOrder }}
-            <span v-if="result.winningLayer.methodCode"> · {{ result.winningLayer.methodCode }}</span>
+            <span v-if="result.winningLayer.methodCode"> · методика: {{ methodName(result.winningLayer.methodCode) }}</span>
             <div class="text-caption text-grey-8">{{ describeLayer(result.winningLayer) }}</div>
           </q-banner>
         </div>
-        <div class="section-title q-mt-md">Трасування каскаду (auditTrace)</div>
+        <div class="section-title q-mt-md">Хід вибору норми</div>
         <q-markup-table dense flat bordered data-testid="rpTrace">
-          <thead><tr><th>#</th><th class="text-left">Шар</th><th>Пріоритет</th><th class="text-left">Умова</th><th>Результат</th></tr></thead>
+          <thead><tr><th>№</th><th class="text-left">Правило</th><th>Пріоритет</th><th class="text-left">Чому підійшло / не підійшло</th><th>Підходить</th></tr></thead>
           <tbody>
-            <tr v-for="(t, i) in trace" :key="i" :class="{ 'bg-green-1': t.matched || t.isMatch || t.won, 'text-grey-6': !(t.matched || t.isMatch || t.won) }">
+            <tr v-for="(t, i) in trace" :key="i" :class="{ 'bg-green-1': isHit(t), 'text-grey-6': !isHit(t) }">
               <td>{{ i + 1 }}</td>
               <td><q-badge :color="layerColor(t.layerType)" :label="layerLabel(t.layerType)" class="q-mr-xs" />{{ t.normName || t.layerName || t.layerId || '' }}</td>
               <td class="text-center">{{ t.priorityOrder || t.priority }}</td>
-              <td>{{ t.condition || t.reason || t.message || describeLayer(t) }}</td>
-              <td class="text-center"><q-icon :name="(t.matched || t.isMatch || t.won) ? 'check_circle' : 'remove_circle_outline'" :color="(t.matched || t.isMatch || t.won) ? 'positive' : 'grey-5'" /></td>
+              <td>{{ t.reason || t.condition || t.message || describeLayer(t) }}</td>
+              <td class="text-center"><q-icon :name="isHit(t) ? 'check_circle' : 'remove_circle_outline'" :color="isHit(t) ? 'positive' : 'grey-5'" /></td>
             </tr>
-            <tr v-if="!trace.length"><td colspan="5" class="text-grey-6 text-center">Трасування порожнє</td></tr>
+            <tr v-if="!trace.length"><td colspan="5" class="text-grey-6 text-center">Правил для цього показника немає</td></tr>
           </tbody>
         </q-markup-table>
       </div>
-      <div v-else class="medlink-card"><empty-state title="Симулятор підбору норми" icon="calculate" hint="Задайте контекст пацієнта — каскад Simplex (BASELINE → DEMOGRAPHIC → CLINICAL → MENSTRUAL → PREGNANCY) покаже переможний шар і трасування" /></div>
+      <div v-else class="medlink-card"><empty-state title="Перевірка норм за пацієнтом" icon="calculate" hint="Задайте дані пацієнта — система покаже, яка норма застосується і чому" /></div>
     </div>
   </div>
 </template>
@@ -86,6 +86,9 @@ export default {
   methods: {
     filterTests (val, update) { update(() => { this.testFilter = val || ''; }); },
     layerLabel (t) { return (LAYER_TYPE[t] || {}).label || t || ''; },
+    // Сервер повертає isMatched; решта імен лишена для сумісності
+    isHit (t) { return !!(t.isMatched || t.matched || t.isMatch || t.won); },
+    methodName (code) { const m = this.$store.getters['dictionaries/items']('method-types').find(x => x.code === code); return m ? m.name : 'не вказано'; },
     layerColor (t) { return (LAYER_TYPE[t] || {}).color || 'grey-6'; },
     describeLayer (l) {
       if (!l) return '';
@@ -101,7 +104,7 @@ export default {
     async resolve () {
       this.loading = true; this.error = '';
       const body = { ...this.ctx, measuredValue: parseDecimal(this.ctx.measuredValue), previousValue: parseDecimal(this.ctx.previousValue), icd10Code: this.ctx.icd10Code || null, methodCode: this.ctx.methodCode || null, pregnancyWeek: this.ctx.isPregnant ? this.ctx.pregnancyWeek : null, menstrualPhase: this.ctx.isPregnant ? null : this.ctx.menstrualPhase };
-      try { this.result = await this.$api.resolveCascade(body); } catch (e) { this.error = e.userMessage || 'Помилка резолвера'; } finally { this.loading = false; }
+      try { this.result = await this.$api.resolveCascade(body); } catch (e) { this.error = e.userMessage || 'Не вдалося підібрати норму'; } finally { this.loading = false; }
     }
   }
 };

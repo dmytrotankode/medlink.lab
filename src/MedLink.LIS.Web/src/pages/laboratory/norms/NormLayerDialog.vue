@@ -1,19 +1,19 @@
 <template>
-  <q-dialog :value="value" @input="$emit('input', $event)" persistent>
+  <q-dialog :value="value" @input="$emit('input', $event)" no-backdrop-dismiss>
     <q-card style="min-width: 760px; max-width: 96vw" data-testid="layerDialog">
       <q-card-section class="row items-center bg-primary text-white q-py-sm">
         <q-icon name="layers" class="q-mr-sm" />
-        <div class="text-subtitle1 text-weight-bold">{{ form.id ? 'Шар норми' : 'Новий шар норми' }} — {{ form.testCode }}</div>
+        <div class="text-subtitle1 text-weight-bold">{{ form.id ? 'Правило норми' : 'Нове правило норми' }} — {{ testTitle }}</div>
         <q-space /><q-btn flat round dense icon="close" v-close-popup />
       </q-card-section>
       <q-card-section style="max-height: 70vh; overflow: auto">
         <div class="row q-col-gutter-sm">
           <div class="col-12 col-md-4">
-            <q-select v-model="form.layerType" outlined dense label="Тип шару *" :options="layerTypes" emit-value map-options @input="onLayerType" data-testid="layerType">
-              <template v-slot:option="scope"><q-item v-bind="scope.itemProps" v-on="scope.itemEvents"><q-item-section><q-item-label>{{ scope.opt.label }}</q-item-label><q-item-label caption>пріоритет {{ scope.opt.priority }}</q-item-label></q-item-section></q-item></template>
+            <q-select v-model="form.layerType" outlined dense label="Тип правила *" :options="layerTypes" emit-value map-options @input="onLayerType" data-testid="layerType">
+              <template v-slot:option="scope"><q-item v-bind="scope.itemProps" v-on="scope.itemEvents"><q-item-section><q-item-label>{{ scope.opt.label }}</q-item-label><q-item-label caption>{{ scope.opt.priority >= 100 ? 'найвищий пріоритет' : scope.opt.priority <= 10 ? 'найнижчий пріоритет' : 'пріоритет ' + scope.opt.priority }}</q-item-label></q-item-section></q-item></template>
             </q-select>
           </div>
-          <div class="col-6 col-md-2"><q-input v-model.number="form.priorityOrder" outlined dense type="number" label="Пріоритет" /></div>
+          <div class="col-6 col-md-2"><q-input v-model.number="form.priorityOrder" outlined dense type="number" label="Пріоритет" hint="Чим більше, тим важливіше" /></div>
           <div class="col-6 col-md-3"><q-select v-model="form.methodCode" outlined dense clearable label="Методика" :options="methodOptions" emit-value map-options /></div>
           <div class="col-12 col-md-3"><q-input v-model="form.normName" outlined dense label="Назва норми" /></div>
 
@@ -40,20 +40,20 @@
           <div class="col-12"><div class="section-title q-mt-sm">Референтні межі</div></div>
           <div class="col-6 col-md-2"><q-input v-model="form.normLow" outlined dense label="Норма від" inputmode="decimal" data-testid="normLow" /></div>
           <div class="col-6 col-md-2"><q-input v-model="form.normHigh" outlined dense label="Норма до" inputmode="decimal" data-testid="normHigh" /></div>
-          <div class="col-6 col-md-2"><q-input v-model="form.critLow" outlined dense label="Крит. низько" inputmode="decimal" input-class="text-negative" /></div>
-          <div class="col-6 col-md-2"><q-input v-model="form.critHigh" outlined dense label="Крит. високо" inputmode="decimal" input-class="text-negative" /></div>
+          <div class="col-6 col-md-2"><q-input v-model="form.critLow" outlined dense label="Критично низько" inputmode="decimal" input-class="text-negative" /></div>
+          <div class="col-6 col-md-2"><q-input v-model="form.critHigh" outlined dense label="Критично високо" inputmode="decimal" input-class="text-negative" /></div>
           <div class="col-6 col-md-2"><q-input v-model="form.unit" outlined dense label="Одиниця" /></div>
-          <div class="col-6 col-md-2"><q-input v-model="form.deltaCheckMaxPct" outlined dense label="Delta %, поріг" inputmode="decimal" /></div>
-          <div class="col-12 col-md-6"><q-input v-model="form.normText" outlined dense label="Текстова норма (для якісних показників: «негативний», «не виявлено»)" /></div>
-          <div class="col-6 col-md-3"><q-input v-model="form.analyzerCode" outlined dense label="Код на приладі (norm_code)" /></div>
+          <div class="col-6 col-md-2"><q-input v-model="form.deltaCheckMaxPct" outlined dense label="Поріг різниці з попереднім, %" inputmode="decimal" /></div>
+          <div class="col-12 col-md-6"><q-input v-model="form.normText" outlined dense label="Текстова норма" hint="Для якісних показників, наприклад «не виявлено»" /></div>
+          <div class="col-6 col-md-3"><q-input v-model="form.analyzerCode" outlined dense label="Код на приладі" /></div>
           <div class="col-6 col-md-3"><q-input v-model="form.dilution" outlined dense label="Розведення" /></div>
-          <div class="col-12"><q-toggle v-model="form.isActive" label="Активний шар" color="positive" /></div>
+          <div class="col-12"><q-toggle v-model="form.isActive" label="Правило діє" color="positive" /></div>
         </div>
         <div v-if="error" class="text-negative q-mt-sm">{{ error }}</div>
       </q-card-section>
       <q-card-actions align="right" class="bg-grey-1">
         <q-btn flat label="Скасувати" v-close-popup />
-        <q-btn color="primary" icon="save" label="Зберегти шар" :loading="saving" :disable="!form.layerType" data-testid="layerSave" @click="save" />
+        <q-btn color="primary" icon="save" label="Зберегти" :loading="saving" :disable="!form.layerType" data-testid="layerSave" @click="save" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -80,7 +80,9 @@ export default {
     };
   },
   computed: {
-    methodOptions () { return this.$store.getters['dictionaries/items']('method-types').map(m => ({ value: m.code, label: `${m.name} (${m.code})` })); }
+    methodOptions () { return this.$store.getters['dictionaries/items']('method-types').map(m => ({ value: m.code, label: m.name })); },
+    // У заголовку — назва показника з кодом у дужках, а не лише код
+    testTitle () { const t = this.$store.getters['dictionaries/items']('tests').find(x => x.code === this.form.testCode); return t && t.name ? `${t.name} (${this.form.testCode})` : this.form.testCode; }
   },
   watch: {
     value (v) {
@@ -114,9 +116,9 @@ export default {
       };
       try {
         const res = await this.$api.saveNormCombination(body);
-        this.$q.notify({ type: 'positive', message: 'Шар норми збережено' });
+        this.$q.notify({ type: 'positive', message: 'Правило норми збережено' });
         this.$emit('saved', res); this.$emit('input', false);
-      } catch (e) { this.error = e.userMessage || 'Помилка'; } finally { this.saving = false; }
+      } catch (e) { this.error = e.userMessage || 'Не вдалося зберегти правило норми'; } finally { this.saving = false; }
     }
   }
 };

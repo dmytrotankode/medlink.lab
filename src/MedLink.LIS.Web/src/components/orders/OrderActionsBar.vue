@@ -1,5 +1,6 @@
 <template>
   <div class="order-actions-bar row items-center q-gutter-xs" data-testid="orderActions">
+    <div v-if="!visibleCodes.length" class="text-caption text-grey-7" data-testid="noActions">На цьому етапі для вашої ролі немає доступних дій.</div>
     <template v-for="code in visibleCodes">
       <q-btn
         :key="code"
@@ -19,18 +20,17 @@
       >
         <q-tooltip>
           <b>{{ meta(code).label }}</b><br>
-          <span v-if="isAllowed(code)">{{ meta(code).hint }}</span>
-          <span v-else>Недоступно для статусу «{{ statusLabel }}» або ролі «{{ roleLabel }}»</span>
+          <span>{{ meta(code).hint }}</span>
         </q-tooltip>
       </q-btn>
     </template>
-    <q-badge v-if="source === 'local'" outline color="grey-6" class="q-ml-sm" title="API не повернуло allowedActions — використано локальні правила за статусом">правила: локальні</q-badge>
   </div>
 </template>
 
 <script>
 import { ORDER_ACTIONS, ACTION_ORDER } from '../../utils/orderActions';
 import { ORDER_STATUS, ROLE } from '../../utils/statuses';
+import { roleAllows } from '../../mixins/roleMixin';
 
 export default {
   name: 'OrderActionsBar',
@@ -45,14 +45,19 @@ export default {
   computed: {
     visibleCodes () {
       const codes = this.only || ACTION_ORDER;
-      return codes.filter(c => ORDER_ACTIONS[c]);
+      // показуємо лише дії, доступні для статусу й ролі
+      return codes.filter(c => ORDER_ACTIONS[c] && this.isAllowed(c));
     },
     statusLabel () { return (ORDER_STATUS[this.status] || {}).label || this.status; },
     roleLabel () { return ROLE[this.$store.getters['context/currentRole']] || 'не визначено'; }
   },
   methods: {
     meta (code) { return ORDER_ACTIONS[code]; },
-    isAllowed (code) { return this.allowed.includes(code); }
+    isAllowed (code) {
+      if (!this.allowed.includes(code)) return false;
+      // локальні правила за статусом не знають ролі — додатково відсіюємо за списком ролей дії
+      return this.source !== 'local' || roleAllows(this.$store.getters['context/currentRole'], ORDER_ACTIONS[code].roles);
+    }
   }
 };
 </script>

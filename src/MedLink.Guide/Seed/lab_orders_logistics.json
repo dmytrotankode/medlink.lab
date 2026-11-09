@@ -127,7 +127,7 @@
         {
           "stepType": "info",
           "title": "Лічильники",
-          "body": "Плитки показують тести в роботі, очікування лікаря, критичні, CITO, Lockout і направлення МІС на розподіл. Клік по плитці відкриває потрібний екран.",
+          "body": "Плитки показують тести в роботі, очікування лікаря, критичні, CITO, блокування ВКЯ і направлення МІС на розподіл. Клік по плитці відкриває потрібний екран.",
           "route": "/laboratory/dashboard",
           "highlight": "element",
           "parentLevels": 0,
@@ -221,7 +221,7 @@
         {
           "stepType": "info",
           "title": "Блокування ВКЯ",
-          "body": "Активні блокування аналізаторів за контролем якості. Поки є Lockout, автоверифікація показника заблокована.",
+          "body": "Активні блокування аналізаторів за контролем якості. Поки є блокування, автоверифікація показника заблокована.",
           "route": "/laboratory/dashboard",
           "highlight": "parent",
           "parentLevels": 1,
@@ -238,13 +238,13 @@
             "strategies": [
               {
                 "type": "text",
-                "value": "span|Блокування ВКЯ (Lockout)",
+                "value": "span|Блокування за результатами ВКЯ",
                 "weight": 70
               }
             ],
             "fingerprint": {
               "tag": "span",
-              "text": "Блокування ВКЯ (Lockout)",
+              "text": "Блокування за результатами ВКЯ",
               "label": "Блок «Блокування ВКЯ»"
             },
             "parentLevels": 1
@@ -252,7 +252,7 @@
         },
         {
           "stepType": "info",
-          "title": "Шлюз аналізаторів",
+          "title": "Прилади онлайн",
           "body": "Стан коннекторів і приладів: онлайн або офлайн, останній heartbeat і кількість повідомлень у буфері.",
           "route": "/laboratory/dashboard",
           "highlight": "parent",
@@ -265,26 +265,26 @@
           "transcript": "Тут стан зв’язку з приладами.",
           "anchor": {
             "code": "lab.ol.dash-gateway",
-            "caption": "Блок «Шлюз аналізаторів»",
+            "caption": "Блок «Прилади онлайн»",
             "routePattern": "/laboratory/dashboard",
             "strategies": [
               {
                 "type": "text",
-                "value": "span|Шлюз аналізаторів",
+                "value": "span|Прилади онлайн",
                 "weight": 70
               }
             ],
             "fingerprint": {
               "tag": "span",
-              "text": "Шлюз аналізаторів",
-              "label": "Блок «Шлюз аналізаторів»"
+              "text": "Прилади онлайн",
+              "label": "Блок «Прилади онлайн»"
             },
             "parentLevels": 1
           }
         },
         {
           "stepType": "info",
-          "title": "TAT сьогодні",
+          "title": "Час виконання сьогодні",
           "body": "Медіана та P90 часу виконання, кількість порушень SLA і середній час кожного етапу.",
           "route": "/laboratory/dashboard",
           "highlight": "parent",
@@ -297,19 +297,19 @@
           "transcript": "Тут час виконання аналізів і порушення термінів.",
           "anchor": {
             "code": "lab.ol.dash-tat-title",
-            "caption": "Блок «TAT сьогодні»",
+            "caption": "Блок «Час виконання сьогодні»",
             "routePattern": "/laboratory/dashboard",
             "strategies": [
               {
                 "type": "text",
-                "value": "span|TAT сьогодні",
+                "value": "span|Час виконання сьогодні",
                 "weight": 70
               }
             ],
             "fingerprint": {
               "tag": "span",
-              "text": "TAT сьогодні",
-              "label": "Блок «TAT сьогодні»"
+              "text": "Час виконання сьогодні",
+              "label": "Блок «Час виконання сьогодні»"
             },
             "parentLevels": 1
           }
@@ -444,7 +444,7 @@
         {
           "stepType": "info",
           "title": "Далі за формою",
-          "body": "Знайдіть пацієнта, оберіть тип направлення, послуги й платника, потім натисніть «Створити замовлення».",
+          "body": "Знайдіть пацієнта, оберіть тип направлення, послуги й платника, потім натисніть «Зареєструвати».",
           "route": "/laboratory/orders",
           "highlight": "element",
           "parentLevels": 0,
@@ -456,7 +456,7 @@
           "transcript": "Знайдіть пацієнта, оберіть послуги й платника та створіть замовлення.",
           "anchor": {
             "code": "lab.ol.cr-submit",
-            "caption": "Кнопка «Створити замовлення»",
+            "caption": "Кнопка «Зареєструвати»",
             "routePattern": "/laboratory/orders",
             "strategies": [
               {
@@ -466,7 +466,7 @@
               },
               {
                 "type": "text",
-                "value": "span|Створити замовлення",
+                "value": "span|Зареєструвати",
                 "weight": 55
               }
             ],
@@ -474,7 +474,7 @@
               "attrs": {
                 "data-testid": "createOrderSubmit"
               },
-              "label": "Кнопка «Створити замовлення»"
+              "label": "Кнопка «Зареєструвати»"
             },
             "parentLevels": 0
           }
@@ -532,8 +532,8 @@
         },
         {
           "stepType": "click",
-          "title": "Усі замовлення",
-          "body": "Натисніть «Усі замовлення», щоб відкрити повний список CITO.",
+          "title": "Усі термінові",
+          "body": "Натисніть «Усі термінові», щоб відкрити повний список CITO.",
           "route": "/laboratory/dashboard",
           "highlight": "element",
           "parentLevels": 0,
@@ -542,22 +542,22 @@
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
-          "transcript": "Натисніть «Усі замовлення», щоб побачити весь список.",
+          "transcript": "Натисніть «Усі термінові», щоб побачити весь список.",
           "anchor": {
             "code": "lab.ol.dash-cito-all",
-            "caption": "Кнопка «Усі замовлення»",
+            "caption": "Кнопка «Усі термінові»",
             "routePattern": "/laboratory/dashboard",
             "strategies": [
               {
                 "type": "text",
-                "value": "span|Усі замовлення",
+                "value": "span|Усі термінові",
                 "weight": 70
               }
             ],
             "fingerprint": {
               "tag": "span",
-              "text": "Усі замовлення",
-              "label": "Кнопка «Усі замовлення»"
+              "text": "Усі термінові",
+              "label": "Кнопка «Усі термінові»"
             },
             "parentLevels": 0
           }
@@ -694,8 +694,8 @@
     {
       "code": "lab.dashboard.tat-cycle",
       "folderCode": "ord-dashboard",
-      "caption": "TAT після повного циклу замовлення",
-      "description": "Після проходження замовлення від реєстрації до видачі перевірити етапи TAT та порушення SLA.",
+      "caption": "Час виконання після повного циклу направлення",
+      "description": "Після проходження замовлення від реєстрації до видачі перевірити етапи часу виконання та порушення нормативу.",
       "icon": "timer",
       "startRoute": "/laboratory/dashboard",
       "requiredRoles": [],
@@ -712,7 +712,7 @@
         {
           "stepType": "info",
           "title": "Спершу пройдіть цикл",
-          "body": "Щоб TAT мав дані, проведіть замовлення від реєстрації до видачі результатів.",
+          "body": "Щоб блок часу виконання мав дані, проведіть замовлення від реєстрації до видачі результатів.",
           "route": "/laboratory/dashboard",
           "highlight": "element",
           "parentLevels": 0,
@@ -721,7 +721,7 @@
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
-          "transcript": "Щоб з’явилися дані TAT, проведіть замовлення від реєстрації до видачі.",
+          "transcript": "Щоб з’явилися дані про час виконання, проведіть замовлення від реєстрації до видачі.",
           "anchor": {
             "code": "lab.ol.dash-page",
             "caption": "Сторінка «Дашборд»",
@@ -744,7 +744,7 @@
         },
         {
           "stepType": "info",
-          "title": "Блок TAT",
+          "title": "Блок часу виконання",
           "body": "Медіана, P90 і порушення SLA рахуються за сьогодні. Нижче — середній час кожного етапу від замовлення до видачі.",
           "route": "/laboratory/dashboard",
           "highlight": "parent",
@@ -757,19 +757,19 @@
           "transcript": "Подивіться медіану, дев’яностий процентиль і порушення термінів.",
           "anchor": {
             "code": "lab.ol.dash-tat-title",
-            "caption": "Блок «TAT сьогодні»",
+            "caption": "Блок «Час виконання сьогодні»",
             "routePattern": "/laboratory/dashboard",
             "strategies": [
               {
                 "type": "text",
-                "value": "span|TAT сьогодні",
+                "value": "span|Час виконання сьогодні",
                 "weight": 70
               }
             ],
             "fingerprint": {
               "tag": "span",
-              "text": "TAT сьогодні",
-              "label": "Блок «TAT сьогодні»"
+              "text": "Час виконання сьогодні",
+              "label": "Блок «Час виконання сьогодні»"
             },
             "parentLevels": 1
           }
@@ -777,7 +777,7 @@
         {
           "stepType": "click",
           "title": "Детальна аналітика",
-          "body": "Натисніть «Аналітика» для детального розрізу TAT.",
+          "body": "Натисніть «Аналітика» для детального розрізу часу виконання.",
           "route": "/laboratory/dashboard",
           "highlight": "element",
           "parentLevels": 0,
@@ -1071,8 +1071,8 @@
         },
         {
           "stepType": "click",
-          "title": "Створити замовлення",
-          "body": "Натисніть «Створити замовлення». Кнопка стане активною, коли обрано пацієнта та послуги.",
+          "title": "Зареєструвати",
+          "body": "Натисніть «Зареєструвати». Кнопка стане активною, коли обрано пацієнта та послуги.",
           "route": "/laboratory/orders",
           "highlight": "element",
           "parentLevels": 0,
@@ -1081,10 +1081,10 @@
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
-          "transcript": "Натисніть «Створити замовлення».",
+          "transcript": "Натисніть «Зареєструвати».",
           "anchor": {
             "code": "lab.ol.cr-submit",
-            "caption": "Кнопка «Створити замовлення»",
+            "caption": "Кнопка «Зареєструвати»",
             "routePattern": "/laboratory/orders",
             "strategies": [
               {
@@ -1094,7 +1094,7 @@
               },
               {
                 "type": "text",
-                "value": "span|Створити замовлення",
+                "value": "span|Зареєструвати",
                 "weight": 55
               }
             ],
@@ -1102,7 +1102,7 @@
               "attrs": {
                 "data-testid": "createOrderSubmit"
               },
-              "label": "Кнопка «Створити замовлення»"
+              "label": "Кнопка «Зареєструвати»"
             },
             "parentLevels": 0
           }
@@ -1337,8 +1337,8 @@
         },
         {
           "stepType": "click",
-          "title": "Створити замовлення",
-          "body": "Натисніть «Створити замовлення». При видачі результатів направлення буде погашено висновком.",
+          "title": "Зареєструвати",
+          "body": "Натисніть «Зареєструвати». При видачі результатів направлення буде погашено висновком.",
           "route": "/laboratory/orders",
           "highlight": "element",
           "parentLevels": 0,
@@ -1350,7 +1350,7 @@
           "transcript": "Створіть замовлення. Направлення погасять під час видачі результатів.",
           "anchor": {
             "code": "lab.ol.cr-submit",
-            "caption": "Кнопка «Створити замовлення»",
+            "caption": "Кнопка «Зареєструвати»",
             "routePattern": "/laboratory/orders",
             "strategies": [
               {
@@ -1360,7 +1360,7 @@
               },
               {
                 "type": "text",
-                "value": "span|Створити замовлення",
+                "value": "span|Зареєструвати",
                 "weight": 55
               }
             ],
@@ -1368,7 +1368,7 @@
               "attrs": {
                 "data-testid": "createOrderSubmit"
               },
-              "label": "Кнопка «Створити замовлення»"
+              "label": "Кнопка «Зареєструвати»"
             },
             "parentLevels": 0
           }
@@ -1535,7 +1535,7 @@
         },
         {
           "stepType": "info",
-          "title": "Лікар-направник",
+          "title": "Лікар, що направив",
           "body": "Прізвище лікаря, який направив пацієнта, необов’язкове, але допомагає у звітах.",
           "route": "/laboratory/orders",
           "highlight": "element",
@@ -1548,19 +1548,19 @@
           "transcript": "Прізвище лікаря-направника можна додати для звітів.",
           "anchor": {
             "code": "lab.ol.cr-paper-doc",
-            "caption": "Лікар-направник",
+            "caption": "Лікар, що направив",
             "routePattern": "/laboratory/orders",
             "strategies": [
               {
                 "type": "text",
-                "value": "div|Лікар-направник",
+                "value": "div|Лікар, що направив",
                 "weight": 80
               }
             ],
             "fingerprint": {
               "tag": "div",
-              "text": "Лікар-направник",
-              "label": "Лікар-направник"
+              "text": "Лікар, що направив",
+              "label": "Лікар, що направив"
             },
             "parentLevels": 0
           }
@@ -1755,7 +1755,7 @@
     {
       "code": "lab.orders.register-new-patient",
       "folderCode": "ord-registry",
-      "caption": "Швидко створити пацієнта при реєстрації",
+      "caption": "Новий пацієнт при реєстрації",
       "description": "Якщо пацієнта немає в базі — створити його прямо у формі направлення.",
       "icon": "person_add",
       "startRoute": "/laboratory/orders",
@@ -1809,8 +1809,8 @@
         },
         {
           "stepType": "click",
-          "title": "Швидко створити пацієнта",
-          "body": "Натисніть «Швидко створити пацієнта», якщо пошук нічого не знайшов.",
+          "title": "Новий пацієнт",
+          "body": "Натисніть «Новий пацієнт», якщо пошук нічого не знайшов.",
           "route": "/laboratory/orders",
           "highlight": "element",
           "parentLevels": 0,
@@ -1819,22 +1819,22 @@
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
-          "transcript": "Якщо пошук нічого не знайшов, натисніть «Швидко створити пацієнта».",
+          "transcript": "Якщо пошук нічого не знайшов, натисніть «Новий пацієнт».",
           "anchor": {
             "code": "lab.ol.cr-quick-patient",
-            "caption": "Кнопка «Швидко створити пацієнта»",
+            "caption": "Кнопка «Новий пацієнт»",
             "routePattern": "/laboratory/orders",
             "strategies": [
               {
                 "type": "text",
-                "value": "span|Швидко створити пацієнта",
+                "value": "span|Новий пацієнт",
                 "weight": 80
               }
             ],
             "fingerprint": {
               "tag": "span",
-              "text": "Швидко створити пацієнта",
-              "label": "Кнопка «Швидко створити пацієнта»"
+              "text": "Новий пацієнт",
+              "label": "Кнопка «Новий пацієнт»"
             },
             "parentLevels": 0
           }
@@ -2598,17 +2598,17 @@
           "transcript": "Введіть номер, прізвище або штрихкод і натисніть Enter.",
           "anchor": {
             "code": "lab.ol.ord-search",
-            "caption": "Пошук: № замовлення, ПІБ, штрихкод",
+            "caption": "Пошук",
             "routePattern": "/laboratory/orders",
             "strategies": [
               {
                 "type": "css",
-                "value": "input[placeholder=\"№ замовлення, ПІБ, штрихкод\"]",
+                "value": "input[placeholder=\"№ направлення, ПІБ, штрихкод\"]",
                 "weight": 90
               }
             ],
             "fingerprint": {
-              "label": "Пошук: № замовлення, ПІБ, штрихкод"
+              "label": "Пошук"
             },
             "parentLevels": 0
           }
@@ -3085,7 +3085,7 @@
         {
           "stepType": "info",
           "title": "Якщо агента немає",
-          "body": "Якщо локальний агент не запущено, скористайтеся кнопкою «Друк SVG (браузер)».",
+          "body": "Якщо локальний агент не запущено, скористайтеся кнопкою «Друк через браузер».",
           "route": "/laboratory/orders",
           "highlight": "element",
           "parentLevels": 0,
@@ -3097,19 +3097,19 @@
           "transcript": "Якщо агента немає, друкуйте через браузер.",
           "anchor": {
             "code": "lab.ol.lbl-svg",
-            "caption": "Кнопка «Друк SVG (браузер)»",
+            "caption": "Кнопка «Друк через браузер»",
             "routePattern": "*",
             "strategies": [
               {
                 "type": "text",
-                "value": "span|Друк SVG (браузер)",
+                "value": "span|Друк через браузер",
                 "weight": 70
               }
             ],
             "fingerprint": {
               "tag": "span",
-              "text": "Друк SVG (браузер)",
-              "label": "Кнопка «Друк SVG (браузер)»"
+              "text": "Друк через браузер",
+              "label": "Кнопка «Друк через браузер»"
             },
             "parentLevels": 0
           }
@@ -3149,17 +3149,17 @@
           "transcript": "Введіть номер замовлення або штрихкод.",
           "anchor": {
             "code": "lab.ol.ord-search",
-            "caption": "Пошук: № замовлення, ПІБ, штрихкод",
+            "caption": "Пошук",
             "routePattern": "/laboratory/orders",
             "strategies": [
               {
                 "type": "css",
-                "value": "input[placeholder=\"№ замовлення, ПІБ, штрихкод\"]",
+                "value": "input[placeholder=\"№ направлення, ПІБ, штрихкод\"]",
                 "weight": 90
               }
             ],
             "fingerprint": {
-              "label": "Пошук: № замовлення, ПІБ, штрихкод"
+              "label": "Пошук"
             },
             "parentLevels": 0
           }
@@ -3228,7 +3228,7 @@
         },
         {
           "stepType": "info",
-          "title": "Процес замовлення",
+          "title": "Процес направлення",
           "body": "Смуга етапів показує, які кроки вже виконано і хто їх виконав.",
           "route": "/laboratory/orders/:id",
           "highlight": "element",
@@ -3241,19 +3241,19 @@
           "transcript": "Смуга етапів показує пройдені кроки.",
           "anchor": {
             "code": "lab.ol.card-stepper",
-            "caption": "Процес замовлення",
+            "caption": "Процес направлення",
             "routePattern": "/laboratory/orders/:id",
             "strategies": [
               {
                 "type": "text",
-                "value": "span|Процес замовлення",
+                "value": "span|Процес направлення",
                 "weight": 70
               }
             ],
             "fingerprint": {
               "tag": "span",
-              "text": "Процес замовлення",
-              "label": "Процес замовлення"
+              "text": "Процес направлення",
+              "label": "Процес направлення"
             },
             "parentLevels": 0
           }
@@ -3512,7 +3512,7 @@
       "code": "lab.orders.card-edit",
       "folderCode": "ord-registry",
       "caption": "Змінити дані замовлення",
-      "description": "Змінити CITO, лікаря, відділення, ID е-направлення та клінічні дані.",
+      "description": "Змінити CITO, лікаря, відділення, номер е-направлення та клінічні дані.",
       "icon": "edit",
       "startRoute": "/laboratory/orders",
       "requiredRoles": [],
@@ -3590,8 +3590,8 @@
         },
         {
           "stepType": "click",
-          "title": "Редагувати замовлення",
-          "body": "Оберіть «Редагувати замовлення».",
+          "title": "Редагувати направлення",
+          "body": "Оберіть «Редагувати направлення».",
           "route": "/laboratory/orders/:id",
           "highlight": "element",
           "parentLevels": 0,
@@ -3600,10 +3600,10 @@
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
-          "transcript": "Оберіть «Редагувати замовлення».",
+          "transcript": "Оберіть «Редагувати направлення».",
           "anchor": {
             "code": "lab.ol.card-edit",
-            "caption": "Пункт «Редагувати замовлення»",
+            "caption": "Пункт «Редагувати направлення»",
             "routePattern": "/laboratory/orders/:id",
             "strategies": [
               {
@@ -3613,7 +3613,7 @@
               },
               {
                 "type": "text",
-                "value": "div|Редагувати замовлення",
+                "value": "div|Редагувати направлення",
                 "weight": 60
               }
             ],
@@ -3621,7 +3621,7 @@
               "attrs": {
                 "data-testid": "orderEdit"
               },
-              "label": "Пункт «Редагувати замовлення»"
+              "label": "Пункт «Редагувати направлення»"
             },
             "parentLevels": 0
           }
@@ -3629,7 +3629,7 @@
         {
           "stepType": "info",
           "title": "Форма редагування",
-          "body": "Можна змінити CITO, лікаря-замовника, відділення, ID е-направлення та клінічні дані.",
+          "body": "Можна змінити CITO, лікаря, відділення, номер е-направлення та клінічні дані.",
           "route": "/laboratory/orders/:id",
           "highlight": "element",
           "parentLevels": 0,
@@ -3661,8 +3661,8 @@
         },
         {
           "stepType": "info",
-          "title": "ID е-направлення",
-          "body": "Вкажіть ID е-направлення eHealth, щоб зв’язати замовлення з ЕСОЗ.",
+          "title": "Номер е-направлення",
+          "body": "Вкажіть номер е-направлення, щоб зв’язати замовлення з ЕСОЗ.",
           "route": "/laboratory/orders/:id",
           "highlight": "element",
           "parentLevels": 0,
@@ -3674,19 +3674,19 @@
           "transcript": "Тут вказують ідентифікатор е-направлення.",
           "anchor": {
             "code": "lab.ol.edit-ehealth",
-            "caption": "ID е-направлення (eHealth)",
+            "caption": "Номер е-направлення",
             "routePattern": "/laboratory/orders/:id",
             "strategies": [
               {
                 "type": "text",
-                "value": "div|ID е-направлення (eHealth)",
+                "value": "div|Номер е-направлення",
                 "weight": 80
               }
             ],
             "fingerprint": {
               "tag": "div",
-              "text": "ID е-направлення (eHealth)",
-              "label": "ID е-направлення (eHealth)"
+              "text": "Номер е-направлення",
+              "label": "Номер е-направлення"
             },
             "parentLevels": 0
           }
@@ -4642,13 +4642,13 @@
             "strategies": [
               {
                 "type": "text",
-                "value": "div|Пошук: № направлення, замовлення, пацієнт, направник",
+                "value": "div|Пошук",
                 "weight": 80
               }
             ],
             "fingerprint": {
               "tag": "div",
-              "text": "Пошук: № направлення, замовлення, пацієнт, направник",
+              "text": "Пошук",
               "label": "Пошук направлень"
             },
             "parentLevels": 0
@@ -4802,7 +4802,7 @@
         {
           "stepType": "info",
           "title": "Пропозиція розподілу",
-          "body": "Для кожного показника система запропонувала прилад, чергу й орієнтовний TAT.",
+          "body": "Для кожного показника система запропонувала прилад, чергу й орієнтовний термін.",
           "route": "/laboratory/refs",
           "highlight": "element",
           "parentLevels": 0,
@@ -5777,7 +5777,7 @@
         {
           "stepType": "select",
           "title": "Лікар і відділення",
-          "body": "Оберіть лікаря-замовника та відділення.",
+          "body": "Оберіть лікаря та відділення.",
           "route": "/laboratory/order-matrix",
           "highlight": "parent",
           "parentLevels": 1,
@@ -5786,7 +5786,7 @@
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
-          "transcript": "Оберіть лікаря-замовника.",
+          "transcript": "Оберіть лікаря.",
           "anchor": {
             "code": "lab.ol.mx-doctor",
             "caption": "Лікар-замовник",
@@ -5903,8 +5903,8 @@
         },
         {
           "stepType": "click",
-          "title": "Створити замовлення",
-          "body": "Натисніть «Створити замовлення» — кнопка активна, коли є пацієнт і вибір.",
+          "title": "Зареєструвати",
+          "body": "Натисніть «Зареєструвати» — кнопка активна, коли є пацієнт і вибір.",
           "route": "/laboratory/order-matrix",
           "highlight": "element",
           "parentLevels": 0,
@@ -5916,7 +5916,7 @@
           "transcript": "Створіть замовлення.",
           "anchor": {
             "code": "lab.ol.mx-submit",
-            "caption": "Кнопка «Створити замовлення»",
+            "caption": "Кнопка «Зареєструвати»",
             "routePattern": "/laboratory/order-matrix",
             "strategies": [
               {
@@ -5929,7 +5929,7 @@
               "attrs": {
                 "data-testid": "matrixSubmit"
               },
-              "label": "Кнопка «Створити замовлення»"
+              "label": "Кнопка «Зареєструвати»"
             },
             "parentLevels": 0
           }
@@ -6184,7 +6184,7 @@
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
-          "transcript": "Оберіть лікаря-замовника.",
+          "transcript": "Оберіть лікаря.",
           "anchor": {
             "code": "lab.ol.mx-doctor",
             "caption": "Лікар-замовник",
@@ -6366,8 +6366,8 @@
         },
         {
           "stepType": "click",
-          "title": "Забір за чек-листом",
-          "body": "Натисніть «Забір за чек-листом». Кнопка активна лише для проби в статусі «Очікує».",
+          "title": "Забрати",
+          "body": "Натисніть «Забрати». Кнопка активна лише для проби в статусі «Очікує».",
           "route": "/laboratory/phlebotomy",
           "highlight": "element",
           "parentLevels": 0,
@@ -6376,10 +6376,10 @@
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
-          "transcript": "Натисніть «Забір за чек-листом».",
+          "transcript": "Натисніть «Забрати».",
           "anchor": {
             "code": "lab.ol.ph-collect",
-            "caption": "Кнопка «Забір за чек-листом»",
+            "caption": "Кнопка «Забрати»",
             "routePattern": "/laboratory/phlebotomy",
             "strategies": [
               {
@@ -6392,7 +6392,7 @@
               "attrs": {
                 "data-testid": "collectBtn"
               },
-              "label": "Кнопка «Забір за чек-листом»"
+              "label": "Кнопка «Забрати»"
             },
             "parentLevels": 0
           }
@@ -7968,6 +7968,72 @@
         },
         {
           "stepType": "click",
+          "title": "Прийняти пробу",
+          "body": "Розділяти й відмічати етапи можна лише для прийнятої проби. Якщо проба ще не прийнята — натисніть «Прийняти пробу» вгорі сторінки.",
+          "route": "/laboratory/samples/:barcode",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "transcript": "Якщо проба ще не прийнята, натисніть «Прийняти пробу».",
+          "anchor": {
+            "code": "lab.ol.sp-receive",
+            "caption": "Кнопка «Прийняти пробу»",
+            "routePattern": "/laboratory/samples/:barcode",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveBtn\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveBtn"
+              },
+              "label": "Кнопка «Прийняти пробу»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Підтвердьте приймання",
+          "body": "Перевірте якість матеріалу й натисніть «Прийняти».",
+          "route": "/laboratory/samples/:barcode",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "transcript": "Підтвердіть приймання проби.",
+          "anchor": {
+            "code": "lab.ol.rcv-confirm",
+            "caption": "Кнопка «Прийняти»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveConfirm\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveConfirm"
+              },
+              "label": "Кнопка «Прийняти»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
           "title": "Розділити",
           "body": "Натисніть «Розділити» вгорі сторінки.",
           "route": "/laboratory/samples/:barcode",
@@ -8250,6 +8316,72 @@
               "tag": "span",
               "text": "Обробка зразка",
               "label": "Кнопка «Обробка зразка»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Прийняти пробу",
+          "body": "Розділяти й відмічати етапи можна лише для прийнятої проби. Якщо проба ще не прийнята — натисніть «Прийняти пробу» вгорі сторінки.",
+          "route": "/laboratory/samples/:barcode",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "transcript": "Якщо проба ще не прийнята, натисніть «Прийняти пробу».",
+          "anchor": {
+            "code": "lab.ol.sp-receive",
+            "caption": "Кнопка «Прийняти пробу»",
+            "routePattern": "/laboratory/samples/:barcode",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveBtn\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveBtn"
+              },
+              "label": "Кнопка «Прийняти пробу»"
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Підтвердьте приймання",
+          "body": "Перевірте якість матеріалу й натисніть «Прийняти».",
+          "route": "/laboratory/samples/:barcode",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "transcript": "Підтвердіть приймання проби.",
+          "anchor": {
+            "code": "lab.ol.rcv-confirm",
+            "caption": "Кнопка «Прийняти»",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"receiveConfirm\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "attrs": {
+                "data-testid": "receiveConfirm"
+              },
+              "label": "Кнопка «Прийняти»"
             },
             "parentLevels": 0
           }
@@ -8637,8 +8769,8 @@
       "steps": [
         {
           "stepType": "click",
-          "title": "Створити маніфест",
-          "body": "Натисніть «Створити маніфест».",
+          "title": "Створити маршрутний лист",
+          "body": "Натисніть «Створити маршрутний лист».",
           "route": "/laboratory/logistics",
           "highlight": "element",
           "parentLevels": 0,
@@ -8647,10 +8779,10 @@
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
-          "transcript": "Натисніть «Створити маніфест».",
+          "transcript": "Натисніть «Створити маршрутний лист».",
           "anchor": {
             "code": "lab.ol.lg-create",
-            "caption": "Кнопка «Створити маніфест»",
+            "caption": "Кнопка «Створити маршрутний лист»",
             "routePattern": "/laboratory/logistics",
             "strategies": [
               {
@@ -8663,7 +8795,7 @@
               "attrs": {
                 "data-testid": "createManifestBtn"
               },
-              "label": "Кнопка «Створити маніфест»"
+              "label": "Кнопка «Створити маршрутний лист»"
             },
             "parentLevels": 0
           }
@@ -9054,8 +9186,8 @@
       "steps": [
         {
           "stepType": "click",
-          "title": "Створити маніфест",
-          "body": "Натисніть «Створити маніфест».",
+          "title": "Створити маршрутний лист",
+          "body": "Натисніть «Створити маршрутний лист».",
           "route": "/laboratory/logistics",
           "highlight": "element",
           "parentLevels": 0,
@@ -9067,7 +9199,7 @@
           "transcript": "Створіть маніфест.",
           "anchor": {
             "code": "lab.ol.lg-create",
-            "caption": "Кнопка «Створити маніфест»",
+            "caption": "Кнопка «Створити маршрутний лист»",
             "routePattern": "/laboratory/logistics",
             "strategies": [
               {
@@ -9080,7 +9212,7 @@
               "attrs": {
                 "data-testid": "createManifestBtn"
               },
-              "label": "Кнопка «Створити маніфест»"
+              "label": "Кнопка «Створити маршрутний лист»"
             },
             "parentLevels": 0
           }
@@ -9184,7 +9316,7 @@
         {
           "stepType": "input",
           "title": "Температура прийому",
-          "body": "Введіть {{tempIn}} °C — вище +8 °C. З’явиться помилка про порушення.",
+          "body": "Введіть {{tempIn}} °C — вище +8 °C. З’явиться оранжеве попередження про порушення, а поле приміток стане обов’язковим.",
           "route": "/laboratory/logistics",
           "highlight": "element",
           "parentLevels": 0,
@@ -9250,7 +9382,7 @@
         {
           "stepType": "info",
           "title": "Підсвічений рядок",
-          "body": "Маніфест із порушенням підсвічується червоним і має попередження в стовпці температури.",
+          "body": "Маршрутний лист із порушенням позначено червоним бейджем «Прийнято з порушенням», а температура в рядку підсвічена.",
           "route": "/laboratory/logistics",
           "highlight": "element",
           "parentLevels": 0,
@@ -9530,7 +9662,7 @@
         {
           "stepType": "click",
           "title": "Видалити",
-          "body": "Значок «Видалити» прибирає маніфест; проби повертаються у статус «Забрано».",
+          "body": "Значок «Видалити» прибирає маршрутний лист, доки його не прийнято в лабораторії; проби повертаються у статус «Забрано». Прийнятий лист видалити не можна.",
           "route": "/laboratory/logistics",
           "highlight": "element",
           "parentLevels": 0,
@@ -9586,6 +9718,20 @@
         }
       ],
       "steps": [
+        {
+          "stepType": "info",
+          "title": "Призначте виконавця",
+          "body": "Спершу вкажіть, що показник виконує зовнішня лабораторія: у картці направлення відкрийте вкладку «Показники», у меню «⋮» біля показника оберіть «Виконати в іншій лабораторії» й виберіть лабораторію. Після цього показник з’явиться в черзі «До відправки».",
+          "route": "/laboratory/send-out",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "У картці направлення виберіть зовнішню лабораторію для показника — він потрапить у чергу до відправки."
+        },
         {
           "stepType": "select",
           "title": "Лабораторія",
@@ -9896,7 +10042,7 @@
         {
           "stepType": "click",
           "title": "До відправки",
-          "body": "Вкладка «До відправки» — тести, які виконують партнери.",
+          "body": "Вкладка «До відправки» — показники, які виконують партнери. Показник потрапляє сюди, коли в картці направлення для нього вибрано зовнішню лабораторію.",
           "route": "/laboratory/send-out",
           "highlight": "parent",
           "parentLevels": 1,
@@ -9928,7 +10074,7 @@
         {
           "stepType": "info",
           "title": "Таблиця",
-          "body": "Номер замовлення, проба й прапорець готовності проби: зелена галочка — проба в лабораторії.",
+          "body": "Номер направлення, проба й прапорець готовності проби: зелена галочка — проба в лабораторії.",
           "route": "/laboratory/send-out",
           "highlight": "element",
           "parentLevels": 0,
@@ -10712,7 +10858,7 @@
         {
           "stepType": "info",
           "title": "Прайс",
-          "body": "Для кожного показника — код у лабораторії, вартість, TAT, маршрут і вимоги до зразка.",
+          "body": "Для кожного показника — код у лабораторії, вартість, термін, маршрут і вимоги до зразка.",
           "route": "/laboratory/send-out",
           "highlight": "element",
           "parentLevels": 0,
@@ -10865,7 +11011,7 @@
         },
         {
           "stepType": "info",
-          "title": "Замовлення клієнта",
+          "title": "Направлення за період",
           "body": "Номер замовлення — посилання на картку; поруч готові результати.",
           "route": "/laboratory/clients",
           "highlight": "element",
@@ -10878,19 +11024,19 @@
           "transcript": "Тут замовлення клініки за період.",
           "anchor": {
             "code": "lab.ol.cl-orders",
-            "caption": "Замовлення клієнта",
+            "caption": "Направлення за період",
             "routePattern": "/laboratory/clients",
             "strategies": [
               {
                 "type": "text",
-                "value": "div|Замовлення клієнта",
+                "value": "div|Направлення за період",
                 "weight": 60
               }
             ],
             "fingerprint": {
               "tag": "div",
-              "text": "Замовлення клієнта",
-              "label": "Замовлення клієнта"
+              "text": "Направлення за період",
+              "label": "Направлення за період"
             },
             "parentLevels": 0
           }
@@ -10901,7 +11047,7 @@
       "code": "lab.clients.import-registry",
       "folderCode": "ord-clients",
       "caption": "Імпортувати реєстр направлень клініки",
-      "description": "Завантажити CSV чи XLSX, перевірити без створення, потім створити замовлення.",
+      "description": "Завантажити CSV чи XLSX, перевірити без створення, потім створити направлення.",
       "icon": "upload_file",
       "startRoute": "/laboratory/clients",
       "requiredRoles": [],
@@ -10984,7 +11130,7 @@
         {
           "stepType": "info",
           "title": "Формат",
-          "body": "Колонки: lastName; firstName; middleName; birthDate; gender; phone; clinicNumber; doctor; tests; cito.",
+          "body": "Колонки: Прізвище; Ім’я; По батькові; Дата народження; Стать; Телефон; Номер у клініки; Лікар; Дослідження (коди через кому); Терміново. Зразок файлу можна завантажити за посиланням «Завантажити зразок файлу».",
           "route": "/laboratory/clients",
           "highlight": "element",
           "parentLevels": 0,
@@ -11028,19 +11174,19 @@
           "transcript": "Спершу система покаже перевірку файлу.",
           "anchor": {
             "code": "lab.ol.cl-orders",
-            "caption": "Замовлення клієнта",
+            "caption": "Направлення за період",
             "routePattern": "/laboratory/clients",
             "strategies": [
               {
                 "type": "text",
-                "value": "div|Замовлення клієнта",
+                "value": "div|Направлення за період",
                 "weight": 60
               }
             ],
             "fingerprint": {
               "tag": "div",
-              "text": "Замовлення клієнта",
-              "label": "Замовлення клієнта"
+              "text": "Направлення за період",
+              "label": "Направлення за період"
             },
             "parentLevels": 0
           }
@@ -11048,7 +11194,7 @@
         {
           "stepType": "info",
           "title": "Створення замовлень",
-          "body": "Після перевірки натисніть «Створити N замовлень».",
+          "body": "Після перевірки натисніть «Створити направлення».",
           "route": "/laboratory/clients",
           "highlight": "element",
           "parentLevels": 0,
@@ -11060,19 +11206,19 @@
           "transcript": "Створіть замовлення з коректних рядків.",
           "anchor": {
             "code": "lab.ol.cl-orders",
-            "caption": "Замовлення клієнта",
+            "caption": "Направлення за період",
             "routePattern": "/laboratory/clients",
             "strategies": [
               {
                 "type": "text",
-                "value": "div|Замовлення клієнта",
+                "value": "div|Направлення за період",
                 "weight": 60
               }
             ],
             "fingerprint": {
               "tag": "div",
-              "text": "Замовлення клієнта",
-              "label": "Замовлення клієнта"
+              "text": "Направлення за період",
+              "label": "Направлення за період"
             },
             "parentLevels": 0
           }
@@ -11677,7 +11823,7 @@
         {
           "stepType": "info",
           "title": "Вимкнення",
-          "body": "Видалення деактивує підрозділ — журнальні записи збережуться.",
+          "body": "Значок «Вимкнути» зупиняє підрозділ — журнальні записи збережуться, а вимкнений підрозділ можна ввімкнути знову. Редагувати й вимикати підрозділи може лише адміністратор.",
           "route": "/laboratory/sections",
           "highlight": "element",
           "parentLevels": 0,
@@ -11848,7 +11994,7 @@
             "strategies": [
               {
                 "type": "css",
-                "value": "input[placeholder=\"Пошук: номер, пацієнт, штрихкод\"]",
+                "value": "input[placeholder=\"Номер, пацієнт, штрихкод\"]",
                 "weight": 90
               }
             ],

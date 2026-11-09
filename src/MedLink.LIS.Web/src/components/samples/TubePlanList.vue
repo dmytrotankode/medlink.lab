@@ -13,7 +13,7 @@
           <q-badge v-if="t.isSeparate" color="deep-orange-5" label="окремо" class="q-ml-xs" />
         </q-item-label>
         <q-item-label caption>
-          <span v-for="(c, i) in t.tests" :key="c.code" :class="c.isNew === false ? 'text-grey-5' : ''">{{ c.code }}{{ i < t.tests.length - 1 ? ', ' : '' }}</span>
+          <span v-for="(c, i) in t.tests" :key="c.code" :class="c.isNew === false ? 'text-grey-5' : ''">{{ c.name || c.code }}{{ i < t.tests.length - 1 ? ', ' : '' }}</span>
         </q-item-label>
         <q-item-label v-if="t.reasonTexts && t.reasonTexts.length" caption class="text-deep-orange-8">
           <q-icon name="call_split" size="14px" /> {{ t.reasonTexts.join('; ') }}
@@ -24,8 +24,8 @@
         </q-item-label>
       </q-item-section>
       <q-item-section side top>
-        <q-badge color="grey-7" :label="`${t.tests.length} тест.`" />
-        <div v-if="t.inversionsCount" class="text-caption text-grey-6 q-mt-xs">інверсій: {{ t.inversionsCount }}</div>
+        <q-badge color="grey-7" :label="pluralN(t.tests.length, 'показник', 'показники', 'показників')" />
+        <div v-if="t.inversionsCount" class="text-caption text-grey-6 q-mt-xs">перевернути {{ pluralN(t.inversionsCount, 'раз', 'рази', 'разів') }}</div>
         <status-chip v-if="t.status" :value="t.status" type="sample" class="q-mt-xs" />
       </q-item-section>
     </q-item>
@@ -34,6 +34,7 @@
 
 <script>
 import StatusChip from '../common/StatusChip.vue';
+import { pluralN } from '../../utils/format';
 
 /**
  * План пробірок (FR-PRE-004) у порядку забору. Елемент:
@@ -48,6 +49,7 @@ export default {
     activeKey: { type: String, default: null }
   },
   methods: {
+    pluralN,
     fmt (v) { return v == null ? '—' : Number(v).toLocaleString('uk-UA', { maximumFractionDigits: 2 }); }
   }
 };

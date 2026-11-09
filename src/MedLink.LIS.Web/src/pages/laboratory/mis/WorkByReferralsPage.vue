@@ -5,17 +5,18 @@
 <template>
   <div data-testid="workByReferralsPage">
     <page-header title="Робота за направленнями" icon="fas fa-tasks" subtitle="Черги аналізаторів, пацієнти й дослідження: що в черзі, в аналізі, з результатом, без обладнання" :breadcrumbs="[{ label: 'Робота за направленнями' }]">
-      <q-btn flat dense color="primary" icon="download" label="XLSX" type="a" :href="exportUrl" class="q-mr-sm" />
+      <q-btn flat dense color="primary" icon="download" label="Завантажити в Excel" type="a" :href="exportUrl" class="q-mr-sm" />
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
     </page-header>
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />
 
     <div class="medlink-card q-pa-sm q-mb-sm row q-gutter-sm items-center">
       <q-select v-model="f.source" dense outlined clearable emit-value map-options :options="sourceOptions" label="Джерело" style="min-width: 180px" />
-      <q-input v-model="f.department" dense outlined clearable label="Відділення" style="min-width: 180px" />
-      <q-input v-model="f.q" dense outlined clearable label="Пошук: № замовлення, штрихкод, пацієнт, код" style="min-width: 280px" @keyup.enter="load" />
-      <q-toggle v-model="f.packagesOnly" label="Лише пакети" dense />
-      <q-toggle v-model="citoOnly" label="Лише CITO" dense color="deep-orange-6" />
+      <q-input v-model="f.department" dense outlined clearable label="Відділення" placeholder="Назва відділення" style="min-width: 180px" />
+      <q-input v-model="f.q" dense outlined clearable label="№ замовлення, штрихкод, пацієнт" style="min-width: 300px" @keyup.enter="load" />
+      <q-toggle v-model="f.packagesOnly" label="Лише пакети" dense class="q-mr-sm" />
+      <q-toggle v-model="citoOnly" label="Лише CITO" dense color="deep-orange-6" class="q-mr-sm" />
+      <span class="text-caption text-grey-7">Показати направлення:</span>
       <q-btn-toggle v-model="f.status" dense unelevated toggle-color="primary" color="grey-2" text-color="grey-9" :options="[{ label: 'Активні', value: 'active' }, { label: 'Усі', value: 'all' }]" />
     </div>
 
@@ -34,22 +35,22 @@
               <div class="text-weight-bold ellipsis">{{ a.name }}</div>
               <div class="text-caption text-grey-7 ellipsis">{{ a.location }}</div>
               <div class="row q-gutter-xs q-mt-xs">
-                <q-badge color="grey-7" :label="`черга ${a.queue}`" />
-                <q-badge v-if="a.inAnalysis" color="primary" :label="`аналіз ${a.inAnalysis}`" />
-                <q-badge v-if="a.results" color="teal-6" :label="`рез. ${a.results}`" />
-                <q-badge v-if="a.cito" color="deep-orange-6" :label="`CITO ${a.cito}`" />
+                <q-badge color="grey-7" :label="`У черзі: ${a.queue}`" />
+                <q-badge v-if="a.inAnalysis" color="primary" :label="`В аналізі: ${a.inAnalysis}`" />
+                <q-badge v-if="a.results" color="teal-6" :label="`Є результат: ${a.results}`" />
+                <q-badge v-if="a.cito" color="deep-orange-6" :label="`Термінових: ${a.cito}`" />
               </div>
-              <div v-if="a.longOffline" class="text-caption text-negative q-mt-xs"><q-icon name="wifi_off" /> без зв’язку</div>
-              <div v-if="a.lockouts.length" class="text-caption text-negative"><q-icon name="lock" /> {{ a.lockouts.join(', ') }}</div>
+              <div v-if="a.longOffline" class="text-caption text-negative q-mt-xs"><q-icon name="wifi_off" /> Немає зв’язку</div>
+              <div v-if="a.lockouts.length" class="text-caption text-negative"><q-icon name="lock" /> Заблоковано: {{ a.lockouts.map(testName).join(', ') }}</div>
             </q-card-section>
           </q-card>
         </div>
         <div class="col-6 col-sm-4 col-md-3 col-lg-2">
           <q-card flat bordered class="cursor-pointer an-tile an-tile--none" :class="{ 'an-tile--active': analyzerId === 'none' }" @click="openAnalyzer('none')">
             <q-card-section class="q-pa-sm">
-              <div class="text-weight-bold">Без обладнання</div>
-              <div class="text-caption text-grey-7">send-out / ручне / відхилення</div>
-              <q-badge class="q-mt-xs" :color="summary.noEquipment ? 'negative' : 'grey-5'" :label="String(summary.noEquipment || 0)" />
+              <div class="text-weight-bold">Без аналізатора</div>
+              <div class="text-caption text-grey-7">зовнішня лабораторія / вручну / відхилено</div>
+              <q-badge class="q-mt-xs" :color="summary.noEquipment ? 'negative' : 'grey-5'" :label="String(summary.noEquipment || 0)"><q-tooltip>Показники, для яких немає аналізатора</q-tooltip></q-badge>
             </q-card-section>
           </q-card>
         </div>
@@ -59,9 +60,9 @@
           <div class="text-subtitle1 text-weight-bold">{{ analyzerView.analyzer }}</div>
           <span class="text-caption text-grey-7 q-ml-sm">{{ analyzerView.location }} · позицій {{ analyzerView.total }}</span>
           <q-space />
-          <q-btn v-if="currentTile && currentTile.longOffline" outline dense color="negative" icon="alt_route" label="Переназначити чергу" @click="reroute" />
+          <q-btn v-if="currentTile && currentTile.longOffline && analyzerView.total > 0" outline dense color="negative" icon="alt_route" label="Переназначити чергу" @click="reroute" />
         </div>
-        <q-table :data="analyzerView.items" :columns="rowColumns" row-key="orderTestId" dense flat :pagination="{ rowsPerPage: 50 }" no-data-label="Черга порожня">
+        <q-table :data="analyzerView.items" :columns="rowColumns" row-key="orderTestId" dense flat :pagination="{ rowsPerPage: 50 }" no-data-label="У черзі нічого немає">
           <template v-slot:body-cell-order="props">
             <q-td :props="props"><router-link :to="{ name: 'lab-order-card', params: { id: props.row.orderId } }" class="text-primary">{{ props.row.orderNumber }}</router-link> <q-badge v-if="props.row.isCito" color="deep-orange-6" label="CITO" /></q-td>
           </template>
@@ -111,7 +112,7 @@
             </div>
           </div>
         </div>
-        <empty-state v-else title="Оберіть пацієнта" icon="person" />
+        <empty-state v-else title="Оберіть пацієнта" hint="Оберіть пацієнта зі списку ліворуч, щоб побачити його дослідження" icon="person" />
       </div>
     </div>
 
@@ -197,9 +198,11 @@ export default {
     params: { deep: true, handler () { this.load(); } },
     tab () { this.load(); }
   },
-  created () { this.load(); },
+  created () { this.$store.dispatch('dictionaries/load', 'tests'); this.load(); },
   methods: {
     viewColor (v) { return { queue: 'grey-7', run: 'primary', res: 'teal-6', ver: 'positive', none: 'negative', rej: 'grey-5' }[v] || 'grey'; },
+    // Для заблокованого показника — назва з довідника та код у дужках
+    testName (code) { const t = this.$store.getters['dictionaries/items']('tests').find(x => x.code === code); return t && t.name ? `${t.name} (${code})` : code; },
     shortAnalyzer (a) { return a ? a.replace(/^(Mindray|MedicalSystem|Sysmex|Roche)\s+/, '') : '—'; },
     async load () {
       await this.callApi(async () => {

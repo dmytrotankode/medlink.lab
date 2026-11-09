@@ -63,7 +63,7 @@ public sealed class SampleProcessingService
         if (!DerivationTypes.All.Contains(req.DerivationType) || req.DerivationType == DerivationTypes.Primary) throw ValidationException.Field("derivationType", "ALIQUOT | CASSETTE | BLOCK | SLIDE | CULTURE_PLATE | DILUTION");
         var parent = await _samples.LoadByBarcodeAsync(barcode);
         if (parent.Status is not (SampleStatuses.Received or SampleStatuses.Processing or SampleStatuses.Stored))
-            throw new ConflictException($"Проба {barcode} у статусі {parent.Status}: розділяти можна лише прийняті проби (RECEIVED/PROCESSING/STORED)");
+            throw new ConflictException($"Проба {barcode} має статус «{UkLabels.Status(LisEntities.Sample, parent.Status)}»: розділити можна тільки прийняті проби");
         if (req.VolumeEachMl.HasValue && parent.VolumeMl.HasValue && req.VolumeEachMl.Value * req.Count > parent.VolumeMl.Value + 1e-9)
             throw new ConflictException($"Недостатньо об'єму: {parent.VolumeMl} мл < {req.Count} × {req.VolumeEachMl} мл");
         var order = parent.Order!;
@@ -135,7 +135,7 @@ public sealed class SampleProcessingService
             tests = tests.Where(t => t.SampleId == s.Id).Select(t => new { t.Id, t.TestCode, t.Status }),
             children = all.Where(c => c.ParentSampleId == s.Id).OrderBy(c => c.DerivationIndex).Select(Node)
         };
-        return new { orderId = root.OrderId, requestedBarcode = barcode, root = Node(root) };
+        return new { orderId = root.OrderId, orderNumber = root.Order?.OrderNumber, patientName = root.Order?.Patient?.Caption, requestedBarcode = barcode, root = Node(root) };
     }
 
     // ------------------------------------------------------------------ stages

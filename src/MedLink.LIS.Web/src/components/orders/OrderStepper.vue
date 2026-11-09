@@ -15,10 +15,13 @@
         </div>
       </div>
     </div>
+    <div v-if="order.status === 'PARTIALLY_COMPLETED'" class="q-mt-xs text-caption text-grey-8">
+      <q-icon name="donut_large" color="lime-8" /> Виконано частково: {{ doneCount }} з {{ totalCount }} показників
+    </div>
     <div v-if="terminal" class="q-mt-xs">
       <q-badge :color="terminal === 'CANCELLED' ? 'grey-7' : 'negative'" class="q-pa-xs">
         <q-icon :name="terminal === 'CANCELLED' ? 'cancel' : 'block'" class="q-mr-xs" />
-        {{ terminal === 'CANCELLED' ? 'Замовлення скасовано' : 'Замовлення відхилено' }}
+        {{ terminal === 'CANCELLED' ? 'Направлення скасовано' : 'Направлення відхилено' }}
         <span v-if="terminalAt"> · {{ formatDateTime(terminalAt) }}</span>
       </q-badge>
     </div>
@@ -39,6 +42,8 @@ export default {
     audit: { type: Array, default: () => [] }
   },
   computed: {
+    totalCount () { return (this.order.tests || []).length; },
+    doneCount () { return (this.order.tests || []).filter(t => ['VERIFIED', 'AUTO_VERIFIED'].includes(t.status)).length; },
     terminal () {
       return ['CANCELLED', 'REJECTED'].includes(this.order.status) ? this.order.status : null;
     },
@@ -46,7 +51,8 @@ export default {
       return this.order.cancelledAt || this.order.rejectedAt || this.auditAtFor(this.order.status) || this.order.modifiedOn || null;
     },
     currentIndex () {
-      const idx = ORDER_STATUS_FLOW.indexOf(this.order.status);
+      // «Частково виконано» — це етап «У роботі» (частину показників уже верифіковано)
+      const idx = ORDER_STATUS_FLOW.indexOf(this.order.status === 'PARTIALLY_COMPLETED' ? 'IN_PROGRESS' : this.order.status);
       if (idx >= 0) return idx;
       // термінальні — показуємо прогрес до останнього досягнутого етапу
       return this.lastReachedIndex;

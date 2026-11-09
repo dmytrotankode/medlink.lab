@@ -29,24 +29,24 @@ export const DICTIONARIES = {
       { name: 'anticoagulant', label: 'Антикоагулянт', type: 'select', options: ['—', 'K2-ЕДТА', 'K3-ЕДТА', 'Na-цитрат 3,2%', 'Na-цитрат 3,8%', 'Li-гепарин', 'Na-гепарин', 'NaF / K-оксалат', 'Гель-активатор згортання', 'Без добавок'], col: 3 },
       { name: 'volumeMl', label: 'Об’єм, мл', type: 'decimal', col: 2 },
       { name: 'orderOfDrawIndex', label: 'Порядок забору', type: 'number', col: 2 },
-      { name: 'inversionsCount', label: 'Інверсій', type: 'number', col: 2 },
+      { name: 'inversionsCount', label: 'Інверсій (разів)', type: 'number', col: 2 },
       { name: 'usableVolumeMl', label: 'Корисний об’єм матеріалу, мл', type: 'decimal', col: 3, hint: 'сироватка/плазма/сеча; порожньо — не контролюється' },
       { name: 'maxTestsPerTube', label: 'Макс. тестів на пробірку', type: 'number', col: 3, hint: 'порожньо — без обмеження' },
       active]
   },
   'method-types': {
-    title: 'Методики', icon: 'fas fa-flask', description: '46 методик дослідження (Simplex): фотометрія, ІФА, ІХЛА, ПЛР…',
+    title: 'Методики', icon: 'fas fa-flask', description: 'Методики дослідження: фотометрія, ІФА, ІХЛА, ПЛР…',
     columns: ['code', 'name', 'isActive'],
     fields: [...codeName, active]
   },
   'analyzer-types': {
-    title: 'Моделі аналізаторів', icon: 'fas fa-server', description: '65 профілів приладів з ac_analyzer_type Simplex: протокол обміну, рамкування, шаблон замовлення',
+    title: 'Моделі аналізаторів', icon: 'fas fa-server', description: 'Моделі аналізаторів: протокол обміну, формат повідомлень, шаблон замовлення',
     columns: ['code', 'name', 'manufacturer', 'category', 'exchType', 'controlSum', 'orderTemplate', 'isActive'],
     fields: [...codeName,
       { name: 'manufacturer', label: 'Виробник', type: 'text', col: 4 },
       { name: 'category', label: 'Категорія', type: 'select', options: ANALYZER_CATEGORIES, col: 4 },
-      { name: 'exchType', label: 'Протокол обміну (exchType)', type: 'select', options: EXCH_TYPES, col: 4 },
-      { name: 'orderTemplate', label: 'Шаблон замовлення (builder)', type: 'text', col: 4 },
+      { name: 'exchType', label: 'Протокол обміну', type: 'select', options: EXCH_TYPES, col: 4 },
+      { name: 'orderTemplate', label: 'Шаблон замовлення', type: 'text', col: 4 },
       { name: 'controlSum', label: 'Контрольна сума', type: 'toggle', col: 4 },
       { name: 'fullText', label: 'Повнотекстовий режим', type: 'toggle', col: 4 },
       { name: 'sleepMs', label: 'Пауза, мс', type: 'number', col: 4 },
@@ -55,7 +55,7 @@ export const DICTIONARIES = {
       active]
   },
   tests: {
-    title: 'Показники', icon: 'fas fa-list-ol', description: 'Лабораторні показники: LOINC, одиниці, тип результату, біоматеріал, методика, delta-check',
+    title: 'Показники', icon: 'fas fa-list-ol', description: 'Лабораторні показники: LOINC, одиниці, тип результату, біоматеріал, методика, контроль змін',
     columns: ['code', 'name', 'unit', 'resultType', 'category', 'biomaterialTypeId', 'tubeTypeId', 'requiredVolumeMl', 'requiresSeparateTube', 'deltaCheckMaxPct', 'requiresManualVerification', 'isQcTracked', 'isActive'],
     fields: [...codeName,
       { name: 'shortName', label: 'Коротка назва', type: 'text', col: 4 },
@@ -63,46 +63,46 @@ export const DICTIONARIES = {
       { name: 'category', label: 'Категорія', type: 'text', col: 4 },
       { name: 'unit', label: 'Одиниця', type: 'text', col: 3 },
       { name: 'decimalPlaces', label: 'Знаків після коми', type: 'number', col: 3, default: 2 },
-      { name: 'resultType', label: 'Тип результату', type: 'select', options: ['NUMERIC', 'TEXT', 'DROPDOWN', 'CALCULATED'], col: 3, default: 'NUMERIC' },
+      { name: 'resultType', label: 'Тип результату', type: 'select', options: [{ value: 'NUMERIC', label: 'Числовий' }, { value: 'TEXT', label: 'Текстовий' }, { value: 'DROPDOWN', label: 'Вибір зі списку' }, { value: 'CALCULATED', label: 'Розрахунковий' }], col: 3, default: 'NUMERIC' },
       { name: 'price', label: 'Ціна, грн', type: 'decimal', col: 3 },
-      { name: 'dropdownOptions', label: 'Варіанти (DROPDOWN)', type: 'chips', col: 6, showIf: f => f.resultType === 'DROPDOWN' },
-      { name: 'formula', label: 'Формула (CALCULATED)', type: 'text', col: 6, showIf: f => f.resultType === 'CALCULATED' },
+      { name: 'dropdownOptions', label: 'Варіанти зі списку', type: 'chips', col: 6, showIf: f => f.resultType === 'DROPDOWN' },
+      { name: 'formula', label: 'Формула розрахунку', type: 'text', col: 6, showIf: f => f.resultType === 'CALCULATED' },
       { name: 'biomaterialTypeId', label: 'Біоматеріал', type: 'dict', dict: 'biomaterials', col: 6 },
       { name: 'methodId', label: 'Методика', type: 'dict', dict: 'method-types', col: 6 },
-      { name: 'tubeTypeId', label: 'Тара (пробірка/контейнер)', type: 'dict', dict: 'tube-types', col: 6 },
-      { name: 'requiredVolumeMl', label: 'Потрібний об’єм матеріалу, мл', type: 'decimal', col: 3 },
+      { name: 'tubeTypeId', label: 'Тара', type: 'dict', dict: 'tube-types', col: 6 },
+      { name: 'requiredVolumeMl', label: 'Потрібний об’єм, мл', type: 'decimal', col: 3 },
       { name: 'maxTestsPerTube', label: 'Макс. тестів у пробірці', type: 'number', col: 3 },
       { name: 'requiresSeparateTube', label: 'Окрема пробірка', type: 'toggle', col: 3 },
       { name: 'tubeCompatibilityGroup', label: 'Група сумісності тари', type: 'text', col: 3, hint: 'однакова група — можна в одну пробірку' },
-      { name: 'deltaCheckMaxPct', label: 'Delta-check, % (поріг)', type: 'decimal', col: 3 },
-      { name: 'deltaCheckHours', label: 'Delta-check, год', type: 'number', col: 3, default: 72 },
+      { name: 'deltaCheckMaxPct', label: 'Контроль змін, % (поріг)', type: 'decimal', col: 3 },
+      { name: 'deltaCheckHours', label: 'Контроль змін, год', type: 'number', col: 3, default: 72 },
       { name: 'requiresManualVerification', label: 'Потребує ручної верифікації', type: 'toggle', col: 3 },
       { name: 'isQcTracked', label: 'Під ВКЯ', type: 'toggle', col: 3 },
       active]
   },
   profiles: {
-    title: 'Послуги (профілі)', icon: 'fas fa-medical-services', description: 'Послуга прайсу MedLink (org_organization_service) + лабораторні атрибути: набір показників, TAT, підготовка',
-    sourceHint: 'Джерело: прайс послуг MedLink (org_organization_service). Назва та ціна послуги редагуються в МІС і тут лише для читання; код eHealth — з каталогу ehe_service_catalog_service.',
+    title: 'Послуги (профілі)', icon: 'fas fa-medical-services', description: 'Послуги з прайсу MedLink і лабораторні властивості: набір показників, час виконання, підготовка',
+    sourceHint: 'Джерело: прайс послуг MedLink. Назва та ціна послуги редагуються в МІС і тут лише для читання; код ЕСОЗ — з каталогу послуг ЕСОЗ.',
     columns: ['code', 'name', 'category', 'turnaroundHours', 'price', 'itemsCount', 'organizationServiceId', 'isActive'],
     fields: [
-      { name: 'organizationServiceId', label: 'Послуга прайсу MedLink (org_organization_service)', type: 'text', col: 4, readonly: true, hint: 'призначається МІС' },
+      { name: 'organizationServiceId', label: 'Послуга прайсу MedLink', type: 'text', col: 4, readonly: true, hint: 'призначається МІС' },
       { name: 'code', label: 'Код', type: 'text', required: true, col: 3 },
       { name: 'name', label: 'Назва', type: 'text', required: true, col: 5, readonlyIf: f => !!f.organizationServiceId },
       { name: 'category', label: 'Категорія', type: 'select', options: ['Гематологія', 'Біохімія', 'Гормони', 'Імунологія', 'Коагулологія', 'Загальноклінічні', 'Мікробіологія', 'ПЛР', 'Інше'], allowCustom: true, col: 4 },
-      { name: 'turnaroundHours', label: 'TAT, год', type: 'number', col: 3, default: 24 },
+      { name: 'turnaroundHours', label: 'Час виконання, год', type: 'number', col: 3, default: 24 },
       { name: 'price', label: 'Ціна, грн (з МІС)', type: 'decimal', col: 3, readonlyIf: f => !!f.organizationServiceId },
       { name: 'fastingRequired', label: 'Натще', type: 'toggle', col: 2 },
       { name: 'items', label: 'Показники профілю', type: 'profileItems', col: 12 },
       active]
   },
   'reflex-rules': {
-    title: 'Reflex-правила', icon: 'fas fa-random', description: 'Автододавання тестів: TSH > 4 → FT4, PSA > 4 → fPSA, Glucose > 11 → HbA1c',
+    title: 'Правила повторного тесту', icon: 'fas fa-random', description: 'Автододавання тестів: ТТГ > 4 → вільний Т4, ПСА > 4 → вільний ПСА, глюкоза > 11 → HbA1c',
     columns: ['triggerTestCode', 'conditionOperator', 'thresholdValue', 'reflexTestCode', 'autoApprove', 'requiresSameSample', 'description', 'isActive'],
     fields: [
       { name: 'triggerTestCode', label: 'Тригерний тест', type: 'dict', dict: 'tests', labelField: 'code', valueField: 'code', required: true, col: 4 },
-      { name: 'conditionOperator', label: 'Умова', type: 'select', options: ['<', '<=', '>', '>=', '==', 'OUT_OF_RANGE', 'CRITICAL'], required: true, col: 4, default: '>' },
+      { name: 'conditionOperator', label: 'Умова', type: 'select', options: [{ value: '<', label: 'менше (<)' }, { value: '<=', label: 'не більше (≤)' }, { value: '>', label: 'більше (>)' }, { value: '>=', label: 'не менше (≥)' }, { value: '==', label: 'дорівнює (=)' }, { value: 'OUT_OF_RANGE', label: 'поза нормою' }, { value: 'CRITICAL', label: 'критичне значення' }], required: true, col: 4, default: '>' },
       { name: 'thresholdValue', label: 'Поріг', type: 'decimal', col: 4 },
-      { name: 'reflexTestCode', label: 'Reflex-тест', type: 'dict', dict: 'tests', labelField: 'code', valueField: 'code', required: true, col: 4 },
+      { name: 'reflexTestCode', label: 'Тест, що додається', type: 'dict', dict: 'tests', labelField: 'code', valueField: 'code', required: true, col: 4 },
       { name: 'autoApprove', label: 'Автопідтвердження', type: 'toggle', col: 4 },
       { name: 'requiresSameSample', label: 'Та сама проба', type: 'toggle', col: 4, default: true },
       { name: 'description', label: 'Опис', type: 'textarea', col: 12 },
@@ -113,7 +113,7 @@ export const DICTIONARIES = {
     columns: ['code', 'name', 'genus', 'gramStain', 'eucastGroup', 'isActive'],
     fields: [...codeName,
       { name: 'genus', label: 'Рід', type: 'text', col: 4 },
-      { name: 'gramStain', label: 'Грам', type: 'select', options: ['Грам+', 'Грам−', 'Гриби', 'Інше'], col: 4 },
+      { name: 'gramStain', label: 'Грам', type: 'select', options: [{ value: 'GRAM_POSITIVE', label: 'Грам-позитивні' }, { value: 'GRAM_NEGATIVE', label: 'Грам-негативні' }, { value: 'FUNGI', label: 'Гриби' }, { value: 'OTHER', label: 'Інше' }, { value: 'Грам+', label: 'Грам-позитивні' }, { value: 'Грам−', label: 'Грам-негативні' }], col: 4 },
       { name: 'eucastGroup', label: 'Група EUCAST', type: 'text', col: 4 },
       active]
   },
@@ -126,7 +126,7 @@ export const DICTIONARIES = {
       active]
   },
   'eucast-breakpoints': {
-    title: 'EUCAST breakpoints', icon: 'fas fa-ruler-horizontal', description: 'Пороги S/I/R за зоною (мм) та МІК (мг/л) для пари організм–антибіотик',
+    title: 'Контрольні значення EUCAST', icon: 'fas fa-ruler-horizontal', description: 'Пороги чутливості S/I/R за зоною (мм) та МІК (мг/л) для пари організм–антибіотик',
     columns: ['organismGroup', 'antibioticId', 'zoneS', 'zoneR', 'micS', 'micR', 'version', 'isActive'],
     fields: [
       { name: 'organismGroup', label: 'Група організмів / організм', type: 'text', required: true, col: 6 },
@@ -139,7 +139,7 @@ export const DICTIONARIES = {
       active]
   },
   departments: {
-    title: 'Відділення', icon: 'fas fa-hospital', description: 'Підрозділи MedLink (org_department) + вид підрозділу для ЛІС (lab_department_settings): лабораторія, пункт забору, клінічне, філія',
+    title: 'Відділення', icon: 'fas fa-hospital', description: 'Підрозділи MedLink і вид підрозділу в ЛІС: лабораторія, пункт забору, клінічне відділення, філія',
     columns: ['code', 'name', 'labKind', 'departmentTypeName', 'address', 'phone', 'isActive'],
     fields: [...codeName,
       { name: 'labKind', label: 'Вид для ЛІС', type: 'select', options: [{ value: 'LABORATORY', label: 'Лабораторія' }, { value: 'COLLECTION_POINT', label: 'Пункт забору' }, { value: 'CLINICAL', label: 'Клінічне відділення' }, { value: 'BRANCH', label: 'Філія' }], required: true, col: 6, default: 'CLINICAL' },
@@ -148,7 +148,7 @@ export const DICTIONARIES = {
       active]
   },
   employees: {
-    title: 'Співробітники', icon: 'fas fa-users', description: 'Співробітники MedLink (org_employee + cmn_person) + роль у ЛІС (lab_employee_settings)',
+    title: 'Співробітники', icon: 'fas fa-users', description: 'Співробітники MedLink і їхня лабораторна роль',
     columns: ['fullName', 'position', 'labRole', 'departmentId', 'phone', 'isActive'],
     fields: [
       { name: 'fullName', label: 'ПІБ', type: 'text', required: true, col: 6 },

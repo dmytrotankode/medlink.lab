@@ -108,8 +108,9 @@ public sealed class AnalyticsService
             case "tat":
             {
                 var data = await CollectAsync(f, t, null, null);
-                var ws = wb.AddWorksheet("TAT");
-                var headers = new[] { "Замовлення", "CITO", "Профіль", "SLA, год" }.Concat(TatCalculator.StageNames).Concat(new[] { "Всього, хв", "Порушення SLA" }).ToArray();
+                var ws = wb.AddWorksheet("Терміни виконання");
+                var stageTitles = new[] { "Замовлення → забір, хв", "Забір → прийом, хв", "Прийом → результат, хв", "Результат → верифікація, хв", "Верифікація → видача, хв" };
+                var headers = new[] { "Замовлення", "Терміново", "Послуга", "Норма часу, год" }.Concat(stageTitles).Concat(new[] { "Всього, хв", "Порушення терміну" }).ToArray();
                 for (var i = 0; i < headers.Length; i++) ws.Cell(1, i + 1).Value = headers[i];
                 var row = 2;
                 foreach (var d in data)

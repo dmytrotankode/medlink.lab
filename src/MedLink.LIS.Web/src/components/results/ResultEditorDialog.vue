@@ -1,5 +1,5 @@
 <template>
-  <q-dialog :value="value" @input="$emit('input', $event)" persistent>
+  <q-dialog :value="value" @input="$emit('input', $event)" no-backdrop-dismiss>
     <q-card style="min-width: 520px; max-width: 96vw" data-testid="resultEditor">
       <q-card-section class="row items-center bg-primary text-white q-py-sm">
         <q-icon name="edit_note" class="q-mr-sm" />
@@ -13,7 +13,7 @@
           <div class="col-6">Штрихкод: <b class="mono">{{ row.barcode || '—' }}</b></div>
           <div class="col-6">Норма: <b>{{ reference }}</b> {{ row.unit }}</div>
           <div class="col-6" v-if="row.previousValue !== undefined && row.previousValue !== null">Попередній: <b>{{ row.previousValue | num }}</b> ({{ row.previousAt | datetime }})</div>
-          <div class="col-12" v-if="row.isLockedOut"><q-badge color="purple-6" icon="lock">Аналізатор/тест під Lockout ВКЯ — автоверифікація заблокована</q-badge></div>
+          <div class="col-12" v-if="row.isLockedOut"><q-badge color="purple-6"><q-icon name="lock" size="12px" class="q-mr-xs" />Аналізатор заблоковано контролем якості — автоверифікація недоступна</q-badge></div>
         </div>
 
         <!-- Структурований протокол (патогістологія / цитологія) -->

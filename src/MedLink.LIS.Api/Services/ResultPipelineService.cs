@@ -89,7 +89,7 @@ public sealed class ResultPipelineService
         var policy = PolicyFor(entry.IsSystem);
 
         if (OrderStatuses.Terminal.Contains(order.Status) || order.Status == OrderStatuses.Released)
-            throw new ConflictException($"Замовлення {order.OrderNumber} у статусі {order.Status} — введення результатів неможливе");
+            throw new ConflictException($"Замовлення {order.OrderNumber} у статусі «{UkLabels.Status(LisEntities.Order, order.Status)}» — введення результатів неможливе");
 
         // Коннектор: проба на приладі = фактично прийнята
         if (entry.IsSystem && test.Sample != null) _samples.SystemReceive(test.Sample);

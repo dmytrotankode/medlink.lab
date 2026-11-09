@@ -5,8 +5,12 @@
 <template>
   <div data-testid="ehealthSubmissionsPage">
     <page-header title="Відправка в ЕСОЗ" icon="fas fa-cloud-upload-alt" :breadcrumbs="[{ label: 'Відправка в ЕСОЗ' }]">
-      <q-badge v-if="mode" :color="mode === 'LIVE' ? 'deep-orange-6' : 'grey-7'" :label="mode" class="q-mr-sm" data-testid="ehealthMode" />
-      <q-btn v-if="mode && mode !== 'LIVE'" flat dense color="primary" icon="play_arrow" label="Обробити зараз" :loading="running" class="q-mr-sm" data-testid="ehealthRunNow" @click="runNow" />
+      <q-badge v-if="mode" :color="mode === 'LIVE' ? 'deep-orange-6' : 'grey-7'" :label="mode === 'LIVE' ? 'Бойовий режим' : 'Тестовий режим'" class="q-mr-sm" data-testid="ehealthMode">
+        <q-tooltip>{{ mode === 'LIVE' ? 'Звіти передаються в реальний ЕСОЗ' : 'Звіти не передаються в реальний ЕСОЗ' }}</q-tooltip>
+      </q-badge>
+      <q-btn v-if="mode && mode !== 'LIVE' && canRunNow" flat dense color="primary" icon="play_arrow" label="Обробити зараз" :loading="running" class="q-mr-sm" data-testid="ehealthRunNow" @click="runNow">
+        <q-tooltip>Запустити обробку черги відправки зараз</q-tooltip>
+      </q-btn>
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" data-testid="ehealthRefresh" @click="load" />
     </page-header>
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />
@@ -15,8 +19,8 @@
       <div class="col-12 col-md-3">
         <q-select v-model="filters.status" dense outlined clearable emit-value map-options :options="statusOptions" label="Статус" data-testid="ehealthStatusFilter" />
       </div>
-      <div class="col-6 col-md-2"><q-input v-model="filters.from" dense outlined type="date" stack-label label="З" data-testid="ehealthDateFrom" /></div>
-      <div class="col-6 col-md-2"><q-input v-model="filters.to" dense outlined type="date" stack-label label="По" data-testid="ehealthDateTo" /></div>
+      <div class="col-6 col-md-2"><q-input v-model="filters.from" dense outlined type="date" stack-label label="Дата з" data-testid="ehealthDateFrom" /></div>
+      <div class="col-6 col-md-2"><q-input v-model="filters.to" dense outlined type="date" stack-label label="Дата по" data-testid="ehealthDateTo" /></div>
       <div class="col-12 col-md-5">
         <q-input v-model="filters.search" dense outlined clearable debounce="400" label="Номер направлення, замовлення або пацієнт" data-testid="ehealthSearch">
           <template v-slot:prepend><q-icon name="search" /></template>
@@ -25,7 +29,7 @@
     </div>
 
     <div class="medlink-card">
-      <q-table :data="rows" :columns="columns" row-key="key" dense flat :loading="loading" :pagination="{ rowsPerPage: 30 }" no-data-label="Задач немає" data-testid="ehealthTable">
+      <q-table :data="rows" :columns="columns" row-key="key" dense flat :loading="loading" :pagination.sync="pagination" :rows-per-page-options="[25, 50, 100]" no-data-label="Задач немає" data-testid="ehealthTable">
         <template v-slot:body-cell-order="props">
           <q-td :props="props">
             <router-link :to="{ name: 'lab-order-card', params: { id: props.row.orderId } }" class="text-primary" :data-testid="`ehealthOrderLink-${props.row.key}`">{{ props.row.orderNumber }}</router-link>
@@ -41,9 +45,12 @@
         </template>
         <template v-slot:body-cell-actions="props">
           <q-td :props="props" class="text-right">
-            <q-btn v-if="props.row.canRetry" flat dense size="sm" color="primary" icon="replay" label="Повторити" :data-testid="`ehealthRetry-${props.row.key}`" @click="retry(props.row)" />
-            <q-btn v-if="props.row.canCancel" flat dense size="sm" color="negative" icon="close" label="Скасувати" :data-testid="`ehealthCancel-${props.row.key}`" @click="cancel(props.row)" />
-            <q-btn v-if="props.row.notSent" flat dense size="sm" color="primary" icon="draw" label="Підписати в картці" :to="{ name: 'lab-order-card', params: { id: props.row.orderId } }" :data-testid="`ehealthOpen-${props.row.key}`" />
+            <q-btn v-if="props.row.canRetry && canSubmit" flat dense size="sm" color="primary" icon="replay" label="Повторити" :data-testid="`ehealthRetry-${props.row.key}`" @click="retry(props.row)" />
+            <q-btn v-if="props.row.canCancel && canSubmit" flat dense size="sm" color="negative" icon="close" label="Скасувати" :data-testid="`ehealthCancel-${props.row.key}`" @click="cancel(props.row)" />
+            <q-btn v-if="props.row.notSent && canSubmit" flat dense size="sm" color="primary" icon="draw" label="Підписати в картці" :to="{ name: 'lab-order-card', params: { id: props.row.orderId } }" :data-testid="`ehealthOpen-${props.row.key}`">
+              <q-tooltip>Відкрити замовлення {{ props.row.orderNumber }} для підпису й відправки</q-tooltip>
+            </q-btn>
+            <span v-else-if="props.row.notSent" class="text-caption text-grey-6">Підпис — лікар-лаборант</span>
           </q-td>
         </template>
       </q-table>
@@ -53,15 +60,17 @@
 
 <script>
 import apiMixin from '../../../mixins/apiMixin';
+import roleMixin from '../../../mixins/roleMixin';
+import { ACTION_ROLES } from '../../../utils/menuAccess';
 
 const COLORS = { NEW: 'primary', SENDING: 'primary', WAITING_JOB: 'primary', DONE: 'positive', FAILED: 'negative', DEAD: 'grey-8', NOT_SENT: 'grey-6' };
 
 export default {
   name: 'EhealthSubmissionsPage',
-  mixins: [apiMixin],
+  mixins: [apiMixin, roleMixin],
   data () {
     return {
-      rows: [], mode: '', running: false,
+      rows: [], mode: '', running: false, pagination: { rowsPerPage: 25 },
       filters: { status: null, from: '', to: '', search: '' },
       statusOptions: [
         { value: 'NOT_SENT', label: 'Не надіслано' }, { value: 'NEW', label: 'У черзі' }, { value: 'SENDING', label: 'Відправляється' }, { value: 'WAITING_JOB', label: 'Очікує обробки в ЕСОЗ' },
@@ -73,13 +82,17 @@ export default {
         { name: 'patient', label: 'Пацієнт', field: 'patientName', align: 'left' },
         { name: 'kind', label: 'Дія', field: 'kindLabel', align: 'left' },
         { name: 'status', label: 'Статус', field: 'status', align: 'left' },
-        { name: 'attempts', label: 'Спроб', field: r => r.attempts || '', align: 'right' },
+        { name: 'attempts', label: 'Спроби', field: r => r.attempts || '', align: 'right' },
         { name: 'next', label: 'Наступна спроба', field: r => (r.nextAttemptAt ? this.$options.filters.datetime(r.nextAttemptAt) : ''), align: 'left' },
-        { name: 'job', label: 'Job', field: r => (r.jobId ? r.jobId.slice(0, 10) : ''), align: 'left', classes: 'mono text-caption' },
+        { name: 'job', label: 'Номер завдання', field: r => (r.jobId ? r.jobId.slice(0, 10) : ''), align: 'left', classes: 'mono text-caption' },
         { name: 'error', label: 'Остання помилка', field: 'lastError', align: 'left' },
         { name: 'actions', label: '', field: 'key' }
       ]
     };
+  },
+  computed: {
+    canSubmit () { return this.canDo(...ACTION_ROLES.ehealthSign); },
+    canRunNow () { return this.canDo(...ACTION_ROLES.ehealthProcessNow); }
   },
   watch: { filters: { deep: true, handler () { this.load(); } } },
   created () { this.load(); },
@@ -106,7 +119,7 @@ export default {
       this.load();
     },
     cancel (row) {
-      this.$q.dialog({ title: 'Скасувати задачу?', message: 'Підписаний пакет збережеться; відправку можна відновити кнопкою «Повторити»', cancel: true, persistent: true })
+      this.$q.dialog({ title: 'Скасувати відправку?', message: 'Підписаний звіт збережеться, відправити його можна повторно кнопкою «Повторити».', cancel: 'Не скасовувати', ok: 'Скасувати відправку', persistent: true })
         .onOk(async () => {
           try {
             await this.$api.ehealthCancelTask(row.id);

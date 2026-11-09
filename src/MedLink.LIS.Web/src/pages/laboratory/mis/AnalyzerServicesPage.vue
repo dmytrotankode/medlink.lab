@@ -5,8 +5,8 @@
 -->
 <template>
   <div data-testid="analyzerServicesPage">
-    <page-header title="Послуги ЕСОЗ × аналізатори" icon="fas fa-project-diagram" subtitle="Яка послуга ЕСОЗ на яких приладах виконується, з яким пріоритетом; склад послуги для МІС; інтервенції ЕСОЗ і пакети" :breadcrumbs="[{ label: 'Послуги ЕСОЗ × аналізатори' }]">
-      <q-btn flat dense color="primary" icon="download" label="CSV" type="a" :href="$api.serviceMatrixCsvUrl()" class="q-mr-sm" />
+    <page-header title="Послуги ЕСОЗ та аналізатори" icon="fas fa-project-diagram" subtitle="Які прилади виконують послуги ЕСОЗ і з яким пріоритетом" :breadcrumbs="[{ label: 'Послуги ЕСОЗ та аналізатори' }]">
+      <q-btn flat dense color="primary" icon="download" label="Експорт у CSV" type="a" :href="$api.serviceMatrixCsvUrl()" class="q-mr-sm" />
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
     </page-header>
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />
@@ -21,8 +21,8 @@
       <div class="row q-gutter-sm q-mb-sm text-caption text-grey-8">
         <span><q-badge color="primary" label="1" /> пріоритет приладу в послузі</span>
         <span><q-badge color="orange-7" label="½" /> прилад виконує частину показників</span>
-        <span><q-badge color="grey-6" label="окр." /> окремі показники (без послуги на приладі)</span>
-        <span><q-badge color="negative" label="lock" /> lockout ВКЯ на показник</span>
+        <span><q-badge color="grey-6" label="окр." /> Окремі показники (без послуги на приладі)</span>
+        <span><q-badge color="negative" icon="lock" /> Блокування за ВКЯ на показник</span>
       </div>
       <div class="matrix-scroll">
         <table class="svc-matrix" data-testid="serviceMatrix">
@@ -36,7 +36,7 @@
                 <q-icon :name="a.longOffline ? 'wifi_off' : a.isOnline || a.kind === 'MANUAL' ? 'wifi' : 'portable_wifi_off'" :color="a.longOffline ? 'negative' : a.isOnline || a.kind === 'MANUAL' ? 'positive' : 'grey-6'" size="14px">
                   <q-tooltip>{{ a.longOffline ? 'Без зв’язку — тести переназначаються' : a.isOnline ? 'На зв’язку' : 'Немає даних про зв’язок' }} · черга {{ a.queue }}</q-tooltip>
                 </q-icon>
-                <q-badge v-if="a.lockouts.length" color="negative" label="lock" class="q-ml-xs"><q-tooltip>Lockout: {{ a.lockouts.join(', ') }}</q-tooltip></q-badge>
+                <q-badge v-if="a.lockouts.length" color="negative" icon="lock" class="q-ml-xs"><q-tooltip>Блокування за ВКЯ: {{ a.lockouts.join(', ') }}</q-tooltip></q-badge>
               </th>
             </tr>
           </thead>
@@ -50,7 +50,7 @@
               <td v-for="a in matrix.analyzers" :key="a.id" class="text-center">
                 <template v-if="r.cells[a.id]">
                   <q-badge :color="cellColor(r.cells[a.id])" :label="cellLabel(r.cells[a.id])">
-                    <q-tooltip>{{ r.cells[a.id].covered }} з {{ r.cells[a.id].total }} показників<span v-if="r.cells[a.id].unavailable.length"> · lockout: {{ r.cells[a.id].unavailable.join(', ') }}</span><span v-if="!r.cells[a.id].enabled"> · вимкнено</span></q-tooltip>
+                    <q-tooltip>{{ r.cells[a.id].covered }} з {{ r.cells[a.id].total }} показників<span v-if="r.cells[a.id].unavailable.length"> · блокування за ВКЯ: {{ r.cells[a.id].unavailable.join(', ') }}</span><span v-if="!r.cells[a.id].enabled"> · вимкнено</span></q-tooltip>
                   </q-badge>
                 </template>
               </td>
@@ -66,7 +66,7 @@
         <q-select v-model="ivStatus" dense outlined clearable emit-value map-options label="Готовність" style="min-width: 200px" :options="readinessOptions" @input="loadInterventions" />
         <q-space />
         <span v-for="(n, k) in interventions.summary || {}" :key="k"><q-badge :color="readinessColor(k)" :label="`${readinessText(k)}: ${n}`" /></span>
-        <q-btn outline dense color="primary" icon="sync" label="Синхронізувати словник" @click="sync" />
+        <q-btn outline dense color="primary" icon="sync" label="Оновити довідник інтервенцій з ЕСОЗ" @click="confirmSync"><q-tooltip>Завантажити з ЕСОЗ актуальний перелік послуг (інтервенцій)</q-tooltip></q-btn>
       </div>
       <q-table :data="interventions.items || []" :columns="ivColumns" row-key="id" dense flat :pagination="{ rowsPerPage: 30 }">
         <template v-slot:body-cell-readiness="props">
@@ -114,7 +114,7 @@
         <q-card-section class="q-pa-sm">
           <div class="text-weight-bold q-mb-xs">Прилади послуги</div>
           <q-markup-table dense flat bordered>
-            <thead><tr><th class="text-left">Прилад</th><th>У послузі</th><th>Пріоритет</th><th>TAT, хв</th><th>Черга</th><th class="text-left">Стан</th></tr></thead>
+            <thead><tr><th class="text-left">Прилад</th><th>У послузі</th><th>Пріоритет</th><th>Час виконання, хв</th><th>Черга</th><th class="text-left">Стан</th></tr></thead>
             <tbody>
               <tr v-for="a in cardAnalyzers" :key="a.id">
                 <td><b>{{ a.name }}</b>&nbsp;<span class="text-caption text-grey-7">{{ a.location }}</span></td>
@@ -168,13 +168,13 @@ export default {
       tab: 'matrix', matrix: { analyzers: [], rows: [] }, interventions: {}, packages: [], ivSearch: '', ivStatus: null,
       cardOpen: false, card: null, cardKey: null, cardMode: null, cardAnalyzers: [], cardIndicators: [],
       readinessOptions: Object.keys(READINESS).map(k => ({ value: k, label: READINESS[k][0] })),
-      modeOptions: [{ value: 'FIXED', label: 'Фіксований склад' }, { value: 'SELECTABLE', label: 'Вибір (обов’язкові + за вибором)' }, { value: 'SELECTABLE_ANY', label: 'Довільний вибір' }],
+      modeOptions: [{ value: 'FIXED', label: 'Фіксований склад' }, { value: 'SELECTABLE', label: 'За вибором (обов’язкові + на вибір)' }, { value: 'SELECTABLE_ANY', label: 'За вибором (хоча б один)' }],
       ivColumns: [
         { name: 'code', label: 'Код', field: 'code', align: 'left', sortable: true },
         { name: 'name', label: 'Інтервенція ЕСОЗ', field: 'name', align: 'left' },
         { name: 'group', label: 'Група', field: r => r.isPathology ? 'патоморфологія' : r.serviceGroup || '', align: 'left' },
         { name: 'profile', label: 'Послуга ЛІС', field: r => r.profileName || (r.mapId ? 'набір показників' : '—'), align: 'left' },
-        { name: 'mode', label: 'Режим', field: r => r.mode || '', align: 'left' },
+        { name: 'mode', label: 'Режим', field: r => ({ FIXED: 'Усі обов’язкові', SELECTABLE: 'За вибором', SELECTABLE_ANY: 'За вибором (хоча б один)' }[r.mode] || r.mode || ''), align: 'left' },
         { name: 'readiness', label: 'Готовність', field: 'readiness', align: 'left' },
         { name: 'synced', label: 'Синхронізовано', field: r => this.$options.filters.datetime(r.syncedOn), align: 'left' },
         { name: 'actions', label: '', field: 'id' }
@@ -201,9 +201,13 @@ export default {
       const r = await this.callApi(() => this.$api.interventions({ search: this.ivSearch, status: this.ivStatus }), { silent: true });
       if (r) this.interventions = r;
     },
+    confirmSync () {
+      this.$q.dialog({ title: 'Оновити довідник інтервенцій?', message: 'З ЕСОЗ буде завантажено актуальний перелік послуг (інтервенцій). Наявні співставлення з послугами ЛІС збережуться.', cancel: 'Скасувати', ok: 'Оновити' })
+        .onOk(() => this.sync());
+    },
     async sync () {
       const r = await this.callApi(() => this.$api.syncInterventions());
-      if (r) { this.$q.notify({ type: 'positive', message: `Синхронізовано: ${r.synced} (${r.source})` }); this.loadInterventions(); }
+      if (r) { this.$q.notify({ type: 'positive', message: `Довідник оновлено: ${r.synced} записів` }); this.loadInterventions(); }
     },
     async openCard (key) {
       const c = await this.callApi(() => this.$api.serviceCard(key));

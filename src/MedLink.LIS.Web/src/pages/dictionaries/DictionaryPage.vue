@@ -1,5 +1,11 @@
 <template>
-  <div class="dictionary-page">
+  <div v-if="!known" class="dictionary-page column items-center q-pa-xl" data-testid="dictNotFound">
+    <q-icon name="menu_book" size="56px" color="grey-5" />
+    <div class="text-h6 text-grey-8 q-mt-md">Довідник не знайдено</div>
+    <div class="text-body2 text-grey-7 q-mt-sm">Такого довідника немає. Оберіть довідник зі списку.</div>
+    <q-btn unelevated color="primary" icon="menu_book" label="До списку довідників" class="q-mt-md" :to="{ name: 'lab-dictionaries' }" />
+  </div>
+  <div v-else class="dictionary-page">
     <page-header :title="schema.title" :icon="schema.icon" :subtitle="schema.description" :breadcrumbs="[{ label: 'Довідники', to: { name: 'lab-dictionaries' } }, { label: schema.title }]">
       <q-btn-dropdown outline dense color="primary" icon="menu_book" label="Інший довідник" no-caps>
         <q-list dense>
@@ -23,7 +29,8 @@ export default {
   components: { DictionaryCrudTable },
   props: { name: { type: String, required: true } },
   computed: {
-    schema () { return DICTIONARIES[this.name] || { title: `Довідник ${this.name}`, icon: 'list', description: 'Невідомий довідник — відображення у загальному вигляді' }; },
+    known () { return !!DICTIONARIES[this.name]; },
+    schema () { return DICTIONARIES[this.name] || { title: 'Довідник', icon: 'list', description: '' }; },
     list () { return DICTIONARY_LIST; }
   }
 };

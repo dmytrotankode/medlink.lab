@@ -78,6 +78,8 @@ public sealed partial class GuideService
                 set.Id, Code = code, set.Caption, set.Description, set.Color, set.Icon, set.SortOrder,
                 estMinutes = ordered.Sum(s => s.EstMinutes ?? 0),
                 scenarioCount = ordered.Count,
+                // інструкції набору, які не потрапили в каталог (недоступні ролі, чернетки): панель показує «Недоступні вашій ролі»
+                unavailableCount = items.Count(i => i.SetId == set.Id && i.ScenarioId != null && !scById.ContainsKey(i.ScenarioId)),
                 scenarios = ordered.Select(s => new
                 {
                     s.Id, s.Code, s.Caption, s.EstMinutes,

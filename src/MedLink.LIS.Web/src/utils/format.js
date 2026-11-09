@@ -56,7 +56,11 @@ export function formatNumber (value, digits = null) {
 
 export function formatMoney (value) {
   if (value === null || value === undefined) return '—';
-  return `${formatNumber(value, 2)} грн`;
+  const s = formatNumber(value, 2);
+  const parts = s.split(',');
+  // розділювач розрядів — нерозривний пробіл: «9 120,00 грн»
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+$)/g, ' ');
+  return `${parts.join(',')} грн`;
 }
 
 export function formatPercent (value, digits = 1) {
@@ -107,10 +111,20 @@ export function genderLabel (g) {
   return '—';
 }
 
+/**
+ * Єдиний вигляд норми: десяткова кома («4,1 – 5,9»), для якісних показників — лише перше значення
+ * українською («не виявлено;negative» → «не виявлено»; синоніми в довіднику норм на екран не виводимо).
+ */
+export function normalizeReference (text) {
+  let s = String(text);
+  if (s.includes(';') && /[^\d\s.,;–—<>=+-]/.test(s)) s = s.split(';')[0].trim();
+  return s.replace(/(\d)\.(\d)/g, '$1,$2');
+}
+
 export function referenceDisplay (row) {
   if (!row) return '';
-  if (row.referenceDisplay) return row.referenceDisplay;
-  if (row.normText) return row.normText;
+  if (row.referenceDisplay) return normalizeReference(row.referenceDisplay);
+  if (row.normText) return normalizeReference(row.normText);
   const lo = row.normLow; const hi = row.normHigh;
   if (lo === null && hi === null) return '';
   if (lo === undefined && hi === undefined) return '';
@@ -143,4 +157,18 @@ export function copyToClipboard (text) {
   document.execCommand('copy');
   document.body.removeChild(ta);
   return Promise.resolve();
+}
+
+/** Відмінювання за числом: plural(4, 'пробірка', 'пробірки', 'пробірок') → 'пробірки' */
+export function plural (n, one, few, many) {
+  const abs = Math.abs(Number(n)) || 0;
+  const m10 = abs % 10; const m100 = abs % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+  return many;
+}
+
+/** «4 пробірки», «1 показник» тощо */
+export function pluralN (n, one, few, many) {
+  return `${n} ${plural(n, one, few, many)}`;
 }

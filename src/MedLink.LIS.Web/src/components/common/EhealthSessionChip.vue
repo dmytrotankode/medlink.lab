@@ -7,7 +7,7 @@
   <div class="row items-center no-wrap">
     <div class="header-chip cursor-pointer" :class="chipClass" data-testid="ehealthChip" @click="open">
       <q-icon :name="level === 'L2' ? 'verified_user' : level === 'L1' ? 'gpp_maybe' : 'shield'" size="15px" />
-      <span>{{ status.label || 'ЕСОЗ: не підключено' }}</span>
+      <span class="gt-sm">{{ status.label || 'ЕСОЗ: не підключено' }}</span>
       <q-tooltip>Сесія ЕСОЗ користувача для підпису й відправки звітів{{ status.mode === 'MOCK' ? ' (тестовий режим)' : '' }}</q-tooltip>
     </div>
 
@@ -16,16 +16,16 @@
         <q-card-section class="text-subtitle1 text-weight-bold"><q-icon name="shield" color="primary" class="q-mr-xs" />Вхід в ЕСОЗ</q-card-section>
 
         <q-card-section v-if="level === 'L0'" class="q-gutter-sm q-pt-none">
-          <q-input v-model="login" dense outlined label="Ел. пошта або логін ЕСОЗ" autocomplete="username" />
+          <q-input v-model="login" dense outlined autofocus label="Ел. пошта або логін ЕСОЗ" autocomplete="username" />
           <q-input v-model="password" dense outlined type="password" label="Пароль ЕСОЗ" autocomplete="current-password" @keyup.enter="doLogin" />
           <div class="text-caption text-grey-7">Пароль передається лише шлюзу ЕСОЗ і не зберігається в ЛІС. Після входу потрібне підтвердження особи.</div>
         </q-card-section>
 
         <q-card-section v-else-if="level === 'L1'" class="q-pt-none">
-          <div class="text-caption q-mb-sm">Підтвердіть особу: КЕП (особистий ключ) або код з додатка автентифікації (2FA).</div>
+          <div class="text-caption q-mb-sm">Підтвердіть особу: КЕП (кваліфікований електронний підпис) або код із додатка автентифікації (двофакторний вхід).</div>
           <q-tabs v-model="method" dense align="left" active-color="primary" class="text-grey-8">
             <q-tab name="KEP" label="КЕП" />
-            <q-tab name="TOTP" label="2FA (TOTP)" />
+            <q-tab name="TOTP" label="Код з додатка" />
           </q-tabs>
           <div v-if="method === 'KEP'" class="q-pt-sm">
             <div v-if="status.testCertificate" class="text-caption bg-grey-2 q-pa-sm rounded-borders">
@@ -35,7 +35,7 @@
           </div>
           <div v-else class="q-pt-sm q-gutter-sm">
             <q-input v-model="code" dense outlined label="Код з додатка" mask="######" @keyup.enter="doConfirm" />
-            <div v-if="!status.totpEnabled" class="text-caption text-orange-9">2FA вимкнена для облікового запису. <a href="#" @click.prevent="enableTotp">Увімкнути 2FA</a></div>
+            <div v-if="!status.totpEnabled" class="text-caption text-orange-9">Двофакторний вхід вимкнено для облікового запису. <a href="#" @click.prevent="enableTotp">Увімкнути</a></div>
             <div v-if="status.demoTotpCode" class="text-caption text-grey-7">Тестовий режим: код {{ status.demoTotpCode }}</div>
           </div>
         </q-card-section>
@@ -49,7 +49,9 @@
           <q-btn v-if="level !== 'L0'" flat color="negative" label="Вийти з ЕСОЗ" @click="doLogout" />
           <q-space />
           <q-btn flat label="Закрити" v-close-popup />
-          <q-btn v-if="level === 'L0'" unelevated color="primary" label="Увійти" :loading="busy" :disable="!login || !password" @click="doLogin" />
+          <q-btn v-if="level === 'L0'" unelevated color="primary" label="Увійти" :loading="busy" :disable="!login || !password" @click="doLogin">
+            <q-tooltip v-if="!login || !password">Введіть логін і пароль</q-tooltip>
+          </q-btn>
           <q-btn v-if="level === 'L1'" unelevated color="primary" :label="method === 'KEP' ? 'Підписати КЕП' : 'Підтвердити'" :loading="busy" @click="doConfirm" />
         </q-card-actions>
       </q-card>
@@ -100,7 +102,7 @@ export default {
       const body = this.method === 'KEP' ? { method: 'KEP', signer: this.status.testCertificate } : { method: 'TOTP', code: this.code };
       return this.run(async () => { await this.$api.ehealthConfirm(body); this.code = ''; this.dlg = false; }, 'Особу підтверджено');
     },
-    enableTotp () { return this.run(() => this.$api.ehealthEnableTotp(), '2FA увімкнено'); },
+    enableTotp () { return this.run(() => this.$api.ehealthEnableTotp(), 'Двофакторний вхід увімкнено'); },
     doLogout () { return this.run(async () => { await this.$api.ehealthLogout(); this.dlg = false; }, 'Сесію ЕСОЗ завершено'); }
   }
 };

@@ -5,9 +5,10 @@ import { h, lstore } from './util.js';
 import { getLayer } from './ui.js';
 
 const PREFS_KEY = 'mlg.narration';
-const HINT_TEXT = 'Голос Остап доступний у Microsoft Edge';
+const HINT_TEXT = 'Озвучення недоступне в цьому браузері. Відкрийте інструкцію в Microsoft Edge (голос Остап)';
 
 let prefs = null;
+let voiceAvail = null; // null — ще не перевіряли, true/false — є українській голос чи ні
 let bar = null; let cur = null; let utter = null; let speakToken = 0; let fallbackTimer = 0; let hintText = '';
 
 function loadPrefs () {
@@ -24,7 +25,7 @@ export function getPrefs () { return Object.assign({}, loadPrefs()); }
 // ---------------------------------------------------------------------------------------------- голос
 function synth () { return typeof window !== 'undefined' && window.speechSynthesis && typeof window.SpeechSynthesisUtterance !== 'undefined' ? window.speechSynthesis : null; }
 
-/** Вибір голосу: «Ostap» → uk-UA → перший доступний. Повертає { voice, ostap, uk } або null, якщо голосів немає. */
+/** Вибір голосу: «Ostap» → uk-UA. Чужим (напр. англійським) голосом український текст не читаємо: тоді uk=false. */
 export function pickVoice (voices) {
   voices = voices || (synth() ? synth().getVoices() : []);
   if (!voices || !voices.length) return null;
@@ -32,7 +33,19 @@ export function pickVoice (voices) {
   if (ostap) return { voice: ostap, ostap: true, uk: true };
   const uk = voices.filter(v => /^uk([-_]|$)/i.test(v.lang || ''))[0];
   if (uk) return { voice: uk, ostap: false, uk: true };
-  return { voice: voices[0], ostap: false, uk: false };
+  return { voice: null, ostap: false, uk: false };
+}
+
+/** Перевіряє, чи є в браузері український голос; якщо ні — озвучення вимикається (voice:false) і не вмикається знову. */
+function checkVoiceAvail () {
+  if (voiceAvail !== null) return;
+  if (!synth()) { voiceAvail = false; loadPrefs(); if (prefs.voice) { prefs.voice = false; savePrefs(); } if (bar) render(); return; }
+  ensureVoices().then(v => {
+    const pv = pickVoice(v);
+    voiceAvail = !!(pv && pv.uk);
+    if (!voiceAvail && loadPrefs().voice) { prefs.voice = false; savePrefs(); stopSpeech(); }
+    if (bar) render();
+  });
 }
 
 /** Голоси завантажуються асинхронно — чекаємо voiceschanged (до 1 с). */
@@ -98,7 +111,7 @@ async function startSpeech () {
   if (token !== speakToken || cur !== c) return;
   const pv = pickVoice(voices);
   setHint(!pv || !pv.uk ? HINT_TEXT : '');
-  if (!pv) { armFallback(estimateMs(c.text)); return; }
+  if (!pv || !pv.uk) { armFallback(estimateMs(c.text)); return; } // українського голосу немає — мовчимо, титри лишаються
   const u = new window.SpeechSynthesisUtterance(c.text);
   u.voice = pv.voice; u.lang = 'uk-UA'; u.rate = 1; u.pitch = 1;
   u.onend = () => finishNatural(token, c);
@@ -130,12 +143,20 @@ function render () {
   bar.innerHTML = '';
   const txt = h('div', { class: 'txt', text: cur && cur.text ? cur.text : '' });
   if (!p.subs || !cur || !cur.text) txt.style.display = 'none';
-  const toggle = (label, on, fn, title) => h('button', { class: 'tg' + (on ? ' on' : ''), text: (on ? '✔ ' : '') + label, title: title, onclick: fn, 'aria-pressed': on ? 'true' : 'false' });
+  // Перемикачі показують стан словами («увімкнено» / «вимкнено»), а не галочкою
+  const toggle = (label, on, fn, title, disabled) => {
+    const b = h('button', { class: 'tg' + (on ? ' on' : ''), text: label + ': ' + (on ? 'увімкнено' : 'вимкнено'), title: title, onclick: fn, 'aria-pressed': on ? 'true' : 'false' });
+    if (disabled) { b.disabled = true; b.style.opacity = '.55'; b.style.cursor = 'default'; }
+    return b;
+  };
+  const noVoice = voiceAvail === false;
   const tools = h('div', { class: 'tools' },
     toggle('Титри', p.subs, () => { prefs.subs = !prefs.subs; savePrefs(); render(); }, 'Показувати текст озвучення внизу екрана'),
-    toggle('Озвучення', p.voice, () => { prefs.voice = !prefs.voice; savePrefs(); if (prefs.voice) startSpeech(); else stopSpeech(); render(); }, 'Читати текст кроку вголос'),
-    p.voice ? h('button', { class: 'tg', text: '↻ Повторити', title: 'Прочитати крок ще раз', onclick: () => repeat() }) : null,
-    h('span', { class: 'nh', 'data-hint': '1', text: hintText, style: { display: hintText && p.voice ? '' : 'none' } }));
+    noVoice
+      ? h('button', { class: 'tg', text: 'Озвучення недоступне в цьому браузері', title: HINT_TEXT, disabled: true, style: { opacity: '.6', cursor: 'default' } })
+      : toggle('Озвучення', p.voice, () => { prefs.voice = !prefs.voice; savePrefs(); if (prefs.voice) startSpeech(); else stopSpeech(); render(); }, 'Читати текст кроку вголос'),
+    p.voice && !noVoice ? h('button', { class: 'tg', text: 'Повторити', title: 'Прочитати крок ще раз', onclick: () => repeat() }) : null,
+    h('span', { class: 'nh', 'data-hint': '1', text: noVoice ? 'Відкрийте інструкцію в Microsoft Edge, щоб почути голос Остап' : hintText, style: { display: (noVoice || (hintText && p.voice)) ? '' : 'none' } }));
   bar.appendChild(txt); bar.appendChild(tools);
 }
 
@@ -146,12 +167,13 @@ function render () {
 export function present (text, opts) {
   stopSpeech();
   cur = { text: text || '', onSpoken: (opts && opts.onSpoken) || null };
+  checkVoiceAvail();
   render();
   if (loadPrefs().voice) startSpeech();
 }
 
 export function repeat () {
-  if (!cur) return;
+  if (!cur || voiceAvail === false) return;
   if (!loadPrefs().voice) { prefs.voice = true; savePrefs(); render(); }
   startSpeech();
 }

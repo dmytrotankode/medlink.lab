@@ -6,6 +6,7 @@
  */
 import MedLinkGuide from '@guide/index.js';
 import { API_BASE } from '../services/http';
+import { ROLE_LABELS } from '../mixins/roleMixin';
 
 export default ({ router, store }) => {
   const apiBase = API_BASE.replace(/\/lab\/?$/, '') + '/guide'; // /api/v1/lab → /api/v1/guide
@@ -27,7 +28,10 @@ export default ({ router, store }) => {
       navigate: route => router.push(route).catch(() => {}),
       currentRoute: () => router.currentRoute.fullPath,
       getRole: () => store.getters['context/currentRole'] || '',
-      canEdit: () => true,
+      // ролі для вибору «Хто бачить» у конструкторі: назви замість кодів
+      roles: Object.keys(ROLE_LABELS).map(code => ({ code, label: ROLE_LABELS[code] })),
+      // конструктор інструкцій — лише для адміністратора лабораторії (автор інструкцій); решта ролей бачить тільки панель
+      canEdit: () => store.getters['context/currentRole'] === 'LAB_ADMIN',
       button: slot ? { mount: slot } : true
     });
   };

@@ -1,11 +1,12 @@
 <template>
   <div class="sample-processing" data-testid="sampleProcessing">
-    <page-header :title="`Обробка зразка ${barcode}`" icon="biotech" subtitle="Дерево зразка (батьківський → аліквоти / касети / блоки / скло / чашки), етапи робочого процесу, розділення з друком етикеток" :breadcrumbs="[{ label: 'Пункт забору', to: { name: 'lab-phlebotomy' } }, { label: 'Обробка зразка' }]">
-      <template v-slot:title-after><status-chip v-if="root" :value="root.status" type="sample" icon /></template>
+    <page-header :title="`Обробка зразка ${barcode}`" icon="biotech" :breadcrumbs="[{ label: 'Зразки' }, { label: barcode }]">
+      <template v-slot:title-after><status-chip v-if="current" :value="current.status" type="sample" icon /></template>
       <q-input v-model="scan" dense outlined placeholder="Інший штрихкод" style="width: 200px" @keyup.enter="$router.push({ name: 'lab-sample-processing', params: { barcode: scan } })"><template v-slot:prepend><q-icon name="qr_code_scanner" /></template></q-input>
-      <q-btn flat dense color="primary" icon="refresh" :loading="loading" @click="load" />
+      <q-btn flat dense color="primary" icon="refresh" :loading="loading" @click="load"><q-tooltip>Оновити</q-tooltip></q-btn>
+      <q-btn v-if="canReceive" unelevated dense color="cyan-7" icon="inbox" label="Прийняти пробу" data-testid="receiveBtn" @click="receiveOpen = true" />
       <q-btn outline dense color="primary" icon="print" label="Друк етикетки" @click="printSampleLabel(barcode, { patientName })" />
-      <q-btn unelevated dense color="teal-7" icon="call_split" label="Розділити" :disable="!root" data-testid="splitBtn" @click="openSplit" />
+      <q-btn unelevated dense color="teal-7" icon="call_split" label="Розділити" :disable="!canSplit" data-testid="splitBtn" @click="openSplit"><q-tooltip v-if="!canSplit">{{ splitDisabledHint }}</q-tooltip></q-btn>
     </page-header>
 
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />
@@ -14,9 +15,9 @@
       <!-- Дерево -->
       <div class="col-12 col-md-5">
         <div class="medlink-card">
-          <div class="medlink-card__title"><span><q-icon name="account_tree" class="q-mr-xs" />Дерево зразка</span><span class="text-caption text-grey-6">{{ countNodes }} вузл.</span></div>
+          <div class="medlink-card__title"><span><q-icon name="account_tree" class="q-mr-xs" />Дерево зразка</span><span class="text-caption text-grey-6">{{ pluralN(countNodes, 'вузол', 'вузли', 'вузлів') }}</span></div>
           <div v-if="root" class="q-pa-sm">
-            <div class="text-caption text-grey-7">Пацієнт: <b>{{ patientName }}</b> · Замовлення: <router-link v-if="orderId" :to="{ name: 'lab-order-card', params: { id: orderId } }" class="text-primary">{{ orderNumber }}</router-link></div>
+            <div class="text-caption text-grey-7"><span v-if="patientName">Пацієнт: <b>{{ patientName }}</b> · </span>Направлення: <router-link v-if="orderId" :to="{ name: 'lab-order-card', params: { id: orderId } }" class="text-primary">{{ orderNumber || 'відкрити' }}</router-link></div>
             <q-tree :nodes="treeNodes" node-key="barcode" default-expand-all :selected.sync="selectedBarcode" selected-color="primary" data-testid="sampleTree">
               <template v-slot:default-header="prop">
                 <div class="row items-center no-wrap q-gutter-xs">
@@ -64,26 +65,29 @@
               </q-item>
             </q-list>
           </div>
-          <empty-state v-else-if="!loading" title="Етапи не визначено" icon="route" hint="Шаблон робочого процесу підрозділу не містить етапів або зразок ще не прийнято" />
+          <empty-state v-else-if="!loading" title="Етапи ще недоступні" icon="route" :hint="canReceive ? 'Спочатку прийміть пробу в лабораторії — кнопка «Прийняти пробу» вгорі.' : 'Етапи з’являться після прийому проби в лабораторії або коли для підрозділу налаштовано робочий процес.'" />
         </div>
       </div>
     </div>
+
+    <receive-sample-dialog v-model="receiveOpen" :samples="receiveSamples" @received="load" />
 
     <!-- Розділити -->
     <q-dialog v-model="splitOpen" persistent>
       <q-card style="min-width: 560px" data-testid="splitDialog">
         <q-card-section class="row items-center bg-teal-7 text-white q-py-sm"><q-icon name="call_split" class="q-mr-sm" /><div class="text-subtitle1 text-weight-bold">Розділити зразок {{ barcode }}</div><q-space /><q-btn flat round dense icon="close" v-close-popup /></q-card-section>
         <q-card-section class="q-gutter-y-sm">
+          <div class="text-caption text-grey-7">Що отримуємо</div>
           <q-btn-toggle v-model="split.derivationType" spread no-caps unelevated toggle-color="teal-7" :options="derivationTypes.map(d => ({ value: d.value, label: d.label }))" data-testid="splitType" />
           <div class="row q-col-gutter-sm">
             <div class="col-6"><q-input v-model.number="split.count" outlined dense type="number" min="1" max="24" label="Кількість *" data-testid="splitCount" /></div>
-            <div class="col-6"><q-input v-model="split.volumeEachMl" outlined dense inputmode="decimal" label="Об’єм кожної, мл" /></div>
+            <div class="col-6"><q-input v-model="split.volumeEachMl" outlined dense inputmode="decimal" label="Об’єм кожної, мл" :hint="volumeHint" :error="!!volumeError" :error-message="volumeError" /></div>
             <div class="col-12"><q-select v-model="split.targetSectionIds" outlined dense multiple use-chips label="Цільові підрозділи" :options="sectionOptions" emit-value map-options /></div>
           </div>
           <q-toggle v-model="split.printLabels" label="Надрукувати етикетки дочірніх зразків" color="teal-7" />
           <div v-if="splitError" class="text-negative">{{ splitError }}</div>
         </q-card-section>
-        <q-card-actions align="right" class="bg-grey-1"><q-btn flat label="Скасувати" v-close-popup /><q-btn color="teal-7" icon="call_split" label="Розділити" :loading="saving" :disable="!split.count" data-testid="splitConfirm" @click="doSplit" /></q-card-actions>
+        <q-card-actions align="right" class="bg-grey-1"><q-btn flat label="Скасувати" v-close-popup /><q-btn color="teal-7" icon="call_split" label="Розділити" :loading="saving" :disable="!split.count || !!volumeError" data-testid="splitConfirm" @click="doSplit" /></q-card-actions>
       </q-card>
     </q-dialog>
   </div>
@@ -91,18 +95,22 @@
 
 <script>
 import apiMixin from '../../../mixins/apiMixin';
+import roleMixin from '../../../mixins/roleMixin';
+import ReceiveSampleDialog from '../../../components/samples/ReceiveSampleDialog.vue';
 import labelPrintMixin from '../../../mixins/labelPrintMixin';
 import { DERIVATION_TYPES } from '../../../utils/statuses';
-import { formatDateTime, parseDecimal, patientDisplay } from '../../../utils/format';
+import { formatDateTime, parseDecimal, patientDisplay, pluralN } from '../../../utils/format';
 
 export default {
   name: 'SampleProcessing',
-  mixins: [apiMixin, labelPrintMixin],
+  mixins: [apiMixin, labelPrintMixin, roleMixin],
+  components: { ReceiveSampleDialog },
   props: { barcode: { type: String, required: true } },
   data () {
     return {
       tree: null, stagesData: null, sections: [], scan: '', selectedBarcode: null,
       stageForm: { stageCode: null, temperature: '', instrument: null, note: '' },
+      receiveOpen: false,
       splitOpen: false, split: { derivationType: 'ALIQUOT', count: 2, volumeEachMl: '', targetSectionIds: [], printLabels: true }, splitError: '', saving: false,
       derivationTypes: DERIVATION_TYPES,
       instrumentOptions: ['Центрифуга Eppendorf 5702', 'Мікротом Leica RM2235', 'Гістопроцесор Thermo Excelsior', 'Термостат 37 °C', 'Фарбувальний автомат']
@@ -113,6 +121,27 @@ export default {
     orderId () { return this.root && (this.root.orderId || (this.tree && this.tree.orderId)); },
     orderNumber () { return (this.root && this.root.orderNumber) || (this.tree && this.tree.orderNumber) || ''; },
     patientName () { return (this.root && (this.root.patientName || patientDisplay(this.root.patient))) || (this.tree && this.tree.patientName) || ''; },
+    /** Вузол дерева, що відповідає відсканованому штрихкоду */
+    current () {
+      if (!this.root) return null;
+      const find = n => (n.barcode === this.barcode ? n : (n.children || []).reduce((f, c) => f || find(c), null));
+      return find(this.root) || this.root;
+    },
+    canReceive () { return !!this.current && ['COLLECTED', 'IN_TRANSIT'].includes(this.current.status) && this.canDo('LAB_TECHNICIAN', 'LAB_DOCTOR', 'LOGISTICS_COURIER'); },
+    receiveSamples () { return this.current ? [{ barcode: this.current.barcode, status: this.current.status, tubeName: this.current.tubeType }] : []; },
+    canSplit () { return !!this.current && ['RECEIVED', 'PROCESSING', 'STORED'].includes(this.current.status) && this.canDo('LAB_DOCTOR', 'LAB_TECHNICIAN'); },
+    splitDisabledHint () {
+      if (!this.current) return 'Зразок не знайдено';
+      if (!['RECEIVED', 'PROCESSING', 'STORED'].includes(this.current.status)) return 'Розділити можна лише прийняту пробу';
+      return 'Недоступно для вашої ролі';
+    },
+    parentVolume () { return this.current && this.current.volumeMl ? Number(this.current.volumeMl) : null; },
+    volumeHint () { return this.parentVolume ? `Залишок у пробі: ${String(this.parentVolume).replace('.', ',')} мл` : ''; },
+    volumeError () {
+      const v = parseDecimal(this.split.volumeEachMl);
+      if (v === null || !this.parentVolume) return '';
+      return v * Number(this.split.count || 0) > this.parentVolume + 1e-9 ? 'Сума об’ємів перевищує залишок проби' : '';
+    },
     treeNodes () { return this.root ? [this.toNode(this.root)] : []; },
     countNodes () { const walk = n => 1 + (n.children || []).reduce((s, c) => s + walk(c), 0); return this.root ? walk(this.root) : 0; },
     stages () { const d = this.stagesData; if (!d) return []; return Array.isArray(d) ? d : (d.stages || d.items || []); },
@@ -125,7 +154,8 @@ export default {
   created () { this.load(); this.$api.sections().then(r => { this.sections = this.asList(r); }).catch(() => {}); },
   methods: {
     formatDateTime,
-    derivationLabel (t) { const d = DERIVATION_TYPES.find(x => x.value === t); return d ? d.label : t; },
+    pluralN,
+    derivationLabel (t) { if (t === 'PRIMARY') return 'Основна проба'; const d = DERIVATION_TYPES.find(x => x.value === t); return d ? d.label : t; },
     toNode (n) { const d = DERIVATION_TYPES.find(x => x.value === n.derivationType); return { ...n, icon: d ? d.icon : 'science', label: n.barcode, children: (n.children || []).map(c => this.toNode(c)) }; },
     isCurrent (s, i) { if (s.isCurrent) return true; const firstOpen = this.stages.findIndex(x => !(x.completedAt || x.isCompleted)); return i === firstOpen; },
     needs (field) { const s = this.currentStage; if (!s) return true; const f = s.fields || s.requiredFields; return Array.isArray(f) ? f.includes(field) : true; },

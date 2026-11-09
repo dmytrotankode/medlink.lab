@@ -86,7 +86,7 @@ public sealed partial class LogisticsService
         foreach (var bc in barcodes.Distinct())
         {
             var sample = await _db.Samples.Include(s => s.Order).ThenInclude(o => o!.Samples).FirstOrDefaultAsync(s => s.Barcode == bc) ?? throw NotFoundException.For("Пробірка", bc);
-            if (sample.Status != SampleStatuses.Collected) throw new ConflictException($"Пробірка {bc} у статусі {sample.Status}: до маніфесту додаються лише зібрані (COLLECTED) пробірки");
+            if (sample.Status != SampleStatuses.Collected) throw new ConflictException($"Пробірка {bc} має статус «{UkLabels.Status(LisEntities.Sample, sample.Status)}»: до маршрутного листа додаються лише забрані пробірки");
             if (m.Items.Any(i => i.SampleId == sample.Id)) continue;
             m.Items.Add(new LabSampleLogisticsItem { LogisticsId = m.Id, SampleId = sample.Id, Barcode = bc, Status = "EN_ROUTE" });
         }

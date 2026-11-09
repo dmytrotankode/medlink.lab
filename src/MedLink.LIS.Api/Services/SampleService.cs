@@ -19,6 +19,8 @@ public sealed class LabelDto
     public string Tube { get; set; } = "";
     public string? TubeColor { get; set; }
     public string OrderNumber { get; set; } = "";
+    /// <summary>Термінове направлення — на етикетці друкується позначка CITO.</summary>
+    public bool IsCito { get; set; }
     public DateTime? CollectedAt { get; set; }
     public List<string> TestCodes { get; set; } = new();
 }
@@ -241,14 +243,14 @@ public sealed class SampleService
     public LabelDto BuildLabel(LabOrderSample sample)
     {
         var patientName = sample.Order?.Patient?.Caption ?? "";
-        var tube = sample.TubeType?.Name ?? "";
+        var tube = (sample.TubeType?.Name ?? "").Replace("3.2%", "3,2%");
         var at = sample.CollectedAt ?? sample.Order?.OrderDatetime ?? DateTime.UtcNow;
         return new LabelDto
         {
             Barcode = sample.Barcode,
-            Zpl = ZplLabelBuilder.Build(sample.Barcode, patientName, tube, at.ToLocalTime(), sample.Order?.OrderNumber),
+            Zpl = ZplLabelBuilder.Build(sample.Barcode, patientName, tube, at.ToLocalTime(), sample.Order?.OrderNumber, sample.Order?.IsUrgentCito ?? false),
             Svg = Code128Svg.Render(sample.Barcode),
-            PatientName = patientName, Tube = tube, TubeColor = sample.TubeType?.ColorCode, OrderNumber = sample.Order?.OrderNumber ?? "",
+            PatientName = patientName, Tube = tube, TubeColor = sample.TubeType?.ColorCode, OrderNumber = sample.Order?.OrderNumber ?? "", IsCito = sample.Order?.IsUrgentCito ?? false,
             CollectedAt = sample.CollectedAt,
             TestCodes = sample.Order?.Tests.Where(t => t.SampleId == sample.Id).Select(t => t.TestCode).ToList() ?? new()
         };

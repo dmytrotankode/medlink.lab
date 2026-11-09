@@ -1,5 +1,5 @@
 <template>
-  <q-dialog :value="value" @input="$emit('input', $event)" persistent>
+  <q-dialog :value="value" @input="$emit('input', $event)">
     <q-card style="min-width: 420px; max-width: 95vw">
       <q-card-section class="row items-center q-pb-none">
         <q-icon :name="icon" :color="color" size="28px" class="q-mr-sm" />
@@ -21,7 +21,7 @@
         <slot />
       </q-card-section>
       <q-card-actions align="right" class="bg-grey-1">
-        <q-btn flat label="Скасувати" @click="$emit('input', false)" />
+        <q-btn flat label="Скасувати" :data-autofocus="!withReason" @click="$emit('input', false)" />
         <q-btn :color="color" :label="okLabel" :disable="reasonRequired && !(reason && reason.trim())" @click="confirm" />
       </q-card-actions>
     </q-card>

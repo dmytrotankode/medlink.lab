@@ -4,7 +4,7 @@
       <q-icon :name="offline ? 'cloud_off' : 'error_outline'" :color="offline ? 'warning' : 'negative'" size="26px" />
     </template>
     <div class="text-weight-bold">
-      {{ offline ? 'API лабораторії недоступне' : 'Помилка запиту до API' }}
+      {{ offline ? 'API лабораторії недоступне' : 'Не вдалося виконати дію' }}
     </div>
     <div class="text-caption">
       <template v-if="offline">
@@ -13,7 +13,8 @@
       <template v-else>{{ message }}</template>
     </div>
     <template v-slot:action>
-      <q-btn flat dense color="primary" icon="refresh" label="Повторити" @click="$emit('retry')" />
+      <q-btn v-if="offline || retryable" flat dense color="primary" icon="refresh" label="Повторити" @click="$emit('retry')" />
+      <q-btn v-if="!offline && $listeners.dismiss" flat dense round color="grey-7" icon="close" aria-label="Закрити" @click="$emit('dismiss')"><q-tooltip>Закрити</q-tooltip></q-btn>
     </template>
   </q-banner>
 </template>
@@ -25,6 +26,8 @@ export default {
   name: 'ApiErrorBanner',
   props: {
     message: { type: String, default: '' },
+    /** false — повтор запиту не допоможе (помилка перевірки, права): кнопку «Повторити» не показуємо */
+    retryable: { type: Boolean, default: true },
     offlineOnly: { type: Boolean, default: false }
   },
   computed: {

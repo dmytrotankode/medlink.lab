@@ -35,7 +35,7 @@ public sealed class RolePolicy : IRolePolicy
         if (!_current.IsResolved)
             throw new ForbiddenException($"Співробітника '{_current.EmployeeId}' не знайдено. Передайте коректний заголовок {CurrentEmployeeMiddleware.HeaderName}");
         if (!Can(roles))
-            throw new ForbiddenException($"Дія «{actionLabel}» недоступна для ролі {CurrentRole}. Потрібна роль: {string.Join(" / ", roles)}");
+            throw new ForbiddenException($"Дія «{actionLabel}» недоступна для ролі «{UkLabels.Role(CurrentRole)}». Доступна ролям: {UkLabels.Roles(roles)}.");
     }
 
     public ActionRule Ensure(string entity, string action, string currentStatus, string? objectLabel = null)

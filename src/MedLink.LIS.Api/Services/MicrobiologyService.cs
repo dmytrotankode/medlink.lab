@@ -125,9 +125,9 @@ public sealed class MicrobiologyService
         var c = await LoadAsync(id);
         var act = action.ToUpperInvariant();
         var rule = _policy.Ensure(LisEntities.Culture, act, c.Status, "Посів");
-        if (rule.ToStatus == null) throw new ValidationException($"Дія {action} не є переходом статусу");
-        if (act == CultureActions.Isolate && c.Isolates.Count == 0) throw new ConflictException("Неможливо перейти до ISOLATED: не додано жодного ізоляту");
-        if (act == CultureActions.Complete && c.GrowthDetected == true && c.Isolates.Count == 0) throw new ConflictException("Виявлено ріст, але ізоляти не описано");
+        if (rule.ToStatus == null) throw new ValidationException("Ця дія не змінює статус посіву");
+        if (act == CultureActions.Isolate && c.Isolates.Count == 0) throw new ConflictException("Не можна позначити «Ізоляти виділено»: не додано жодного ізоляту");
+        if (act == CultureActions.Complete && c.GrowthDetected == true && c.Isolates.Count == 0) throw new ConflictException("Виявлено ріст, але ізоляти не додано");
         var before = c.Status;
         c.Status = rule.ToStatus;
         if (act == CultureActions.Complete)
@@ -219,7 +219,7 @@ public sealed class MicrobiologyService
             if (string.IsNullOrWhiteSpace(req.OverrideReason)) throw ValidationException.Field("overrideReason", "Ручна інтерпретація потребує обґрунтування");
             interpretation = req.OverrideInterpretation.ToUpperInvariant();
         }
-        if (string.IsNullOrEmpty(interpretation)) throw new ConflictException($"Немає breakpoint EUCAST для {isolate.Organism?.LatinName} / {antibiotic.Name} — вкажіть інтерпретацію вручну з обґрунтуванням");
+        if (string.IsNullOrEmpty(interpretation)) throw new ConflictException($"Для пари «{isolate.Organism?.CommonName ?? isolate.Organism?.LatinName} / {antibiotic.Name}» немає порогових значень EUCAST — вкажіть інтерпретацію вручну з обґрунтуванням");
 
         var existing = isolate.Susceptibilities.FirstOrDefault(s => s.AntibioticId == antibiotic.Id);
         if (existing == null) { existing = new LabSusceptibilityResult { IsolateId = isolate.Id, AntibioticId = antibiotic.Id }; isolate.Susceptibilities.Add(existing); }

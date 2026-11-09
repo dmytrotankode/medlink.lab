@@ -216,6 +216,8 @@ const labApi = {
   createCulture: body => data(http.post('/microbiology/cultures', body)),
   updateCulture: (id, body) => data(http.put(`/microbiology/cultures/${id}`, body)),
   deleteCulture: id => data(http.delete(`/microbiology/cultures/${id}`)),
+  // Сервер приймає ідентифікатор дії (PRELIMINARY / ISOLATE / COMPLETE) у полі status
+  transitionCulture: (id, action, comment) => data(http.post(`/microbiology/cultures/${id}/transition`, { status: action, comment })),
   updateIsolate: (id, body) => data(http.put(`/microbiology/isolates/${id}`, body)),
   deleteIsolate: id => data(http.delete(`/microbiology/isolates/${id}`)),
   deleteSusceptibility: id => data(http.delete(`/microbiology/susceptibility/${id}`)),
@@ -368,7 +370,7 @@ const labApi = {
   pathSlideReady: slideId => data(http.post(`/pathology/slides/${slideId}/ready`)),
   pathSaveReport: (id, body) => data(http.put(`/pathology/cases/${id}/report`, body)),
   pathPreliminary: (id, text) => data(http.post(`/pathology/cases/${id}/report/preliminary`, { text })),
-  pathSign: (id, signer) => data(http.post(`/pathology/cases/${id}/report/sign`, { signer })),
+  pathSign: (id, signer, extra) => data(http.post(`/pathology/cases/${id}/report/sign`, { signer, ...(extra || {}) })),
   pathAddendum: (id, body) => data(http.post(`/pathology/cases/${id}/report/addendum`, body)),
   pathCitoNotice: (id, body) => data(http.post(`/pathology/cases/${id}/cito-notice`, body)),
   pathArchive: params => data(http.get('/pathology/archive', { params: clean(params) })),

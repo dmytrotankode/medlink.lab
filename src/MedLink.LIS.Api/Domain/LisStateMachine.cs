@@ -256,9 +256,15 @@ public static class LisStateMachine
                    ?? throw new ArgumentException($"Невідома дія '{action}' для {entity}");
         var label = objectLabel ?? EntityLabel(entity);
         if (!rule.FromStatuses.Contains(currentStatus))
-            throw new ConflictException($"{label}: дія «{rule.Label}» неможлива у статусі {currentStatus}. Дозволені статуси: {string.Join(", ", rule.FromStatuses)}");
+        {
+            // Введення результату до прийому проби — найчастіша помилка: пояснюємо, що зробити, а не показуємо технічний статус
+            if (entity == LisEntities.Order && action == OrderActions.EnterResult &&
+                (currentStatus == OrderStatuses.New || currentStatus == OrderStatuses.Collected || currentStatus == OrderStatuses.InTransit))
+                throw new ConflictException($"{label} ще не прийнято в лабораторії (статус «{UkLabels.Status(entity, currentStatus)}»). Спершу відмітьте забір і прийом проби, потім вводьте результат.");
+            throw new ConflictException($"{label}: дія «{rule.Label}» неможлива у статусі «{UkLabels.Status(entity, currentStatus)}». Дозволені статуси: {UkLabels.Statuses(entity, rule.FromStatuses)}.");
+        }
         if (!RoleAllowed(rule, role))
-            throw new ForbiddenException($"Дія «{rule.Label}» недоступна для ролі {role ?? "невідомо"}. Потрібна роль: {string.Join(" / ", rule.Roles)}");
+            throw new ForbiddenException($"Дія «{rule.Label}» недоступна для ролі «{UkLabels.Role(role)}». Доступна ролям: {UkLabels.Roles(rule.Roles)}.");
         return rule;
     }
 

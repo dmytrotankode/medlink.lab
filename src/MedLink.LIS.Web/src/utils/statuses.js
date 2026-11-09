@@ -9,7 +9,7 @@ export const ORDER_STATUS = {
   IN_TRANSIT: { label: 'У дорозі', color: 'indigo-5', icon: 'local_shipping' },
   RECEIVED: { label: 'Прийнято', color: 'cyan-7', icon: 'inbox' },
   IN_PROGRESS: { label: 'У роботі', color: 'orange-7', icon: 'science' },
-  PARTIALLY_COMPLETED: { label: 'Частково видано', color: 'lime-8', icon: 'donut_large' },
+  PARTIALLY_COMPLETED: { label: 'Частково виконано', color: 'lime-8', icon: 'donut_large' },
   COMPLETED: { label: 'Виконано', color: 'light-green-7', icon: 'task_alt' },
   RELEASED: { label: 'Видано', color: 'positive', icon: 'verified' },
   CANCELLED: { label: 'Скасовано', color: 'grey-6', icon: 'cancel' },
@@ -69,8 +69,8 @@ export const MANIFEST_STATUS = {
 };
 
 export const CONTAINER_STATUS = {
-  FREE: { label: 'Вільний', color: 'grey-6', icon: 'inventory_2' },
-  PACKING: { label: 'Укладання', color: 'blue-7', icon: 'move_to_inbox' },
+  FREE: { label: 'Порожній', color: 'grey-6', icon: 'inventory_2' },
+  PACKING: { label: 'Укладається', color: 'blue-7', icon: 'move_to_inbox' },
   SEALED: { label: 'Запечатано', color: 'deep-purple-5', icon: 'lock' },
   IN_TRANSIT: { label: 'У дорозі', color: 'indigo-5', icon: 'local_shipping' },
   RECEIVED: { label: 'Прийнято', color: 'positive', icon: 'inbox' },
@@ -79,9 +79,9 @@ export const CONTAINER_STATUS = {
 };
 
 export const CONNECTOR_STATUS = {
-  PENDING: { label: 'Очікує реєстрації', color: 'grey-6', icon: 'hourglass_empty' },
+  PENDING: { label: 'Очікує реєстрації коннектора', color: 'grey-6', icon: 'hourglass_empty' },
   ACTIVE: { label: 'Активний', color: 'positive', icon: 'wifi' },
-  OFFLINE: { label: 'Офлайн', color: 'negative', icon: 'wifi_off' },
+  OFFLINE: { label: 'Не в мережі', color: 'negative', icon: 'wifi_off' },
   DISABLED: { label: 'Вимкнено', color: 'grey-8', icon: 'power_off' }
 };
 
@@ -94,7 +94,7 @@ export const BATCH_STATUS = {
 export const QC_STATUS = {
   OK: { label: 'У контролі', color: 'positive' },
   WARNING: { label: 'Попередження', color: 'warning', textColor: 'dark' },
-  LOCKOUT: { label: 'LOCKOUT', color: 'negative' }
+  LOCKOUT: { label: 'Заблоковано', color: 'negative' }
 };
 
 export const CULTURE_STATUS = {
@@ -103,6 +103,8 @@ export const CULTURE_STATUS = {
   GROWTH: { label: 'Є ріст', color: 'deep-orange-6' },
   NO_GROWTH: { label: 'Росту немає', color: 'positive' },
   IDENTIFIED: { label: 'Ідентифіковано', color: 'purple-6' },
+  PRELIMINARY: { label: 'Попередній результат', color: 'deep-orange-6' },
+  ISOLATED: { label: 'Ідентифіковано', color: 'purple-6' },
   COMPLETED: { label: 'Завершено', color: 'green-9' },
   RELEASED: { label: 'Видано', color: 'positive' }
 };
@@ -158,9 +160,9 @@ export const WESTGARD_RULES = [
 ];
 
 export const QC_LEVELS = [
-  { value: 'LEVEL_1_LOW', label: 'Рівень 1 (Low)' },
-  { value: 'LEVEL_2_NORMAL', label: 'Рівень 2 (Normal)' },
-  { value: 'LEVEL_3_HIGH', label: 'Рівень 3 (High)' }
+  { value: 'LEVEL_1_LOW', label: '1 — низький' },
+  { value: 'LEVEL_2_NORMAL', label: '2 — норма' },
+  { value: 'LEVEL_3_HIGH', label: '3 — високий' }
 ];
 
 export function statusMeta (map, value) {

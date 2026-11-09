@@ -1,12 +1,12 @@
 <template>
-  <q-dialog :value="value" @input="$emit('input', $event)" persistent maximized-mobile>
+  <q-dialog :value="value" @input="$emit('input', $event)" persistent maximized-mobile @shake="tryClose">
     <q-card style="width: 980px; max-width: 98vw" data-testid="createOrderDialog">
       <q-card-section class="row items-center bg-primary text-white q-py-sm">
         <q-icon name="post_add" class="q-mr-sm" />
-        <div class="text-subtitle1 text-weight-bold">Нове направлення / замовлення</div>
+        <div class="text-subtitle1 text-weight-bold">Нове направлення</div>
         <q-space />
         <q-toggle data-testid="citoToggle" v-model="form.isUrgentCito" color="deep-orange-5" keep-color label="CITO (терміново)" class="q-mr-md" />
-        <q-btn flat round dense icon="close" v-close-popup />
+        <q-btn flat round dense icon="close" @click="tryClose"><q-tooltip>Закрити</q-tooltip></q-btn>
       </q-card-section>
 
       <q-form @submit.prevent="submit">
@@ -18,7 +18,7 @@
               <patient-select v-model="patient" :rules="[v => !!v || 'Оберіть пацієнта']" @create="startNewPatient" />
             </div>
             <div class="col-12 col-md-4">
-              <q-btn outline color="primary" icon="person_add" label="Швидко створити пацієнта" class="full-width" @click="startNewPatient('')" />
+              <q-btn outline color="primary" icon="person_add" label="Новий пацієнт" class="full-width" @click="startNewPatient('')" />
             </div>
             <div v-if="patient" class="col-12">
               <q-banner dense class="bg-blue-1 text-grey-9" rounded>
@@ -28,16 +28,16 @@
             </div>
           </div>
           <div v-else class="row q-col-gutter-sm">
-            <div class="col-12 col-md-4"><q-input v-model="newPatient.lastName" outlined dense label="Прізвище *" :rules="[v => !!v || 'Обов’язково']" /></div>
-            <div class="col-12 col-md-4"><q-input v-model="newPatient.firstName" outlined dense label="Ім’я *" :rules="[v => !!v || 'Обов’язково']" /></div>
-            <div class="col-12 col-md-4"><q-input v-model="newPatient.middleName" outlined dense label="По батькові" /></div>
+            <div class="col-12 col-md-4"><q-input v-model="newPatient.lastName" outlined dense label="Прізвище *" maxlength="60" counter :rules="[v => !!v || 'Обов’язково']" /></div>
+            <div class="col-12 col-md-4"><q-input v-model="newPatient.firstName" outlined dense label="Ім’я *" maxlength="60" counter :rules="[v => !!v || 'Обов’язково']" /></div>
+            <div class="col-12 col-md-4"><q-input v-model="newPatient.middleName" outlined dense label="По батькові" maxlength="60" counter /></div>
             <div class="col-6 col-md-3"><q-input v-model="newPatient.birthDate" outlined dense type="date" label="Дата народження *" stack-label :rules="[v => !!v || 'Обов’язково']" /></div>
             <div class="col-6 col-md-3">
               <q-select v-model="newPatient.gender" outlined dense label="Стать *" :options="[{ value: 'M', label: 'Чоловіча' }, { value: 'F', label: 'Жіноча' }]" emit-value map-options :rules="[v => !!v || 'Обов’язково']" />
             </div>
             <div class="col-6 col-md-3"><q-input v-model="newPatient.phone" outlined dense label="Телефон" mask="+38 (###) ###-##-##" unmasked-value fill-mask /></div>
-            <div class="col-6 col-md-3"><q-input v-model="newPatient.taxId" outlined dense label="ІПН" mask="##########" /></div>
-            <div class="col-12 col-md-8"><q-input v-model="newPatient.email" outlined dense label="E-mail (для сповіщень)" type="email" /></div>
+            <div class="col-6 col-md-3"><q-input v-model="newPatient.taxId" outlined dense label="ІПН" mask="##########" lazy-rules :rules="[v => !v || v.length === 10 || 'ІПН складається з 10 цифр']" /></div>
+            <div class="col-12 col-md-8"><q-input v-model="newPatient.email" outlined dense label="E-mail (для сповіщень)" type="email" lazy-rules :rules="[v => !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Невірний формат e-mail']" /></div>
             <div class="col-12 col-md-4 text-right">
               <q-btn flat color="grey-8" label="Назад до пошуку" icon="arrow_back" @click="newPatientMode = false" />
             </div>
@@ -51,32 +51,37 @@
           <div class="row q-col-gutter-sm">
             <template v-if="form.referralType === 'EHEALTH'">
               <div class="col-12 col-md-4">
-                <q-input v-model="ehealthNumber" outlined dense label="Номер е-направлення *" data-testid="ehealthNumber" @keyup.enter="lookupReferral">
+                <q-input v-model="ehealthNumber" outlined dense label="Номер е-направлення *" data-testid="ehealthNumber" :error="!!referralInfo && !referralInfo.canUse && !referralInfo.serviceName" @keyup.enter="lookupReferral">
                   <template v-slot:append><q-btn flat dense icon="search" :loading="referralLoading" @click="lookupReferral" /></template>
                 </q-input>
               </div>
               <div class="col-12 col-md-8">
                 <q-banner v-if="referralInfo" dense rounded :class="referralInfo.canUse ? 'bg-green-1' : 'bg-red-1'" data-testid="referralInfo">
-                  <b>{{ referralInfo.serviceName }}</b> · {{ referralInfo.patientName }} · дійсне до {{ referralInfo.expirationDate | date }} · {{ referralInfo.statusName }}
-                  <div v-for="(p, i) in referralInfo.problems" :key="i" class="text-negative text-caption">{{ p }}</div>
+                  <template v-if="referralInfo.serviceName || referralInfo.patientName">
+                    <b>{{ referralInfo.serviceName }}</b><span v-if="referralInfo.patientName"> · {{ referralInfo.patientName }}</span><span v-if="referralInfo.expirationDate"> · дійсне до {{ referralInfo.expirationDate | date }}</span><span v-if="referralInfo.statusName"> · {{ referralInfo.statusName }}</span>
+                  </template>
+                  <div v-for="(p, i) in referralInfo.problems" :key="i" :class="referralInfo.serviceName ? 'text-negative text-caption' : 'text-negative'">{{ p }}</div>
                 </q-banner>
                 <div v-else class="text-caption text-grey-7 q-pt-sm">Знайдіть направлення ЕСОЗ — пацієнт і послуга підставляться автоматично; при видачі результатів направлення буде погашено висновком.</div>
               </div>
             </template>
             <template v-if="form.referralType === 'PAPER'">
               <div class="col-6 col-md-3"><q-input v-model="paper.number" outlined dense label="№ паперового направлення *" /></div>
-              <div class="col-6 col-md-3"><q-input v-model="paper.date" outlined dense type="date" stack-label label="Дата" /></div>
+              <div class="col-6 col-md-3"><q-input v-model="paper.date" outlined dense type="date" stack-label label="Дата направлення" /></div>
               <div class="col-12 col-md-4"><q-input v-model="paper.requesterLegalEntityName" outlined dense label="Заклад-направник *" /></div>
-              <div class="col-6 col-md-2"><q-input v-model="paper.requesterLegalEntityEdrpou" outlined dense label="ЄДРПОУ" mask="########" /></div>
-              <div class="col-6 col-md-4"><q-input v-model="paper.requesterEmployeeName" outlined dense label="Лікар-направник" /></div>
+              <div class="col-6 col-md-2"><q-input v-model="paper.requesterLegalEntityEdrpou" outlined dense label="ЄДРПОУ" hint="8 цифр" mask="########" /></div>
+              <div class="col-6 col-md-4"><q-input v-model="paper.requesterEmployeeName" outlined dense label="Лікар, що направив" /></div>
             </template>
             <template v-if="form.referralType === 'EXTERNAL_CLINIC'">
-              <div class="col-12 col-md-4"><q-input v-model="form.referrerOrganizationName" outlined dense label="Клініка-партнер *" /></div>
-              <div class="col-6 col-md-2"><q-input v-model="form.referrerOrganizationEdrpou" outlined dense label="ЄДРПОУ" mask="########" /></div>
+              <div class="col-12 col-md-4">
+                <q-input v-model="form.referrerOrganizationName" outlined dense label="Клініка-партнер *" list="clinicList" hint="Оберіть зі списку клієнтів або введіть нову" @input="onClinicInput" />
+                <datalist id="clinicList"><option v-for="c in clinics" :key="c.id" :value="c.name" /></datalist>
+              </div>
+              <div class="col-6 col-md-2"><q-input v-model="form.referrerOrganizationEdrpou" outlined dense label="ЄДРПОУ" hint="8 цифр" mask="########" /></div>
               <div class="col-6 col-md-3"><q-input v-model="form.referrerDoctorName" outlined dense label="Лікар клініки" /></div>
               <div class="col-12 col-md-3"><q-input v-model="form.referrerNumber" outlined dense label="№ направлення клініки" /></div>
             </template>
-            <div class="col-12 col-md-4">
+            <div v-if="form.referralType !== 'PAPER' && form.referralType !== 'EXTERNAL_CLINIC'" class="col-12 col-md-4">
               <q-select v-model="form.doctorId" outlined dense clearable :label="form.referralType === 'INTERNAL' ? 'Лікар закладу *' : 'Лікар-замовник'" :options="doctorOptions" emit-value map-options use-input input-debounce="0" @filter="filterDoctors" />
             </div>
             <div class="col-12 col-md-4">
@@ -99,7 +104,7 @@
                 v-model="form.profileIds"
                 data-testid="profileSelect"
                 outlined dense multiple use-chips use-input input-debounce="0"
-                label="Профілі (послуги)"
+                label="Профілі"
                 :options="profileOptionsFiltered"
                 emit-value map-options
                 @filter="filterProfiles"
@@ -108,7 +113,7 @@
                   <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                     <q-item-section>
                       <q-item-label>{{ scope.opt.label }}</q-item-label>
-                      <q-item-label caption>{{ scope.opt.item.code }} · {{ scope.opt.item.category }} · {{ (scope.opt.item.items || []).length }} показн. · TAT {{ scope.opt.item.turnaroundHours }} год</q-item-label>
+                      <q-item-label caption>{{ scope.opt.item.category }} · {{ pluralN((scope.opt.item.items || []).length, 'показник', 'показники', 'показників') }}<span v-if="scope.opt.item.turnaroundHours"> · готово за {{ scope.opt.item.turnaroundHours }} год</span></q-item-label>
                     </q-item-section>
                     <q-item-section side><span class="text-weight-bold">{{ scope.opt.item.price | money }}</span></q-item-section>
                   </q-item>
@@ -120,7 +125,7 @@
                 v-model="form.testIds"
                 data-testid="testSelect"
                 outlined dense multiple use-chips use-input input-debounce="0"
-                label="Окремі показники (тести)"
+                label="Окремі показники"
                 :options="testOptionsFiltered"
                 emit-value map-options
                 @filter="filterTests"
@@ -129,8 +134,9 @@
                   <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
                     <q-item-section>
                       <q-item-label>{{ scope.opt.label }}</q-item-label>
-                      <q-item-label caption>{{ scope.opt.item.code }} · {{ scope.opt.item.unit }} · {{ biomaterialName(scope.opt.item.biomaterialTypeId) }}</q-item-label>
+                      <q-item-label caption>{{ [scope.opt.item.unit, biomaterialName(scope.opt.item.biomaterialTypeId)].filter(Boolean).join(' · ') }}</q-item-label>
                     </q-item-section>
+                    <q-item-section v-if="scope.opt.item.price" side><span class="text-weight-bold">{{ scope.opt.item.price | money }}</span></q-item-section>
                   </q-item>
                 </template>
               </q-select>
@@ -143,19 +149,19 @@
               <div class="medlink-card" data-testid="tubePlanCard">
                 <div class="medlink-card__title">
                   <span><q-icon name="science" class="q-mr-xs" />План пробірок у порядку забору</span>
-                  <span class="text-grey-6 text-caption"><q-spinner v-if="planLoading" size="14px" class="q-mr-xs" />{{ planItems.length }} пробірк.</span>
+                  <span class="text-grey-6 text-caption"><q-spinner v-if="planLoading" size="14px" class="q-mr-xs" />{{ pluralN(planItems.length, 'пробірка', 'пробірки', 'пробірок') }}</span>
                 </div>
                 <q-banner v-for="(w, i) in planWarnings" :key="i" dense class="bg-orange-1 text-deep-orange-9 q-ma-sm" rounded>
                   <template v-slot:avatar><q-icon name="warning" color="deep-orange" /></template>{{ w }}
                 </q-banner>
                 <tube-plan-list v-if="planItems.length" :items="planItems" />
                 <div v-else-if="planError" class="q-pa-md text-negative text-caption">{{ planError }}</div>
-                <div v-else class="q-pa-md text-grey-6 text-caption">Оберіть профілі або показники — сервер сформує план пробірок за правилами тари: окремі пробірки, об’єм, ліміт тестів, сумісність.</div>
+                <div v-else class="q-pa-md text-grey-6 text-caption">Оберіть послуги — тут з’явиться перелік пробірок.</div>
               </div>
             </div>
             <div class="col-12 col-md-5">
               <div class="medlink-card q-pa-md">
-                <div class="row items-center justify-between"><span class="text-grey-7">Показників усього</span><b>{{ allTestCodes.length }}</b></div>
+                <div class="row items-center justify-between"><span class="text-grey-7">Показників усього</span><b>{{ testsTotal }}</b></div>
                 <div class="row items-center justify-between"><span class="text-grey-7">Профілів</span><b>{{ form.profileIds.length }}</b></div>
                 <div class="row items-center justify-between"><span class="text-grey-7">Пробірок до забору</span><b>{{ planItems.length }}</b></div>
                 <q-separator class="q-my-sm" />
@@ -173,7 +179,7 @@
                 <q-banner v-if="quote && quote.warning" dense rounded class="bg-orange-1 text-deep-orange-9 q-mb-xs">{{ quote.warning }}</q-banner>
                 <template v-if="quote">
                   <div v-for="l in quote.lines" :key="l.code" class="row justify-between text-caption">
-                    <span>{{ l.code }}<span v-if="l.isPackage" class="text-primary"> (пакет)</span><span v-if="l.isNotCovered" class="text-deep-orange-8"> · не покривається</span></span>
+                    <span>{{ l.name || l.code }}<span v-if="l.isPackage" class="text-primary"> (пакет)</span><span v-if="l.isNotCovered" class="text-deep-orange-8"> · не покривається</span></span>
                     <span>{{ l.amount | money }}</span>
                   </div>
                   <q-separator class="q-my-xs" />
@@ -188,8 +194,9 @@
 
         <q-card-actions align="right" class="bg-grey-1">
           <div v-if="submitError" class="text-negative text-caption q-mr-md ellipsis" style="max-width: 50%">{{ submitError }}</div>
-          <q-btn flat label="Скасувати" v-close-popup />
-          <q-btn type="submit" data-testid="createOrderSubmit" color="primary" icon="save" label="Створити замовлення" :loading="saving" :disable="!canSubmit" />
+          <span v-if="!canSubmit && !saving" class="text-caption text-grey-7 q-mr-sm" data-testid="createOrderHint">Не заповнено: {{ missingFields.join(', ') }}</span>
+          <q-btn flat label="Скасувати" @click="tryClose" />
+          <q-btn type="submit" data-testid="createOrderSubmit" color="primary" icon="save" label="Зареєструвати" :loading="saving" :disable="!canSubmit"><q-tooltip v-if="!canSubmit && !saving">Не заповнено: {{ missingFields.join(', ') }}</q-tooltip></q-btn>
         </q-card-actions>
       </q-form>
     </q-card>
@@ -200,7 +207,8 @@
 import PatientSelect from '../../../components/common/PatientSelect.vue';
 import OrderMatrix from '../../../components/orders/OrderMatrix.vue';
 import TubePlanList from '../../../components/samples/TubePlanList.vue';
-import { patientDisplay, genderLabel, ageFromBirthDate } from '../../../utils/format';
+import { patientDisplay, genderLabel, ageFromBirthDate, pluralN } from '../../../utils/format';
+import { http } from '../../../services/http';
 
 const emptyPaper = () => ({ number: '', date: '', requesterLegalEntityName: '', requesterLegalEntityEdrpou: '', requesterEmployeeName: '' });
 const emptyForm = () => ({
@@ -225,6 +233,7 @@ export default {
   data () {
     return {
       pickMode: 'lists',
+      clinics: [],
       patient: null,
       newPatientMode: false,
       newPatient: { lastName: '', firstName: '', middleName: '', birthDate: '', gender: null, phone: '', taxId: '', email: '' },
@@ -254,7 +263,8 @@ export default {
       planLoading: false,
       planError: '',
       planTimer: null,
-      planSeq: 0
+      planSeq: 0,
+      closeAsked: false
     };
   },
   computed: {
@@ -272,11 +282,35 @@ export default {
     },
     profileOptionsFiltered () {
       const f = this.profileFilter.toLowerCase();
-      return this.profiles.filter(p => !f || `${p.name} ${p.code}`.toLowerCase().includes(f)).map(p => ({ value: p.id, label: p.name, item: p }));
+      // код використовується лише для пошуку; перелік — за назвою
+      return this.profiles.filter(p => !f || `${p.name} ${p.code}`.toLowerCase().includes(f)).map(p => ({ value: p.id, label: p.name, item: p }))
+        .sort((a, b) => String(a.label).localeCompare(String(b.label), 'uk'));
     },
     testOptionsFiltered () {
       const f = this.testFilter.toLowerCase();
-      return this.tests.filter(t => !f || `${t.name} ${t.code}`.toLowerCase().includes(f)).map(t => ({ value: t.id, label: t.name, item: t }));
+      return this.tests.filter(t => !f || `${t.name} ${t.code}`.toLowerCase().includes(f)).map(t => ({ value: t.id, label: t.name, item: t }))
+        .sort((a, b) => String(a.label).localeCompare(String(b.label), 'uk'));
+    },
+    /** Кількість показників: за планом пробірок сервера (єдине джерело), доки плану немає — за вибраними послугами */
+    testsTotal () {
+      const fromPlan = new Set();
+      ((this.plan && this.plan.tubes) || []).forEach(t => (t.tests || []).forEach(x => fromPlan.add(x.code)));
+      return fromPlan.size || this.allTestCodes.length;
+    },
+    isDirty () {
+      const f = this.form; const n = this.newPatient;
+      return !!(this.patient || n.lastName || n.firstName || f.profileIds.length || f.testIds.length || f.clinicalNotes || this.ehealthNumber || this.paper.number || f.referrerOrganizationName);
+    },
+    missingFields () {
+      const m = [];
+      if (this.newPatientMode) {
+        if (!this.newPatient.lastName) m.push('прізвище');
+        if (!this.newPatient.firstName) m.push('ім’я');
+        if (!this.newPatient.birthDate) m.push('дата народження');
+        if (!this.newPatient.gender) m.push('стать');
+      } else if (!this.patient) m.push('пацієнт');
+      if (!(this.form.profileIds.length || this.form.testIds.length)) m.push('послуги');
+      return m;
     },
     selectedProfiles () { return this.profiles.filter(p => this.form.profileIds.includes(p.id)); },
     selectedTests () {
@@ -301,7 +335,7 @@ export default {
     },
     planWarnings () { return (this.plan && this.plan.warnings) || []; },
     payerOptions () {
-      return [{ value: 'AUTO', label: 'Автоматично (поліс / НСЗУ з е-направлення / каса)' }]
+      return [{ value: 'AUTO', label: 'Автоматично' }]
         .concat(this.payers.filter(p => p.isActive).map(p => ({ value: p.id, label: `${p.name} · ${p.kindName}` })));
     },
     selectedPayer () { return this.payers.find(p => p.id === this.payerId || p.code === this.payerId) || null; },
@@ -317,6 +351,7 @@ export default {
     'form.profileIds' () { this.schedulePlan(); },
     'form.testIds' () { this.schedulePlan(); },
     payerId () { this.scheduleQuote(); },
+    'form.referralType' (t) { if (t === 'EXTERNAL_CLINIC') this.loadClinics(); },
     patient (p) { this.loadPolicies(p); this.scheduleQuote(); },
     value: {
       // immediate: діалог може бути відкритий одразу при завантаженні сторінки (?create=1)
@@ -330,7 +365,26 @@ export default {
     }
   },
   methods: {
+    // довідник клієнтів (клінік-партнерів) для підказки в полі «Клініка-партнер»
+    async loadClinics () {
+      if (this.clinics.length) return;
+      try { const r = await http.get('/clients'); this.clinics = Array.isArray(r.data) ? r.data : []; } catch (e) { this.clinics = []; }
+    },
+    onClinicInput (name) {
+      const c = this.clinics.find(x => x.name === name);
+      if (c && c.edrpou) this.form.referrerOrganizationEdrpou = String(c.edrpou).slice(0, 8);
+    },
     genderLabel,
+    pluralN,
+    /** Закриття діалогу: якщо в формі є введені дані — питаємо підтвердження */
+    tryClose () {
+      if (!this.isDirty) { this.$emit('input', false); return; }
+      if (this.closeAsked) return;
+      this.closeAsked = true;
+      this.$q.dialog({ title: 'Закрити без збереження?', message: 'Введені дані буде втрачено.', ok: { label: 'Закрити', color: 'negative', flat: true }, cancel: { label: 'Повернутися', flat: true }, persistent: true })
+        .onOk(() => { this.$emit('input', false); })
+        .onDismiss(() => { this.closeAsked = false; });
+    },
     schedulePlan () {
       clearTimeout(this.planTimer);
       this.planTimer = setTimeout(this.loadPlan, 300);
@@ -388,7 +442,15 @@ export default {
         }
         (info.matchingProfiles || []).forEach(p => { if (!this.form.profileIds.includes(p.id)) this.form.profileIds.push(p.id); });
       } catch (e) {
-        this.referralInfo = { canUse: false, problems: [e.userMessage || 'Направлення не знайдено'] };
+        // Якщо сесія ЕСОЗ не підключена, «не знайдено» було б неправдою: номер просто не вдалося перевірити
+        let esozOff = false;
+        try { const st = await this.$api.ehealthSession(); esozOff = !st || (st.level || 'L0') === 'L0'; } catch (e2) { /* ignore */ }
+        this.referralInfo = {
+          canUse: false,
+          problems: [esozOff
+            ? 'ЕСОЗ не підключено, тому е-направлення не вдалося перевірити. Увійдіть в ЕСОЗ (значок «ЕСОЗ» у верхній панелі) і повторіть пошук.'
+            : (e.userMessage || 'Направлення не знайдено')]
+        };
       } finally {
         this.referralLoading = false;
       }
@@ -441,11 +503,11 @@ export default {
       else body.patientId = this.patient.id;
       try {
         const order = await this.$api.createOrder(body);
-        this.$q.notify({ type: 'positive', message: `Замовлення ${order.orderNumber || ''} створено` });
+        this.$q.notify({ type: 'positive', message: `Направлення ${order.orderNumber || ''} створено` });
         this.$emit('created', order);
         this.$emit('input', false);
       } catch (e) {
-        this.submitError = e.userMessage || 'Не вдалося створити замовлення';
+        this.submitError = e.userMessage || 'Не вдалося створити направлення';
       } finally {
         this.saving = false;
       }

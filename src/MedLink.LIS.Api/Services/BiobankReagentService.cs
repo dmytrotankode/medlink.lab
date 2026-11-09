@@ -80,8 +80,8 @@ public sealed class BiobankService
     {
         _policy.Require("Створення штатива", Roles);
         if (string.IsNullOrWhiteSpace(req.Code)) throw ValidationException.Field("code", "Вкажіть код штатива");
-        if (await _db.Racks.AnyAsync(r => r.Code == req.Code && r.RecordState != RecordStates.Deleted)) throw new ConflictException($"Штатив із кодом {req.Code} вже існує");
-        if (req.RowsCount is < 1 or > 26 || req.ColsCount is < 1 or > 50) throw new ValidationException("Розмір штатива: рядків 1..26, колонок 1..50");
+        if (await _db.Racks.AnyAsync(r => r.Code == req.Code && r.RecordState != RecordStates.Deleted)) throw new ConflictException($"Штатив із кодом «{req.Code}» вже існує");
+        if (req.RowsCount is < 1 or > 26 || req.ColsCount is < 1 or > 50) throw new ValidationException("Розмір штатива: від 1 до 26 рядків і від 1 до 50 стовпців");
         var r = new LabArchiveRack { Code = req.Code, Name = req.Name, RoomNumber = req.RoomNumber, FreezerName = req.FreezerName, ShelfNumber = req.ShelfNumber, TemperatureCelsius = req.TemperatureCelsius, RowsCount = req.RowsCount, ColsCount = req.ColsCount, IsActive = req.IsActive };
         _db.Racks.Add(r);
         _audit.Log("CREATE", "lab_archive_rack", r.Id, null, req);
@@ -110,7 +110,7 @@ public sealed class BiobankService
     {
         _policy.Require("Видалення штатива", LabRoles.Admin, LabRoles.Doctor);
         var r = await LoadRackAsync(id);
-        if (r.Cells.Any(c => c.SampleId != null && !c.IsDisposed)) throw new ConflictException("Штатив містить зразки — спочатку вилучіть їх");
+        if (r.Cells.Any(c => c.SampleId != null && !c.IsDisposed)) throw new ConflictException("Видалити можна лише порожній штатив: спочатку вилучіть зразки");
         _db.Racks.Remove(r);
         _audit.Log("DELETE", "lab_archive_rack", id, new { r.Code }, null);
         await _db.SaveChangesAsync();
@@ -119,6 +119,7 @@ public sealed class BiobankService
     public async Task<object> CellsAsync(string rackId)
     {
         var rack = await _db.Racks.AsNoTracking().Include(r => r.Cells).ThenInclude(c => c.Sample).ThenInclude(s => s!.Order).ThenInclude(o => o!.Patient)
+            .Include(r => r.Cells).ThenInclude(c => c.Sample).ThenInclude(s => s!.BiomaterialType)
             .FirstOrDefaultAsync(r => r.Id == rackId) ?? throw NotFoundException.For("Штатив", rackId);
         var cells = new List<object>();
         for (var row = 1; row <= rack.RowsCount; row++)
@@ -129,7 +130,8 @@ public sealed class BiobankService
                 {
                     id = c?.Id, rackId, row, col, coordinate = $"{(char)('A' + row - 1)}{col:00}", isOccupied = c?.SampleId != null,
                     sampleId = c?.SampleId, barcode = c?.Barcode, storedAt = c?.StoredAt, expiryAt = c?.ExpiryAt, isExpired = c?.ExpiryAt < DateTime.UtcNow,
-                    patientName = c?.Sample?.Order?.Patient?.Caption, orderNumber = c?.Sample?.Order?.OrderNumber
+                    patientName = c?.Sample?.Order?.Patient?.Caption, orderNumber = c?.Sample?.Order?.OrderNumber, orderId = c?.Sample?.OrderId,
+                    biomaterialCode = c?.Sample?.BiomaterialType?.Code, biomaterialName = c?.Sample?.BiomaterialType?.Name
                 });
             }
         return new { rack = RackDto(rack), cells };
@@ -159,7 +161,7 @@ public sealed class BiobankService
     {
         _policy.Require("Вилучення зразка з біобанку", Roles);
         var cell = await _db.Cells.Include(c => c.Sample).ThenInclude(s => s!.Order).FirstOrDefaultAsync(c => c.Id == cellId) ?? throw NotFoundException.For("Комірка", cellId);
-        if (cell.SampleId == null || cell.IsDisposed) throw new ConflictException("Комірка порожня");
+        if (cell.SampleId == null || cell.IsDisposed) throw new ConflictException("Комірка порожня — вилучати нічого");
         cell.IsDisposed = true; cell.DisposedAt = DateTime.UtcNow; cell.DisposalReason = reason;
         if (cell.Sample != null && cell.Sample.Status == SampleStatuses.Stored) cell.Sample.Status = SampleStatuses.Disposed;
         _audit.Log("REMOVE", "lab_archive_cell", cell.Id, new { cell.Barcode }, new { reason });
@@ -191,13 +193,15 @@ public sealed class BiobankService
     public async Task<object?> SearchAsync(string barcode)
     {
         var cell = await _db.Cells.AsNoTracking().Include(c => c.Rack).Include(c => c.Sample).ThenInclude(s => s!.Order).ThenInclude(o => o!.Patient)
+            .Include(c => c.Sample).ThenInclude(s => s!.BiomaterialType)
             .FirstOrDefaultAsync(c => c.Barcode == barcode && !c.IsDisposed);
         if (cell == null) return null;
         return new
         {
             cell.Id, rackId = cell.RackId, rackCode = cell.Rack?.Code, rackName = cell.Rack?.Name, freezer = cell.Rack?.FreezerName, shelf = cell.Rack?.ShelfNumber, temperature = cell.Rack?.TemperatureCelsius,
             row = cell.RowNum, col = cell.ColNum, coordinate = cell.Coordinate, cell.Barcode, cell.StoredAt, cell.ExpiryAt, isExpired = cell.ExpiryAt < DateTime.UtcNow,
-            patientName = cell.Sample?.Order?.Patient?.Caption, orderNumber = cell.Sample?.Order?.OrderNumber, sampleStatus = cell.Sample?.Status
+            patientName = cell.Sample?.Order?.Patient?.Caption, orderNumber = cell.Sample?.Order?.OrderNumber, sampleStatus = cell.Sample?.Status,
+            biomaterialCode = cell.Sample?.BiomaterialType?.Code, biomaterialName = cell.Sample?.BiomaterialType?.Name
         };
     }
 
@@ -281,8 +285,8 @@ public sealed class ReagentService
         _policy.Require("Списання реагенту", Roles);
         if (tests <= 0) throw ValidationException.Field("tests", "Кількість має бути > 0");
         var lot = await _db.ReagentLots.FirstOrDefaultAsync(l => l.Id == id && l.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Лот реагенту", id);
-        if (!lot.IsActive) throw new ConflictException("Лот неактивний");
-        if (lot.TestsRemaining < tests) throw new ConflictException($"Недостатньо реагенту: залишок {lot.TestsRemaining}, потрібно {tests}");
+        if (!lot.IsActive) throw new ConflictException("Лот вимкнено — списання неможливе");
+        if (lot.TestsRemaining < tests) throw new ConflictException($"Недостатньо реагенту: залишок {lot.TestsRemaining} тестів, потрібно {tests}");
         lot.TestsRemaining -= tests;
         lot.OpenedAt ??= DateTime.UtcNow;
         _audit.Log("CONSUME", "lab_reagent_lot", lot.Id, null, new { tests, lot.TestsRemaining });
@@ -297,12 +301,12 @@ public sealed class ReagentService
         var alerts = new List<object>();
         foreach (var l in lots)
         {
-            if (l.TestsRemaining <= 0) alerts.Add(new { l.Id, l.ReagentName, l.LotNumber, analyzer = l.Analyzer?.Name, type = "EMPTY", severity = "CRITICAL", message = "Реагент вичерпано" });
-            else if (l.TestsRemaining <= l.MinimumTests) alerts.Add(new { l.Id, l.ReagentName, l.LotNumber, analyzer = l.Analyzer?.Name, type = "LOW_STOCK", severity = "WARNING", message = $"Залишок {l.TestsRemaining} тестів (мінімум {l.MinimumTests})" });
-            if (l.ExpiryDate < now) alerts.Add(new { l.Id, l.ReagentName, l.LotNumber, analyzer = l.Analyzer?.Name, type = "EXPIRED", severity = "CRITICAL", message = $"Термін придатності минув {l.ExpiryDate:dd.MM.yyyy}" });
-            else if (l.ExpiryDate < now.AddDays(14)) alerts.Add(new { l.Id, l.ReagentName, l.LotNumber, analyzer = l.Analyzer?.Name, type = "EXPIRING", severity = "WARNING", message = $"Термін придатності спливає {l.ExpiryDate:dd.MM.yyyy}" });
+            if (l.TestsRemaining <= 0) alerts.Add(new { l.Id, l.ReagentName, l.LotNumber, analyzer = l.Analyzer?.Name, type = "EMPTY", severity = "CRITICAL", message = "реагент вичерпано" });
+            else if (l.TestsRemaining <= l.MinimumTests) alerts.Add(new { l.Id, l.ReagentName, l.LotNumber, analyzer = l.Analyzer?.Name, type = "LOW_STOCK", severity = "WARNING", message = $"залишок {l.TestsRemaining} тестів, мінімум {l.MinimumTests}" });
+            if (l.ExpiryDate < now) alerts.Add(new { l.Id, l.ReagentName, l.LotNumber, analyzer = l.Analyzer?.Name, type = "EXPIRED", severity = "CRITICAL", message = $"термін придатності минув {l.ExpiryDate:dd.MM.yyyy}" });
+            else if (l.ExpiryDate < now.AddDays(14)) alerts.Add(new { l.Id, l.ReagentName, l.LotNumber, analyzer = l.Analyzer?.Name, type = "EXPIRING", severity = "WARNING", message = $"термін придатності спливає {l.ExpiryDate:dd.MM.yyyy}" });
             if (l.OpenedAt.HasValue && l.OnboardStabilityDays.HasValue && l.OpenedAt.Value.AddDays(l.OnboardStabilityDays.Value) < now)
-                alerts.Add(new { l.Id, l.ReagentName, l.LotNumber, analyzer = l.Analyzer?.Name, type = "ONBOARD_EXPIRED", severity = "WARNING", message = $"Перевищено on-board стабільність ({l.OnboardStabilityDays} дн. після відкриття)" });
+                alerts.Add(new { l.Id, l.ReagentName, l.LotNumber, analyzer = l.Analyzer?.Name, type = "ONBOARD_EXPIRED", severity = "WARNING", message = $"перевищено стабільність після відкриття ({l.OnboardStabilityDays} діб)" });
         }
         return alerts;
     }

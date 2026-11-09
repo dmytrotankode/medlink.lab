@@ -272,8 +272,15 @@ public sealed partial class LogisticsService
         var other = await _db.ContainerItems.Include(i => i.Container)
             .FirstOrDefaultAsync(i => i.SampleId == sample.Id && i.Status == ContainerItemStatuses.Packed && ContainerStatuses.Active.Contains(i.Container!.Status));
         if (other != null) throw new ConflictException($"Пробірка {bc} уже в контейнері {other.Container!.Barcode}");
-        if (sample.Status != SampleStatuses.Collected) throw new ConflictException($"Пробірка {bc} у статусі {sample.Status}: до контейнера кладуться лише зібрані (COLLECTED) пробірки");
-        if (sample.Order?.DepartmentId != c.OriginDepartmentId) throw new ConflictException($"Пробірка {bc} належить іншому пункту відправлення — до контейнера {c.Barcode} її покласти не можна");
+        if (sample.Status != SampleStatuses.Collected)
+            throw new ConflictException(sample.Status == SampleStatuses.Pending
+                ? $"Пробірка {bc} ще не забрана — спочатку заберіть її на пункті забору"
+                : $"Пробірка {bc} має статус «{UkLabels.Status(LisEntities.Sample, sample.Status)}»: до контейнера кладуться лише забрані пробірки");
+        if (sample.Order?.DepartmentId != c.OriginDepartmentId)
+        {
+            var sampleDept = sample.Order?.DepartmentId == null ? null : (await _db.Departments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == sample.Order.DepartmentId))?.Caption;
+            throw new ConflictException($"Пробірка {bc} належить іншому пункту відправлення — «{sampleDept ?? "не вказано"}», а контейнер {c.Barcode} призначений для «{c.OriginDepartment?.Caption ?? "не вказано"}»");
+        }
         if (await _db.LogisticsItems.AnyAsync(i => i.SampleId == sample.Id && i.Logistics!.Status == LisStateMachine.ManifestCreated))
             throw new ConflictException($"Пробірка {bc} уже внесена в чернетку маніфесту");
 
@@ -342,7 +349,7 @@ public sealed partial class LogisticsService
         var sampleIds = c.Items.Select(i => i.SampleId).ToList();
         var samples = await _db.Samples.AsNoTracking().Where(s => sampleIds.Contains(s.Id)).ToListAsync();
         var bad = samples.FirstOrDefault(s => s.Status != SampleStatuses.Collected);
-        if (bad != null) throw new ConflictException($"Пробірка {bad.Barcode} у статусі {bad.Status}: зніміть її з контейнера перед запечатуванням");
+        if (bad != null) throw new ConflictException($"Пробірка {bad.Barcode} має статус «{UkLabels.Status(LisEntities.Sample, bad.Status)}»: зніміть її з контейнера перед запечатуванням");
 
         var (min, max) = await ContainerCorridorAsync(c.Type!);
         var violated = temp < min || temp > max;

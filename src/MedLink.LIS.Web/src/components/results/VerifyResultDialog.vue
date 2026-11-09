@@ -1,5 +1,5 @@
 <template>
-  <q-dialog :value="value" @input="$emit('input', $event)" persistent>
+  <q-dialog :value="value" @input="$emit('input', $event)" no-backdrop-dismiss>
     <q-card style="min-width: 520px; max-width: 96vw" data-testid="verifyDialog">
       <q-card-section class="row items-center text-white q-py-sm" :class="critical ? 'bg-negative' : 'bg-green-8'">
         <q-icon :name="critical ? 'warning' : 'how_to_reg'" class="q-mr-sm" />
@@ -23,25 +23,27 @@
           </div>
         </div>
         <q-banner v-if="row.deltaAlert" dense rounded class="bg-orange-1 text-orange-9 q-mb-sm">
-          <q-icon name="trending_up" /> Delta-check: зміна {{ row.deltaPercent | pct }} відносно попереднього {{ row.previousValue | num }} ({{ row.previousAt | datetime }})
+          <q-icon name="trending_up" /> Різка зміна відносно попереднього результату: {{ row.deltaPercent | pct }} (було {{ row.previousValue | num }}, {{ row.previousAt | datetime }})
         </q-banner>
         <q-banner v-if="row.isLockedOut" dense rounded class="bg-purple-1 text-purple-9 q-mb-sm">
-          <q-icon name="lock" /> Активний Lockout ВКЯ: верифікація можлива лише з явним override та коментарем.
+          <q-icon name="lock" /> Аналізатор заблоковано контролем якості: верифікація можлива лише з підтвердженням винятку та коментарем.
         </q-banner>
         <q-input
           v-model="comment"
           outlined dense autogrow
           :label="critical ? 'Коментар лікаря (обов’язково для критичних значень) *' : 'Коментар лікаря'"
-          :rules="critical ? [v => !!(v && v.trim()) || 'Для CRIT_* коментар обов’язковий'] : []"
+          :rules="critical ? [v => !!(v && v.trim()) || 'Для критичного значення коментар обов’язковий'] : []"
           data-testid="verifyComment"
           autofocus
         />
-        <q-toggle v-if="row.isLockedOut" v-model="override" color="purple-6" label="Override Lockout (підтверджую відповідальність)" />
+        <q-toggle v-if="row.isLockedOut" v-model="override" color="purple-6" label="Верифікувати попри блокування (беру відповідальність на себе)" />
         <div v-if="error" class="text-negative q-mt-sm">{{ error }}</div>
       </q-card-section>
       <q-card-actions align="right" class="bg-grey-1">
         <q-btn flat label="Скасувати" v-close-popup />
-        <q-btn :color="critical ? 'negative' : 'green-8'" icon="how_to_reg" label="Верифікувати" :loading="saving" :disable="!canSave" data-testid="verifyConfirm" @click="confirm" />
+        <q-btn :color="critical ? 'negative' : 'green-8'" icon="how_to_reg" label="Верифікувати" :loading="saving" :disable="!canSave" data-testid="verifyConfirm" @click="confirm">
+          <q-tooltip v-if="!canSave">{{ blockReason }}</q-tooltip>
+        </q-btn>
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -50,6 +52,7 @@
 <script>
 import { isCritical, flagMeta } from '../../utils/statuses';
 import { referenceDisplay, formatNumber } from '../../utils/format';
+import { roleBlockReason, VERIFY_ROLES } from '../../utils/resultRules';
 
 export default {
   name: 'VerifyResultDialog',
@@ -68,10 +71,13 @@ export default {
       const v = this.row.value !== undefined ? this.row.value : (this.row.numericValue !== undefined && this.row.numericValue !== null ? this.row.numericValue : this.row.stringValue);
       return isNaN(Number(v)) || v === null || v === '' ? (v || '—') : formatNumber(v);
     },
-    canSave () {
-      if (this.critical && !(this.comment && this.comment.trim())) return false;
-      if (this.row.isLockedOut && !this.override) return false;
-      return true;
+    canSave () { return !this.blockReason; },
+    /** Чому «Верифікувати» неактивна: роль, коментар для критичного значення або блокування контролем якості */
+    blockReason () {
+      if (roleBlockReason(this.$store.getters['context/currentRole'], VERIFY_ROLES)) return 'Верифікує лише лікар-лаборант (або адміністратор лабораторії)';
+      if (this.critical && !(this.comment && this.comment.trim())) return 'Для критичного значення потрібен коментар лікаря';
+      if (this.row.isLockedOut && !this.override) return 'Аналізатор заблоковано: увімкніть підтвердження винятку';
+      return '';
     }
   },
   watch: {

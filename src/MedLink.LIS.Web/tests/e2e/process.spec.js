@@ -25,19 +25,19 @@ test('1. Реєстратор створює замовлення (списки 
   await pickOption(page, dlg.locator('.q-select').filter({ hasText: 'Профілі' }), /./);
   await page.keyboard.press('Escape');
   await expect(dlg.locator('text=План пробірок').or(dlg.locator('text=Автопідбір пробірок'))).toBeVisible();
-  await dlg.getByRole('button', { name: /Створити замовлення/ }).click();
+  await dlg.getByRole('button', { name: /Зареєструвати/ }).click();
   await expectNotify(page, /створено/i);
   await page.waitForURL(/\/laboratory\/orders\/[^/]+/);
   orderUrl = page.url();
   await expect(page.getByTestId('orderCard')).toBeVisible();
-  orderNumber = (await page.locator('.page-header__title span').first().innerText()).replace('Замовлення', '').trim();
+  orderNumber = (await page.locator('.page-header__title span').first().innerText()).replace('Направлення', '').trim();
   await page.getByTestId('tab-samples').click();
   const codes = await page.locator('[data-testid="orderCard"] .q-tab-panel .mono.text-weight-bold').allInnerTexts();
   codes.forEach(c => barcodes.push(c.trim()));
   expect(barcodes.length).toBeGreaterThan(0);
   await expect(page.getByTestId('orderStatus')).toContainText(/Нове/);
-  // дії за роллю: COLLECT дозволено або ні — кнопка рендериться завжди
-  await expect(page.getByTestId('action-COLLECT')).toBeVisible();
+  // дії за роллю: кнопки, недоступні ролі, не показуються — або дія є, або пояснення, що дій немає
+  await expect(page.getByTestId('action-COLLECT').or(page.getByTestId('noActions'))).toBeVisible();
 });
 
 test('2. Медсестра забирає матеріал за чек-листом і друкує етикетку', async ({ page }) => {
@@ -136,8 +136,7 @@ test('6. Видача результатів, бланк та кабінет п�
   await waitIdle(page);
   await switchRole(page, 'LAB_DOCTOR');
   const release = page.getByTestId('action-RELEASE');
-  await expect(release).toBeVisible();
-  if ((await release.getAttribute('data-allowed')) === '1') {
+  if ((await release.count()) && (await release.getAttribute('data-allowed')) === '1') {
     await release.click();
     await page.locator('.q-dialog').getByRole('button', { name: /^Видати$/ }).click();
     await expectNotify(page, /видано/i);

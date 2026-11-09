@@ -22,7 +22,7 @@ public static class PathKinds
     public static readonly string[] All = { Operative, Biopsy, Cito, Consult, Cyto };
     public static string Label(string? k) => k switch
     {
-        Operative => "Операційний матеріал", Biopsy => "Біопсія діагностична", Cito => "Біопсія термінова (інтраопераційна)", Consult => "Консультація готових препаратів", Cyto => "Цитологічне дослідження", _ => k ?? "—"
+        Operative => "Операційний матеріал", Biopsy => "Біопсія діагностична", Cito => "Термінова інтраопераційна (CITO)", Consult => "Консультація готових препаратів", Cyto => "Цитологічне дослідження", _ => k ?? "—"
     };
 }
 

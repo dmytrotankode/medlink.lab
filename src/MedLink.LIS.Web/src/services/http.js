@@ -16,6 +16,15 @@ export const http = axios.create({
   }
 });
 
+/** Англійські тексти стандартної валідації → зрозумілі українські (запасний варіант; основне робить сервер). */
+function humanizeFieldError (text) {
+  const t = String(text || '');
+  if (/could not be converted/i.test(t)) return 'Невірний формат значення: введіть число';
+  if (/is required/i.test(t)) return 'Не заповнено обов’язкове поле';
+  if (t && !/[А-Яа-яІіЇїЄєҐґ]/.test(t)) return 'Некоректне значення';
+  return t;
+}
+
 /**
  * Перетворює помилку axios у зручний для UI вигляд (RFC 7807 ProblemDetails).
  */
@@ -25,8 +34,11 @@ export function describeApiError (error) {
     const data = error.response.data || {};
     const fields = data.errors || {};
     let message = data.detail || data.title || error.response.statusText || `HTTP ${error.response.status}`;
-    const fieldMessages = Object.keys(fields).map(k => `${k}: ${[].concat(fields[k]).join(', ')}`);
-    if (fieldMessages.length) message += ' — ' + fieldMessages.join('; ');
+    // технічні імена полів (macro, assistantId, $.amount) користувачу не показуємо; текст поля додаємо, лише якщо його ще немає в повідомленні
+    const fieldMessages = Object.keys(fields)
+      .map(k => [].concat(fields[k]).map(humanizeFieldError).join(', '))
+      .filter((text, i, all) => text && !message.includes(text) && all.indexOf(text) === i);
+    if (fieldMessages.length) message += ': ' + fieldMessages.join('; ');
     return { message, offline: false, status: error.response.status, fields, raw: data };
   }
   if (error.request) {

@@ -1,5 +1,5 @@
 <template>
-  <q-dialog :value="value" @input="$emit('input', $event)" persistent>
+  <q-dialog :value="value" @input="$emit('input', $event)" no-backdrop-dismiss>
     <q-card style="min-width: 720px; max-width: 96vw" :data-testid="`dictForm-${name}`">
       <q-card-section class="row items-center bg-primary text-white q-py-sm">
         <q-icon :name="schema.icon" class="q-mr-sm" />
@@ -12,7 +12,7 @@
           <template v-for="f in visibleFields">
             <div :key="f.name" :class="`col-12 col-md-${f.col || 12}`">
               <!-- text / textarea / number / decimal -->
-              <q-input v-if="f.type === 'text'" v-model="form[f.name]" outlined dense :label="f.label + (f.required ? ' *' : '')" :readonly="isReadonly(f)" :bg-color="isReadonly(f) ? 'grey-2' : undefined" :hint="f.hint" :data-testid="`f-${f.name}`" />
+              <q-input v-if="f.type === 'text'" v-model="form[f.name]" outlined dense :label="f.label + (f.required ? ' *' : '')" :readonly="isReadonly(f)" :bg-color="isReadonly(f) ? 'grey-2' : undefined" :hint="f.hint" :error="fieldInvalid(f)" :error-message="`Вкажіть: ${f.label.toLowerCase()}`" :data-testid="`f-${f.name}`" />
               <q-input v-else-if="f.type === 'textarea'" v-model="form[f.name]" outlined dense autogrow :label="f.label" :readonly="isReadonly(f)" :data-testid="`f-${f.name}`" />
               <q-input v-else-if="f.type === 'number'" v-model.number="form[f.name]" outlined dense type="number" :label="f.label" :readonly="isReadonly(f)" :data-testid="`f-${f.name}`" />
               <q-input v-else-if="f.type === 'decimal'" v-model="form[f.name]" outlined dense inputmode="decimal" :label="f.label" :readonly="isReadonly(f)" :bg-color="isReadonly(f) ? 'grey-2' : undefined" :data-testid="`f-${f.name}`" />
@@ -24,9 +24,9 @@
                 <template v-slot:append><q-icon name="colorize" class="cursor-pointer"><q-popup-proxy transition-show="scale" transition-hide="scale"><q-color v-model="form[f.name]" default-view="palette" no-header format-model="hex" /></q-popup-proxy></q-icon></template>
               </q-input>
               <!-- select -->
-              <q-select v-else-if="f.type === 'select'" v-model="form[f.name]" outlined dense :label="f.label + (f.required ? ' *' : '')" :options="normalizeOptions(f.options)" emit-value map-options clearable :use-input="!!f.allowCustom" :new-value-mode="f.allowCustom ? 'add-unique' : undefined" :data-testid="`f-${f.name}`" />
+              <q-select v-else-if="f.type === 'select'" v-model="form[f.name]" outlined dense :label="f.label + (f.required ? ' *' : '')" :options="normalizeOptions(f.options)" emit-value map-options clearable :use-input="!!f.allowCustom" :new-value-mode="f.allowCustom ? 'add-unique' : undefined" :error="fieldInvalid(f)" :error-message="`Оберіть: ${f.label.toLowerCase()}`" :data-testid="`f-${f.name}`" />
               <!-- dict -->
-              <q-select v-else-if="f.type === 'dict'" v-model="form[f.name]" outlined dense :label="f.label + (f.required ? ' *' : '')" :options="dictOptions(f)" emit-value map-options clearable use-input input-debounce="0" @filter="(val, update) => filterDict(f, val, update)" :data-testid="`f-${f.name}`" />
+              <q-select v-else-if="f.type === 'dict'" v-model="form[f.name]" outlined dense :label="f.label + (f.required ? ' *' : '')" :options="dictOptions(f)" emit-value map-options clearable use-input input-debounce="0" @filter="(val, update) => filterDict(f, val, update)" :error="fieldInvalid(f)" :error-message="`Оберіть: ${f.label.toLowerCase()}`" :data-testid="`f-${f.name}`" />
               <!-- chips -->
               <q-select v-else-if="f.type === 'chips'" v-model="form[f.name]" outlined dense multiple use-chips use-input hide-dropdown-icon new-value-mode="add-unique" :label="f.label + ' (Enter — додати)'" :options="[]" :data-testid="`f-${f.name}`" />
               <!-- profile items -->
@@ -57,7 +57,7 @@
       </q-card-section>
       <q-card-actions align="right" class="bg-grey-1">
         <q-btn flat label="Скасувати" v-close-popup />
-        <q-btn color="primary" icon="save" label="Зберегти" :loading="saving" :disable="!valid" data-testid="dictSave" @click="save" />
+        <q-btn color="primary" icon="save" label="Зберегти" :loading="saving" data-testid="dictSave" @click="save" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -70,7 +70,7 @@ import { parseDecimal } from '../../utils/format';
 export default {
   name: 'DictionaryFormDialog',
   props: { value: Boolean, name: { type: String, required: true }, item: { type: Object, default: null } },
-  data () { return { form: {}, saving: false, error: '', dictFilters: {}, testFilter: '' }; },
+  data () { return { form: {}, saving: false, error: '', dictFilters: {}, testFilter: '', touched: false }; },
   computed: {
     schema () { return DICTIONARIES[this.name] || { title: this.name, fields: [], icon: 'list' }; },
     visibleFields () { return this.schema.fields.filter(f => !f.showIf || f.showIf(this.form)); },
@@ -90,7 +90,7 @@ export default {
   watch: {
     value (v) {
       if (v) {
-        this.error = '';
+        this.error = ''; this.touched = false;
         const base = {};
         this.schema.fields.forEach(f => { base[f.name] = f.default !== undefined ? f.default : (f.type === 'toggle' ? false : (f.type === 'chips' ? [] : (f.type === 'profileItems' ? [] : null))); });
         const src = this.item ? JSON.parse(JSON.stringify(this.item)) : {};
@@ -102,6 +102,8 @@ export default {
     }
   },
   methods: {
+    /** Обов'язкове поле порожнє — підсвічується після спроби зберегти */
+    fieldInvalid (f) { return this.touched && !!f.required && (this.form[f.name] === null || this.form[f.name] === undefined || this.form[f.name] === ''); },
     isReadonly (f) { return !!(f.readonly || (f.readonlyIf && f.readonlyIf(this.form))); },
     normalizeOptions (opts) { return (opts || []).map(o => typeof o === 'string' ? { value: o, label: o } : o); },
     dictOptions (f) {
@@ -115,6 +117,7 @@ export default {
     testLabel (id) { const t = this.tests.find(x => x.id === id); return t ? `${t.code} — ${t.name}` : id; },
     moveItem (i, d) { const arr = this.form.items; const j = i + d; if (j < 0 || j >= arr.length) return; const tmp = arr[i]; this.$set(arr, i, arr[j]); this.$set(arr, j, tmp); arr.forEach((it, idx) => { it.displayOrder = idx + 1; }); },
     async save () {
+      if (!this.valid) { this.touched = true; this.error = 'Заповніть обов’язкові поля, позначені *'; return; }
       this.saving = true; this.error = '';
       const body = { ...this.form };
       this.schema.fields.filter(f => f.type === 'decimal').forEach(f => { body[f.name] = parseDecimal(body[f.name]); });

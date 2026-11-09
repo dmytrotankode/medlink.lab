@@ -37,28 +37,34 @@
               </q-item>
               <q-item tag="label" v-ripple>
                 <q-item-section avatar><q-checkbox v-model="checklist.orderOfDraw" color="teal-6" data-testid="chk-order" /></q-item-section>
-                <q-item-section><q-item-label>Порядок забору пробірок</q-item-label><q-item-label caption>за індексом order of draw</q-item-label></q-item-section>
+                <q-item-section><q-item-label>Порядок забору пробірок</q-item-label><q-item-label caption>за встановленою послідовністю пробірок</q-item-label></q-item-section>
               </q-item>
               <q-item tag="label" v-ripple>
                 <q-item-section avatar><q-checkbox v-model="checklist.mixing" color="teal-6" data-testid="chk-mixing" /></q-item-section>
-                <q-item-section><q-item-label>Перемішано</q-item-label><q-item-label caption>{{ inversions ? `${inversions} інверсій` : 'інверсії за інструкцією' }}</q-item-label></q-item-section>
+                <q-item-section><q-item-label>Перемішано</q-item-label><q-item-label caption>{{ inversions ? `перевернути ${pluralN(inversions, 'раз', 'рази', 'разів')}` : 'перевернути за інструкцією' }}</q-item-label></q-item-section>
               </q-item>
             </q-list>
             <q-input v-model="volumeMl" type="number" step="0.1" outlined dense label="Об’єм, мл (необов’язково)" class="q-mt-sm" />
           </div>
         </div>
+        <q-banner v-if="earlierPending.length" dense rounded class="bg-orange-1 text-deep-orange-9 q-mt-sm" data-testid="orderOfDrawWarning">
+          <template v-slot:avatar><q-icon name="warning" color="deep-orange" /></template>
+          Спочатку заберіть пробірки, які йдуть раніше за порядком: {{ earlierPending.join(', ') }}. Порушення порядку може вплинути на результати.
+          <q-checkbox v-model="orderOverride" dense color="deep-orange" label="Все одно забрати цю пробірку" class="q-mt-xs" />
+        </q-banner>
         <div v-if="error" class="text-negative q-mt-sm">{{ error }}</div>
       </q-card-section>
       <q-card-actions align="right" class="bg-grey-1">
+        <span v-if="!canConfirm && !saving" class="text-caption text-grey-7 q-mr-sm">{{ confirmHint }}</span>
         <q-btn flat label="Скасувати" v-close-popup />
-        <q-btn color="teal-6" icon="check" label="Підтвердити забір" :loading="saving" :disable="!allChecked" data-testid="collectConfirm" @click="confirm" />
+        <q-btn color="teal-6" icon="check" label="Підтвердити забір" :loading="saving" :disable="!canConfirm" data-testid="collectConfirm" @click="confirm" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script>
-import { parseDecimal } from '../../utils/format';
+import { parseDecimal, pluralN } from '../../utils/format';
 
 export default {
   name: 'CollectSampleDialog',
@@ -72,7 +78,9 @@ export default {
       checklist: { idVerified: false, fasting: false, orderOfDraw: false, mixing: false },
       volumeMl: null,
       saving: false,
-      error: ''
+      error: '',
+      earlierPending: [],
+      orderOverride: false
     };
   },
   computed: {
@@ -92,9 +100,16 @@ export default {
     inversions () { return this.tube && this.tube.inversionsCount; },
     tubeMeta () {
       if (!this.tube) return '';
-      return [this.tube.anticoagulant ? `антикоагулянт: ${this.tube.anticoagulant}` : null, this.tube.volumeMl ? `${this.tube.volumeMl} мл` : null, this.tube.orderOfDrawIndex ? `порядок забору #${this.tube.orderOfDrawIndex}` : null].filter(Boolean).join(' · ');
+      const anticoagulant = String(this.tube.anticoagulant || '').replace(/K(\d)\/K(\d)\s*EDTA/i, 'ЕДТА К$1/К$2').replace(/EDTA/gi, 'ЕДТА');
+      const volume = this.tube.volumeMl ? String(this.tube.volumeMl).replace('.', ',') : '';
+      return [anticoagulant ? `антикоагулянт: ${anticoagulant}` : null, volume ? `${volume} мл` : null, this.tube.orderOfDrawIndex ? `порядок забору: ${this.tube.orderOfDrawIndex}` : null].filter(Boolean).join(' · ');
     },
-    allChecked () { return Object.values(this.checklist).every(Boolean); }
+    allChecked () { return Object.values(this.checklist).every(Boolean); },
+    canConfirm () { return this.allChecked && (!this.earlierPending.length || this.orderOverride); },
+    confirmHint () {
+      if (!this.allChecked) return 'Позначте всі пункти чек-листа';
+      return 'Підтвердіть забір поза порядком';
+    }
   },
   watch: {
     value (v) {
@@ -102,11 +117,29 @@ export default {
         this.checklist = { idVerified: false, fasting: false, orderOfDraw: false, mixing: false };
         this.volumeMl = null;
         this.error = '';
+        this.earlierPending = [];
+        this.orderOverride = false;
+        this.loadEarlierPending();
         this.$store.dispatch('dictionaries/loadMany', ['tube-types', 'biomaterials']);
       }
     }
   },
   methods: {
+    pluralN,
+    /** Пробірки цього ж направлення, які ще не забрані, але за порядком забору йдуть раніше за поточну */
+    async loadEarlierPending () {
+      const s = this.sample;
+      if (!s || !s.barcode) return;
+      try {
+        const order = await this.$api.orderByBarcode(s.barcode);
+        const me = (order.samples || []).find(x => x.barcode === s.barcode);
+        const myIndex = me ? (me.orderOfDrawIndex || 99) : 99;
+        this.earlierPending = (order.samples || [])
+          .filter(x => !x.parentSampleId && x.barcode !== s.barcode && x.status === 'PENDING' && (x.orderOfDrawIndex || 99) < myIndex)
+          .sort((a, b) => (a.orderOfDrawIndex || 99) - (b.orderOfDrawIndex || 99))
+          .map(x => x.barcode);
+      } catch (e) { this.earlierPending = []; }
+    },
     async confirm () {
       this.saving = true;
       this.error = '';

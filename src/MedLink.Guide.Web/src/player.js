@@ -122,9 +122,17 @@ export class Player {
   async go (i) {
     try { await this.goInner(i); } catch (e) {
       if (typeof console !== 'undefined') console.error('[guide]', e);
-      toast('Не вдалося показати крок — інструкцію зупинено');
-      this.stop(true);
-      if (this.chain) { const c = this.chain; this.chain = null; c.onUserStop(); }
+      // Помилка одного кроку не зупиняє всю інструкцію: показуємо підказку з активною кнопкою «Пропустити крок»
+      const r = this.run;
+      if (!r) return;
+      const total = r.scenario.steps.length;
+      const buttons = [];
+      if (i > 0) buttons.push({ text: '← Назад', onClick: () => this.prev() });
+      buttons.push({ text: 'Закрити', kind: 'dng', onClick: () => this.stop() });
+      buttons.push({ spacer: true });
+      buttons.push({ text: 'Повторити', onClick: () => this.go(i) });
+      buttons.push({ text: i === total - 1 ? 'Завершити' : 'Пропустити крок →', kind: 'pri', onClick: () => this.next() });
+      overlay.show({ title: 'Не вдалося показати цей крок', body: 'Не вдалося знайти елемент на екрані. Натисніть «' + (i === total - 1 ? 'Завершити' : 'Пропустити крок') + '», щоб продовжити.', target: null, blockOutside: true, index: i, total: total, buttons: buttons });
     }
   }
 
@@ -171,7 +179,7 @@ export class Player {
     if (!found) {
       this.report(step, null, 'missing');
       if (step.optional) return this.next();
-      return this.showStep({ step, title, body, i, total, el: null, value, r, warn: 'Елемент не знайдено на екрані (можливо, змінився інтерфейс). Можна пропустити крок.' });
+      return this.showStep({ step, title, body, i, total, el: null, value, r, warn: 'Не вдалося показати цей крок.' + (this.run.preview || this.ctx.opts.reportAnchors === false ? '' : ' Ми вже повідомили автору інструкції.') + ' Натисніть «Пропустити крок →», щоб продовжити.' });
     }
     this.report(step, found, found.healed ? 'healed' : 'ok');
     const el = found.el;
@@ -270,7 +278,7 @@ export class Player {
     buttons.push({ text: 'Закрити', kind: 'dng', onClick: () => this.stop() });
     buttons.push({ spacer: true });
     if (mode === 'guided' && canAuto) buttons.push({ text: 'Зроби за мене', onClick: live(async () => { await perform(); advance(500); }) });
-    buttons.push({ text: i === total - 1 ? 'Завершити' : (c.warn ? 'Пропустити →' : 'Далі →'), kind: 'pri', disabled: !nextEnabled, onClick: live(() => this.next()) });
+    buttons.push({ text: i === total - 1 ? 'Завершити' : (c.warn ? 'Пропустити крок →' : 'Далі →'), kind: 'pri', disabled: !nextEnabled, onClick: live(() => this.next()) });
     if (c.warn) buttons.splice(buttons.length - 1, 0, { text: 'Повторити', onClick: () => this.go(i) });
 
     const valueHint = (type === 'input' || type === 'select') && value ? ((step.inputMode === 'show' ? 'Введіть: ' : step.inputMode === 'prefill' ? 'Автозаповнено: ' : 'Потрібно ввести: ') + value) : '';
