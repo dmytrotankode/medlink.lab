@@ -20,6 +20,8 @@
 3. **Дефекти відносно ТЗ, знайдені аудитом** (код не змінювався): (a) ~~`release` замовлення НЕ блокується незареєстрованим панічним дзвінком (FR-VAL-002, S-06)~~ — виправлено (409 `PANIC_CALL_REQUIRED`); (b) `ConsumeAsync` реагенту блокує списання при нестачі (суперечить FR-REA-002) і списання лише ручне; (c) CALCULATED-показники не обчислюються (FR-WS-005); (d) немає mutex єдиного екземпляра коннектора та перевірки мінімальної версії (FR-CON-007/008); (e) ліміти «200 замовлень/413» і «5000 рядків імпорту» не реалізовані; (f) бланк тільки українською (FR-PRN-002); (g) коефіцієнт `supersededByRerun` відсутній.
 2. **Жодного API-тесту** немає для: біобанку, мікробіології (API), панічних дзвінків, імпорту результатів, налаштувань, аудиту, аналітики TAT, друку робочого листа, пакетної реєстрації, коннектора (heartbeat/буфер/команди), порталу (до release, чужий пацієнт, тренд). Усі «заплановані» тести Додатка E з іменами `I-*`/`U-*`/`E-*` як такі не існують; Playwright E2E, перф-тести (NFR-01…03), CI-матриця PostgreSQL — відсутні (є лише перемикач `LIS_TEST_PG`). *(реагенти, повтор/розведення, `autoverify` через API, розрахункові показники — покриті ResultsCalcRerunReagentApiTests у cl/results.)*
 3. **Дефекти відносно ТЗ, знайдені аудитом** (код не змінювався): (a) `release` замовлення НЕ блокується незареєстрованим панічним дзвінком (FR-VAL-002, S-06); (b) ~~`ConsumeAsync` блокує при нестачі~~ — усунено (cl/results); (c) ~~CALCULATED не обчислюються~~ — усунено (cl/results); (d) немає mutex єдиного екземпляра коннектора та перевірки мінімальної версії (FR-CON-007/008); (e) ліміти «200 замовлень/413» і «5000 рядків імпорту» не реалізовані; (f) бланк тільки українською (FR-PRN-002); (g) ~~`supersededByRerun`~~ — реалізовано (cl/results).
+2. (Оновлення cl/tests: біобанк, мікробіологія, TAT, коннектор, автоверифікація через API та імпорт тепер мають API-тести; решта пункту актуальна для реагентів, паніки, rerun тощо.) **Жодного API-тесту** немає для: біобанку, реагентів, мікробіології (API), панічних дзвінків, повтору (`rerun`), `autoverify` через API, імпорту результатів, налаштувань, аудиту, аналітики TAT, друку робочого листа, пакетної реєстрації, коннектора (heartbeat/буфер/команди), порталу (до release, чужий пацієнт, тренд). Усі «заплановані» тести Додатка E з іменами `I-*`/`U-*`/`E-*` як такі не існують; Playwright E2E, перф-тести (NFR-01…03), CI-матриця PostgreSQL — відсутні (є лише перемикач `LIS_TEST_PG`).
+3. **Дефекти відносно ТЗ, знайдені аудитом** (код не змінювався): (a) `release` замовлення НЕ блокується незареєстрованим панічним дзвінком (FR-VAL-002, S-06); (b) `ConsumeAsync` реагенту блокує списання при нестачі (суперечить FR-REA-002) і списання лише ручне; (c) CALCULATED-показники не обчислюються (FR-WS-005); (d) немає mutex єдиного екземпляра коннектора та перевірки мінімальної версії (FR-CON-007/008); (e) ліміти «200 замовлень/413» і «5000 рядків імпорту» не реалізовані; (f) бланк тільки українською (FR-PRN-002); (g) коефіцієнт `supersededByRerun` відсутній.
 4. Імітації та відсутня автентифікація описані в розд. 6; **docs/AUDIT_MOCKS.md розд. 4 частково застарів**: пакет Npgsql, перемикач `Database:Provider`, `UseNpgsql` для ЛІС і Guide вже є (`Program.cs`), тести можна запускати на PG через `LIS_TEST_PG`; відкритими лишаються SQL-міграції, `PRAGMA`/`SchemaUpgrader`, атомарність нумераторів.
 
 ## 2. Покриття за модулями (FR-групи)
@@ -308,37 +310,39 @@ Guide: у `src/MedLink.Guide/Seed/*.json` 296 сценаріїв з кодами
 
 ## 8. Старі вимоги (Додаток E): відповідність «планових» тестів
 
+> Оновлено агентом тестів (cl/tests): додано ~100 API-тестів (Api/*ApiTests.cs, Clinical/AppendixEUnitTests.cs), частина з `[Trait("TZ","I-…")]`. Не реалізоване й причини — `docs/TESTS_BACKLOG.md`. Знайдені й виправлені дефекти: 500 на невідомій дії мікробіології; дубль `order_number` після заднього числа; «дата-до» без часу відсікала цілий день у аналітиці; `/volume` падав на SQLite (Sum decimal); зламаний XML/XLSX в імпорті давав 500; гонка реєстрації коннектора за одним ключем видавала кілька apiKey. Відкрите: `ReleaseAsync`/`verify` без атомарного захоплення (паралельні виклики обидва 200) — чекає переробки іншим агентом.
+
 | Рядок Додатка E | Фактичний тест | Статус |
 |---|---|:--:|
 | CORE-03 довідники | Dictionary_crud | ✔ |
 | CORE-05 реєстрація | Full_happy_path; TubePlanApiTests | ◐ |
 | CORE-06 штрихкоди | BarcodeTests | ✔ |
-| CORE-07 батчі | — | ✘ |
+| CORE-07 батчі | AppendixEApiTests (I-WS-batch, I-REG-batch, I-VAL-batch-skipped) | ✔ |
 | CORE-08 ASTM | AstmFrameCodec/Parser/OrderBuilder/SessionE2E | ✔ |
 | CORE-09 HL7 | Hl7Tests; Hl7_mllp_session… | ✔ |
 | CORE-10 введення | Full_happy_path (без perf) | ◐ |
 | CORE-11 верифікація | Full_happy_path | ◐ |
 | CORE-12 друк, QR | Full_happy_path; QR unit | ✔ |
 | CORE-13 розсилка | — | ✘ |
-| CORE-14 звітність | MIS Work_views (поверхнево) | ◐ |
-| CORE-15 налаштування | — | ✘ |
+| CORE-14 звітність | AnalyticsApiTests (TAT, обсяги, експорт XLSX, аудит) | ✔ |
+| CORE-15 налаштування | AppendixEApiTests (I-ADM-settings); SecurityAndRaceApiTests (ролі) | ✔ |
 | QC-01 автоверифікація | RulesEngineTests (unit) | ✔ |
 | QC-02 delta | RulesEngineTests | ✔ |
 | QC-03 reflex | RulesEngineTests | ✔ |
-| QC-04 критичні | — | ✘ |
+| QC-04 критичні | AutoVerifyApiTests (CRIT блокує автоверифікацію); AppendixEApiTests (I-VAL-crit-comment); блок видачі при паніці — у роботі іншого агента | ◐ |
 | QC-05..07 ВКЯ | QcAndEucastTests; Qc_1_3s… | ✔ |
 | QC-09 норми | NormsCascadeResolverTests | ✔ |
-| PT-02..08 портал | Full_happy_path (частково) | ◐ |
-| INT-03 імпорт | — | ✘ |
-| INT-04 offline коннектор | — | ✘ |
-| EXT-01 мікробіологія | QcAndEucastTests (unit) | ◐ |
-| EXT-05 трекінг | Full_happy_path, Sample_split | ◐ |
+| PT-02..08 портал | AppendixEApiTests (I-PORT-*, I-VERIFY-public-no-pii) | ✔ |
+| INT-03 імпорт | ImportApiTests (dryRun, OVERWRITE, CSV/XLSX/XML, помилки рядків) | ✔ |
+| INT-04 offline коннектор | ConnectorApiTests (ключі, heartbeat, буфер, повторна доставка, unmatched) | ✔ |
+| EXT-01 мікробіологія | MicrobiologyApiTests (S/I/R, переходи, ролі); QcAndEucastTests | ✔ |
+| EXT-05 трекінг | AppendixEApiTests (I-LOG-*, I-SAMPLE-status-transitions, холодовий ланцюг); Sample_split | ✔ |
 | COM-03 реагенти | — | ✘ |
-| COM-04 біобанк | — | ✘ |
-| AN-01 TAT | RulesEngineTests (unit) | ◐ |
-| Процес 11 монітор шлюзу | Full_happy_path (register, unmatched) | ◐ |
+| COM-04 біобанк | BiobankApiTests; SecurityAndRaceApiTests (гонка за комірку) | ✔ |
+| AN-01 TAT | AnalyticsApiTests (етапи, медіана, P90, SLA, межі періоду); RulesEngineTests | ✔ |
+| Процес 11 монітор шлюзу | ConnectorApiTests (повідомлення, логи, чужий аналізатор) | ✔ |
 | NFR-01..03 перф | — | ✘ |
-| T-122 аудит | — | ✘ |
+| T-122 аудит | AnalyticsApiTests (аудит/історія); AppendixEApiTests (I-VAL-reopen-audit) | ✔ |
 
 Критерії приймання R1 (розд. 12.4): №1 «усі G/W/T на SQLite, і на PG» — частково (PG через `LIS_TEST_PG`, у CI не налаштовано); №2 «12 сценаріїв на стенді з приладом» — не підтверджено; №3 інсталятор Win/Ubuntu — не автоматизовано; №4 ETL довідників з системи-джерела — виключено (розд. 20.0); №5 повнота аудиту S-06 — не перевіряється.
 

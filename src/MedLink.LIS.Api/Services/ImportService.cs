@@ -41,12 +41,21 @@ public sealed class ImportService
     {
         _policy.Require("Імпорт результатів", LabRoles.Admin, LabRoles.Doctor, LabRoles.Technician);
         var ext = Path.GetExtension(fileName).ToLowerInvariant();
-        var rows = ext switch
+        List<ImportRow> rows;
+        try
         {
-            ".xlsx" => ParseXlsx(stream),
-            ".xml" => ParseXml(stream),
-            _ => ParseCsv(stream)
-        };
+            rows = ext switch
+            {
+                ".xlsx" => ParseXlsx(stream),
+                ".xml" => ParseXml(stream),
+                _ => ParseCsv(stream)
+            };
+        }
+        catch (Exception ex) when (ex is System.Xml.XmlException or InvalidDataException or ArgumentException or NullReferenceException or InvalidOperationException or IOException)
+        {
+            // зіпсований файл — помилка клієнта (400), а не збій сервера
+            throw new ValidationException($"Файл {fileName} не вдалося прочитати як {(ext is ".xlsx" or ".xml" ? ext.TrimStart('.').ToUpperInvariant() : "CSV")}: {ex.Message}");
+        }
         BatchLimits.CheckImportRows(rows.Count);
         if (rows.Count == 0) throw new ValidationException("Файл не містить рядків із даними (очікуються колонки barcode, testCode, value[, unit, flags])");
 

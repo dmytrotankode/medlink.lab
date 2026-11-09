@@ -245,6 +245,11 @@ $@"MedLink LabConnector — інструкція з встановлення (і
         if (c.InstallKeyUsed || c.Status != LisStateMachine.ConnectorPending)
             throw new ConflictException($"Ключ інсталяції вже використано (статус {c.Status}). Адміністратор може перевипустити ключ (Enable/Rotate key)");
         LisStateMachine.Ensure(LisEntities.Connector, ConnectorActions.Register, c.Status, LabRoles.System);
+        // атомарне «захоплення» ключа: паралельні реєстрації з одним ключем не мають видати кілька apiKey
+        var claimed = await _db.Connectors.Where(x => x.Id == c.Id && !x.InstallKeyUsed && x.Status == LisStateMachine.ConnectorPending)
+            .ExecuteUpdateAsync(u => u.SetProperty(x => x.InstallKeyUsed, true));
+        if (claimed == 0)
+            throw new ConflictException("Ключ інсталяції вже використано. Адміністратор може перевипустити ключ (Enable/Rotate key)");
         var apiKey = NewApiKey();
         c.ApiKeyHash = Hash(apiKey);
         c.InstallKeyUsed = true;

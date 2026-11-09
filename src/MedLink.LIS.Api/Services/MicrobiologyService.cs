@@ -123,7 +123,9 @@ public sealed class MicrobiologyService
     public async Task<object> TransitionAsync(string id, string action, string? comment)
     {
         var c = await LoadAsync(id);
-        var act = action.ToUpperInvariant();
+        var act = (action ?? "").Trim().ToUpperInvariant();
+        // дія приходить від клієнта: невідому відхиляємо як помилку валідації (400), а не падінням 500
+        if (!LisStateMachine.CultureRules.Any(r => r.Action == act)) throw ValidationException.Field("status", $"Невідома дія «{action}» для посіву");
         var rule = _policy.Ensure(LisEntities.Culture, act, c.Status, "Посів");
         if (rule.ToStatus == null) throw new ValidationException("Ця дія не змінює статус посіву");
         if (act == CultureActions.Isolate && c.Isolates.Count == 0) throw new ConflictException("Не можна позначити «Ізоляти виділено»: не додано жодного ізоляту");
