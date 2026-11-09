@@ -39,7 +39,7 @@ public class BiochemCatalogTests
     }
 
     /// <summary>Показники каталогу без тимчасових, створених іншими тестами (код починається з ZZ).</summary>
-    private async Task<List<JsonNode>> CatalogTestsAsync() => (await ListAsync("tests")).Where(t => { var c = t["code"]!.GetValue<string>(); return !c.StartsWith("ZZ") && !System.Text.RegularExpressions.Regex.IsMatch(c, "^AV[0-9A-F]{6}$"); }).ToList();
+    private async Task<List<JsonNode>> CatalogTestsAsync() => (await ListAsync("tests")).Where(t => { var c = t["code"]!.GetValue<string>(); return !c.StartsWith("ZZ") && !System.Text.RegularExpressions.Regex.IsMatch(c, "^(AV|DT)[0-9A-F]{5,6}$"); }).ToList();
 
     // ------------------------------------------------------------------ цілісність каталогу
     /// <summary>Показники, для яких немає надійно визначеного коду LOINC (залишені порожніми свідомо).</summary>
