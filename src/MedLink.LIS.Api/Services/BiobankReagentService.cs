@@ -162,11 +162,49 @@ public sealed class BiobankService
         _policy.Require("Вилучення зразка з біобанку", Roles);
         var cell = await _db.Cells.Include(c => c.Sample).ThenInclude(s => s!.Order).FirstOrDefaultAsync(c => c.Id == cellId) ?? throw NotFoundException.For("Комірка", cellId);
         if (cell.SampleId == null || cell.IsDisposed) throw new ConflictException("Комірка порожня — вилучати нічого");
-        cell.IsDisposed = true; cell.DisposedAt = DateTime.UtcNow; cell.DisposalReason = reason;
+        if (string.IsNullOrWhiteSpace(reason)) throw ValidationException.Field("reason", "Вкажіть причину списання (потрібна для акта)");
+        if (cell.Sample != null) _policy.Ensure(LisEntities.Sample, SampleActions.Dispose, cell.Sample.Status, $"Пробірка {cell.Barcode}");
+        cell.IsDisposed = true; cell.DisposedAt = DateTime.UtcNow; cell.DisposalReason = reason.Trim();
         if (cell.Sample != null && cell.Sample.Status == SampleStatuses.Stored) cell.Sample.Status = SampleStatuses.Disposed;
         _audit.Log("REMOVE", "lab_archive_cell", cell.Id, new { cell.Barcode }, new { reason });
         await _db.SaveChangesAsync();
-        return new { cell.Id, cell.Barcode, cell.IsDisposed, cell.DisposedAt, cell.DisposalReason };
+        return new { cell.Id, cell.Barcode, cell.IsDisposed, cell.DisposedAt, cell.DisposalReason, actNumber = ActNumber(cell) };
+    }
+
+    private static string ActNumber(LabArchiveCell c) => $"АС-{(c.DisposedAt ?? DateTime.UtcNow):yyyyMMdd}-{c.Barcode}";
+
+    /// <summary>Видача зразка з біобанку на повторне дослідження (S-11): STORED → PROCESSING, комірка звільняється, причина обов'язкова.</summary>
+    public async Task<object> RetrieveAsync(string cellId, string reason)
+    {
+        _policy.Require("Видача зразка з біобанку на повтор", Roles);
+        var cell = await _db.Cells.Include(c => c.Sample).FirstOrDefaultAsync(c => c.Id == cellId) ?? throw NotFoundException.For("Комірка", cellId);
+        if (cell.SampleId == null || cell.IsDisposed || cell.Sample == null) throw new ConflictException("Комірка порожня — видавати нічого");
+        if (string.IsNullOrWhiteSpace(reason)) throw ValidationException.Field("reason", "Вкажіть причину видачі зразка");
+        _policy.Ensure(LisEntities.Sample, SampleActions.Process, cell.Sample.Status, $"Пробірка {cell.Barcode}");
+        cell.Sample.Status = SampleStatuses.Processing;
+        cell.IsDisposed = true; cell.DisposedAt = DateTime.UtcNow; cell.DisposalReason = "Видано на повтор: " + reason.Trim();
+        _audit.Log("RETRIEVE", "lab_archive_cell", cell.Id, new { cell.Barcode, status = SampleStatuses.Stored }, new { status = SampleStatuses.Processing }, reason);
+        await _db.SaveChangesAsync();
+        return new { cell.Id, cell.Barcode, sampleStatus = cell.Sample.Status, cell.DisposalReason };
+    }
+
+    /// <summary>Акт списання (HTML) за вилученою коміркою зі статусом пробірки «Утилізовано».</summary>
+    public async Task<string> DisposalActAsync(string cellId)
+    {
+        var cell = await _db.Cells.AsNoTracking().Include(c => c.Rack).Include(c => c.Sample).ThenInclude(s => s!.Order).ThenInclude(o => o!.Patient)
+            .FirstOrDefaultAsync(c => c.Id == cellId) ?? throw NotFoundException.For("Комірка", cellId);
+        if (!cell.IsDisposed || cell.Sample?.Status != SampleStatuses.Disposed) throw new ConflictException("Акт формується лише для списаного зразка");
+        Func<string, string> h = System.Net.WebUtility.HtmlEncode!;
+        return $"<!doctype html><html lang=\"uk\"><head><meta charset=\"utf-8\"><title>Акт списання {h(ActNumber(cell))}</title></head><body style=\"font-family:Arial;font-size:13px;max-width:720px;margin:24px auto\">"
+            + $"<h2>Акт списання біоматеріалу № {h(ActNumber(cell))}</h2>"
+            + $"<p>Дата списання: <b>{cell.DisposedAt?.ToLocalTime():dd.MM.yyyy HH:mm}</b></p>"
+            + $"<table border=\"1\" cellpadding=\"6\" style=\"border-collapse:collapse;width:100%\"><tr><td>Штрихкод пробірки</td><td>{h(cell.Barcode ?? "")}</td></tr>"
+            + $"<tr><td>Замовлення</td><td>{h(cell.Sample?.Order?.OrderNumber ?? "—")}</td></tr>"
+            + $"<tr><td>Місце зберігання</td><td>{h(cell.Rack?.Name ?? "")} ({h(cell.Rack?.Code ?? "")}), комірка {h(cell.Coordinate)}</td></tr>"
+            + $"<tr><td>Зберігався з</td><td>{cell.StoredAt?.ToLocalTime():dd.MM.yyyy}</td></tr>"
+            + $"<tr><td>Причина списання</td><td>{h(cell.DisposalReason ?? "")}</td></tr>"
+            + $"<tr><td>Виконав</td><td>{h(_current.FullName ?? _current.EmployeeId)}</td></tr></table>"
+            + "<p style=\"margin-top:40px\">Підпис відповідальної особи: ______________________</p></body></html>";
     }
 
     public async Task<object> UpdateCellAsync(string cellId, DateTime? expiryAt)

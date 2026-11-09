@@ -18,13 +18,13 @@ public sealed class SingleInstanceGuard : IDisposable
         const string msg = "Коннектор уже запущено на цьому ПК. Закрийте інший екземпляр (службу або консольний запуск) і повторіть.";
         try
         {
+            Directory.CreateDirectory(dataDir);
+            g._lock = new FileStream(Path.Combine(dataDir, "connector.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             if (OperatingSystem.IsWindows())
             {
                 g._mutex = new Mutex(false, @"Global\MedLinkLabConnector_SingleInstance");
-                if (!g._mutex.WaitOne(0)) { g._mutex.Dispose(); g._mutex = null; error = msg; return false; }
+                if (!g._mutex.WaitOne(0)) { g.Dispose(); error = msg; return false; }
             }
-            Directory.CreateDirectory(dataDir);
-            g._lock = new FileStream(Path.Combine(dataDir, "connector.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         }
         catch (IOException) { g.Dispose(); error = msg; return false; }
         catch (AbandonedMutexException) { /* попередній екземпляр аварійно завершився — забираємо mutex */ }
