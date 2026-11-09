@@ -1,4 +1,4 @@
-// Реєстрація інтеграції з ЕСОЗ: режими Mock | Replay | Live, клієнт, outbox-рушій і воркер. У Program.cs — один рядок: builder.AddEhealthIntegration();
+// Реєстрація інтеграції з ЕСОЗ через проксі MedLink: режими Mock | MedLinkProxy | Replay | Live (застарілий), клієнт, outbox-рушій і воркер. У Program.cs — один рядок: builder.AddEhealthIntegration();
 using System.Net.Http;
 
 namespace MedLink.LIS.Api.Services.Ehealth;
@@ -18,14 +18,17 @@ public static class EhealthServiceCollectionExtensions
 
         s.AddHttpClient(EhealthClient.HttpClientName, (sp, c) =>
             {
-                var baseUrl = sp.GetRequiredService<EhealthOptions>().BaseUrl;
+                var o = sp.GetRequiredService<EhealthOptions>();
+                // MedLinkProxy — адреса проксі; Mock/Replay — умовна адреса двійника (запити не виходять у мережу); Live (застарілий) — прямий ЕСОЗ
+                var baseUrl = o.IsLive ? o.BaseUrl : o.IsProxy ? (o.Proxy.BaseUrl ?? "") : "https://ehealth-proxy.mock/";
+                if (string.IsNullOrWhiteSpace(baseUrl)) baseUrl = "https://ehealth-proxy.not-configured.invalid/"; // MedLinkProxy без Ehealth:Proxy:BaseUrl: перший виклик дасть помилку підключення
                 c.BaseAddress = new Uri(baseUrl.EndsWith('/') ? baseUrl : baseUrl + "/");
                 c.Timeout = Timeout.InfiniteTimeSpan; // таймаут запиту задає клієнт (Ehealth:Http:TimeoutSeconds)
             })
             .ConfigurePrimaryHttpMessageHandler(sp =>
             {
                 var o = sp.GetRequiredService<EhealthOptions>();
-                if (o.IsLive) return new SocketsHttpHandler { AllowAutoRedirect = false, PooledConnectionLifetime = TimeSpan.FromMinutes(10) }; // 303 у job — не перенаправлення
+                if (o.IsReal) return new SocketsHttpHandler { AllowAutoRedirect = false, PooledConnectionLifetime = TimeSpan.FromMinutes(10) }; // 303 у job — не перенаправлення
                 return o.IsReplay ? sp.GetRequiredService<EhealthReplayHandler>() : sp.GetRequiredService<EhealthMockHandler>();
             });
 

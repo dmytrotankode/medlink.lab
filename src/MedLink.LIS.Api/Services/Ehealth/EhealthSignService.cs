@@ -1,8 +1,9 @@
-// ТЗ 21.13 (FR-SGN-001…014): сесія ЕСОЗ, пакет DiagnosticReport для підпису, підпис КЕП, постановка відправки в чергу (outbox), повтор, анулювання.
+// ТЗ 21.13 (FR-SGN-001…014): сесія ЄСОЗ, пакет DiagnosticReport для підпису, підпис КЕП, постановка відправки в чергу (outbox), повтор, анулювання.
 // Реальну відправку виконує воркер (EhealthOutbox.cs): SUBMIT_DR → job processed → окрема задача COMPLETE_SR; виправлення: CANCEL_DR → новий пакет.
-// Режими: Mock/Replay — імітація ЕСОЗ (вхід паролем + 2FA 123456, тестовий підписувач, мок-реєстр/фікстури);
-// Live — вхід паролем недоступний (ТВ 1.2.2: лише сторінка auth.ehealth.gov.ua; OAuth redirect потребує preprod і не реалізований),
-// відправка можлива зі статичним токеном (Ehealth:AccessToken) і підписом, що надходить з браузерного віджета КЕП.
+// Сесія ЄСОЗ користувача — це токен, який зберігає eHealth-сервіс (проксі) MedLink за парою ClientId + UserId (docs/EHEALTH_MEDLINK_PROXY_CONTRACT.md, розд. 3):
+// посилання на вхід (auth/EhealthUILink) → користувач входить на сторінці ЄСОЗ → ЛІС отримує code на своїй сторінці й обмінює його через проксі (POST auth)
+// → стан перевіряється auth/hasAccessToken; вихід — auth/logout. Паролі, 2FA та токени ЕСОЗ ЛІС не бачить і не зберігає.
+// Режими: Mock/Replay — двійник проксі (вхід без реальних облікових даних, тестовий підписувач, мок-реєстр/фікстури); MedLinkProxy — реальний проксі.
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -15,11 +16,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MedLink.LIS.Api.Services.Ehealth;
 
-public sealed class EhealthLoginRequest
+public sealed class EhealthAuthCallbackRequest
 {
-    public string Login { get; set; } = "";
-    /// <summary>Пароль передається лише на шлюз ЕСОЗ і ніде не зберігається (FR-SGN-002).</summary>
-    public string Password { get; set; } = "";
+    /// <summary>Код авторизації, який ЄСОЗ повернула на сторінку ЛІС (?code=…). Обмінюється на токен у проксі; ніде не зберігається.</summary>
+    public string Code { get; set; } = "";
+    /// <summary>Роль у ЄСОЗ (порожньо — Ehealth:Proxy:Role).</summary>
+    public string? Role { get; set; }
 }
 
 public sealed class SignerInfo
@@ -28,14 +30,6 @@ public sealed class SignerInfo
     public string? Name { get; set; }
     public string? CertSerial { get; set; }
     public DateTime? ValidTo { get; set; }
-}
-
-public sealed class EhealthConfirmRequest
-{
-    /// <summary>KEP | TOTP</summary>
-    public string Method { get; set; } = "KEP";
-    public string? Code { get; set; }
-    public SignerInfo? Signer { get; set; }
 }
 
 public sealed class EhealthSubmitRequest
@@ -58,7 +52,6 @@ public sealed class EhealthMockSignRequest
 public sealed class EhealthSignService
 {
     public static readonly string[] SubmitRoles = { LabRoles.Doctor, LabRoles.Admin };
-    public const string DemoTotpCode = "123456";
     /// <summary>Код причини скасування з eHealth/cancellation_reasons (звірити з GET /api/dictionaries на preprod).</summary>
     public const string CancellationReasonCode = "misspelling";
 
@@ -72,11 +65,12 @@ public sealed class EhealthSignService
     private readonly EhealthOutboxEngine _engine;
     private readonly EhealthMockState _mock;
     private readonly IEhealthTokenProvider _tokens;
+    private readonly IEhealthClient _client;
 
     public EhealthSignService(LisDbContext db, ICurrentEmployee current, IRolePolicy policy, IAuditService audit, EhealthOptions options, EhealthPackageBuilder builder,
-        EhealthOutboxService outbox, EhealthOutboxEngine engine, EhealthMockState mock, IEhealthTokenProvider tokens)
+        EhealthOutboxService outbox, EhealthOutboxEngine engine, EhealthMockState mock, IEhealthTokenProvider tokens, IEhealthClient client)
     {
-        _db = db; _current = current; _policy = policy; _audit = audit; _options = options; _builder = builder; _outbox = outbox; _engine = engine; _mock = mock; _tokens = tokens;
+        _db = db; _current = current; _policy = policy; _audit = audit; _options = options; _builder = builder; _outbox = outbox; _engine = engine; _mock = mock; _tokens = tokens; _client = client;
     }
 
     private static DomainProblemException Problem(int status, string code, string title, string detail) => new(status, code, title, detail);
@@ -84,21 +78,28 @@ public sealed class EhealthSignService
     // ------------------------------------------------------------------ сесія
     private async Task<LabSettings> SettingsAsync() => await _db.Settings.AsNoTracking().FirstOrDefaultAsync() ?? new LabSettings();
 
-    /// <summary>Активна сесія поточного користувача (прострочені й неактивні довше IdleMinutes — закриваються, FR-SGN-004).</summary>
-    public async Task<LabEhealthSession?> ActiveAsync(bool touch = false)
+    /// <summary>Повідомлення помилки обміну з проксі → проблема API (з кодом, зрозумілим інтерфейсу).</summary>
+    private static DomainProblemException ProxyProblem(EhealthException ex) => ex.Kind switch
     {
-        var now = DateTime.UtcNow;
-        var settings = await SettingsAsync();
-        var s = await _db.EhealthSessions.Where(x => x.EmployeeId == _current.EmployeeId && x.ClosedAt == null).OrderByDescending(x => x.CreatedOn).FirstOrDefaultAsync();
-        if (s == null) return null;
-        if (s.ExpiresAt <= now || (now - s.LastActivityOn).TotalMinutes > settings.EhealthSessionIdleMinutes)
-        {
-            s.ClosedAt = now;
-            await _db.SaveChangesAsync();
-            return null;
-        }
-        if (touch) s.LastActivityOn = now;
-        return s;
+        EhealthErrorKind.Auth => Problem(401, "ehealth-auth-required", "Потрібен вхід в ЄСОЗ", ex.Message),
+        EhealthErrorKind.Config => Problem(409, "ehealth-not-configured", "Підключення до ЄСОЗ не налаштовано", ex.Message),
+        EhealthErrorKind.Disabled => Problem(409, "ehealth-operation-disabled", "Операцію вимкнено", ex.Message),
+        EhealthErrorKind.Transient => Problem(503, "ehealth-proxy-unavailable", "Сервіс ЄСОЗ тимчасово недоступний", ex.Message),
+        EhealthErrorKind.Validation when ex.StatusCode == 401 => Problem(401, "ehealth-auth-required", "Потрібен вхід в ЄСОЗ", ex.Message),
+        _ => Problem(ex.StatusCode is >= 400 and < 600 ? ex.StatusCode : 502, "ehealth-error", "Помилка ЄСОЗ", ex.Message)
+    };
+
+    /// <summary>Чи налаштоване підключення до проксі (для Mock/Replay — завжди).</summary>
+    private bool ProxyConfigured => !_options.IsProxy || !string.IsNullOrWhiteSpace(_options.Proxy.BaseUrl);
+
+    /// <summary>Стан сесії ЄСОЗ поточного користувача за відповіддю проксі (auth/hasAccessToken): none | active | unavailable | notConfigured.</summary>
+    private async Task<(string State, string? Detail)> SessionStateAsync()
+    {
+        if (_options.IsLive)
+            return (!string.IsNullOrEmpty(await _tokens.GetAccessTokenAsync()) ? "active" : "notConfigured", "Застарілий режим Live: використовується статичний токен");
+        if (!ProxyConfigured) return ("notConfigured", "Не задано адресу проксі MedLink (Ehealth:Proxy:BaseUrl)");
+        try { return (await _client.HasAccessTokenAsync() ? "active" : "none", null); }
+        catch (EhealthException ex) { return (ex.Kind == EhealthErrorKind.Config ? "notConfigured" : "unavailable", ex.Message); }
     }
 
     /// <summary>Тестовий сертифікат КЕП користувача (Mock/Replay): ДРФО з картки персони або детермінований демо-номер.</summary>
@@ -113,17 +114,24 @@ public sealed class EhealthSignService
 
     public async Task<object> StatusAsync()
     {
-        var s = await ActiveAsync();
+        var (state, detail) = await SessionStateAsync();
         var sim = _options.Simulated;
+        var active = state == "active";
         return new
         {
-            mode = _options.ModeName, simulated = sim,
-            level = s == null ? "L0" : s.AuthLevel, login = s?.Login, method = s?.AuthMethod, expiresAt = s?.ExpiresAt, totpEnabled = s?.TotpEnabled ?? false,
-            signerName = s?.SignerName, certSerial = s?.CertSerial,
-            label = s == null ? "ЕСОЗ: не підключено" : s.AuthLevel == "L1" ? "ЕСОЗ: пароль введено" : $"ЕСОЗ: підтверджено до {s.ExpiresAt.ToLocalTime():HH:mm}",
+            mode = _options.ModeName, simulated = sim, deprecatedDirectMode = _options.IsLive,
+            // level збережено для сумісності з інтерфейсом: L2 — у проксі є токен користувача, L0 — немає (проміжного L1 більше не існує)
+            level = active ? "L2" : "L0", state, detail,
+            label = state switch
+            {
+                "active" => "ЄСОЗ: сесія активна",
+                "unavailable" => "ЄСОЗ: проксі недоступний",
+                "notConfigured" => "ЄСОЗ: не налаштовано",
+                _ => "ЄСОЗ: не підключено"
+            },
+            loginAvailable = sim || _options.IsProxy && !string.IsNullOrWhiteSpace(_options.Proxy.AuthPortalUrl),
             testCertificate = sim ? await TestCertificateAsync() : null,
-            demoTotpCode = sim ? DemoTotpCode : null,
-            liveOperations = _options.IsLive ? _options.Live.Operations : null
+            operations = _options.IsReal ? _options.Operations : null
         };
     }
 
@@ -134,74 +142,51 @@ public sealed class EhealthSignService
         ResponseJson = response == null ? null : JsonSerializer.Serialize(response, JsonDefaults.Options)
     });
 
-    /// <summary>Вхід паролем/2FA — лише імітація (Mock/Replay). У Live вхід виконує сторінка auth.ehealth.gov.ua (OAuth), який тут не реалізовано.</summary>
-    private void EnsureSimulatedSession()
+    /// <summary>Крок 1 входу: посилання на сторінку авторизації ЄСОЗ (auth/EhealthUILink). У Mock/Replay сторінки ЄСОЗ немає: повертається тестовий код,
+    /// який інтерфейс одразу передає в крок 2 (callback).</summary>
+    public async Task<object> AuthLinkAsync()
     {
-        if (_options.IsLive) throw Problem(503, "ehealth-live-oauth-not-implemented", "Вхід в ЕСОЗ недоступний",
-            "У режимі Live вхід виконується через сторінку auth.ehealth.gov.ua (OAuth), що ще не підключено; тимчасово використовується токен із Ehealth:AccessToken");
+        try
+        {
+            var link = await _client.GetAuthLinkAsync();
+            if (_options.Simulated) return new { simulated = true, url = (string?)null, code = "mock-" + Guid.NewGuid().ToString("N")[..12], link.Scopes };
+            if (string.IsNullOrWhiteSpace(_options.Proxy.AuthPortalUrl))
+                throw Problem(409, "ehealth-auth-portal-not-configured", "Вхід в ЄСОЗ не налаштовано", "Не задано адресу сторінки авторизації ЄСОЗ (Ehealth:Proxy:AuthPortalUrl)");
+            var redirect = !string.IsNullOrWhiteSpace(_options.Proxy.RedirectUri) ? _options.Proxy.RedirectUri! : link.RedirectUri;
+            if (string.IsNullOrWhiteSpace(redirect))
+                throw Problem(409, "ehealth-redirect-not-configured", "Вхід в ЄСОЗ не налаштовано", "Не задано зареєстрований redirect_uri (Ehealth:Proxy:RedirectUri), проксі його не повернув");
+            // параметри посилання — як у МІС: client_id, redirect_uri, scope
+            var url = $"{_options.Proxy.AuthPortalUrl!.TrimEnd('?')}?client_id={Uri.EscapeDataString(link.ClientId)}&redirect_uri={Uri.EscapeDataString(redirect)}&scope={Uri.EscapeDataString(link.Scopes)}";
+            return new { simulated = false, url, code = (string?)null, link.Scopes };
+        }
+        catch (EhealthException ex) { throw ProxyProblem(ex); }
     }
 
-    /// <summary>Крок 1 — вхід логіном і паролем (L1). Пароль не зберігається й не журналюється.</summary>
-    public async Task<object> LoginAsync(EhealthLoginRequest req)
+    /// <summary>Крок 2 входу: код авторизації, отриманий на сторінці-призначенні, обмінюється через проксі (POST auth); токен зберігає проксі.</summary>
+    public async Task<object> AuthCallbackAsync(EhealthAuthCallbackRequest req)
     {
-        EnsureSimulatedSession();
-        if (string.IsNullOrWhiteSpace(req.Login) || string.IsNullOrWhiteSpace(req.Password))
-            throw Problem(401, "ehealth-invalid-credentials", "Невірні дані входу", "Вкажіть ел. пошту або логін і пароль ЕСОЗ");
-        var now = DateTime.UtcNow;
-        foreach (var old in await _db.EhealthSessions.Where(x => x.EmployeeId == _current.EmployeeId && x.ClosedAt == null).ToListAsync()) old.ClosedAt = now;
-        var settings = await SettingsAsync();
-        var prevTotp = await _db.EhealthSessions.AsNoTracking().Where(x => x.EmployeeId == _current.EmployeeId).OrderByDescending(x => x.CreatedOn).Select(x => (bool?)x.TotpEnabled).FirstOrDefaultAsync();
-        var s = new LabEhealthSession
-        {
-            EmployeeId = _current.EmployeeId, Login = req.Login.Trim(), AuthLevel = "L1", AuthMethod = "PASSWORD", ExpiresAt = now.AddMinutes(settings.EhealthSessionTtlMinutes),
-            TokenEnc = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24)), TotpEnabled = prevTotp ?? false, LastActivityOn = now
-        };
-        _db.EhealthSessions.Add(s);
-        Log("POST", "oauth/tokens (password)", new { login = s.Login }, 201, new { level = "L1" });
-        _audit.Log("EHEALTH_LOGIN", "lab_ehealth_session", s.Id, null, new { s.Login, s.AuthLevel });
+        if (string.IsNullOrWhiteSpace(req.Code)) throw ValidationException.Field("code", "Не передано код авторизації ЄСОЗ");
+        try { await _client.AuthByCodeAsync(req.Code.Trim(), req.Role); }
+        catch (EhealthException ex) when (ex.Kind == EhealthErrorKind.Auth) { throw Problem(422, "ehealth-invalid-code", "Код авторизації недійсний", "Код авторизації ЄСОЗ недійсний або прострочений: повторіть вхід"); }
+        catch (EhealthException ex) { throw ProxyProblem(ex); }
+        Log("POST", "auth (обмін коду авторизації через проксі)", new { role = req.Role ?? _options.Proxy.Role }, 200, new { signedIn = true });
+        _audit.Log("EHEALTH_LOGIN", "ehealth_proxy_session", _current.EmployeeId, null, new { mode = _options.ModeName });
         await _db.SaveChangesAsync();
         return await StatusAsync();
     }
 
-    /// <summary>Крок 2 — підтвердження особи (L2): КЕП (збіг ДРФО, чинний сертифікат) або код TOTP, якщо 2FA увімкнена (FR-SGN-003).</summary>
-    public async Task<object> ConfirmAsync(EhealthConfirmRequest req)
+    /// <summary>Оновити токен користувача в проксі (auth/update).</summary>
+    public async Task<object> RefreshSessionAsync()
     {
-        EnsureSimulatedSession();
-        var s = await ActiveAsync(true) ?? throw Problem(401, "ehealth-auth-required", "Потрібен вхід в ЕСОЗ", "Спершу увійдіть в ЕСОЗ логіном і паролем");
-        var method = req.Method.ToUpperInvariant();
-        if (method == "KEP")
-        {
-            var signer = await CheckSignerAsync(req.Signer);
-            s.CertSerial = signer.CertSerial; s.SignerName = signer.Name; s.SignerDrfo = signer.Drfo;
-        }
-        else if (method == "TOTP")
-        {
-            if (!s.TotpEnabled) throw Problem(409, "ehealth-totp-disabled", "Двофакторна автентифікація вимкнена", "Двофакторна автентифікація вимкнена. Увімкніть 2FA (ТОТР) у налаштуваннях облікового запису ЕСОЗ або увійдіть через КЕП");
-            if (req.Code?.Trim() != DemoTotpCode) throw Problem(422, "ehealth-invalid-code", "Невірний код", "Невірний код з додатка автентифікації");
-        }
-        else throw ValidationException.Field("method", "Метод: KEP або TOTP");
-        s.AuthLevel = "L2";
-        s.AuthMethod = "PASSWORD+" + method;
-        Log("POST", $"oauth/approve ({method})", new { method, certSerial = s.CertSerial }, 200, new { level = "L2" });
-        _audit.Log("EHEALTH_CONFIRM", "lab_ehealth_session", s.Id, null, new { s.AuthMethod, s.CertSerial });
-        await _db.SaveChangesAsync();
+        try { await _client.RefreshAccessTokenAsync(); } catch (EhealthException ex) { throw ProxyProblem(ex); }
         return await StatusAsync();
     }
 
-    /// <summary>«Увімкнути 2FA (ТОТР)» — перехід до налаштувань облікового запису ЕСОЗ (Mock/Replay — вмикається для демо-облікового запису).</summary>
-    public async Task<object> EnableTotpAsync()
-    {
-        EnsureSimulatedSession();
-        var s = await ActiveAsync(true) ?? throw Problem(401, "ehealth-auth-required", "Потрібен вхід в ЕСОЗ", "Спершу увійдіть в ЕСОЗ логіном і паролем");
-        s.TotpEnabled = true;
-        await _db.SaveChangesAsync();
-        return new { totpEnabled = true, otpauth = $"otpauth://totp/ESOZ:{Uri.EscapeDataString(s.Login)}?secret=DEMODEMODEMO&issuer=ESOZ", demoCode = DemoTotpCode };
-    }
-
+    /// <summary>Вихід з ЄСОЗ: проксі видаляє токен користувача (auth/logout).</summary>
     public async Task LogoutAsync()
     {
-        var now = DateTime.UtcNow;
-        foreach (var s in await _db.EhealthSessions.Where(x => x.EmployeeId == _current.EmployeeId && x.ClosedAt == null).ToListAsync()) s.ClosedAt = now;
+        try { await _client.LogoutAsync(); } catch (EhealthException ex) { throw ProxyProblem(ex); }
+        _audit.Log("EHEALTH_LOGOUT", "ehealth_proxy_session", _current.EmployeeId, null, new { mode = _options.ModeName });
         await _db.SaveChangesAsync();
     }
 
@@ -215,16 +200,17 @@ public sealed class EhealthSignService
         return new SignerInfo { Drfo = signer.Drfo.Trim(), Name = signer.Name ?? expected.Name, CertSerial = signer.CertSerial ?? expected.CertSerial, ValidTo = signer.ValidTo };
     }
 
-    /// <summary>Mock/Replay: сесія L2 (пароль + КЕП/2FA). Live: достатньо налаштованого токена доступу (сесії користувача поки немає).</summary>
+    /// <summary>Відправка можлива, коли в проксі є чинний токен ЄСОЗ користувача (auth/hasAccessToken); підтвердження особи — це підпис КЕП пакета.</summary>
     private async Task RequireAuthAsync()
     {
-        if (_options.IsLive)
+        var (state, detail) = await SessionStateAsync();
+        switch (state)
         {
-            if (string.IsNullOrEmpty(await _tokens.GetAccessTokenAsync())) throw Problem(503, "ehealth-live-not-configured", "ЕСОЗ не налаштовано", "Не налаштовано токен доступу ЕСОЗ (Ehealth:AccessToken)");
-            return;
+            case "active": return;
+            case "notConfigured": throw Problem(503, "ehealth-live-not-configured", "ЄСОЗ не налаштовано", detail ?? "Підключення до проксі MedLink не налаштовано");
+            case "unavailable": throw Problem(503, "ehealth-proxy-unavailable", "Сервіс ЄСОЗ тимчасово недоступний", detail ?? "Проксі MedLink не відповідає");
+            default: throw Problem(401, "ehealth-auth-required", "Потрібен вхід в ЄСОЗ", "Увійдіть в ЄСОЗ (кнопка «Увійти в ЄСОЗ» у шапці), потім підпишіть звіт КЕП");
         }
-        var s = await ActiveAsync(true) ?? throw Problem(401, "ehealth-auth-required", "Потрібен вхід в ЕСОЗ", "Увійдіть в ЕСОЗ (логін і пароль, потім КЕП або 2FA)");
-        if (s.AuthLevel != "L2") throw Problem(403, "ehealth-strong-auth-required", "Потрібне підтвердження особи", "Відправка доступна після підтвердження особи (КЕП або 2FA)");
     }
 
     // ------------------------------------------------------------------ підготовка пакета
@@ -277,7 +263,7 @@ public sealed class EhealthSignService
     public async Task<object> MockSignAsync(string orderId, EhealthMockSignRequest req)
     {
         _policy.Require("Відправка звіту в ЕСОЗ", SubmitRoles);
-        if (_options.IsLive) throw Problem(409, "mock-sign-disabled", "Тестовий підпис недоступний", "У режимі Live підпис виконує браузерний віджет КЕП");
+        if (_options.IsReal) throw Problem(409, "mock-sign-disabled", "Тестовий підпис недоступний", "У режимі реального проксі підпис виконує браузерний віджет КЕП");
         var o = await LoadOrderAsync(orderId);
         byte[] content;
         if (string.Equals(req.Kind, "annul", StringComparison.OrdinalIgnoreCase))
@@ -317,7 +303,7 @@ public sealed class EhealthSignService
         if (sub.PackageJson == null) throw Problem(409, "report-not-ready", "Звіт не підготовлено", "Спершу підготуйте пакет для підпису (prepare)");
         if (sub.SignedData == null || sub.Status == EhealthSubmitStatuses.ReadyToSign)
         {
-            if (string.IsNullOrWhiteSpace(req.SignedData)) throw ValidationException.Field("signedData", "Підпишіть пакет КЕП (окремий крок навіть після входу через 2FA)");
+            if (string.IsNullOrWhiteSpace(req.SignedData)) throw ValidationException.Field("signedData", "Підпишіть пакет КЕП (підпис КЕП — окремий крок після входу в ЄСОЗ)");
             var signer = await CheckSignerAsync(req.Signer);
             // Структурна перевірка (формат, CAdES-X Long, збіг підписаного вмісту з пакетом); криптографічно підпис перевіряє ЕСОЗ
             var inspection = CadesInspector.Inspect(req.SignedData, new UTF8Encoding(false).GetBytes(sub.PackageJson));
@@ -338,7 +324,7 @@ public sealed class EhealthSignService
         var pkg = JsonNode.Parse(sub.PackageJson!)!;
         var reportId = pkg["diagnostic_report"]!["id"]!.GetValue<string>();
         var (patientId, srId, referralId) = await _builder.RoutingAsync(o);
-        await _outbox.EnqueueAsync(EhealthOutboxKinds.SubmitDr, sub.Id, o.Id, $"SUBMIT_DR:{sub.Id}:{sub.PackageHash![..16]}", new { patientId, reportId, serviceRequestId = srId, referralId });
+        await _outbox.EnqueueAsync(EhealthOutboxKinds.SubmitDr, sub.Id, o.Id, $"SUBMIT_DR:{sub.Id}:{sub.PackageHash![..16]}", new { patientId, reportId, serviceRequestId = srId, referralId, userId = _current.EmployeeId });
         sub.Status = EhealthSubmitStatuses.Processing; o.EhealthStatus = EhealthSubmitStatuses.Processing; sub.LastError = null;
     }
 
@@ -351,7 +337,7 @@ public sealed class EhealthSignService
         var row = await _db.EhealthOutbox.Where(x => x.OrderId == o.Id && (x.Status == EhealthOutboxStatuses.Failed || x.Status == EhealthOutboxStatuses.Dead))
                       .OrderByDescending(x => x.CreatedOn).FirstOrDefaultAsync()
                   ?? throw new ConflictException("Немає зупиненої задачі відправки в ЕСОЗ, яку можна повторити");
-        await _outbox.RetryAsync(row.Id);
+        await _outbox.RetryAsync(row.Id, _current.EmployeeId);
         var sub = await _db.EhealthSubmissions.FirstAsync(s => s.Id == row.EntityId);
         return Dto(o, sub);
     }
@@ -402,7 +388,7 @@ public sealed class EhealthSignService
         foreach (var stale in await _db.EhealthOutbox.Where(x => x.EntityId == sub.Id && x.Kind == EhealthOutboxKinds.CompleteSr && (x.Status == EhealthOutboxStatuses.Failed || x.Status == EhealthOutboxStatuses.Dead)).ToListAsync())
         { stale.Status = EhealthOutboxStatuses.Dead; stale.ErrorCode = EhealthOutboxErrors.CancelledByUser; stale.LastError = "Звіт анульовано"; stale.NextAttemptAt = null; }
         await _outbox.EnqueueAsync(EhealthOutboxKinds.CancelDr, annul.Id, o.Id, $"CANCEL_DR:{cancel.ReportId}:{annul.Id}",
-            new { patientId, reportId = cancel.ReportId, submissionId = sub.Id, reason = req.Reason!.Trim() });
+            new { patientId, reportId = cancel.ReportId, submissionId = sub.Id, reason = req.Reason!.Trim(), userId = _current.EmployeeId });
         _audit.Log("EHEALTH_ANNUL_QUEUED", "lab_ehealth_submission", annul.Id, null, new { req.Reason, annul.CertSerial });
         await _db.SaveChangesAsync();
         return Dto(o, annul);
@@ -507,7 +493,7 @@ public sealed class EhealthSignService
     {
         _policy.Require("Відправка звіту в ЕСОЗ", SubmitRoles);
         await RequireAuthAsync();
-        var r = await _outbox.RetryAsync(id);
+        var r = await _outbox.RetryAsync(id, _current.EmployeeId);
         return OutboxDto(r);
     }
 

@@ -11,15 +11,25 @@ public static class EhealthJobReader
     /// <summary>Відповідь на ініціювання операції (use/complete/submit/cancel): 202 → job; 200/201 → виконано синхронно.</summary>
     public static EhealthJob ParseAccepted(JsonNode? json, int httpStatus)
     {
-        // 200/201: операцію виконано синхронно, у data — оновлена сутність (її id не є id job)
-        if (httpStatus != 202) return new EhealthJob("", EhealthJobStatus.Processed, null, "sync", httpStatus);
+        // Проксі MedLink повертає тіло job {data:{status:"pending", links:[{entity:"job",…}]}} з кодом 200/201 (SDK МІС перевіряє лише data.status),
+        // прямий ЕСОЗ — 202. Тому job визначається за вмістом: посилання entity=job або status pending/processed/failed у data.
+        if (httpStatus != 202 && !LooksLikeJob(json)) return new EhealthJob("", EhealthJobStatus.Processed, null, "sync", httpStatus); // 200/201: виконано синхронно, у data — сутність
+        if (httpStatus != 202 && Parse(json, httpStatus) is { } direct && (direct.IsProcessed || direct.IsFailed) && string.IsNullOrEmpty(direct.Id)) return direct;
         var job = Parse(json, httpStatus);
         if (string.IsNullOrEmpty(job.Id))
             throw new EhealthException(502, "Відповідь ЕСОЗ 202 не містить посилання на job (links[entity=job] або data.id)", EhealthErrorKind.Transient, json?.ToJsonString());
         return job;
     }
 
-    /// <summary>Відповідь GET /api/jobs/{id} (або 202): нормалізує стан, id, посилання на створені сутності й помилку.</summary>
+    private static bool LooksLikeJob(JsonNode? json)
+    {
+        var data = ((json as JsonObject)?["data"] as JsonObject) ?? json as JsonObject;
+        if (data == null) return false;
+        if ((data["links"] as JsonArray)?.OfType<JsonObject>().Any(l => string.Equals(Str(l["entity"]), "job", StringComparison.OrdinalIgnoreCase)) == true) return true;
+        return Str(data["status"])?.ToLowerInvariant() is "pending" or "processed" or "failed" or "failed_with_error";
+    }
+
+    /// <summary>Відповідь jobs/{id} (проксі) або GET /api/jobs/{id} (прямий ЕСОЗ), а також відповідь-прийняття операції: нормалізує стан, id, посилання на створені сутності й помилку.</summary>
     public static EhealthJob Parse(JsonNode? json, int httpStatus)
     {
         var root = json as JsonObject;

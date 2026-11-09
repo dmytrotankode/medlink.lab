@@ -1,19 +1,21 @@
 // =============================================================================
-// Моделі інтеграції з ЕСОЗ: режими, операції (поопераційні прапорці Live), класифікація помилок, job, е-направлення.
-// Контракт — OpenAPI eHealth (medical-events.json): шляхи /api/service_requests…, /api/jobs/{id},
+// Моделі інтеграції з ЕСОЗ: режими, операції (поопераційні прапорці), класифікація помилок, job, е-направлення.
+// Контракт — eHealth-сервіс (проксі) MedLink: patients/service_requests…, jobs/{id}, auth/* (docs/EHEALTH_MEDLINK_PROXY_CONTRACT.md);
+// прямий ЕСОЗ (OpenAPI, medical-events.json) — лише застарілий режим Live: /api/service_requests…, /api/jobs/{id},
 // /api/patients/{id}/diagnostic_report_package; докладно — docs/ESOZ_LAB_INTERACTIONS.md.
 // =============================================================================
 using System.Text.Json.Nodes;
 
 namespace MedLink.LIS.Api.Services.Ehealth;
 
-/// <summary>Режим роботи інтеграції: Mock — контрактний двійник; Replay — записані фікстури; Live — реальні виклики.</summary>
+/// <summary>Режим роботи інтеграції: Mock — двійник проксі MedLink; MedLinkProxy — реальний eHealth-сервіс MedLink; Replay — записані фікстури проксі;
+/// Live — ЗАСТАРІЛИЙ прямий виклик ЕСОЗ.</summary>
 public static class EhealthModes
 {
-    public const string Mock = "Mock", Replay = "Replay", Live = "Live";
+    public const string Mock = "Mock", MedLinkProxy = "MedLinkProxy", Replay = "Replay", Live = "Live";
 }
 
-/// <summary>Операції ЕСОЗ, які можна вмикати окремо в режимі Live (безпечна поетапна обкатка).</summary>
+/// <summary>Операції ЕСОЗ, які можна вмикати окремо в реальних режимах (безпечна поетапна обкатка).</summary>
 public enum EhealthOperation { SearchRead, Use, Complete, SubmitDr, CancelDr, Specimen, Equipment }
 
 /// <summary>Клас помилки обміну: визначає поведінку воркера (повторити / дія користувача / вхід).</summary>
@@ -31,7 +33,7 @@ public enum EhealthErrorKind
     Conflict,
     /// <summary>400/422 — помилка валідації тіла.</summary>
     Validation,
-    /// <summary>Операцію не дозволено прапорцем Ehealth:Live:Operations.</summary>
+    /// <summary>Операцію не дозволено прапорцем Ehealth:Proxy:Operations (для застарілого Live — Ehealth:Live:Operations).</summary>
     Disabled,
     /// <summary>Підключення не налаштовано (токен, ідентифікатори закладу) або немає фікстури Replay.</summary>
     Config

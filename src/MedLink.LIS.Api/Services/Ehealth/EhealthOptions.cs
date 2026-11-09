@@ -1,6 +1,7 @@
 // =============================================================================
-// Налаштування інтеграції з ЕСОЗ (секція Ehealth у appsettings). Секрети (AccessToken, ApiKey, CustomPsk) зберігаються
-// лише в конфігурації сервера/сховищі секретів і не потрапляють у відповіді API та журнали.
+// Налаштування інтеграції з ЕСОЗ (секція Ehealth у appsettings). Основна схема: ЛІС викликає eHealth-сервіс (проксі) MedLink, який
+// тримає токени й секрети та сам звертається до ЕСОЗ (Ehealth:Mode = MedLinkProxy, секція Ehealth:Proxy). Секрети (Proxy:ApiKey,
+// застарілі AccessToken/ApiKey/CustomPsk) зберігаються лише в конфігурації сервера/сховищі секретів і не потрапляють у відповіді API та журнали.
 // =============================================================================
 namespace MedLink.LIS.Api.Services.Ehealth;
 
@@ -25,6 +26,27 @@ public sealed class EhealthOperationFlags
         EhealthOperation.SearchRead => SearchRead, EhealthOperation.Use => Use, EhealthOperation.Complete => Complete, EhealthOperation.SubmitDr => SubmitDr,
         EhealthOperation.CancelDr => CancelDr, EhealthOperation.Specimen => Specimen, EhealthOperation.Equipment => Equipment, _ => false
     };
+}
+
+/// <summary>Підключення до eHealth-сервісу (проксі) MedLink. Контракт — docs/EHEALTH_MEDLINK_PROXY_CONTRACT.md.</summary>
+public sealed class EhealthProxyOptions
+{
+    /// <summary>Базова адреса проксі (без префікса /api). Порожньо в appsettings: значення дає команда проксі через змінну середовища Ehealth__Proxy__BaseUrl.</summary>
+    public string? BaseUrl { get; set; }
+    /// <summary>Заголовок ClientId: id організації (legal_entity) в ЕСОЗ. Порожньо — береться Ehealth:LegalEntityId.</summary>
+    public string? ClientId { get; set; }
+    /// <summary>Роль користувача в ЕСОЗ для авторизації (auth/EhealthUILink/{role}); типово DOCTOR (як у МІС).</summary>
+    public string Role { get; set; } = "DOCTOR";
+    /// <summary>Адреса сторінки авторизації ЕСОЗ (UIUri в МІС), на яку перенаправляється користувач для входу. Порожньо — вхід недоступний.</summary>
+    public string? AuthPortalUrl { get; set; }
+    /// <summary>Зареєстрований redirect_uri клієнта (сторінка ЛІС, що приймає ?code=…). Порожньо — береться redirect_uri з відповіді проксі.</summary>
+    public string? RedirectUri { get; set; }
+    /// <summary>Чи заклад пройшов реорганізацію (параметр isReorganized в auth/EhealthUILink).</summary>
+    public bool IsReorganized { get; set; }
+    /// <summary>Службовий UserId для викликів без користувача (довідники, перевірка підключення). Порожньо — такі виклики вимагають користувача.</summary>
+    public string? ServiceUserId { get; set; }
+    /// <summary>Поопераційні прапорці (типово все вимкнено): вмикайте по одній, починаючи з SearchRead.</summary>
+    public EhealthOperationFlags Operations { get; set; } = new();
 }
 
 public sealed class EhealthHttpOptions
@@ -75,18 +97,24 @@ public sealed class EhealthMockOptions
     public int JobPendingPolls { get; set; } = 1;
     /// <summary>Одноразово наповнити реєстр мока е-направленнями з демо-даних дзеркала (лише для демонстрації).</summary>
     public bool SeedFromMirror { get; set; } = true;
+    /// <summary>true — двійник вимагає збереженого токена користувача (як реальний проксі: без входу 401 token_not_found); false (типово) — поблажливий режим демо.
+    /// Перевірка наявності токена перед відправкою звіту (auth/hasAccessToken) від цього прапорця не залежить.</summary>
+    public bool RequireSession { get; set; }
 }
 
 public sealed class EhealthOptions
 {
-    /// <summary>Mock | Replay | Live</summary>
+    /// <summary>Mock (двійник проксі, типово) | MedLinkProxy (реальний eHealth-сервіс MedLink) | Replay (фікстури проксі) | Live (ЗАСТАРІЛО: прямий ЕСОЗ).</summary>
     public string Mode { get; set; } = EhealthModes.Mock;
+    /// <summary>ЗАСТАРІЛО (лише Mode = Live): адреса прямого API ЕСОЗ. Замовник вимагає працювати через проксі MedLink — використовуйте Proxy:BaseUrl.</summary>
     public string BaseUrl { get; set; } = "https://api.ehealth.gov.ua/api/";
-    /// <summary>Access token (у Live — з авторизації МІС; тимчасово статичний). Не журналюється.</summary>
+    /// <summary>ЗАСТАРІЛО (лише Live): статичний access token. Не журналюється.</summary>
     public string? AccessToken { get; set; }
+    /// <summary>ЗАСТАРІЛО (лише Live).</summary>
     public string? ApiKey { get; set; }
-    /// <summary>Заголовок X-Custom-PSK (потрібен шлюзу ЕСОЗ).</summary>
+    /// <summary>ЗАСТАРІЛО (лише Live): заголовок X-Custom-PSK шлюзу ЕСОЗ. У схемі через проксі ці секрети тримає проксі.</summary>
     public string? CustomPsk { get; set; }
+    public EhealthProxyOptions Proxy { get; set; } = new();
     public int PageSize { get; set; } = 50;
 
     /// <summary>Ідентифікатори закладу/підрозділу/працівника в ЕСОЗ (для Live; у Mock-режимі генеруються детерміновано).</summary>
@@ -104,13 +132,26 @@ public sealed class EhealthOptions
     public EhealthReplayOptions Replay { get; set; } = new();
     public EhealthMockOptions Mock { get; set; } = new();
 
+    /// <summary>ЗАСТАРІЛИЙ режим прямого виклику ЕСОЗ (Bearer-токен, шляхи OpenAPI). Збережено для довідки; для роботи не використовувати.</summary>
     public bool IsLive => string.Equals(Mode, EhealthModes.Live, StringComparison.OrdinalIgnoreCase);
+    /// <summary>Реальний eHealth-сервіс (проксі) MedLink.</summary>
+    public bool IsProxy => string.Equals(Mode, EhealthModes.MedLinkProxy, StringComparison.OrdinalIgnoreCase);
     public bool IsReplay => string.Equals(Mode, EhealthModes.Replay, StringComparison.OrdinalIgnoreCase);
-    public bool IsMock => !IsLive && !IsReplay;
-    /// <summary>Mock або Replay: ЕСОЗ імітується (вхід паролем/2FA, тестовий підпис).</summary>
-    public bool Simulated => !IsLive;
-    public string ModeName => IsLive ? "LIVE" : IsReplay ? "REPLAY" : "MOCK";
+    public bool IsMock => !IsLive && !IsProxy && !IsReplay;
+    /// <summary>Mock або Replay: проксі й ЕСОЗ імітуються (тестовий вхід, тестовий підпис, мок-реєстр/фікстури).</summary>
+    public bool Simulated => IsMock || IsReplay;
+    /// <summary>Реальне зовнішнє з'єднання (проксі або застарілий прямий ЕСОЗ): операції вмикаються прапорцями.</summary>
+    public bool IsReal => IsLive || IsProxy;
+    /// <summary>Виклики йдуть за контрактом проксі MedLink (усі режими, крім застарілого Live).</summary>
+    public bool UsesProxyContract => !IsLive;
+    public string ModeName => IsLive ? "LIVE" : IsProxy ? "PROXY" : IsReplay ? "REPLAY" : "MOCK";
 
-    /// <summary>Чи дозволена операція: у Mock/Replay — завжди, у Live — за прапорцем.</summary>
-    public bool IsAllowed(EhealthOperation op) => !IsLive || Live.Operations.IsEnabled(op);
+    /// <summary>Прапорці операцій поточного реального режиму.</summary>
+    public EhealthOperationFlags Operations => IsProxy ? Proxy.Operations : Live.Operations;
+
+    /// <summary>Значення заголовка ClientId (id організації в ЕСОЗ): Proxy:ClientId або Ehealth:LegalEntityId.</summary>
+    public string? ClientIdValue => !string.IsNullOrWhiteSpace(Proxy.ClientId) ? Proxy.ClientId : !string.IsNullOrWhiteSpace(LegalEntityId) ? LegalEntityId : null;
+
+    /// <summary>Чи дозволена операція: у Mock/Replay — завжди, у реальних режимах — за прапорцем.</summary>
+    public bool IsAllowed(EhealthOperation op) => !IsReal || Operations.IsEnabled(op);
 }

@@ -279,7 +279,7 @@ public class LabEhealthSession : GuidEntity
 {
     [MaxLength(64)] public string EmployeeId { get; set; } = "";
     [MaxLength(128)] public string Login { get; set; } = "";
-    /// <summary>L1 — пароль; L2 — підтверджена особа (КЕП/2FA).</summary>
+    /// <summary>ЗАСТАРІЛО (сесію ЄСОЗ тепер тримає проксі MedLink): таблиця не використовується. L1 — пароль; L2 — підтверджена особа (КЕП/2FA).</summary>
     [MaxLength(4)] public string AuthLevel { get; set; } = "L1";
     /// <summary>PASSWORD | PASSWORD+KEP | PASSWORD+TOTP</summary>
     [MaxLength(32)] public string AuthMethod { get; set; } = "PASSWORD";

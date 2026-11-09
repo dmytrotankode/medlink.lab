@@ -68,13 +68,24 @@ public sealed class EhealthOutboxService
     public static bool CanRetry(EheOutbox r) => r.Status is EhealthOutboxStatuses.Failed or EhealthOutboxStatuses.Dead;
     public static bool CanCancel(EheOutbox r) => (r.Status == EhealthOutboxStatuses.New || r.Status is EhealthOutboxStatuses.Failed or EhealthOutboxStatuses.Dead) && r.ErrorCode != EhealthOutboxErrors.CancelledByUser;
 
-    public async Task<EheOutbox> RetryAsync(string id)
+    /// <summary>Підставляє в службові дані задачі користувача, від імені якого проксі братиме токен ЕСОЗ (заголовок UserId).</summary>
+    public static string WithUser(string payload, string? userId)
+    {
+        if (string.IsNullOrEmpty(userId)) return payload;
+        var o = (JsonNode.Parse(payload) as JsonObject) ?? new JsonObject();
+        o["userId"] = userId;
+        return o.ToJsonString();
+    }
+
+    /// <param name="userId">Користувач, що повторює задачу: його токен ЕСОЗ у проксі використає воркер (попередній міг вийти з ЕСОЗ).</param>
+    public async Task<EheOutbox> RetryAsync(string id, string? userId = null)
     {
         var r = await _db.EhealthOutbox.FirstOrDefaultAsync(x => x.Id == id) ?? throw new Infrastructure.NotFoundException("Задачу відправки в ЕСОЗ не знайдено");
         if (r.Kind == EhealthOutboxKinds.CompleteSr && await _db.EhealthSubmissions.AnyAsync(s => s.Id == r.EntityId && (s.Status == EhealthSubmitStatuses.Annulled || s.Status == EhealthSubmitStatuses.Completed)))
             throw new Infrastructure.ConflictException("Погашення вже не потрібне: звіт анульовано або направлення погашено");
         if (!CanRetry(r)) throw new Infrastructure.ConflictException($"Повторити можна лише задачу в стані «{EhealthOutboxStatuses.Label(EhealthOutboxStatuses.Failed)}» або «{EhealthOutboxStatuses.Label(EhealthOutboxStatuses.Dead)}»; зараз: «{EhealthOutboxStatuses.Label(r.Status)}»");
         Revive(r, DateTime.UtcNow);
+        r.Payload = WithUser(r.Payload, userId);
         await SyncSubmissionAsync(r, EhealthSubmitStatuses.Processing, null);
         await _db.SaveChangesAsync();
         return r;
@@ -162,6 +173,10 @@ public sealed class EhealthOutboxEngine
         if (!await TryClaimAsync(db, id, now, WorkerId, ct)) return false;
         var row = await db.EhealthOutbox.FirstAsync(x => x.Id == id, ct);
         var client = scope.ServiceProvider.GetRequiredService<IEhealthClient>();
+        // воркер працює без HTTP-контексту: користувач для заголовка UserId береться з даних задачі
+        string? payloadUser = null;
+        try { payloadUser = (JsonNode.Parse(row.Payload) as JsonObject)?["userId"]?.GetValue<string>(); } catch { /* пошкоджені дані — без користувача */ }
+        using var userCtx = EhealthCallContext.Use(payloadUser);
         try
         {
             var step = new Step(db, client, row, now, _options, scope.ServiceProvider.GetRequiredService<EhealthOutboxService>());
@@ -358,7 +373,7 @@ public sealed class EhealthOutboxEngine
                 // Погашення направлення — ОКРЕМА задача, лише після того, як звіт існує в ЕСОЗ
                 var svc = new EhealthOutboxService(_db);
                 await svc.EnqueueAsync(EhealthOutboxKinds.CompleteSr, sub.Id, sub.OrderId, $"COMPLETE_SR:{sr}:{reportId}",
-                    new { serviceRequestId = sr, reportId, patientId = P("patientId"), referralId = PN("referralId"), submissionId = sub.Id }, _now);
+                    new { serviceRequestId = sr, reportId, patientId = P("patientId"), referralId = PN("referralId"), submissionId = sub.Id, userId = PN("userId") }, _now);
             }
         }
 
