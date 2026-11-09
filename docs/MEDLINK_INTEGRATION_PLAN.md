@@ -153,3 +153,26 @@ Lab__SeedDemoData=false
 PathBase=/lab
 ```
 
+
+## 8. Стенд mis.med-one (розгорнуто 09.11.2026, режим Header)
+
+**Розгорнуто [С]:** Lab API (гілка `cl/mis`) як служба `medlink-lab-mis` на `127.0.0.1:5200`, каталог `/srv/medlink-lab-mis` (`app/` — збірка, `app.prev/` — попередня), користувач `medlinklab`. nginx: сніпет `/etc/nginx/snippets/medlink-lab-mis.conf` підключено в `sites-available/mis.med-one.avowiz.com` перед `location /`; `/lab/` → `127.0.0.1:5200` за тим самим basic-auth, що й сайт (`/api/` і решта не змінювались). Поруч не чіпались: `medlink-lab` (5190), `medlink-lab-v2` (5191), `medlink-api`, контейнери `medlink-*`.
+
+**БД `evomis` (контейнер `medlink-pg`):** схема `lab` (власник `lab_migrator`, 132 таблиці створив сам застосунок при старті), ролі `lab_migrator` і `lab_app` — LOGIN, не superuser/createdb/createrole; `lab_app` — CRUD на `lab`; обидві ролі — `USAGE` на `public` і `SELECT` лише на 10 таблиць розділу 3. Додатково знято `CREATE` на схемі `public` у ролі `PUBLIC` (у PG14 вона є за замовчуванням, інакше `lab_*` могли б створювати об'єкти в `public`; відкат: `GRANT CREATE ON SCHEMA public TO PUBLIC`). `lab_migrator` має `CREATE` на базі (для `CREATE SCHEMA IF NOT EXISTS` при старті).
+
+**Змінні служби (drop-in, 0600 root):** `Database__Provider=Postgres`, `Database__ConnectionString` (lab_migrator, `Search Path=lab`), `Database__Schema=lab`, `Lab__SeedDemoData=false`, `PathBase=/lab`, `Auth__Mode=Header` (режим Oidc — окремий крок), `Lab__PublicBaseUrl=https://mis.med-one.avowiz.com/lab`, `Lab__VerifySecret`, `Medlink__ConnectionString` (lab_app, SELECT-only).
+
+**Де секрети (лише шляхи):** `/srv/medlink-lab-mis/secrets.env` (паролі ролей і VerifySecret, 0600 root); `/etc/systemd/system/medlink-lab-mis.service.d/{postgres,app,auth}.conf` (0600 root). Бекап БД до розгортання: `/srv/medlink/backups/evomis_20261109.dump` (pg_dump -Fc, 280 МБ, 0600).
+
+**Оновити:** з кореня репозиторію (Git Bash), гілка `cl/mis`:
+```
+MSYS_NO_PATHCONV=1 MSYS2_ENV_CONV_EXCL=LIS_PUBLIC_PATH LIS_PUBLIC_PATH=/lab/ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./build.ps1 -SkipInstall
+dotnet publish src/MedLink.LIS.Api/MedLink.LIS.Api.csproj -c Release -r linux-x64 --self-contained false -o OUT/app
+tar -czf OUT/lab-mis-app.tgz -C OUT/app . && scp -i ~/.ssh/medone_ed25519 OUT/lab-mis-app.tgz root@94.130.180.117:/tmp/lab-mis-app.tgz
+ssh -i ~/.ssh/medone_ed25519 root@94.130.180.117 'bash -s' < tools/deploy/medlink-lab-mis-install.sh
+```
+Скрипт `tools/deploy/medlink-lab-mis-install.sh` ідемпотентний: паролі й наявний `auth.conf` не перезаписує, попередню збірку зберігає в `app.prev`.
+
+**Відкат:** застосунок — `systemctl stop medlink-lab-mis; rm -rf /srv/medlink-lab-mis/app; mv /srv/medlink-lab-mis/app.prev /srv/medlink-lab-mis/app; systemctl start medlink-lab-mis`. Повне зняття: `systemctl disable --now medlink-lab-mis`; прибрати рядок `include snippets/medlink-lab-mis.conf;` із сайту (копія до правки: `/root/mis.med-one.avowiz.com.bak.*`), `nginx -t && systemctl reload nginx`; БД — `DROP SCHEMA lab CASCADE; DROP ROLE lab_app; DROP ROLE lab_migrator;` (перед `DROP ROLE` — `REVOKE ... ` або `DROP OWNED BY`), або `pg_restore` з бекапу.
+
+**Перевірено [С]:** `/lab/health` 200 (db ok); `lab_app` у `public`: INSERT/UPDATE/DELETE/CREATE TABLE — `permission denied`, SELECT дозволено; у `lab` `lab_app` не може DDL; `medlink-api`, `/lab` на med-one.avowiz.com, :5190 — без змін (health до і після). **Не перевірено:** `/lab/` через nginx із basic-auth (пароль у власника; без нього 401), вхід у SPA, режим Oidc. **Увага для кроку Oidc:** `Authorization: Bearer` від SPA конфліктує з basic-auth сайту (той самий заголовок) — для `/lab/` потрібно або зняти basic-auth, або передавати токен іншим способом.
