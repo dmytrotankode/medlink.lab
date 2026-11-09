@@ -44,6 +44,11 @@ public class LabSettings : GuidEntity
     [MaxLength(128)] public string? LabelPrinterName { get; set; }
     /// <summary>Прапорці шаблонів бланка (JSON): {"final":true,"preliminary":true,"cito":true,"showPreviousValues":true,"showQr":true}</summary>
     public string ReportTemplatesJson { get; set; } = "{\"final\":true,\"preliminary\":true,\"cito\":true,\"showPreviousValues\":true,\"showQr\":true}";
+    // --- Калібрування приладів (FR-GAP-031) ---
+    /// <summary>true — введення/верифікація результату при простроченому калібруванні заборонені (верифікація — лише з override і коментарем); false — лише попередження.</summary>
+    public bool BlockOnExpiredCalibration { get; set; }
+    /// <summary>За скільки днів до кінця терміну дії показувати нагадування про калібрування.</summary>
+    public int CalibrationWarnDays { get; set; } = 7;
     // --- Маршрутизація й розподіл (ТЗ 21.7, 23.4; зміна діє без перезапуску) ---
     /// <summary>PRIORITY | LEAST_LOAD | PRIORITY_THEN_LOAD</summary>
     [MaxLength(24)] public string RoutingStrategy { get; set; } = "PRIORITY_THEN_LOAD";

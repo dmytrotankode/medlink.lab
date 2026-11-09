@@ -21,6 +21,8 @@
             <div class="col-6"><q-input v-model="form.directorName" outlined dense label="Керівник / завідувач" /></div>
             <div class="col-6"><q-input v-model="form.workingHours" outlined dense label="Графік роботи" /></div>
             <div class="col-12"><q-input v-model="form.panicPhone" outlined dense label="Телефон для повідомлень про критичні значення (черговий лікар)" data-testid="settingsPanicPhone"><template v-slot:prepend><q-icon name="call" color="negative" /></template></q-input></div>
+            <div class="col-12 col-md-8"><q-toggle v-model="form.blockOnExpiredCalibration" color="warning" label="Забороняти введення та верифікацію результатів при простроченому калібруванні приладу" data-testid="settingsBlockCalibration" /><div class="text-caption text-grey-7">Якщо вимкнено — лише попередження біля результату, автоверифікація вимикається.</div></div>
+            <div class="col-12 col-md-4"><q-input v-model.number="form.calibrationWarnDays" outlined dense type="number" min="0" max="90" label="Нагадувати про калібрування за, діб" data-testid="settingsCalibWarnDays" /></div>
           </div>
         </div>
 

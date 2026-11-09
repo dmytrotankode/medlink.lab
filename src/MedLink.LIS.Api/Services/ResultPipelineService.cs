@@ -74,6 +74,9 @@ public sealed class ResultPipelineService
         return DtoMapper.ToWorklistRow(t, locked, _policy);
     }
 
+    private async Task<bool> BlockOnCalibrationAsync() =>
+        (await _db.Settings.AsNoTracking().Select(s => (bool?)s.BlockOnExpiredCalibration).FirstOrDefaultAsync()) ?? false;
+
     public async Task<bool> IsLockedOutAsync(string? analyzerId, string testCode)
     {
         if (string.IsNullOrEmpty(analyzerId)) return false;
@@ -151,12 +154,19 @@ public sealed class ResultPipelineService
             if (!check.IsPlausible) implausible = check.Summary;
         }
 
+        // Калібрування приладу (FR-GAP-031): прострочене/відхилене → попередження; за налаштуванням — заборона ручного введення
+        var calib = await CalibrationService.CheckAsync(_db, analyzerId, def.Code);
+        if (calib.IsProblem && !entry.IsSystem && await BlockOnCalibrationAsync())
+            throw new ConflictException($"Введення результату неможливе: {calib.Message}") { Code = "CALIBRATION_EXPIRED" };
+        var calibWarning = calib.IsProblem ? calib.Message : null;
+        if (calibWarning != null && calibWarning.Length > 500) calibWarning = calibWarning.Substring(0, 497) + "...";
+
         // Автоверифікація
         var decision = AutoVerificationEngine.Evaluate(new AutoVerificationInput
         {
             Flag = flag, AnalyzerFlags = entry.AnalyzerFlags, DeltaAlert = delta.IsAlert,
             RequiresManualVerification = def.RequiresManualVerification || (entry.PerformerId ?? test.PerformerId) != null, HasActiveLockout = locked, HasValue = numeric.HasValue || !string.IsNullOrEmpty(text),
-            ImplausibleReason = implausible
+            ImplausibleReason = implausible ?? calibWarning
         });
 
         // Результат (одна версія на тест, попередні — в історії)
@@ -201,7 +211,10 @@ public sealed class ResultPipelineService
         result.PerformerId = entry.PerformerId ?? test.PerformerId;
         result.ExternalReference = entry.ExternalReference;
         result.IsAutoVerified = decision.Approved;
-        result.AutoVerifyBlockReason = decision.Approved ? null : decision.Summary;
+        result.AutoVerifyBlockReason = decision.Approved ? null : (decision.Summary.Length > 500 ? decision.Summary.Substring(0, 497) + "..." : decision.Summary);
+        result.CalibrationWarning = calibWarning;
+        result.CalibrationId = calib.Status is CalibrationStatuses.None ? null : calib.Calibration?.Id;
+        if (calibWarning != null) _audit.Log("CALIBRATION_WARNING", "lab_order_test", test.Id, null, new { test.TestCode, analyzerId, calib.Status, calibrationId = calib.Calibration?.Id });
         result.VerifiedById = null; result.VerifiedAt = null; result.VerificationComment = null;
 
         if (decision.Approved)
@@ -213,7 +226,7 @@ public sealed class ResultPipelineService
         else
         {
             test.ReleasedAt = null;
-            test.Status = ResultFlags.IsCritical(flag) || delta.IsAlert || implausible != null ? OrderTestStatuses.NeedsReview : OrderTestStatuses.Resulted;
+            test.Status = ResultFlags.IsCritical(flag) || delta.IsAlert || implausible != null || calibWarning != null ?OrderTestStatuses.NeedsReview : OrderTestStatuses.Resulted;
         }
         test.RejectReason = null;
         if (analyzerId != null) test.AssignedAnalyzerId = analyzerId;
@@ -299,6 +312,11 @@ public sealed class ResultPipelineService
         var locked = await IsLockedOutAsync(result.AnalyzerId ?? test.AssignedAnalyzerId, test.TestCode);
         if (locked && !req.Override) throw new ConflictException($"Аналізатор заблоковано (lockout ВКЯ) для {test.TestCode}: верифікація можлива лише з override та коментарем");
         if (locked && string.IsNullOrWhiteSpace(req.Comment)) throw ValidationException.Field("comment", "Override lockout потребує коментаря");
+        // Калібрування (FR-GAP-031): при увімкненому блокуванні верифікація результату з простроченим калібруванням — лише з override і коментарем
+        var calib = await CalibrationService.CheckAsync(_db, result.AnalyzerId ?? test.AssignedAnalyzerId, test.TestCode);
+        var calibBlocked = calib.IsProblem && await BlockOnCalibrationAsync();
+        if (calibBlocked && !req.Override) throw new ConflictException($"Верифікація неможлива: {calib.Message} Для виняткового підтвердження вкажіть коментар і позначте «Підтвердити попри прострочене калібрування».") { Code = "CALIBRATION_EXPIRED" };
+        if (calibBlocked && string.IsNullOrWhiteSpace(req.Comment)) throw ValidationException.Field("comment", "Підтвердження при простроченому калібруванні потребує коментаря");
 
         var before = test.Status;
         test.Status = OrderTestStatuses.Verified;
@@ -451,10 +469,12 @@ public sealed class ResultPipelineService
         {
             var r = t.Result!;
             var locked = await IsLockedOutAsync(r.AnalyzerId ?? t.AssignedAnalyzerId, t.TestCode);
+            var calib = await CalibrationService.CheckAsync(_db, r.AnalyzerId ?? t.AssignedAnalyzerId, t.TestCode);
             var decision = AutoVerificationEngine.Evaluate(new AutoVerificationInput
             {
                 Flag = r.Flag, AnalyzerFlags = r.AnalyzerFlags, DeltaAlert = r.DeltaAlert, RequiresManualVerification = t.Test?.RequiresManualVerification ?? false,
-                HasActiveLockout = locked, HasValue = r.NumericValue.HasValue || !string.IsNullOrEmpty(r.StringValue)
+                HasActiveLockout = locked, HasValue = r.NumericValue.HasValue || !string.IsNullOrEmpty(r.StringValue),
+                ImplausibleReason = calib.IsProblem ? calib.Message : null
             });
             if (decision.Approved)
             {

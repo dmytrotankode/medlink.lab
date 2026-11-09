@@ -63,6 +63,7 @@ public class LisDbContext : DbContext
     public DbSet<LabQcTarget> QcTargets => Set<LabQcTarget>();
     public DbSet<LabQcResult> QcResults => Set<LabQcResult>();
     public DbSet<LabAnalyzerLockout> Lockouts => Set<LabAnalyzerLockout>();
+    public DbSet<LabCalibration> Calibrations => Set<LabCalibration>();
 
     // --- logistics / biobank / reagents ---
     public DbSet<LabSampleLogistics> Logistics => Set<LabSampleLogistics>();
@@ -178,6 +179,7 @@ public class LisDbContext : DbContext
         mb.Entity<LabReferenceLayer>().HasIndex(l => new { l.TestCode, l.MethodCode, l.PriorityOrder });
         mb.Entity<LabQcResult>().HasIndex(q => new { q.QcMaterialId, q.TestCode, q.RunAt });
         mb.Entity<LabAnalyzerLockout>().HasIndex(l => new { l.AnalyzerId, l.ResolvedAt });
+        mb.Entity<LabCalibration>().HasIndex(c => new { c.AnalyzerId, c.TestCode, c.PerformedAt });
         mb.Entity<LabAnalyzer>().HasIndex(a => a.Code).IsUnique();
         mb.Entity<LabConnectorInstallation>().HasIndex(c => c.ApiKeyHash);
         mb.Entity<LabConnectorInstallation>().HasIndex(c => c.InstallKey).IsUnique();

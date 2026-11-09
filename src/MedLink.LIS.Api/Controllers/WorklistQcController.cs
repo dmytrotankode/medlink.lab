@@ -173,3 +173,33 @@ public sealed class LockoutCreateRequest
     public string? TestCode { get; set; }
     public string Reason { get; set; } = "";
 }
+
+public sealed class CalibrationController : LisControllerBase
+{
+    private readonly CalibrationService _cal;
+    public CalibrationController(CalibrationService cal) => _cal = cal;
+
+    [HttpGet("calibrations")]
+    public async Task<IActionResult> List([FromQuery] string? analyzerId, [FromQuery] string? testCode, [FromQuery] string? status, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+        => Ok(await _cal.ListAsync(analyzerId, testCode, status, from, to));
+
+    /// <summary>Поточний стан калібрування по кожній парі «прилад + показник».</summary>
+    [HttpGet("calibrations/summary")]
+    public async Task<IActionResult> Summary([FromQuery] string? analyzerId) => Ok(await _cal.SummaryAsync(analyzerId));
+
+    /// <summary>Перевірка перед введенням результату: чи дійсне калібрування приладу для показника.</summary>
+    [HttpGet("calibrations/check")]
+    public async Task<IActionResult> Check([FromQuery] string analyzerId, [FromQuery] string testCode) => Ok(await _cal.CheckEndpointAsync(analyzerId, testCode));
+
+    [HttpGet("calibrations/{id}")]
+    public async Task<IActionResult> Get(string id) => Ok(await _cal.GetAsync(id));
+
+    [HttpPost("calibrations")]
+    public async Task<IActionResult> Create([FromBody] CalibrationRequest req) => StatusCode(201, await _cal.CreateAsync(req));
+
+    [HttpPut("calibrations/{id}")]
+    public async Task<IActionResult> Update(string id, [FromBody] CalibrationUpdateRequest req) => Ok(await _cal.UpdateAsync(id, req));
+
+    [HttpDelete("calibrations/{id}")]
+    public async Task<IActionResult> Delete(string id, [FromQuery] string? reason) { await _cal.DeleteAsync(id, reason); return NoContent(); }
+}

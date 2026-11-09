@@ -1,0 +1,272 @@
+{
+  "format": "medlink-guide-bundle",
+  "version": 1,
+  "app": {
+    "code": "lab",
+    "caption": "MedLink LIS"
+  },
+  "folders": [
+    {
+      "code": "calibration",
+      "caption": "Калібрування приладів",
+      "icon": "tune",
+      "sortOrder": 60
+    }
+  ],
+  "scenarios": [
+    {
+      "code": "lab.cal.enter",
+      "folderCode": "calibration",
+      "caption": "Внесення калібрування приладу",
+      "description": "Як записати виконане калібрування аналізатора: лот калібратора, термін дії, результат.",
+      "icon": "tune",
+      "startRoute": "/laboratory/calibration",
+      "requiredRoles": [],
+      "tags": [
+        "калібрування",
+        "аналізатор"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [
+        {
+          "name": "lot",
+          "caption": "Лот калібратора для прикладу",
+          "kind": "fixed",
+          "defaultValue": "CAL-2026-01"
+        }
+      ],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Журнал калібрувань",
+          "body": "Угорі — попередження про прострочені та такі, що скоро спливають, калібрування. Нижче — журнал за приладами й показниками.",
+          "route": "/laboratory/calibration",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Угорі — попередження про прострочені та такі, що скоро спливають, калібрування. Нижче — журнал за приладами й показниками.",
+          "anchor": {
+            "code": "lab.cal.page",
+            "caption": "Сторінка журналу калібрувань",
+            "routePattern": "/laboratory/calibration",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"calibrationPage\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Внести калібрування",
+          "body": "Натисніть «Внести калібрування» одразу після того, як прилад відкалібровано.",
+          "route": "/laboratory/calibration",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Внести калібрування» одразу після того, як прилад відкалібровано.",
+          "anchor": {
+            "code": "lab.cal.create",
+            "caption": "Кнопка «Внести калібрування»",
+            "routePattern": "/laboratory/calibration",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"calibrationCreate\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Лот калібратора",
+          "body": "Вкажіть лот калібратора з упаковки — наприклад {{lot}}.",
+          "route": "/laboratory/calibration",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "{{lot}}",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Вкажіть лот калібратора з упаковки — наприклад {{lot}}.",
+          "anchor": {
+            "code": "lab.cal.lot",
+            "caption": "Поле «Лот калібратора»",
+            "routePattern": "/laboratory/calibration",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"calCalibratorLot\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "input",
+          "title": "Термін дії",
+          "body": "Вкажіть, скільки діб діє калібрування за інструкцією до реагенту. Після цього терміну результати отримають попередження.",
+          "route": "/laboratory/calibration",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "30",
+          "inputMode": "prefill",
+          "optional": false,
+          "transcript": "Вкажіть, скільки діб діє калібрування за інструкцією до реагенту. Після цього терміну результати отримають попередження.",
+          "anchor": {
+            "code": "lab.cal.days",
+            "caption": "Поле «Діє, діб»",
+            "routePattern": "/laboratory/calibration",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"calValidDays\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "click",
+          "title": "Зберегти",
+          "body": "Натисніть «Зберегти». Якщо калібрування не пройшло критерії, зніміть позначку «прийнято» і вкажіть причину — тоді прилад вважається некаліброваним.",
+          "route": "/laboratory/calibration",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Натисніть «Зберегти». Якщо калібрування не пройшло критерії, зніміть позначку «прийнято» і вкажіть причину — тоді прилад вважається некаліброваним.",
+          "anchor": {
+            "code": "lab.cal.save",
+            "caption": "Кнопка «Зберегти»",
+            "routePattern": "/laboratory/calibration",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"calSave\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "code": "lab.val.release-panic",
+      "folderCode": "calibration",
+      "caption": "Видача результату з критичним значенням",
+      "description": "Чому система не дає видати результат із критичним значенням і що робити: зареєструвати дзвінок лікарю.",
+      "icon": "phone_in_talk",
+      "startRoute": "/laboratory/validation",
+      "requiredRoles": [],
+      "tags": [
+        "критичні значення",
+        "дзвінок",
+        "видача"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 20,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Критичні значення",
+          "body": "Результат із критичним значенням не можна видати, доки не зареєстровано телефонний дзвінок лікарю, який направив пацієнта.",
+          "route": "/laboratory/validation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Результат із критичним значенням не можна видати, доки не зареєстровано телефонний дзвінок лікарю, який направив пацієнта.",
+          "anchor": {
+            "code": "lab.val.panic.page",
+            "caption": "Сторінка валідації",
+            "routePattern": "/laboratory/validation",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"validationPage\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Очікують дзвінка",
+          "body": "У цій таблиці — критичні результати без зареєстрованого дзвінка. Для кожного натисніть «Дзвінок»: ПІБ лікаря, телефон, підтвердження повторення значення.",
+          "route": "/laboratory/validation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "У цій таблиці — критичні результати без зареєстрованого дзвінка. Для кожного натисніть «Дзвінок»: ПІБ лікаря, телефон, підтвердження повторення значення.",
+          "anchor": {
+            "code": "lab.val.panic.table",
+            "caption": "Таблиця критичних результатів",
+            "routePattern": "/laboratory/validation",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"panicTable\"]",
+                "weight": 100
+              }
+            ]
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Журнал викликів",
+          "body": "Тут усі зареєстровані дзвінки з часом та відповідальним. Після реєстрації дзвінка поверніться до замовлення й повторіть видачу результатів.",
+          "route": "/laboratory/validation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Тут усі зареєстровані дзвінки з часом та відповідальним. Після реєстрації дзвінка поверніться до замовлення й повторіть видачу результатів.",
+          "anchor": {
+            "code": "lab.val.panic.calls",
+            "caption": "Журнал викликів",
+            "routePattern": "/laboratory/validation",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"callsTable\"]",
+                "weight": 100
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -121,6 +121,8 @@ public sealed class LabSettingsRequest
     public int? LabelPrinterPort { get; set; }
     public string? LabelPrinterName { get; set; }
     public Dictionary<string, bool>? ReportTemplates { get; set; }
+    public bool? BlockOnExpiredCalibration { get; set; }
+    public int? CalibrationWarnDays { get; set; }
 }
 
 public sealed class NumeratorRequest
@@ -153,6 +155,8 @@ public sealed class SettingsService
         if (req.ReportFooter != null) s.ReportFooter = req.ReportFooter; if (req.PanicPhone != null) s.PanicPhone = req.PanicPhone;
         if (req.ColdChainMinC.HasValue) s.ColdChainMinC = req.ColdChainMinC.Value; if (req.ColdChainMaxC.HasValue) s.ColdChainMaxC = req.ColdChainMaxC.Value;
         if (req.LabelPrinterHost != null) s.LabelPrinterHost = req.LabelPrinterHost; if (req.LabelPrinterPort.HasValue) s.LabelPrinterPort = req.LabelPrinterPort.Value; if (req.LabelPrinterName != null) s.LabelPrinterName = req.LabelPrinterName;
+        if (req.BlockOnExpiredCalibration.HasValue) s.BlockOnExpiredCalibration = req.BlockOnExpiredCalibration.Value;
+        if (req.CalibrationWarnDays.HasValue) s.CalibrationWarnDays = Math.Clamp(req.CalibrationWarnDays.Value, 0, 90);
         if (req.ReportTemplates != null) { var rt = s.ReportTemplates; foreach (var kv in req.ReportTemplates) rt[kv.Key] = kv.Value; s.ReportTemplates = rt; }
         if (!string.IsNullOrWhiteSpace(req.OrderNumberMask))
         {

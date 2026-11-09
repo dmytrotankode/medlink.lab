@@ -192,6 +192,9 @@ public class ApiIntegrationTests
 
         var beforeRelease = await Json(await admin.GetAsync($"/api/v1/lab/orders/{orderId}"));
         Assert.Equal("COMPLETED", beforeRelease["status"]!.GetValue<string>());
+        // FR-VAL-002: без зареєстрованого панічного дзвінка критичний калій не видається
+        await AssertProblem(await doctor.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/release", new { }), HttpStatusCode.Conflict);
+        await Json(await doctor.PostAsJsonAsync("/api/v1/lab/panic-calls", new { resultId = kRow["resultId"]!.GetValue<string>(), doctorName = "Іванчук М.П.", phone = "+380501234567", readbackConfirmed = true }));
         var released = await Json(await doctor.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/release", new { }));
         Assert.Equal("RELEASED", released["status"]!.GetValue<string>());
         var token = released["verifyToken"]!.GetValue<string>();
