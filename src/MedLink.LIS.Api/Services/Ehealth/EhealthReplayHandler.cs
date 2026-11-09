@@ -1,6 +1,7 @@
 // =============================================================================
-// Replay (Ehealth:Mode = Replay): відповідає ЗАПИСАНИМИ фікстурами замість реальної ЕСОЗ — для CI та відтворення збоїв.
-// Фікстури: tests/MedLink.LIS.Tests/Fixtures/ehealth/*.json (приклади з OpenAPI eHealth та знімки відповідей preprod).
+// Replay (Ehealth:Mode = Replay): відповідає ЗАПИСАНИМИ фікстурами проксі MedLink замість реального сервісу — для CI та відтворення збоїв.
+// Фікстури: tests/MedLink.LIS.Tests/Fixtures/ehealth/*.json (форма відповідей проксі за SDK МІС та приклади OpenAPI eHealth; знімків реального проксі поки немає).
+// Як і реальний проксі, обробник вимагає заголовки ClientId і UserId та відхиляє Authorization; пари (ClientId|UserId) пишуться в Identities.
 // Формат файлу — один запис або масив записів:
 //   { "name": "…", "match": { "method": "GET", "pathRegex": "/api/service_requests$", "query": { "requisition": "AX654654T" }, "bodyContains": "…" },
 //     "responses": [ { "status": 202, "body": {…} }, { "status": 303, "body": {…} } ] }
@@ -69,6 +70,8 @@ public sealed class EhealthReplayState
     public void Reset() { lock (_gate) { if (_fixtures != null) foreach (var f in _fixtures) f.Hits = 0; Calls.Clear(); } }
     public IReadOnlyList<string> CallLog() { lock (_gate) return Calls.ToList(); }
     internal void Record(string call) { lock (_gate) Calls.Add(call); }
+    public List<string> Identities { get; } = new();
+    internal void RecordIdentity(string s) { lock (_gate) Identities.Add(s); }
     internal (int Status, string Body)? Next(Fixture f) { lock (_gate) { var r = f.Responses[Math.Min(f.Hits, f.Responses.Count - 1)]; f.Hits++; return r; } }
 }
 
@@ -85,6 +88,14 @@ public sealed class EhealthReplayHandler : HttpMessageHandler
         var query = System.Web.HttpUtility.ParseQueryString(request.RequestUri.Query);
         var body = request.Content == null ? "" : await request.Content.ReadAsStringAsync(ct);
         _state.Record($"{method} {path}{request.RequestUri.Query}");
+        var clientId = request.Headers.TryGetValues("ClientId", out var cv) ? cv.FirstOrDefault() : null;
+        var userId = request.Headers.TryGetValues("UserId", out var uv) ? uv.FirstOrDefault() : null;
+        _state.RecordIdentity($"{method} {path} | {clientId} | {userId}");
+        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(userId) || request.Headers.Authorization != null)
+        {
+            var bad = new JsonObject { ["HasException"] = true, ["InternalMessage"] = "Headers ClientId and UserId are required", ["StatusCode"] = 400, ["EhealthResponse"] = new JsonObject { ["error"] = new JsonObject { ["type"] = "request_malformed", ["message"] = "Headers ClientId and UserId are required; Authorization is not expected" } } };
+            return new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent(bad.ToJsonString(), new UTF8Encoding(false), "application/json") };
+        }
 
         var fixtures = _state.Load(_options.Replay.FixturesPath);
         foreach (var f in fixtures)

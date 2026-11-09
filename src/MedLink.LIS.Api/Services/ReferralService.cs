@@ -16,13 +16,13 @@ namespace MedLink.LIS.Api.Services;
 /// COMPLETE_SR лише після того, як діагностичний звіт зареєстровано в ЕСОЗ (див. Services/Ehealth/EhealthOutbox.cs).</summary>
 public interface IEhealthReferralGateway
 {
-    /// <summary>Чи можна опитувати реєстр ЕСОЗ (Mock/Replay — завжди; Live — прапорець SearchRead).</summary>
+    /// <summary>Чи можна опитувати реєстр ЕСОЗ через проксі (Mock/Replay — завжди; MedLinkProxy — прапорець SearchRead).</summary>
     bool SearchEnabled { get; }
-    /// <summary>Пошук за номером у реєстрі ЕСОЗ: GET /api/service_requests?requisition=… Повертає null, якщо ЕСОЗ направлення не знає.</summary>
+    /// <summary>Пошук за номером у реєстрі ЕСОЗ: GET patients/service_requests?requisition=… (проксі MedLink) Повертає null, якщо ЕСОЗ направлення не знає.</summary>
     Task<MedLink.LIS.Api.Services.Ehealth.EhealthServiceRequest?> FindAsync(string requisition);
-    /// <summary>Взяти в роботу: PATCH /api/service_requests/{id}/actions/use (для направлень без програми — лише якщо Ehealth:UseWithoutProgram).</summary>
+    /// <summary>Взяти в роботу: PATCH patients/service_requests/{id}/actions/use (для направлень без програми — лише якщо Ehealth:UseWithoutProgram).</summary>
     Task TakeInWorkAsync(EheIncomingMedicalReferral r, string employeeId, string organizationId, DateTime at);
-    /// <summary>Звільнити: PATCH /api/service_requests/{id}/actions/release (лише якщо use виконувався).</summary>
+    /// <summary>Звільнити: PATCH patients/service_requests/{id}/actions/release (лише якщо use виконувався).</summary>
     Task ReleaseAsync(EheIncomingMedicalReferral r);
 }
 
@@ -48,7 +48,7 @@ public sealed class EhealthReferralGateway : IEhealthReferralGateway
         // За схемою OpenAPI program обов'язкова в use; для направлень без програми use імовірно не застосовується (потребує перевірки на preprod)
         if (r.EhealthProgramId != null || _options.UseWithoutProgram)
         {
-            if (!_options.IsAllowed(MedLink.LIS.Api.Services.Ehealth.EhealthOperation.Use)) throw new ConflictException("Операцію ЕСОЗ «взяти в роботу» вимкнено (Ehealth:Live:Operations:Use)");
+            if (!_options.IsAllowed(MedLink.LIS.Api.Services.Ehealth.EhealthOperation.Use)) throw new ConflictException("Операцію ЕСОЗ «взяти в роботу» вимкнено (Ehealth:Proxy:Operations:Use)");
             var emp = _identity.EmployeeId(employeeId) ?? throw new ConflictException("Не налаштовано ідентифікатор працівника в ЕСОЗ (Ehealth:DefaultEmployeeId)");
             var le = _identity.LegalEntityId(organizationId) ?? throw new ConflictException("Не налаштовано ідентифікатор закладу в ЕСОЗ (Ehealth:LegalEntityId)");
             var job = await Call(async () => await _client.WaitForJobAsync(await _client.UseServiceRequestAsync(EhealthId(r), emp, le, r.EhealthProgramId, _identity.DivisionId())));
@@ -107,7 +107,7 @@ public sealed class ReferralService
     public sealed record ResolvedReferral(EheIncomingMedicalReferral Referral, MedLink.LIS.Api.Services.Ehealth.EhealthServiceRequest? Remote, List<string> Problems);
 
     /// <summary>
-    /// Спочатку запит у ЕСОЗ (GET /api/service_requests?requisition=…), далі upsert дзеркала. Дзеркало — кеш: направлення, якого ще немає в БД,
+    /// Спочатку запит у ЕСОЗ (GET patients/service_requests?requisition=… (проксі MedLink)), далі upsert дзеркала. Дзеркало — кеш: направлення, якого ще немає в БД,
     /// знаходиться через ЕСОЗ. Якщо опитування реєстру вимкнено (Live без SearchRead) — працюємо з кешем.
     /// </summary>
     public async Task<ResolvedReferral> ResolveAsync(string idOrNumber)

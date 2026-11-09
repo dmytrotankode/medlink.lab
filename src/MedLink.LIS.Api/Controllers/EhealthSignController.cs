@@ -10,11 +10,11 @@ public sealed class EhealthSignController : LisControllerBase
     public EhealthSignController(EhealthSignService svc) => _svc = svc;
 
     [HttpGet("ehealth/session")] public async Task<IActionResult> Session() => Ok(await _svc.StatusAsync());
-    /// <summary>Крок 1: логін і пароль ЕСОЗ (L1). Пароль не зберігається.</summary>
-    [HttpPost("ehealth/session")] public async Task<IActionResult> Login([FromBody] EhealthLoginRequest req) => Ok(await _svc.LoginAsync(req));
-    /// <summary>Крок 2: підтвердження особи КЕП або кодом 2FA (L2).</summary>
-    [HttpPost("ehealth/session/confirm")] public async Task<IActionResult> Confirm([FromBody] EhealthConfirmRequest req) => Ok(await _svc.ConfirmAsync(req));
-    [HttpPost("ehealth/session/totp")] public async Task<IActionResult> EnableTotp() => Ok(await _svc.EnableTotpAsync());
+    /// <summary>Вхід в ЄСОЗ, крок 1: посилання на сторінку авторизації (через проксі MedLink). Паролі ЛІС не бачить.</summary>
+    [HttpPost("ehealth/session/link")] public async Task<IActionResult> AuthLink() => Ok(await _svc.AuthLinkAsync());
+    /// <summary>Вхід в ЄСОЗ, крок 2: обмін коду авторизації на токен у проксі.</summary>
+    [HttpPost("ehealth/session/callback")] public async Task<IActionResult> Callback([FromBody] EhealthAuthCallbackRequest req) => Ok(await _svc.AuthCallbackAsync(req));
+    [HttpPost("ehealth/session/refresh")] public async Task<IActionResult> Refresh() => Ok(await _svc.RefreshSessionAsync());
     [HttpDelete("ehealth/session")] public async Task<IActionResult> Logout() { await _svc.LogoutAsync(); return NoContent(); }
 
     [HttpPost("orders/{id}/ehealth/prepare")] public async Task<IActionResult> Prepare(string id) => Ok(await _svc.PrepareAsync(id));

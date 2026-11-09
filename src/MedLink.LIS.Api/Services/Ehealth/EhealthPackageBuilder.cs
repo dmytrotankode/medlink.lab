@@ -1,6 +1,10 @@
 // =============================================================================
 // Будівник пакета Submit Diagnostic Report Package: LabOrder → {diagnostic_report, observations[]} за схемою OpenAPI eHealth
-// (Submit_DR_Package_DecodedPayload) і ТВ МІС 3.19/3.21. Ідентифікатори DR та спостережень — UUID v1, створюються при побудові
+// (Submit_DR_Package_DecodedPayload) і ТВ МІС 3.19/3.21 у тому вигляді, який очікує проксі MedLink (збігається з побудовою в SDK МІС:
+// EhealthDiagnosticReportPrepareJsonService, DiagnosticReportJsonHelper, ObservationJsonHelper): DR з effective_period, based_on / paper_referral
+// (з note), performer, recorded_by, managing_organization; спостереження з LOINC-кодом (eHealth/LOINC/observation_codes), значенням value_quantity
+// (UCUM, comparator "="), діапазонами, performer. Проксі приймає пакет як готовий підписаний JSON (поле signed_data) і сам його не змінює.
+// Ідентифікатори DR та спостережень — UUID v1, створюються при побудові
 // й після цього НЕ змінюються (ідемпотентність повтору). Канонічний JSON — UTF-8 без BOM (ТВ 1.3.3).
 // Що ще НЕ мапиться (етап 3 плану, потребує довідників preprod): specimens, used_references (equipment), components, results_interpreter.
 // =============================================================================
@@ -22,12 +26,12 @@ public sealed class EhealthIdentity
     public EhealthIdentity(EhealthOptions o) => _o = o;
 
     public string? LegalEntityId(string? organizationId) =>
-        !string.IsNullOrWhiteSpace(_o.LegalEntityId) ? _o.LegalEntityId : _o.IsLive ? null : DeterministicGuid.For("ehealth-legal-entity:" + (organizationId ?? MedLinkDefaults.OrganizationId));
+        !string.IsNullOrWhiteSpace(_o.LegalEntityId) ? _o.LegalEntityId : _o.IsReal ? null : DeterministicGuid.For("ehealth-legal-entity:" + (organizationId ?? MedLinkDefaults.OrganizationId));
 
     public string? DivisionId() => string.IsNullOrWhiteSpace(_o.DivisionId) ? null : _o.DivisionId;
 
     public string? EmployeeId(string? localEmployeeId) =>
-        !string.IsNullOrWhiteSpace(_o.DefaultEmployeeId) ? _o.DefaultEmployeeId : _o.IsLive ? null : DeterministicGuid.For("ehealth-employee:" + (localEmployeeId ?? MedLinkEnums.EmptyGuid));
+        !string.IsNullOrWhiteSpace(_o.DefaultEmployeeId) ? _o.DefaultEmployeeId : _o.IsReal ? null : DeterministicGuid.For("ehealth-employee:" + (localEmployeeId ?? MedLinkEnums.EmptyGuid));
 }
 
 public sealed class EhealthPackage
@@ -133,7 +137,12 @@ public sealed class EhealthPackageBuilder
             ["id"] = drId, ["status"] = EhealthPackageContract.StatusFinal,
             ["code"] = serviceId == null ? null : EhealthRef.Identifier("service", serviceId),
             ["category"] = new JsonArray(EhealthRef.Coding("eHealth/diagnostic_report_categories", _options.DiagnosticReportCategoryCode)),
-            ["effective_date_time"] = Iso(report.EffectiveDateTimeStart ?? report.EffectiveDateTimeEnd ?? o.OrderDatetime),
+            // як у SDK МІС: діагностичний звіт передається періодом (start/end), спостереження — моментом
+            ["effective_period"] = new JsonObject
+            {
+                ["start"] = Iso(report.EffectiveDateTimeStart ?? report.EffectiveDateTimeEnd ?? o.OrderDatetime),
+                ["end"] = Iso(report.EffectiveDateTimeEnd ?? report.EffectiveDateTimeStart ?? o.OrderDatetime)
+            },
             ["issued"] = issued, ["primary_source"] = true,
             ["performer"] = employee != null ? new JsonObject { ["reference"] = EhealthRef.Identifier("employee", employee) }
                 : new JsonObject { ["text"] = report.PerformerString ?? "Лаборант" },
@@ -157,7 +166,7 @@ public sealed class EhealthPackageBuilder
             {
                 ["requisition"] = paper.RegNumber, ["requester_legal_entity_name"] = paper.RequesterLegalEntityName,
                 ["requester_legal_entity_edrpou"] = paper.RequesterLegalEntityEdrpou, ["requester_employee_name"] = paper.RequesterEmployeeName,
-                ["service_request_date"] = paper.RegDate.ToString("yyyy-MM-dd")
+                ["service_request_date"] = paper.RegDate.ToString("yyyy-MM-dd"), ["note"] = paper.Description
             };
         }
 

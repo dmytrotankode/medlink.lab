@@ -361,9 +361,10 @@ const labApi = {
   rerouteOrder: (orderId, analyzerId, reason, orderTestIds) => data(http.post(`/orders/${orderId}/reroute`, { analyzerId, reason, orderTestIds })),
   rerouteAnalyzer: (id, reason) => data(http.post(`/analyzers/${id}/reroute`, { reason })),
   ehealthSession: () => data(http.get('/ehealth/session')),
-  ehealthLogin: body => data(http.post('/ehealth/session', body)),
-  ehealthConfirm: body => data(http.post('/ehealth/session/confirm', body)),
-  ehealthEnableTotp: () => data(http.post('/ehealth/session/totp')),
+  // вхід у ЄСОЗ через проксі MedLink: посилання на сторінку авторизації → код → обмін коду (токен зберігає проксі)
+  ehealthAuthLink: () => data(http.post('/ehealth/session/link')),
+  ehealthAuthCallback: body => data(http.post('/ehealth/session/callback', body)),
+  ehealthRefresh: () => data(http.post('/ehealth/session/refresh')),
   ehealthLogout: () => data(http.delete('/ehealth/session')),
   ehealthPrepare: orderId => data(http.post(`/orders/${orderId}/ehealth/prepare`)),
   ehealthSubmit: (orderId, body) => data(http.post(`/orders/${orderId}/ehealth/submit`, body)),

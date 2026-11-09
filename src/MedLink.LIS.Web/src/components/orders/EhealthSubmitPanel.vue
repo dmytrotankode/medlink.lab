@@ -14,7 +14,7 @@
         <q-btn v-if="info.canSubmit" unelevated dense color="primary" icon="draw" label="Підписати КЕП і відправити" :loading="busy" data-testid="ehealthSubmit" @click="submit" />
         <q-btn v-if="info.canRetry" outline dense color="primary" icon="replay" label="Повторити відправку" :loading="busy" data-testid="ehealthRetry" @click="retry" />
         <q-btn v-if="info.canAnnul" flat dense color="negative" icon="block" label="Анулювати" :loading="busy" data-testid="ehealthAnnul" @click="annul" />
-        <q-btn v-if="sessionLevel !== 'L2'" flat dense color="grey-8" icon="shield" label="Вхід в ЕСОЗ" data-testid="ehealthLogin" @click="$root.$emit('ehealth-login')" />
+        <q-btn v-if="sessionLevel !== 'L2'" flat dense color="grey-8" icon="shield" label="Увійти в ЄСОЗ" data-testid="ehealthLogin" @click="$root.$emit('ehealth-login')" />
       </div>
       <q-list v-if="info.outbox && info.outbox.length" dense separator class="q-mt-sm" data-testid="ehealthPanelTasks">
         <q-item v-for="t in info.outbox" :key="t.id" :data-testid="`ehealthPanelTask-${t.id}`">

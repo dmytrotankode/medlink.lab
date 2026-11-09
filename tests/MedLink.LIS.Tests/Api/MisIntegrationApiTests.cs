@@ -207,7 +207,7 @@ public class MisIntegrationApiTests
     }
 
     [Fact]
-    public async Task Ehealth_session_two_factor_sign_submit_retry_and_annul()
+    public async Task Ehealth_proxy_session_sign_submit_retry_and_annul()
     {
         var doc = _f.As(DemoDataSeeder.Doctor);
         await doc.DeleteAsync("/api/v1/lab/ehealth/session");
@@ -217,14 +217,18 @@ public class MisIntegrationApiTests
 
         Assert.Equal("L0", S((await Json(await doc.GetAsync("/api/v1/lab/ehealth/session")))["level"]));
         Assert.Equal("ehealth-auth-required", await Problem(await doc.PostAsync($"/api/v1/lab/orders/{orderId}/ehealth/prepare", null), HttpStatusCode.Unauthorized));
-        Assert.Equal("L1", S((await Json(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session", new { login = "doctor@clinic.ua", password = "secret" })))["level"]));
-        Assert.Equal("ehealth-strong-auth-required", await Problem(await doc.PostAsync($"/api/v1/lab/orders/{orderId}/ehealth/prepare", null), HttpStatusCode.Forbidden));
+        Assert.Equal("none", S((await Json(await doc.GetAsync("/api/v1/lab/ehealth/session")))["state"]));
 
-        // 2FA вимкнена → 409; після увімкнення невірний код → 422, вірний → L2
-        Assert.Equal("ehealth-totp-disabled", await Problem(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/confirm", new { method = "TOTP", code = "123456" }), HttpStatusCode.Conflict));
-        await Json(await doc.PostAsync("/api/v1/lab/ehealth/session/totp", null));
-        Assert.Equal("ehealth-invalid-code", await Problem(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/confirm", new { method = "TOTP", code = "000000" }), HttpStatusCode.UnprocessableEntity));
-        Assert.Equal("L2", S((await Json(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/confirm", new { method = "TOTP", code = "123456" })))["level"]));
+        // Вхід через проксі: невірний код авторизації -> 422; порожній -> 400; посилання -> код -> обмін -> токен у проксі -> L2
+        Assert.Equal("ehealth-invalid-code", await Problem(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/callback", new { code = "wrong-code" }), HttpStatusCode.UnprocessableEntity));
+        Assert.Equal(HttpStatusCode.BadRequest, (await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/callback", new { code = "" })).StatusCode);
+        var link = await Json(await doc.PostAsync("/api/v1/lab/ehealth/session/link", null));
+        Assert.True(link["simulated"]!.GetValue<bool>());
+        var session = await Json(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/callback", new { code = S(link["code"]) }));
+        Assert.Equal("L2", S(session["level"]));
+        Assert.Equal("active", S(session["state"]));
+        // сесія персональна: токен співробітника не діє для іншого (інший UserId у проксі)
+        Assert.Equal("none", S((await Json(await _f.As(DemoDataSeeder.Registrar).GetAsync("/api/v1/lab/ehealth/session")))["state"]));
 
         var prepared = await Json(await doc.PostAsync($"/api/v1/lab/orders/{orderId}/ehealth/prepare", null));
         Assert.Equal(EhealthSubmitStatuses.ReadyToSign, S(prepared["ehealthStatus"]));
@@ -232,6 +236,9 @@ public class MisIntegrationApiTests
         var cert = (await Json(await doc.GetAsync("/api/v1/lab/ehealth/session")))["testCertificate"]!;
         // Підпис довільного вмісту (не пакета) і не-CMS рядок структурно відхиляються до постановки в чергу
         Assert.Equal("signature-invalid", await Problem(await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/submit", new { signedData = "MIIDEMO==", signer = cert }), HttpStatusCode.UnprocessableEntity));
+        // підпис особистий: ДРФО підписувача з КЕП має збігатися з обліковим записом
+        Assert.Equal("signer-mismatch", await Problem(await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/submit",
+            new { signedData = "MIIDEMO==", signer = new { drfo = "0000000000", name = "Інша особа" } }), HttpStatusCode.UnprocessableEntity));
 
         // Мережева помилка 503 → задача лишається в черзі з витримкою (не втрачається), помилка видима
         var signed = await Json(await doc.PostAsJsonAsync($"/api/v1/lab/orders/{orderId}/ehealth/mock-sign", new { kind = "submit" }));
@@ -245,13 +252,11 @@ public class MisIntegrationApiTests
         Assert.Contains("503", S(row["lastError"]));
         Assert.NotNull(row["nextAttemptAt"]);
 
-        // Без сесії повтор неможливий (401); вхід через КЕП: чужий ДРФО → 422; власний тестовий сертифікат → L2
+        // Після виходу з ЄСОЗ (проксі видаляє токен) повтор неможливий (401); новий вхід відновлює роботу
         await doc.DeleteAsync("/api/v1/lab/ehealth/session");
+        Assert.Equal("none", S((await Json(await doc.GetAsync("/api/v1/lab/ehealth/session")))["state"]));
         Assert.Equal(HttpStatusCode.Unauthorized, (await doc.PostAsync($"/api/v1/lab/ehealth/outbox/{S(row["id"])}/retry", null)).StatusCode);
-        await Json(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session", new { login = "doctor@clinic.ua", password = "secret" }));
-        Assert.Equal("signer-mismatch", await Problem(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/confirm",
-            new { method = "KEP", signer = new { drfo = "0000000000", name = "Інша особа" } }), HttpStatusCode.UnprocessableEntity));
-        await Json(await doc.PostAsJsonAsync("/api/v1/lab/ehealth/session/confirm", new { method = "KEP", signer = cert }));
+        await EhealthKit.LoginAsync(doc);
 
         // Далі воркер доводить задачу до кінця (пакет → job → registered); без направлення погашення не потрібне
         await _f.Pump();
