@@ -54,7 +54,7 @@ public static class SchemaUpgrader
             var statements = Regex.Split(db.Database.GenerateCreateScript(), @";\s*(?:\r?\n|$)").Select(s => s.Trim()).Where(s => s.Length > 0);
             foreach (var sql in statements)
             {
-                var m = Regex.Match(sql, @"^CREATE\s+(?:UNIQUE\s+)?(?:TABLE|INDEX\s+""[^""]+""\s+ON)\s+""([^""]+)""", RegexOptions.IgnoreCase);
+                var m = Regex.Match(sql, @"^CREATE\s+(?:UNIQUE\s+)?(?:TABLE|INDEX\s+""?[^""\s]+""?\s+ON)\s+""?([^""\s(]+)""?", RegexOptions.IgnoreCase);
                 if (!m.Success || !missing.Contains(m.Groups[1].Value)) continue;
                 await db.Database.ExecuteSqlRawAsync(sql);
                 applied.Add(sql.Split('\n')[0]);
@@ -91,7 +91,7 @@ public static class SchemaUpgrader
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var sql in Regex.Split(db.Database.GenerateCreateScript(), @";\s*(?:\r?\n|$)").Select(x => x.Trim()).Where(x => x.Length > 0))
         {
-            var m = Regex.Match(sql, @"^CREATE\s+(?:UNIQUE\s+)?INDEX\s+""([^""]+)""\s+ON\s+""([^""]+)""", RegexOptions.IgnoreCase);
+            var m = Regex.Match(sql, @"^CREATE\s+(?:UNIQUE\s+)?INDEX\s+""?([^""\s]+)""?\s+ON\s+""?([^""\s(]+)""?", RegexOptions.IgnoreCase);
             var indexName = m.Groups[1].Value;
             if (pg && indexName.Length > 63) indexName = indexName[..63]; // PostgreSQL мовчки обрізає ідентифікатори до 63 байт
             if (!m.Success || missing.Contains(m.Groups[2].Value) || existingIndexes.Contains(indexName)) continue;
