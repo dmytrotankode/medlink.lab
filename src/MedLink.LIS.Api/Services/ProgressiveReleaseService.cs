@@ -43,11 +43,9 @@ public sealed class ProgressiveReleaseService
                      || await _db.Notifications.AsNoTracking().AnyAsync(n => n.OrderId == order.Id && n.CreatedOn >= since);
         if (recent) return;
         var patient = order.Patient ?? await _db.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.Id == order.PatientId);
-        _db.Notifications.Add(new LabPatientNotification
-        {
-            PatientId = order.PatientId, OrderId = order.Id, Channel = !string.IsNullOrWhiteSpace(patient?.Person?.Email) ? "EMAIL" : "SMS", Status = "QUEUED", CreatedOn = now,
-            Payload = $"Готові нові результати за замовленням №{order.OrderNumber} ({test.TestName}). Перегляд: /portal/{order.PatientId}/orders/{order.Id}"
-        });
+        // Назви тестів і результати в текст не потрапляють; ключ — вікно debounce, тож повторний виклик у вікні дубля не створює
+        await Notifications.NotifyQueue.EnqueueAsync(_db, order.PatientId, order.Id, Notifications.NotifyQueue.PreferredChannel(patient?.Person),
+            Notifications.NotifyTemplates.ResultPartial, $"/portal/{order.PatientId}/orders/{order.Id}", $"result-partial:{order.Id}:{now.Ticks / NotificationDebounce.Ticks}", now);
     }
 
     // ------------------------------------------------------------------ portal projection

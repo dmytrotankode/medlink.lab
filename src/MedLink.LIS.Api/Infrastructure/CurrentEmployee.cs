@@ -45,7 +45,9 @@ public sealed class CurrentEmployeeMiddleware
 
     public async Task InvokeAsync(HttpContext context, ICurrentEmployee current, LisDbContext db, IConfiguration config)
     {
-        var requested = context.Request.Headers[HeaderName].FirstOrDefault();
+        // Точка заміни автентифікації (docs/AUTH_PLAN.md): Auth:Mode=None — заголовок ігнорується, діє Lab:DefaultEmployeeId;
+        // Auth:Mode=Header — співробітник із заголовка (довіра до проксі МІС). Майбутній режим OIDC підставляє requested із claims токена.
+        var requested = AuthModes.Resolve(config) == AuthModes.Header ? context.Request.Headers[HeaderName].FirstOrDefault() : null;
         if (string.IsNullOrWhiteSpace(requested)) requested = config["Lab:DefaultEmployeeId"] ?? "";
         OrgEmployee? employee = null;
         if (!string.IsNullOrWhiteSpace(requested) && context.Request.Path.StartsWithSegments("/api"))

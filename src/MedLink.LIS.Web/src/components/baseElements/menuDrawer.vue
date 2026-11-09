@@ -113,7 +113,8 @@ export default {
             { name: 'microbiology', label: 'Мікробіологія', icon: 'fas fa-bacterium', to: { name: 'lab-microbiology' } },
             { name: 'tat', label: 'Аналітика термінів виконання', icon: 'fas fa-chart-pie', to: { name: 'lab-analytics-tat' } },
             { name: 'reports', label: 'Звіти лабораторії', icon: 'fas fa-file-alt', to: { name: 'lab-reports' } },
-            { name: 'ehealth', label: 'Відправка в ЕСОЗ', icon: 'fas fa-cloud-upload-alt', to: { name: 'lab-ehealth' } }
+            { name: 'ehealth', label: 'Відправка в ЕСОЗ', icon: 'fas fa-cloud-upload-alt', to: { name: 'lab-ehealth' } },
+            { name: 'notifications', label: 'Сповіщення', icon: 'fas fa-bell', to: { name: 'lab-notifications' } }
           ]
         },
         {

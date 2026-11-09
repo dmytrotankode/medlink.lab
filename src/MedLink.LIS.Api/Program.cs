@@ -170,6 +170,7 @@ builder.Services.AddScoped<DemoDataSeeder>();
 builder.Services.AddScoped<PathologyDemoSeeder>();
 // Парсер повідомлень аналізаторів: локальна реалізація; замінюється на MedLink.LIS.Core.Protocols однією реєстрацією
 builder.Services.AddSingleton<IAnalyzerMessageParser, AnalyzerMessageParserFallback>();
+MedLink.LIS.Api.Services.Notifications.NotificationsServiceCollectionExtensions.AddNotificationsAndMisDelivery(builder.Services);
 builder.Services.AddSingleton<RetentionCleanupService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<RetentionCleanupService>());
 
@@ -225,6 +226,10 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// --- Перевірка виробничої конфігурації: гучне попередження, без падіння ---
+var configWarnings = StartupConfigCheck.Evaluate(app.Configuration, app.Environment);
+StartupConfigCheck.LogWarnings(app.Logger, configWarnings);
+
 await app.Services.EnsureGuideDatabaseAsync();
 await app.Services.SeedGuideBundlesAsync();
 
@@ -243,10 +248,20 @@ app.MapControllers();
 app.MapGuide();
 
 // Health
-app.MapGet("/health", async (LisDbContext db) =>
+app.MapGet("/health", async (LisDbContext db, MedLink.LIS.Api.Services.Notifications.NotifyOptions notify, MedLink.LIS.Api.Services.Notifications.MisDeliveryOptions mis) =>
 {
     var ok = await db.Database.CanConnectAsync();
-    return Results.Json(new { status = ok ? "Healthy" : "Unhealthy", db = ok ? "ok" : "error", version = "4.0.0", utc = DateTime.UtcNow }, statusCode: ok ? 200 : 503);
+    var integrations = new
+    {
+        auth = AuthModes.Resolve(app.Configuration),
+        notifyEmail = notify.Email.IsConfigured, notifySms = notify.Sms.IsConfigured, notifyViber = notify.Viber.IsConfigured, notifyTelegram = notify.Telegram.IsConfigured,
+        misDelivery = mis.IsConfigured ? "Webhook" : "Disabled"
+    };
+    return Results.Json(new
+    {
+        status = ok ? "Healthy" : "Unhealthy", db = ok ? "ok" : "error", version = "4.0.0", utc = DateTime.UtcNow,
+        configWarnings = configWarnings.Select(w => new { w.Code, w.Message }), integrations
+    }, statusCode: ok ? 200 : 503);
 });
 
 // Публічна сторінка верифікації бланка за QR (без ПІБ): /verify/{token}

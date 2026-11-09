@@ -383,3 +383,22 @@ Payload `RESULT_FINAL` / `ADDENDUM.payload`: `caseNo, version, kind, addendumTyp
 **Конструктор (роль редактора або `Guide:AllowAnonymousEditing`):** `POST apps`; `GET apps/{app}/tree`; папки: `POST/PUT/DELETE folders`, `POST folders/{id}/move`; інструкції: `POST/GET/PUT/DELETE scenarios`, `POST scenarios/{id}/duplicate|publish|unpublish`, `PUT scenarios/{id}/steps|variables`, `GET scenarios/{id}/export`, `POST apps/{app}/import`; якорі: `GET apps/{app}/anchors`, `PUT anchors/{id}`, `GET apps/{app}/anchors/health`, `POST anchor-reports/{id}/accept`; `POST media`.
 
 Сутність кроку: `stepType` (`info|click|input|select|hover|navigate|wait`), `expect`, `highlight` (`element|parent|rect|none`), `parentLevels`, `inputValue` з `{{змінними}}`, `inputMode`, `anchor {strategies[], fingerprint, parentLevels}`.
+
+
+## 9. Сповіщення та події для МІС (`/api/v1/lab`)
+
+| Метод і шлях | Призначення | Ролі |
+|--------------|-------------|------|
+| `GET /notifications?status&channel&search&from&to&page&pageSize` | Черга сповіщень пацієнтам: `{items,total,page,pageSize}`; елемент: `id, patientName, orderNumber, channel, status, statusLabel, reasonCode, reasonLabel, attempts, nextAttemptAt, lastError, recipientMasked, sentAt, canRetry` | усі |
+| `GET /notifications/summary` | Кількість за статусами | усі |
+| `POST /notifications/{id}/retry` | Повернути `FAILED/SKIPPED/NOT_CONFIGURED` у чергу (409 для інших) | Admin, Registrar, Doctor |
+| `POST /notifications/run` | Обробити черги (сповіщення й події МІС) зараз | Admin |
+| `GET /notifications/channels` | Стан каналів: `channel, state (READY/OFF/NOT_CONFIGURED), configured, enabled, configKeys` — без секретів | усі |
+| `PUT /notifications/channels/{channel}` `{enabled}` | Увімкнути/вимкнути канал | Admin |
+| `GET /mis-events?status&event&search&from&to` | Події ЛІС→МІС і стан доставки | усі |
+| `GET /mis-events/status` | Режим доставки, `host` (лише хост), `signed`, лічильники — без секрету й URL | усі |
+| `POST /mis-events/{id}/retry` | Повторити доставку (`FAILED/NOT_CONFIGURED`) | Admin, Registrar, Doctor |
+
+Webhook МІС: `POST {MisDelivery:Url}`, тіло `{id,event,orderId,misReferralId,occurredAt,payload}`, заголовки `X-MedLink-Event-Id`, `Idempotency-Key`, `X-MedLink-Event`, `X-MedLink-Timestamp`, `X-MedLink-Signature` (див. ТЗ розд. 26.2). `/health` додатково повертає `configWarnings[]` і `integrations`.
+
+Нові таблиці/колонки: `lab_notify_channel` (нова таблиця); `lab_patient_notification` + `template_code, idempotency_key, attempts, next_attempt_at, last_error, reason_code, recipient_masked, provider_message_id, locked_by, locked_until, updated_at`; `lab_mis_event_log` + `next_attempt_at, delivered_at, http_status, locked_by, locked_until, updated_at` (типовий статус тепер `QUEUED`).

@@ -26,7 +26,7 @@ public sealed class LisApiFactory : WebApplicationFactory<Program>
             ["Database:Provider"] = string.IsNullOrWhiteSpace(pg) ? "Sqlite" : "Postgres",
             ["Database:ConnectionString"] = pg,
             ["Lab:SeedDemoData"] = "true",
-            ["Lab:PublicBaseUrl"] = "http://localhost:5055",
+            ["Lab:PublicBaseUrl"] = "http://localhost:5055", ["Auth:Mode"] = "Header",
             ["Logging:LogLevel:Default"] = "Warning"
         }));
     }
@@ -55,7 +55,7 @@ public sealed class LisApiFactory : WebApplicationFactory<Program>
 }
 
 [CollectionDefinition("api")]
-public class ApiCollection : ICollectionFixture<LisApiFactory> { }
+public class ApiCollection : ICollectionFixture<LisApiFactory>, ICollectionFixture<NotifyFactory> { }
 
 [Collection("api")]
 public class ApiIntegrationTests

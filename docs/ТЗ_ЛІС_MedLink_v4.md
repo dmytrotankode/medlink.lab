@@ -3972,6 +3972,28 @@ POST /mis/referrals
 - Зміна інтерфейсу не ламає якір, якщо збігається відбиток; інакше з'являється запис у `anchors/health`.
 - `dotnet test` — усі тести проходять, включно з `MedLink.Guide.Tests`.
 
+## <span class="tag-new">НОВЕ</span>26. Сповіщення пацієнтів, доставка подій у МІС, конфігурація та автентифікація
+
+### 26.1. Сповіщення пацієнтам (FR-NTF-001…007)
+- Видача результатів і поетапна видача ставлять сповіщення в чергу (`lab_patient_notification`) з ключем ідемпотентності (`result-ready:{замовлення}`, `result-partial:{замовлення}:{вікно}`).
+- Фонова служба відправляє записи через провайдера каналу: **EMAIL** (SMTP, `System.Net.Mail`), **SMS / VIBER / TELEGRAM** (HTTP POST JSON на налаштований шлюз, `Authorization: Bearer`).
+- Статуси: `QUEUED → SENDING → SENT | FAILED | SKIPPED | NOT_CONFIGURED`. **Канал не налаштований або вимкнений адміністратором → `NOT_CONFIGURED`** (повідомлення не надсилалось; після налаштування піде автоматично). Немає згоди пацієнта (`SubscribedToNotifications`) або контакту → `SKIPPED` із причиною.
+- Тимчасові помилки (мережа, 408/429/5xx, SMTP 4xx) — повтор із паузою `Notify:BackoffBaseSeconds · 2^(n-1)` (до `BackoffMaxSeconds`), до `Notify:MaxAttempts` спроб, далі `FAILED`; остаточні (4xx шлюзу, недійсна адреса) — `FAILED` одразу. Ручний повтор — для `FAILED`, `SKIPPED`, `NOT_CONFIGURED`.
+- Текст — шаблони `RESULT_READY`, `RESULT_PARTIAL`: лише факт готовності й посилання (`Lab:PublicBaseUrl` + шлях порталу). Жодних результатів, назв тестів, діагнозів. Одержувач у журналі маскується.
+- Секрети (пароль SMTP, ключі шлюзів) — тільки конфігурація сервера / змінні середовища (`Notify__Email__Password`, `Notify__Sms__ApiKey`); у `appsettings.json` порожні; API й журнали їх не повертають.
+- Екран «Сповіщення» (`/laboratory/notifications`): вкладки «Пацієнтам», «Події для МІС», «Канали».
+
+### 26.2. Доставка подій ЛІС → МІС (FR-MIS-026)
+- Події (`lab_mis_event_log`) створюються зі статусом `QUEUED`; `MisDeliveryEngine` надсилає їх HTTP POST на `MisDelivery:Url`. Режим `MisDelivery:Mode`: `Disabled` (типово; події отримують `NOT_CONFIGURED`) або `Webhook` (потрібні `Url` і `Secret`).
+- Заголовки: `X-MedLink-Event-Id` (= `Idempotency-Key`, незмінний при повторах), `X-MedLink-Event`, `X-MedLink-Timestamp`, `X-MedLink-Signature: sha256=HMAC-SHA256(secret, "{timestamp}.{тіло}")`. Отримувач перевіряє підпис, свіжість timestamp і відкидає дублі за Event-Id.
+- 2xx → `DELIVERED`; 408/425/429/5xx і мережеві збої → повтор (до `MisDelivery:MaxAttempts`), далі `FAILED`; інші 4xx → `FAILED`. Ручний повтор для `FAILED` / `NOT_CONFIGURED`.
+
+### 26.3. Конфігурація виробничого середовища (FR-CFG-001)
+Поза `Development` при старті перевіряються `Lab:VerifySecret` (порожній, коротший за 16 символів або заглушка) і `Lab:PublicBaseUrl` (порожній, localhost, HTTP). Система **не падає**, а пише попередження `!!!` у журнал і повертає їх у `/health` у полі `configWarnings` (поле `integrations` показує стан каналів і доставки в МІС).
+
+### 26.4. Автентифікація (FR-AUTH-001)
+Параметр `Auth:Mode`: `None` (типово — заголовок `X-MedLink-Employee-Id` ігнорується, діє `Lab:DefaultEmployeeId`) або `Header` (співробітник із заголовка; лише за довіреним проксі МІС). `appsettings.Development.json` вмикає `Header` для роботи ролей на стенді розробника. Поза Development обидва режими дають попередження в `/health`. Підключення входу — `docs/AUTH_PLAN.md` (потребує даних від замовника).
+
 ## 15. Додатки
 
 ### Додаток A. Каталог профілів аналізаторів (`ac_analyzer_type` Simplex → `LabAnalyzerType`)

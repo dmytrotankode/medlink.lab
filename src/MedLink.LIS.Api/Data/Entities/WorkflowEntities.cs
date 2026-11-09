@@ -406,10 +406,26 @@ public class LabPatientNotification : GuidEntity
 {
     [MaxLength(64)] public string PatientId { get; set; } = "";
     [MaxLength(64)] public string? OrderId { get; set; }
-    /// <summary>SMS | EMAIL | PUSH | VIBER</summary>
+    /// <summary>SMS | EMAIL | VIBER | TELEGRAM (історично також PUSH)</summary>
     [MaxLength(16)] public string Channel { get; set; } = "SMS";
+    /// <summary>Посилання на портал (відносне) або текст; медичні дані в повідомлення не потрапляють.</summary>
     public string Payload { get; set; } = "";
-    /// <summary>QUEUED | SENT | FAILED</summary>
+    /// <summary>QUEUED | SENDING | SENT | FAILED | SKIPPED | NOT_CONFIGURED (див. NotifyStatuses)</summary>
     [MaxLength(16)] public string Status { get; set; } = "QUEUED";
     public DateTime? SentAt { get; set; }
+    /// <summary>Код шаблону (NotifyTemplates): RESULT_READY | RESULT_PARTIAL.</summary>
+    [MaxLength(32)] public string? TemplateCode { get; set; }
+    /// <summary>Ключ ідемпотентності: повторна постановка з тим самим ключем не створює дубль.</summary>
+    [MaxLength(128)] public string? IdempotencyKey { get; set; }
+    public int Attempts { get; set; }
+    public DateTime? NextAttemptAt { get; set; }
+    [MaxLength(1024)] public string? LastError { get; set; }
+    /// <summary>Причина пропуску/неналаштування (NotifyReasons).</summary>
+    [MaxLength(32)] public string? ReasonCode { get; set; }
+    /// <summary>Замаскований одержувач (для журналу): p***@example.org, +380***1234.</summary>
+    [MaxLength(128)] public string? RecipientMasked { get; set; }
+    [MaxLength(128)] public string? ProviderMessageId { get; set; }
+    [MaxLength(96)] public string? LockedBy { get; set; }
+    public DateTime? LockedUntil { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

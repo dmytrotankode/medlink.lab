@@ -259,7 +259,7 @@ public sealed class MisReferralService
 
     private void Emit(LabOrder order, string ev, object? payload) => _db.MisEvents.Add(new LabMisEventLog
     {
-        OrderId = order.Id, MisReferralId = order.MisReferralId, Event = ev, Payload = payload == null ? null : JsonSerializer.Serialize(payload, JsonDefaults.Options), Status = "DELIVERED", Attempts = 1
+        OrderId = order.Id, MisReferralId = order.MisReferralId, Event = ev, Payload = payload == null ? null : JsonSerializer.Serialize(payload, JsonDefaults.Options), Status = "QUEUED"
     });
 
     /// <summary>Подія для МІС із замовлення (виклик з інших сервісів, без збереження).</summary>

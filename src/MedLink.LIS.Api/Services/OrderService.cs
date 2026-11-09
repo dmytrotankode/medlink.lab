@@ -479,12 +479,9 @@ public sealed class OrderService
         foreach (var item in order.Items.Where(i => i.Status == "ACTIVE")) { item.Status = "DONE"; MisReferralService.EmitFor(_db, order, MisEvents.ResultReady, new { item.InterventionCode, diagnosticReportId = report.Id }); }
         MisReferralService.EmitFor(_db, order, MisEvents.Completed, new { order.OrderNumber, diagnosticReportId = report.Id });
 
-        var channel = !string.IsNullOrWhiteSpace(order.Patient?.Person?.Email) ? "EMAIL" : "SMS";
-        _db.Notifications.Add(new LabPatientNotification
-        {
-            PatientId = order.PatientId, OrderId = order.Id, Channel = channel, Status = "QUEUED",
-            Payload = $"Результати дослідження №{order.OrderNumber} готові. Перегляд: /portal/{order.PatientId}/orders/{order.Id}"
-        });
+        // Сповіщення пацієнта: у черзі без відправника тут — його відправляє NotificationDispatcher (текст без медичних даних, лише посилання)
+        await Notifications.NotifyQueue.EnqueueAsync(_db, order.PatientId, order.Id, Notifications.NotifyQueue.PreferredChannel(order.Patient?.Person),
+            Notifications.NotifyTemplates.ResultReady, $"/portal/{order.PatientId}/orders/{order.Id}", $"result-ready:{order.Id}", now);
         _audit.Log("RELEASE", "lab_order", order.Id, new { status = OrderStatuses.Completed }, new { status = order.Status, order.ReleasedAt, order.VerifyToken });
         await _db.SaveChangesAsync();
         return await GetAsync(id);
