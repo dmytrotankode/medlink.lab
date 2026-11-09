@@ -26,6 +26,7 @@ export default [
       lab('work', 'lab-work', 'Робота за направленнями', () => import('pages/laboratory/mis/WorkByReferralsPage.vue')),
       lab('reports', 'lab-reports', 'Звіти лабораторії', () => import('pages/laboratory/mis/LabReportsPage.vue')),
       lab('ehealth', 'lab-ehealth', 'Відправка в ЕСОЗ', () => import('pages/laboratory/mis/EhealthSubmissionsPage.vue')),
+      lab('notifications', 'lab-notifications', 'Сповіщення', () => import('pages/laboratory/NotificationsPage.vue')),
       lab('orders/:id', 'lab-order-card', 'Направлення', () => import('pages/laboratory/orders/OrderCard.vue'), { props: true }),
       lab('order-matrix', 'lab-order-matrix', 'Матриця призначень', () => import('pages/laboratory/orders/OrderMatrixPage.vue')),
       lab('phlebotomy', 'lab-phlebotomy', 'Пункт забору біоматеріалу', () => import('pages/laboratory/PhlebotomyStation.vue')),

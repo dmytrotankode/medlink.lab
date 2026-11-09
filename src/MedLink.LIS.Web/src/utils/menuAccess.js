@@ -36,6 +36,7 @@ export const ROUTE_ROLES = {
   'lab-work': LAB_STAFF,
   'lab-reports': [DOCTOR, TECH, REG],
   'lab-ehealth': [DOCTOR], // SubmitRoles у EhealthSignService
+  'lab-notifications': [REG, DOCTOR], // перегляд черги; налаштування каналів — лише LAB_ADMIN (NotificationAdminService)
   'lab-order-matrix': CREATORS,
   'lab-phlebotomy': [PHLEB, REG],
   'lab-sample-processing': [...LAB_STAFF, PHLEB],
@@ -88,6 +89,8 @@ export const ACTION_ROLES = {
   ehealthProcessNow: [DOCTOR], // SubmitRoles
   ehealthSign: [DOCTOR], // SubmitRoles
   ehealthRetry: [DOCTOR],
+  notificationRetry: [REG, DOCTOR], // NotificationAdminService.RetryRoles
+  notificationChannels: [], // лише адміністратор
   priceEdit: [], // BillingService: «Прайс-листи» — лише Admin
   payerEdit: [], // «Довідник платників» — лише Admin
   takePayment: [REG, PHLEB], // Cashiers
