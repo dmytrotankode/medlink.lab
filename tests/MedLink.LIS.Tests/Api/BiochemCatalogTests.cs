@@ -343,10 +343,10 @@ public class BiochemCatalogTests
     [Fact]
     public async Task Reasons_import_dry_run_marks_create_and_update()
     {
-        var csv = "code;name;category\nHEMOLYSIS;Гемоліз;SAMPLE_QUALITY\nIMP_NEW;Імпортована причина;OTHER\n";
+        var csv = "code;name;category\nHEMOLYSIS;Гемоліз (уточнено);SAMPLE_QUALITY\nIMP_NEW;Імпортована причина;OTHER\n";
         var res = await _f.As(DemoDataSeeder.Admin).PostAsync($"{Base}/dictionaries/import?name=rejection-reasons&dryRun=true", new StringContent(csv, System.Text.Encoding.UTF8, "text/csv"));
         var json = await Json(res);
-        var actions = json["rows"]!.AsArray().ToDictionary(r => r!["code"]!.GetValue<string>(), r => r!["action"]!.GetValue<string>());
+        var actions = json["rows"]!.AsArray().ToDictionary(r => r!["key"]!.GetValue<string>(), r => r!["action"]!.GetValue<string>());
         Assert.Equal("UPDATE", actions["HEMOLYSIS"]);
         Assert.Equal("CREATE", actions["IMP_NEW"]);
     }
