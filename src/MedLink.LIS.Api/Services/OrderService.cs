@@ -21,9 +21,11 @@ public sealed class OrderService
     private readonly BillingService _billing;
     private readonly RoutingService _routing;
 
-    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state, TubePlanService tubes, ReferralService referrals, BillingService billing, RoutingService routing)
+    private readonly MedLinkBridge.IMisRecords _records;
+
+    public OrderService(LisDbContext db, INumeratorService numerators, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state, TubePlanService tubes, ReferralService referrals, BillingService billing, RoutingService routing, MedLinkBridge.IMisRecords records)
     {
-        _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state; _tubes = tubes; _referrals = referrals; _billing = billing; _routing = routing;
+        _records = records; _db = db; _numerators = numerators; _audit = audit; _policy = policy; _current = current; _state = state; _tubes = tubes; _referrals = referrals; _billing = billing; _routing = routing;
     }
 
     /// <summary>Параметри побудови замовлення з направлення МІС (розд. 21.6, 23.3): обрані лікарем показники, позиції, пропозиція розподілу.</summary>
@@ -165,14 +167,14 @@ public sealed class OrderService
         // Пацієнт
         MisPatientCard patient;
         if (!string.IsNullOrWhiteSpace(req.PatientId))
-            patient = await _db.Patients.FirstOrDefaultAsync(p => p.Id == req.PatientId) ?? throw NotFoundException.For("Пацієнт", req.PatientId);
+            // У режимі моста з МІС картки пацієнтів ведуться в МІС: відсутню локально картку підтягуємо проєкцією (лише читання з МІС)
+            patient = await _db.Patients.FirstOrDefaultAsync(p => p.Id == req.PatientId) ?? await _records.ImportPatientAsync(req.PatientId) ?? throw NotFoundException.For("Пацієнт", req.PatientId);
         else if (req.NewPatient != null)
         {
             if (string.IsNullOrWhiteSpace(req.NewPatient.LastName) || string.IsNullOrWhiteSpace(req.NewPatient.FirstName))
                 throw ValidationException.Field("newPatient", "Прізвище та ім'я пацієнта обов'язкові");
             req.NewPatient.Gender = NormalizeGender(req.NewPatient.Gender);
-            patient = MedLinkPeople.NewPatient(req.NewPatient, MedLinkDefaults.OrganizationId);
-            _db.Patients.Add(patient);
+            patient = _records.AddPatient(req.NewPatient); // у режимі моста з МІС — відмова
             _audit.Log("CREATE", "mis_patient_card", patient.Id, null, req.NewPatient);
         }
         else throw ValidationException.Field("patientId", "Вкажіть patientId або newPatient");
@@ -479,12 +481,12 @@ public sealed class OrderService
             PerformerString = performerName, IsPerformerString = true, IsPrimarySource = true,
             Description = $"Лабораторне дослідження №{order.OrderNumber}: {order.Tests.Count} показників, критичних: {critical}"
         };
-        _db.DiagnosticReports.Add(report);
-        order.DiagnosticReportId = report.Id;
+        // У режимі моста висновок не створюється в базі ЛІС: результат передається МІС подією (MisReferralService.EmitFor)
+        if (_records.TryAddDiagnosticReport(report)) order.DiagnosticReportId = report.Id;
         await _referrals.CompleteAsync(order, report, now);
         // Зворотні події МІС (FR-MIS-026, FR-PKG-010): результат по кожній позиції і завершення направлення
-        foreach (var item in order.Items.Where(i => i.Status == "ACTIVE")) { item.Status = "DONE"; MisReferralService.EmitFor(_db, order, MisEvents.ResultReady, new { item.InterventionCode, diagnosticReportId = report.Id }); }
-        MisReferralService.EmitFor(_db, order, MisEvents.Completed, new { order.OrderNumber, diagnosticReportId = report.Id });
+        foreach (var item in order.Items.Where(i => i.Status == "ACTIVE")) { item.Status = "DONE"; MisReferralService.EmitFor(_db, order, MisEvents.ResultReady, new { item.InterventionCode, diagnosticReportId = order.DiagnosticReportId }); }
+        MisReferralService.EmitFor(_db, order, MisEvents.Completed, new { order.OrderNumber, diagnosticReportId = order.DiagnosticReportId });
 
         // Сповіщення пацієнта: у черзі без відправника тут — його відправляє NotificationDispatcher (текст без медичних даних, лише посилання)
         await Notifications.NotifyQueue.EnqueueAsync(_db, order.PatientId, order.Id, Notifications.NotifyQueue.PreferredChannel(order.Patient?.Person),

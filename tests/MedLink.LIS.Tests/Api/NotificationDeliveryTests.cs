@@ -529,7 +529,8 @@ public class StartupConfigCheckTests
     public void Auth_mode_defaults_to_none_and_unknown_is_safe()
     {
         Assert.Equal(AuthModes.None, AuthModes.Resolve(Cfg()));
-        Assert.Equal(AuthModes.None, AuthModes.Resolve(Cfg(("Auth:Mode", "Oidc"))));
+        Assert.Equal(AuthModes.Oidc, AuthModes.Resolve(Cfg(("Auth:Mode", "Oidc"))));
+        Assert.Equal(AuthModes.None, AuthModes.Resolve(Cfg(("Auth:Mode", "Kerberos"))));
         Assert.Equal(AuthModes.Header, AuthModes.Resolve(Cfg(("Auth:Mode", "header"))));
     }
 

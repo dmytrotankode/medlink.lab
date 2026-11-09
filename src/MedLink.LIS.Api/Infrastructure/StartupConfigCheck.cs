@@ -10,10 +10,13 @@ public static class AuthModes
     public const string None = "None";
     /// <summary>Співробітник береться із заголовка X-MedLink-Employee-Id (довіра до заголовка; лише за зворотним проксі МІС).</summary>
     public const string Header = "Header";
+    /// <summary>Вхід через сервер Identity MedLink: JWT/reference-токен у заголовку Authorization, співробітник і роль — з МІС (Medlink:*).</summary>
+    public const string Oidc = "Oidc";
 
     public static string Resolve(IConfiguration config)
     {
         var raw = config["Auth:Mode"];
+        if (string.Equals(raw, Oidc, StringComparison.OrdinalIgnoreCase)) return Oidc;
         return string.Equals(raw, Header, StringComparison.OrdinalIgnoreCase) ? Header : None; // невідоме значення = безпечніший None
     }
 }
@@ -40,8 +43,29 @@ public static class StartupConfigCheck
         var mode = AuthModes.Resolve(config);
         if (mode == AuthModes.None)
             list.Add(new("AUTH_NONE", "Auth:Mode = None: автентифікації користувачів немає, усі запити виконуються від імені співробітника за замовчуванням. Увімкніть автентифікацію МІС перед промисловою експлуатацією (docs/AUTH_PLAN.md)."));
+        else if (mode == AuthModes.Oidc)
+            list.AddRange(EvaluateOidc(config));
         else
             list.Add(new("AUTH_HEADER", "Auth:Mode = Header: співробітник береться із заголовка запиту без перевірки — будь-хто може підставити чужий ідентифікатор. Допустимо лише за довіреним зворотним проксі МІС (docs/AUTH_PLAN.md)."));
+        return list;
+    }
+
+    /// <summary>Режим Oidc: усе, що робить вхід недіючим або слабшим, ніж очікується.</summary>
+    public static List<ConfigWarning> EvaluateOidc(IConfiguration config)
+    {
+        var list = new List<ConfigWarning>();
+        var authority = config["Identity:Authority"];
+        if (string.IsNullOrWhiteSpace(authority))
+            list.Add(new("OIDC_AUTHORITY", "Auth:Mode = Oidc, але Identity:Authority не задано: токени неможливо перевірити, усі запити до API отримуватимуть 401."));
+        else if (!authority.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            list.Add(new("OIDC_AUTHORITY_HTTP", "Identity:Authority вказує не на HTTPS: ключі підпису токенів завантажуються без шифрування."));
+        if (string.IsNullOrWhiteSpace(config["Identity:JwtBearerAudience"]))
+            list.Add(new("OIDC_AUDIENCE", "Identity:JwtBearerAudience не задано: очікується IdentityApiScope;MisApiScope, інакше токени з audience відхиляються."));
+        if (string.IsNullOrWhiteSpace(config["Medlink:ConnectionString"]))
+            list.Add(new("MEDLINK_BRIDGE_OFF", "Medlink:ConnectionString не задано: міст до МІС вимкнено, співробітник береться з власної бази за claim (Auth:Oidc:EmployeeIdClaim або sub). Для роботи в складі МІС задайте підключення лише для читання."));
+        else if (string.IsNullOrWhiteSpace(config["Medlink:DefaultLabRole"]) && !config.GetSection("Medlink:ProfileRoles").GetChildren().Any())
+            list.Add(new("MEDLINK_NO_ROLES", "Medlink:ProfileRoles порожній і Medlink:DefaultLabRole не задано: жоден працівник МІС не матиме доступу до Лабораторії (403)."));
+        list.Add(new("OIDC_PORTAL_OPEN", "Кабінет пацієнта (/api/v1/lab/portal/*) лишається без входу співробітника: потрібна окрема схема доступу пацієнта (docs/AUTH_PLAN.md п.5), до цього не виставляйте його назовні."));
         return list;
     }
 

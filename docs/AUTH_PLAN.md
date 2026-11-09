@@ -1,6 +1,6 @@
 # План підключення автентифікації (OIDC MedLink)
 
-Статус: **вхід не реалізовано** — потрібні дані від замовника. Підготовлено перемикач `Auth:Mode` і точку заміни.
+Статус: **режим `Auth:Mode=Oidc` реалізовано** (JWT Bearer від Identity MedLink, співробітник і роль з МІС, SPA на oidc-client, код + PKCE) — деталі й налаштування в `docs/MEDLINK_INTEGRATION_PLAN.md` розділ 7. Перевірено на підписаному тестовому токені; вхід через справжній Identity не перевірявся (потрібен клієнт і redirect URI). Нижче — початковий план і вимоги замовника.
 
 ## 1. Що є зараз
 - `CurrentEmployeeMiddleware` (`src/MedLink.LIS.Api/Infrastructure/CurrentEmployee.cs`) визначає співробітника:

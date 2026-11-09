@@ -51,7 +51,8 @@ public sealed class OrgDictionaryService
 
     private readonly LisDbContext _db;
     private readonly IAuditService _audit;
-    public OrgDictionaryService(LisDbContext db, IAuditService audit) { _db = db; _audit = audit; }
+    private readonly MedLinkBridge.IMisRecords _records;
+    public OrgDictionaryService(LisDbContext db, IAuditService audit, MedLinkBridge.IMisRecords records) { _db = db; _audit = audit; _records = records; }
 
     /// <summary>Тип підрозділу MedLink за видом підрозділу ЛІС.</summary>
     public static string DepartmentTypeFor(string labKind) => labKind switch
@@ -142,7 +143,7 @@ public sealed class OrgDictionaryService
         OrgEmployee e;
         if (id == null)
         {
-            var person = new CmnPerson();
+            var person = _records.AddEmployeePerson(); // у режимі моста з МІС — відмова: співробітників веде МІС
             e = new OrgEmployee { Person = person, PersonId = person.Id, OrganizationId = MedLinkDefaults.OrganizationId, WorkingStartDate = DateTime.UtcNow.Date, LabSettings = new LabEmployeeSettings() };
             e.LabSettings.EmployeeId = e.Id;
             _db.Employees.Add(e);

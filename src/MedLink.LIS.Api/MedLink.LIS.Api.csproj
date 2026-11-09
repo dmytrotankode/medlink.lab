@@ -18,6 +18,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="QuestPDF" Version="2024.12.3" />
     <PackageReference Include="ClosedXML" Version="0.104.2" />
+    <!-- Вхід через Identity MedLink (Auth:Mode=Oidc): JWT Bearer, reference-токени (introspection / Redis) -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
+    <PackageReference Include="AspNet.Security.OAuth.Introspection" Version="2.0.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.7.27" />
   </ItemGroup>
 
   <ItemGroup>

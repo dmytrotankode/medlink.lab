@@ -19,7 +19,10 @@ public sealed class SeedService
     private readonly LisDbContext _db;
     private readonly ILogger<SeedService> _logger;
 
-    public SeedService(LisDbContext db, ILogger<SeedService> logger) { _db = db; _logger = logger; }
+    private readonly bool _bridged;
+
+    /// <param name="records">У режимі моста з МІС демо-співробітники, демо-пацієнти, направлення й поліси не створюються: їх веде МІС.</param>
+    public SeedService(LisDbContext db, ILogger<SeedService> logger, MedLink.LIS.Api.Services.MedLinkBridge.IMisRecords records) { _db = db; _logger = logger; _bridged = records.Bridged; }
 
     public static T ReadResource<T>(string name)
     {
@@ -117,7 +120,7 @@ public sealed class SeedService
                 d.LabSettings = new LabDepartmentSettings { DepartmentId = d.Id, LabKind = kind, Phone = Str(el, "phone") };
                 _db.Departments.Add(d);
             }
-        if (!await _db.Employees.AnyAsync())
+        if (!_bridged && !await _db.Employees.AnyAsync())
             foreach (var el in org.GetProperty("employees").EnumerateArray())
             {
                 var id = el.GetProperty("id").GetString()!;
@@ -137,7 +140,7 @@ public sealed class SeedService
                 e.LabSettings = new LabEmployeeSettings { EmployeeId = id, LabRole = role, PositionName = Str(el, "positionName"), DigitalSignatureCertId = Str(el, "digitalSignatureCertId") };
                 _db.Employees.Add(e);
             }
-        if (!await _db.Patients.AnyAsync())
+        if (!_bridged && !await _db.Patients.AnyAsync())
             foreach (var el in org.GetProperty("patients").EnumerateArray())
             {
                 var req = JsonSerializer.Deserialize<NewPatientRequest>(el.GetRawText(), Json)!;
@@ -163,7 +166,7 @@ public sealed class SeedService
                 });
             }
         await _db.SaveChangesAsync();
-        if (!await _db.Referrals.AnyAsync())
+        if (!_bridged && !await _db.Referrals.AnyAsync())
         {
             foreach (var el in org.GetProperty("referrals").EnumerateArray())
             {
@@ -235,6 +238,7 @@ public sealed class SeedService
             if (el.TryGetProperty("priceListCode", out var pl)) p.PriceListId = lists[pl.GetString()!];
             _db.Payers.Add(p);
         }
+        if (!_bridged)
         foreach (var el in b.GetProperty("policies").EnumerateArray())
             _db.PatientInsurances.Add(new MisPatientInsurance
             {

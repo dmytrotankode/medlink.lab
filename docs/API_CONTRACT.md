@@ -10,6 +10,8 @@
 |---|---|
 | Базовий URL | `/api/v1/lab` (REST, JSON, camelCase) |
 | Автентифікація користувачів | **ВІДСУТНЯ** (за вимогою замовника: модуль вбудовується в evomis, де є власний IdentityServer). Поточний співробітник передається необов'язковим заголовком `X-MedLink-Employee-Id: <org_employee.id>`; якщо відсутній — береться співробітник за замовчуванням із налаштувань (`Lab:DefaultEmployeeId`). У UI — перемикач «Працюю як…» (лікар-лаборант / лаборант / медсестра / адміністратор) без пароля. Жодних `[Authorize]`, JWT, логінів |
+| Режими входу (`Auth:Mode`) | `None` (типово), `Header` (довіра до проксі МІС) — як описано вище; `Oidc` — `Authorization: Bearer <токен Identity MedLink>`, співробітник і роль з МІС, заголовок співробітника не діє (docs/MEDLINK_INTEGRATION_PLAN.md розд. 7). Без токена в режимі Oidc — 401, без ролі лабораторії — 403 (ProblemDetails українською). Публічні: `/health`, `/verify/*`, `/auth/config`, `/connector/*`, `/portal/*` |
+| `GET /auth/config` | Публічно. `{ mode, runAs, oidc?: { authority, clientId, scope, callbackPath }, bridge: { enabled }, basePath }` — для SPA; секретів не містить |
 | Автентифікація коннектора | Заголовок `X-MedLink-ApiKey: <apiKey>` (технічний ключ інсталяції, видається при реєстрації; це не користувацька авторизація, а ідентифікація пристрою) |
 | Ролі | Довідкові (для UI та аудиту, не для обмеження доступу): `LAB_ADMIN`, `LAB_DOCTOR`, `LAB_TECHNICIAN`, `PHLEBOTOMIST`, `LOGISTICS_COURIER`, `REGISTRAR`. Беруться з `org_employee.lab_role`. У бойовому evomis мапляться на claims IdentityServer |
 | Ідентифікатори | GUID у вигляді рядка (`"018f4a12-..."`). Довідники з `int` id |

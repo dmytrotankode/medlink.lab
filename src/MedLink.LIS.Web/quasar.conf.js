@@ -11,6 +11,7 @@ module.exports = function (ctx) {
     boot: [
       'fonts',
       'axios',
+      'oidc',
       'components',
       'guide'
     ],

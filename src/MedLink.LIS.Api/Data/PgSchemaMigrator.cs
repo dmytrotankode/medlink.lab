@@ -57,6 +57,12 @@ public static class PgSchemaMigrator
         {
             var conn = (NpgsqlConnection)db.Database.GetDbConnection();
             await Exec(conn, null, $"SELECT pg_advisory_lock({LockKey})", ct);
+            // Власна схема (Database:Schema ≠ public): скриптам потрібні розширення з public (gin_trgm_ops), тож на час виконання
+            // search_path = «власна, public». Таблиці ЛІС існують у власній схемі, тому однойменні таблиці МІС не зачіпаються.
+            string? ownSchema = null;
+            await using (var cs = new NpgsqlCommand("SELECT current_schema()", conn)) ownSchema = (string?)await cs.ExecuteScalarAsync(ct);
+            var widened = !string.IsNullOrEmpty(ownSchema) && ownSchema != "public";
+            if (widened) await Exec(conn, null, $"SELECT set_config('search_path', '{ownSchema}, public', false)", ct);
             try
             {
                 await Exec(conn, null, @"CREATE TABLE IF NOT EXISTS lab_schema_version (
@@ -97,7 +103,11 @@ public static class PgSchemaMigrator
                     applied.Add($"{s.Version:0000}_{s.Name}");
                 }
             }
-            finally { await Exec(conn, null, $"SELECT pg_advisory_unlock({LockKey})", CancellationToken.None); }
+            finally
+            {
+                if (widened) await Exec(conn, null, $"SELECT set_config('search_path', '{ownSchema}', false)", CancellationToken.None);
+                await Exec(conn, null, $"SELECT pg_advisory_unlock({LockKey})", CancellationToken.None);
+            }
         }
         finally { await db.Database.CloseConnectionAsync(); }
         return applied;

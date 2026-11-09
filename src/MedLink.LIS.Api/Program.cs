@@ -8,7 +8,9 @@ using MedLink.LIS.Api.Data;
 using MedLink.LIS.Api.Data.Seed;
 using MedLink.LIS.Api.Domain;
 using MedLink.LIS.Api.Infrastructure;
+using MedLink.LIS.Api.Configuration;
 using MedLink.LIS.Api.Services;
+using MedLink.LIS.Api.Services.MedLinkBridge;
 using MedLink.LIS.Api.Services.Parsing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -42,8 +44,12 @@ bool UsePostgres()
 // Налаштування текстових запитів PostgreSQL (ILIKE, українська колація): уточнюються при старті після перевірки кластера
 var pgQuery = new PgQuerySettings { Collation = builder.Configuration["Database:Collation"] ?? "uk-x-icu" };
 if (string.IsNullOrWhiteSpace(pgQuery.Collation)) pgQuery.Collation = null;
-string PgConnectionString(IConfiguration cfg) => PgConnectionOptions.Normalize(
-    cfg["Database:ConnectionString"] is { Length: > 0 } cs ? cs : args.Contains("--export-pg-ddl") ? "Host=localhost" : throw new InvalidOperationException("Database:ConnectionString не задано (Database:Provider = Postgres). Для локальної розробки задайте Database:Provider = Sqlite."));
+// Database:Schema (напр. lab) — власна схема ЛІС у спільній базі МІС (Search Path); порожньо — типова схема бази (public). Guide має власну схему guide.
+string PgConnectionString(IConfiguration cfg, bool labSchema = true)
+{
+    var raw = cfg["Database:ConnectionString"] is { Length: > 0 } cs ? cs : args.Contains("--export-pg-ddl") ? "Host=localhost" : throw new InvalidOperationException("Database:ConnectionString не задано (Database:Provider = Postgres). Для локальної розробки задайте Database:Provider = Sqlite.");
+    return PgConnectionOptions.Normalize(labSchema ? PgConnectionOptions.WithSchema(raw, cfg["Database:Schema"]) : raw);
+}
 builder.Services.AddDbContext<LisDbContext>((sp, o) =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
@@ -60,10 +66,11 @@ builder.Services.AddGuide(builder.Configuration, o =>
 {
     o.ConfigureDb = db =>
     {
-        if (UsePostgres()) db.UseNpgsql(PgConnectionString(Cfg())).AddInterceptors(new PgQueryInterceptor(pgQuery));
+        if (UsePostgres()) db.UseNpgsql(PgConnectionString(Cfg(), labSchema: false)).AddInterceptors(new PgQueryInterceptor(pgQuery));
         else { Directory.CreateDirectory(Path.GetDirectoryName(guideDbPath)!); db.UseSqlite($"Data Source={guideDbPath}"); }
     };
-    o.AllowAnonymousEditing = true; // у ЛІС немає автентифікації (її надає evomis); розмежування — через Guide:EditorRoles у evomis
+    // Без входу (None/Header) редагування інструкцій відкрите; у режимі Oidc — лише за правилами Guide:EditorRoles (анонімного редагування немає)
+    o.AllowAnonymousEditing = AuthModes.Resolve(builder.Configuration) != AuthModes.Oidc;
 });
 // --- MVC / JSON / ProblemDetails ---
 static string LocalizeModelKey(string key)
@@ -120,6 +127,14 @@ builder.Services.AddSwaggerGen(c =>
     c.CustomSchemaIds(t => t.FullName!.Replace("+", "."));
 });
 builder.Services.AddCors(o => o.AddPolicy("AllowAll", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().WithExposedHeaders("Content-Disposition", "X-MedLink-Pdf-Fallback")));
+
+// --- Вхід (Auth:Mode): None | Header | Oidc (токен Identity MedLink: JWT Bearer / reference через introspection або Redis) ---
+builder.Services.AddMemoryCache();
+builder.Services.Configure<MedLinkOptions>(builder.Configuration.GetSection(MedLinkOptions.Section));
+builder.Services.AddSingleton<IMedLinkDirectory, MedLinkDirectory>(); // лише SELECT з бази МІС (Medlink:ConnectionString); без рядка підключення міст вимкнено
+builder.Services.AddScoped<IMisRecords, MisRecords>();
+builder.Services.AddScoped<MedLinkUserResolver>();
+builder.Services.AddHybridJwtAndReferenceTokenAuthentication(builder.Configuration); // схема реєструється завжди; використовується лише при Auth:Mode=Oidc
 
 // --- Сервіси домену ---
 builder.Services.AddScoped<ICurrentEmployee, CurrentEmployee>();
@@ -197,7 +212,9 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<LisDbContext>();
     var legacyBackup = await SchemaUpgrader.BackupIfIncompatibleAsync(db);
     if (legacyBackup != null) app.Logger.LogWarning("БД попередньої структури (до вирівнювання з MedLink) збережено як {Backup}; створюється нова БД", legacyBackup);
-    await db.Database.EnsureCreatedAsync();
+    var ownSchema = PgConnectionOptions.NormalizeSchema(app.Configuration["Database:Schema"]);
+    if (UsePostgres() && ownSchema != null) await LabSchemaBootstrap.EnsureAsync(db, ownSchema); // власна схема в базі МІС: EnsureCreated бачить таблиці МІС і нічого б не створив
+    else await db.Database.EnsureCreatedAsync();
     foreach (var change in await SchemaUpgrader.UpgradeAsync(db)) app.Logger.LogWarning("Оновлення схеми БД: {Sql}", change);
     if (db.Database.IsNpgsql())
     {
@@ -220,7 +237,7 @@ using (var scope = app.Services.CreateScope())
     await scope.ServiceProvider.GetRequiredService<MisCatalogSeeder>().SeedAsync();
     await scope.ServiceProvider.GetRequiredService<BiochemCatalogSeeder>().SeedAsync();
     await scope.ServiceProvider.GetRequiredService<MisCatalogService>().RecomputeReadinessAsync();
-    if (app.Configuration.GetValue<bool?>("Lab:SeedDemoData") ?? true)
+    if ((app.Configuration.GetValue<bool?>("Lab:SeedDemoData") ?? true) && string.IsNullOrWhiteSpace(app.Configuration["Medlink:ConnectionString"])) // з мостом демо-пацієнтів і співробітників не створюємо: їх веде МІС
     {
         try { await scope.ServiceProvider.GetRequiredService<DemoDataSeeder>().SeedAsync(); }
         catch (Exception ex) { app.Logger.LogError(ex, "Помилка створення демо-даних"); }
@@ -244,8 +261,12 @@ app.UseMiddleware<ProblemDetailsMiddleware>();
 app.UseCors("AllowAll");
 app.UseDefaultFiles();
 app.UseStaticFiles();
-app.UseSwagger();
-app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "MedLink LIS 4.0 API v1"); c.RoutePrefix = "swagger"; c.DocumentTitle = "MedLink LIS 4.0 — API"; });
+// Swagger у режимі Oidc — лише поза виробничим середовищем (docs/AUTH_PLAN.md п.3)
+if (AuthModes.Resolve(app.Configuration) != AuthModes.Oidc || !app.Environment.IsProduction())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "MedLink LIS 4.0 API v1"); c.RoutePrefix = "swagger"; c.DocumentTitle = "MedLink LIS 4.0 — API"; });
+}
 app.UseMiddleware<CurrentEmployeeMiddleware>();
 app.UseRouting();
 app.MapControllers();

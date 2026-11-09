@@ -30,10 +30,14 @@ const state = {
   lab: null,
   labSettings: null, // GET /settings/lab (принтер етикеток, бланки, retention)
   loaded: false,
-  loading: false
+  loading: false,
+  // Режим входу з /api/v1/lab/auth/config: Oidc — особу визначає токен Identity, «Працюю як…» вимкнено
+  auth: { mode: 'None', runAs: true, bridge: false, error: null }
 };
 
 const getters = {
+  runAsEnabled: s => s.auth.runAs !== false,
+  oidcMode: s => s.auth.mode === 'Oidc',
   currentEmployee: s => s.employee || s.employees.find(e => e.id === s.employeeId) || null,
   currentRole: (s, g) => (g.currentEmployee && (g.currentEmployee.labRole || g.currentEmployee.role)) || null,
   labName: s => (s.lab && s.lab.name) || 'Клініко-діагностична лабораторія',
@@ -57,6 +61,7 @@ const mutations = {
     s.loaded = true;
   },
   SET_LAB_SETTINGS (s, v) { s.labSettings = v || null; },
+  SET_AUTH (s, v) { s.auth = Object.assign({ mode: 'None', runAs: true, bridge: false, error: null }, v || {}); },
   SET_LOADING (s, v) { s.loading = v; }
 };
 
@@ -95,9 +100,9 @@ const actions = {
     }
   },
 
-  async init ({ dispatch }) {
+  async init ({ dispatch, getters: g }) {
     try {
-      await dispatch('loadEmployees');
+      if (g.runAsEnabled) await dispatch('loadEmployees'); // у режимі Oidc список для перемикача не потрібен
     } catch (e) { /* банер API покаже стан */ }
     try {
       await dispatch('loadMe');

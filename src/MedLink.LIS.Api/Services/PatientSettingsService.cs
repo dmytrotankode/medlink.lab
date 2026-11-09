@@ -15,7 +15,8 @@ public sealed class PatientService
     private readonly IRolePolicy _policy;
     private readonly IAuditService _audit;
 
-    public PatientService(LisDbContext db, IRolePolicy policy, IAuditService audit) { _db = db; _policy = policy; _audit = audit; }
+    private readonly MedLinkBridge.IMisRecords _records;
+    public PatientService(LisDbContext db, IRolePolicy policy, IAuditService audit, MedLinkBridge.IMisRecords records) { _db = db; _policy = policy; _audit = audit; _records = records; }
 
     public async Task<PagedResult<PatientDto>> SearchAsync(string? search, PagingQuery paging)
     {
@@ -37,8 +38,7 @@ public sealed class PatientService
         _policy.Require("Створення картки пацієнта", EditorRoles);
         if (string.IsNullOrWhiteSpace(req.LastName) || string.IsNullOrWhiteSpace(req.FirstName)) throw new ValidationException("Прізвище та ім'я обов'язкові");
         req.Gender = OrderService.NormalizeGender(req.Gender);
-        var p = MedLinkPeople.NewPatient(req, MedLinkDefaults.OrganizationId);
-        _db.Patients.Add(p);
+        var p = _records.AddPatient(req); // у режимі моста з МІС — відмова: картки створює МІС
         _audit.Log("CREATE", "mis_patient_card", p.Id, null, req);
         await _db.SaveChangesAsync();
         return DtoMapper.ToDto(p);
@@ -50,7 +50,7 @@ public sealed class PatientService
         var p = await LoadAsync(id);
         var before = MedLinkPeople.ToDto(p);
         if (!string.IsNullOrWhiteSpace(req.Gender)) req.Gender = OrderService.NormalizeGender(req.Gender);
-        MedLinkPeople.Apply(p, req, isNew: false);
+        _records.UpdatePatient(p, req);
         _audit.Log("UPDATE", "mis_patient_card", p.Id, before, req);
         await _db.SaveChangesAsync();
         return DtoMapper.ToDto(p);
@@ -61,9 +61,7 @@ public sealed class PatientService
         _policy.Require("Видалення картки пацієнта", LabRoles.Admin, LabRoles.Registrar);
         var p = await LoadAsync(id);
         if (await _db.Orders.AnyAsync(o => o.PatientId == id)) throw new ConflictException("Пацієнт має замовлення — видалення неможливе (картку деактивовано)");
-        _db.Patients.Remove(p);
-        if (p.Person != null && !await _db.Patients.AnyAsync(x => x.PersonId == p.PersonId && x.Id != p.Id) && !await _db.Employees.AnyAsync(e => e.PersonId == p.PersonId))
-            _db.Persons.Remove(p.Person);
+        await _records.RemovePatientAsync(p);
         _audit.Log("DELETE", "mis_patient_card", id, new { p.Caption }, null);
         await _db.SaveChangesAsync();
     }

@@ -95,3 +95,61 @@
 7. eHealth через проксі — після отримання адреси та клієнта.
 
 **Ризики:** (1) фронт МІС недоступний у репозиторії; (2) `src` на сервері — знімок без .git, оновлення ручне, розбіжності з phrm-test можливі; (3) TerraLab-вебхуки відкриті без автентифікації — не виставляти назовні (nginx блокує лише `/api/simplex/`); (4) LABA нині пише в таблиці МІС — переробити; (5) повністю відсутня перевірка id-test реальним токеном; (6) пам'ять сервера: два PG, два Redis, .NET 6 + .NET 8 + стенди.
+
+## 7. Реалізація в основній лінії (гілка cl/oidc, 09.11.2026)
+
+Статус: **[К]** — зібрано й покрито тестами на SQLite; **[Н]** — не перевірялось (потрібні реальний Identity, база МІС або PostgreSQL).
+
+### 7.1. Режим входу `Auth:Mode=Oidc` (None і Header не змінено)
+- Перевірка токена: JWT Bearer від Identity (`Identity:Authority`, `Identity:JwtBearerAudience`, типово `IdentityApiScope;MisApiScope`). Authority і audience читаються з остаточної конфігурації, секретів у репозиторії немає. **[К]** (підписаний тестовий JWT: 401 без токена, прострочений, чужий audience/issuer/підпис; 200 із чинним).
+- Reference-токени (опційно, `Identity:UseRefreshTokenFlow=true`): introspection (`Identity:IntrospectionClientId`, секрет — лише змінна середовища `Identity__IntrospectionClientSecret` або `REFERENCE_TOKEN_API_SECRET`) і/або Redis активних токенів (`Identity:UseRedisActiveTokenValidation`, `Identity:RedisConnectionString`). Код перенесено з Lab V2 без змін логіки. **[Н]**
+- `CurrentEmployeeMiddleware`: токен → `sub` → співробітник. Заголовок `X-MedLink-Employee-Id` у режимі Oidc **не визначає особу** (лише обирає одну з власних посад особи, якщо їх кілька). `Lab:DefaultEmployeeId` не використовується (немає токена → 401). **[К]**
+- Без входу лишаються: `/health`, `/verify/*`, `/api/v1/lab/auth/*`, `/api/v1/lab/connector/*` (власний `X-MedLink-ApiKey`), `/api/v1/lab/portal/*` (див. ризик нижче), статика SPA; додаткові префікси — `Auth:PublicPaths`. Swagger у режимі Oidc вимкнено у Production. Редагування Guide без входу вимкнено (`Guide:EditorRoles`).
+- Без моста (немає `Medlink:ConnectionString`): співробітник береться з власної бази за `org_employee.id` = `sub` (або claim з `Auth:Oidc:EmployeeIdClaim`). **[К]**
+
+### 7.2. Міст до МІС (лише читання)
+- `Medlink:ConnectionString` — окремий Npgsql-рядок до бази МІС (роль лише з `SELECT` на таблиці з розділу 3). Порожньо — міст вимкнено. `Medlink:Schema` (типово `public`), `Medlink:OrganizationId` (опційно обмежити організацією).
+- Ланцюг: `sub` → `cmn_person.user_id` → `org_employee` особи → `sys_user_profile`/`sys_profile` → роль ЛІС за таблицею `Medlink:ProfileRoles` (ключ — назва профілю, регістр не важливий; якщо профілів кілька — найвища роль: адмін › лікар › лаборант › реєстратор › медсестра › кур'єр). Таблиця — у `appsettings.json` за розділом 3 (назви профілів **[П]**, звірити з МІС). `Medlink:DefaultLabRole` порожній → 403 «Для вашого профілю в МІС немає доступу до Лабораторії…». `Medlink:CacheSeconds` (60) — затримка, з якою зміна профілю в МІС діє в ЛІС. **[К]** (підміна каталогу МІС); справжні SQL до `public` **[Н]**.
+- Запити каталогу: лише `SELECT`, параметризовані; тест `Mis_directory_issues_only_select_statements` забороняє будь-який модифікуючий SQL у файлі каталогу.
+- Проєкція: при першому вході працівник (особа, заклад, підрозділ, роль) копіюється у власну схему ЛІС з тим самим id — потрібно для зовнішніх ключів і аудиту (`CreatedBy` = id працівника МІС). Картка пацієнта МІС підтягується проєкцією при створенні замовлення з `patientId`.
+
+### 7.3. Запис у public заборонено: де основна лінія писала і що зроблено
+Усі записи нижче йдуть через `IMisRecords` (`Services/MedLinkBridge/MisRecords.cs`). Без моста (автономна ЛІС) поведінка не змінилась; з мостом (`Medlink:ConnectionString` задано):
+
+| Місце | Таблиця | Рішення в режимі моста |
+|---|---|---|
+| `PatientService.CreateAsync`, `OrderService.BuildOrderAsync` (`newPatient`) | `cmn_person`, `mis_patient_card` | 409 «Створення картки пацієнта у лабораторії недоступне… виконайте дію в МІС» |
+| `PatientService.UpdateAsync` / `DeleteAsync` | те саме | 409 (редагування й видалення карток — у МІС) |
+| `OrgDictionaryService.SaveEmployeeAsync` (новий співробітник) | `cmn_person`, `org_employee` | 409; працівників веде МІС (оновлення посади/підпису існуючого дозволене — це дані ЛІС) |
+| `OrderService.ReleaseAsync` | `mis_diagnostic_report` | висновок не створюється; результат йде подією МІС (`MisReferralService.EmitFor`, `diagnosticReportId` = null). Підпис ЄСОЗ у ЛІС без висновку не можливий — формує МІС |
+| `EhealthOutbox` (копія висновку після анулювання) | `mis_diagnostic_report` | не виконується: без висновку `old == null` |
+| `SeedService` | усі | демо-співробітники, пацієнти, направлення й поліси не створюються (також `DemoDataSeeder` вимкнено) |
+
+Фізично запису в `public` немає в жодному режимі: ЛІС пише лише у власну схему (7.4), а підключення `Medlink:ConnectionString` має роль із `SELECT`. Таблиці `cmn_person`/`mis_patient_card`/`org_employee` у схемі ЛІС — **проєкції** (копії) для зовнішніх ключів; їх наповнює лише `IMisRecords.ImportPatientAsync`/`ProjectEmployeeAsync` зі значень МІС.
+
+Не зроблено: подія результату в МІС (канал B з розділу 5) — до появи `LabResultsController`; пошук пацієнтів МІС у формі замовлення (каталог має `SearchPatientsAsync`, UI-вибору ще немає — поки `patientId` картки МІС).
+
+### 7.4. Власна схема PostgreSQL
+- `Database:Schema=lab` додає `Search Path=lab` (лише вона, без `public`) до рядка підключення ЛІС; Guide працює у своїй схемі `guide`. Старт: `CREATE SCHEMA IF NOT EXISTS lab`; якщо схема порожня — таблиці створює EF (`EnsureCreated` у базі з таблицями МІС нічого б не створив), решту додає `SchemaUpgrader` (він і `PgSchemaMigrator` працюють через `current_schema()`). На час версіонованих скриптів `search_path` = «lab, public» (потрібен для `pg_trgm`), після — повертається.
+- DDL-експорт (`--export-pg-ddl`) і модель EF не змінено: `db/postgres/medlink_lis_schema.sql` лишається актуальним (`PostgresDdlTests` зелений). **[Н]** на справжньому PostgreSQL (локально PG немає): перевірено рядок підключення (тест), решта — за кодом.
+- Права: `lab_migrator` — `CREATE` на базі та власник схеми `lab`; `lab_app` — CRUD на `lab`; обидві ролі — `USAGE` на `public` + `SELECT` лише на таблиці розділу 3.
+
+### 7.5. SPA
+- `GET /api/v1/lab/auth/config` → `{mode, runAs, oidc:{authority, clientId, scope, callbackPath}, bridge:{enabled}}` (без секретів). Клієнт OIDC — `Auth:Oidc:ClientId` (типово `MisFront`, до отримання окремого клієнта), `Auth:Oidc:Scope`, redirect URI = `<адреса ЛІС>/<PathBase>/callback` (його потрібно зареєструвати в Identity).
+- `oidc-client` 1.7.1, код + PKCE; токен додається до запитів; 401 → повторний вхід; кнопка «Вийти». «Працюю як…» лишається лише в None/Header. Посилання на PDF/друк/експорт API відкриваються з токеном (перехоплення кліку на `a[href]` і `window.open`). Вибір профілю за потоком МІС (`Account/authenticate`) не переносився — роль береться з профілів у базі МІС.
+- **[Н]** вхід через справжній Identity не перевірявся: потрібні клієнт і redirect URI.
+
+### 7.6. Як увімкнути (приклад змінних середовища)
+```
+Auth__Mode=Oidc
+Identity__Authority=https://id-test.medlink.healthcare
+Identity__JwtBearerAudience=IdentityApiScope;MisApiScope
+Auth__Oidc__ClientId=<клієнт ЛІС або MisFront>
+Medlink__ConnectionString=Host=...;Database=evomis;Username=lab_app;Password=...   # роль лише SELECT
+Database__Provider=Postgres
+Database__ConnectionString=Host=...;Database=evomis;Username=lab_migrator;Password=...
+Database__Schema=lab
+Lab__SeedDemoData=false
+PathBase=/lab
+```
+

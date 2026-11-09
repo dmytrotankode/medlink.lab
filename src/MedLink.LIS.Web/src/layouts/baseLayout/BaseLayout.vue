@@ -72,8 +72,21 @@
           <q-tooltip>Аналізатори, заблоковані за результатами внутрішнього контролю якості (ВКЯ)</q-tooltip>
         </router-link>
 
+        <!-- Вхід через Identity: поточний співробітник і вихід -->
+        <div v-if="oidcMode" class="row items-center no-wrap" data-testid="oidcUser">
+          <q-avatar color="primary" text-color="white" size="26px" icon="person" class="q-mr-sm" />
+          <div class="column no-wrap" style="line-height: 1.1">
+            <div class="text-weight-bold ellipsis" style="font-size: 13px; max-width: 190px">{{ meName }}</div>
+            <div class="text-caption text-grey-7 ellipsis" style="font-size: 11px; max-width: 190px">{{ roleLabel(currentLabRole) }}</div>
+          </div>
+          <q-btn flat dense round icon="logout" aria-label="Вийти" class="q-ml-sm" data-testid="oidcLogout" @click="logout">
+            <q-tooltip>Вийти</q-tooltip>
+          </q-btn>
+        </div>
+
         <!-- Працюю як… -->
         <q-select
+          v-else
           v-model="employeeId"
           data-testid="employeeSelect"
           :options="employeeOptions"
@@ -132,6 +145,7 @@ import AccessDenied from '../../components/common/AccessDenied.vue';
 import roleMixin from '../../mixins/roleMixin';
 import { ROLE } from '../../utils/statuses';
 import { routeAllowed } from '../../utils/menuAccess';
+import { signOut } from '../../services/auth';
 
 export default {
   name: 'BaseLayout',
@@ -148,7 +162,8 @@ export default {
   computed: {
     ...mapState('laboratory', ['apiOffline']),
     ...mapGetters('laboratory', ['panicCount', 'gatewayOnline', 'gatewayTotal', 'analyzersOnline', 'lockoutCount']),
-    ...mapGetters('context', ['employeeOptions', 'labName']),
+    ...mapGetters('context', ['employeeOptions', 'labName', 'oidcMode', 'currentEmployee']),
+    meName () { const e = this.currentEmployee; return (e && (e.fullName || e.name)) || '—'; },
     contextLoading () { return this.$store.state.context.loading; },
     employeeId: {
       get () { return this.$store.state.context.employeeId; },
@@ -188,6 +203,7 @@ export default {
   },
   methods: {
     toggleDrawer () { this.drawerOpen = !this.drawerOpen; },
+    logout () { signOut(); },
     roleLabel (role) { return ROLE[role] || ''; },
     refreshStatus () {
       this.$store.dispatch('laboratory/refreshStatus');

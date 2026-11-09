@@ -27,4 +27,24 @@ public static class PgConnectionOptions
             if (!Regex.IsMatch(cs, pattern, RegexOptions.IgnoreCase)) cs += $";{name}={value}";
         return cs;
     }
+
+    /// <summary>
+    /// Власна схема ЛІС усередині спільної бази МІС (Database:Schema, напр. lab). Усі таблиці ЛІС створюються й читаються в ній через
+    /// Search Path лише з цієї схеми — без public, щоб запит ніколи не потрапив на таблиці МІС з однаковою назвою. Порожньо або public — без змін.
+    /// </summary>
+    public static string? NormalizeSchema(string? schema)
+    {
+        if (string.IsNullOrWhiteSpace(schema) || schema.Trim().Equals("public", StringComparison.OrdinalIgnoreCase)) return null;
+        var s = schema.Trim();
+        if (!Regex.IsMatch(s, "^[a-z_][a-z0-9_]{0,62}$")) throw new InvalidOperationException($"Database:Schema = «{schema}» некоректна: дозволені малі латинські літери, цифри й підкреслення");
+        return s;
+    }
+
+    /// <summary>Додає Search Path=схема до рядка підключення (якщо його там ще немає).</summary>
+    public static string WithSchema(string connectionString, string? schema)
+    {
+        var s = NormalizeSchema(schema);
+        if (s == null || Regex.IsMatch(connectionString, @"search[ _]?path", RegexOptions.IgnoreCase)) return connectionString;
+        return connectionString.TrimEnd().TrimEnd(';') + $";Search Path={s}";
+    }
 }

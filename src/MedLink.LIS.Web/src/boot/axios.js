@@ -1,13 +1,19 @@
 /**
  * Boot-файл axios: заголовок X-MedLink-Employee-Id із Vuex (context.employeeId),
  * відстеження доступності API та нормалізація помилок (ProblemDetails → error.userMessage).
- * Автентифікації немає — див. docs/API_CONTRACT.md розділ 0.
+ * Режими входу — services/auth.js та docs/AUTH_PLAN.md; у режимі Oidc замість заголовка співробітника додається Bearer-токен.
  */
 import { http, describeApiError } from '../services/http';
 import labApi from '../services/labApiService';
+import { isOidc, authHeader, signIn } from '../services/auth';
 
 export default ({ app, store, Vue }) => {
   http.interceptors.request.use(config => {
+    if (isOidc()) {
+      // Вхід через Identity: особу визначає токен, заголовок співробітника не діє
+      Object.assign(config.headers, authHeader());
+      return config;
+    }
     const employeeId = store.state.context.employeeId;
     if (employeeId) {
       config.headers['X-MedLink-Employee-Id'] = employeeId;
@@ -23,6 +29,7 @@ export default ({ app, store, Vue }) => {
       return response;
     },
     error => {
+      if (isOidc() && error.response && error.response.status === 401) signIn(); // сесія закінчилась — повторний вхід
       const info = describeApiError(error);
       error.userMessage = info.message;
       error.apiStatus = info.status;

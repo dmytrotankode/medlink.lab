@@ -6,6 +6,7 @@
  */
 import MedLinkGuide from '@guide/index.js';
 import { API_BASE } from '../services/http';
+import { authHeader } from '../services/auth';
 import { ROLE_LABELS } from '../mixins/roleMixin';
 
 export default ({ router, store }) => {
@@ -18,7 +19,7 @@ export default ({ router, store }) => {
       appCaption: 'MedLink LIS',
       apiBase,
       headers: () => {
-        const h = {};
+        const h = { ...authHeader() };
         const emp = store.state.context.employeeId;
         const role = store.getters['context/currentRole'];
         if (emp) h['X-MedLink-Employee-Id'] = emp;
