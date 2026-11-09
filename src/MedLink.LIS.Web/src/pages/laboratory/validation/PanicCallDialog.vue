@@ -18,7 +18,7 @@
         </q-banner>
         <div class="row q-col-gutter-sm">
           <div class="col-7"><q-input v-model="form.doctorName" outlined dense label="Лікар, якому повідомлено (ПІБ) *" data-testid="panicDoctor" /></div>
-          <div class="col-5"><q-input v-model="form.phone" outlined dense label="Телефон лікаря *" data-testid="panicPhone" /></div>
+          <div class="col-5"><q-input v-model="form.phone" outlined dense label="Телефон лікаря *" :rules="[v => !v || phoneOk(v) || 'Вкажіть телефон: цифри, +, пробіли, дужки, дефіс (7–15 цифр)']" lazy-rules hint="Напр.: +380 50 123 45 67" data-testid="panicPhone" /></div>
           <div class="col-12"><q-select v-model="form.department" outlined dense clearable label="Відділення" :options="departmentNames" use-input new-value-mode="add-unique" /></div>
           <div class="col-12"><q-input v-model="form.comments" outlined dense autogrow label="Коментар (що саме повідомлено, рекомендації)" /></div>
         </div>
@@ -52,7 +52,7 @@ export default {
   },
   computed: {
     departmentNames () { return this.$store.getters['dictionaries/items']('departments').map(d => d.name); },
-    canSave () { return !!(this.form.doctorName && this.form.phone && this.form.readbackConfirmed); }
+    canSave () { return !!(this.form.doctorName && this.form.phone && this.phoneOk(this.form.phone) && this.form.readbackConfirmed); }
   },
   watch: {
     value (v) {
@@ -64,6 +64,7 @@ export default {
     }
   },
   methods: {
+    phoneOk (v) { const t = String(v || '').trim(); return /^\+?[\d\s()\-.]+$/.test(t) && t.replace(/\D/g, '').length >= 7 && t.replace(/\D/g, '').length <= 15; },
     empty () { return { id: null, doctorName: '', phone: '', department: null, readbackConfirmed: false, comments: '' }; },
     async save () {
       this.saving = true; this.error = '';

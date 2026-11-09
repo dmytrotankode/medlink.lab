@@ -20,7 +20,7 @@
       "connectionMode": "TCP", "tcpHost": "192.168.1.102", "tcpPort": 5600, "isTcpServer": false, "autoQueryOrders": true,
       "parameterMap": [
         { "analyzerCode": "GLU", "testCode": "GLU" }, { "analyzerCode": "Crea", "testCode": "CREAT" }, { "analyzerCode": "CREAT", "testCode": "CREAT" },
-        { "analyzerCode": "Urea", "testCode": "UREA" }, { "analyzerCode": "UREA", "testCode": "UREA" }, { "analyzerCode": "ALT", "testCode": "ALT" },
+        { "analyzerCode": "Urea", "testCode": "UREA" }, { "analyzerCode": "ALT", "testCode": "ALT" },
         { "analyzerCode": "AST", "testCode": "AST" }, { "analyzerCode": "TBIL", "testCode": "BIL_TOT" }, { "analyzerCode": "TP", "testCode": "PROT_TOT" },
         { "analyzerCode": "ALB", "testCode": "ALB" }, { "analyzerCode": "K", "testCode": "K" }, { "analyzerCode": "Na", "testCode": "NA" },
         { "analyzerCode": "Cl", "testCode": "CL" }, { "analyzerCode": "Ca", "testCode": "CA" }, { "analyzerCode": "CHOL", "testCode": "CHOL" },

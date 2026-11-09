@@ -106,7 +106,7 @@
           <span v-if="props.row.previousValue != null" :class="props.row.deltaAlert ? 'text-orange-9 text-weight-bold' : 'text-grey-8'">{{ props.row.deltaPercent | pct }}</span><span v-else class="text-grey-6">—</span>
           <q-icon v-if="props.row.deltaAlert && props.row.previousValue != null" name="trending_up" color="orange-9" size="14px"><q-tooltip>Контроль змін: попереднє значення {{ props.row.previousValue | num }} ({{ props.row.previousAt | datetime }})</q-tooltip></q-icon>
         </q-td>
-        <q-td key="status" :props="props" class="wl-sticky wl-sticky--status"><status-chip :value="props.row.status" type="test" /></q-td>
+        <q-td key="status" :props="props" class="wl-sticky wl-sticky--status"><status-chip :value="props.row.status" type="test" /><q-icon v-if="props.row.autoVerifyBlockReason && ['NEEDS_REVIEW', 'RESULTED'].includes(props.row.status)" name="help_outline" color="orange-9" size="16px" class="q-ml-xs" data-testid="autoVerifyWhy"><q-tooltip max-width="320px">Чому не автоверифіковано: {{ props.row.autoVerifyBlockReason }}</q-tooltip></q-icon></q-td>
         <q-td key="actions" :props="props" class="text-right no-wrap wl-sticky wl-sticky--actions" @click.stop>
           <span v-for="a in rowActions(props.row)" :key="a.key" class="inline-block">
             <q-btn
@@ -343,6 +343,14 @@ export default {
     right 170px
     min-width 130px
     box-shadow -4px 0 4px -4px rgba(0, 0, 0, .25)
+  // Вузьке вікно: закріплені колонки не перекривають «Результат» — звичайна горизонтальна прокрутка
+  @media (max-width: 1280px)
+    .wl-sticky, td.wl-sticky, thead th.wl-sticky
+      position static
+      box-shadow none
+    .wl-sticky--actions
+      min-width 150px
+      width auto
   tr.bg-red-1 td.wl-sticky
     background-color #ffebee
   tr.row-status--closed td.wl-sticky

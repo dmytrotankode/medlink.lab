@@ -7,7 +7,7 @@
         <q-tooltip v-if="!canEdit">{{ editHint }}</q-tooltip>
       </span>
       <span class="inline-block">
-        <q-btn unelevated dense color="primary" icon="add_chart" label="Внести точку контролю" :disable="!materialId || !canEdit" data-testid="qcAddPoint" @click="pointOpen = true" />
+        <q-btn unelevated dense color="primary" icon="add_chart" label="Внести точку контролю" :disable="!materialId || !canEdit" data-testid="qcAddPoint" @click="openNewPoint" />
         <q-tooltip v-if="!canEdit">{{ editHint }}</q-tooltip>
         <q-tooltip v-else-if="!materialId">Спершу оберіть контрольний матеріал</q-tooltip>
       </span>
@@ -288,7 +288,7 @@ export default {
     materialOptions () { return this.materialsFiltered.map(m => ({ value: m.id, label: `${m.name} · ${this.levelLabel(m.level)} · лот ${m.lotNumber}` })); },
     material () { return this.materials.find(m => m.id === this.materialId) || null; },
     materialLabel () { return this.material ? `${this.material.name} (лот ${this.material.lotNumber})` : '—'; },
-    testOptions () { return ((this.material && this.material.targets) || []).map(t => ({ value: t.testCode, label: `${t.testCode}${t.unit ? ' · ' + t.unit : ''}` })); },
+    testOptions () { return ((this.material && this.material.targets) || []).map(t => ({ value: t.testCode, label: `${this.testLabel(t.testCode)}${t.unit ? ' · ' + t.unit : ''}` })); },
     target () { return ((this.material && this.material.targets) || []).find(t => t.testCode === (this.point.testCode || this.testCode)) || null; },
     kpis () {
       const c = this.chart; if (!c) return [];
@@ -345,6 +345,8 @@ export default {
     formatNumber,
     levelLabel (l) { const x = QC_LEVELS.find(q => q.value === l); return x ? x.label : l; },
     /** «Лейкоцити (WBC)»: назва показника з довідника, код — у дужках */
+    /** Нова точка: показник, обраний на карті, підставляється одразу */
+    openNewPoint () { this.point = { id: null, testCode: this.testCode, measuredValue: '', runAt: '' }; this.pointError = ''; this.pointOpen = true; },
     testLabel (code) {
       const t = this.tests.find(x => x.code === code);
       return t && t.name && t.name !== code ? (t.name.includes(`(${code})`) ? t.name : `${t.name} (${code})`) : (code || '');

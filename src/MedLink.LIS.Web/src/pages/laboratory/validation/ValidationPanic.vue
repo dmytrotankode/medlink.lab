@@ -41,7 +41,7 @@
                   <span v-else class="text-grey-5">—</span>
                 </q-td>
                 <q-td key="delta" :props="props" class="text-right"><span v-if="props.row.previousValue != null" :class="props.row.deltaAlert ? 'text-orange-9 text-weight-bold' : ''">{{ props.row.deltaPercent | pct }}</span><span v-else>—</span></q-td>
-                <q-td key="status" :props="props"><status-chip :value="props.row.status" type="test" /><q-badge v-if="props.row.isLockedOut" color="purple-6" class="q-ml-xs"><q-icon name="lock" size="10px" /><q-tooltip>Аналізатор заблоковано контролем якості</q-tooltip></q-badge></q-td>
+                <q-td key="status" :props="props"><status-chip :value="props.row.status" type="test" /><q-icon v-if="props.row.autoVerifyBlockReason && ['NEEDS_REVIEW', 'RESULTED'].includes(props.row.status)" name="help_outline" color="orange-9" size="16px" class="q-ml-xs" data-testid="autoVerifyWhy"><q-tooltip max-width="320px">Чому не автоверифіковано: {{ props.row.autoVerifyBlockReason }}</q-tooltip></q-icon><q-badge v-if="props.row.isLockedOut" color="purple-6" class="q-ml-xs"><q-icon name="lock" size="10px" /><q-tooltip>Аналізатор заблоковано контролем якості</q-tooltip></q-badge></q-td>
                 <q-td key="actions" :props="props" class="text-right no-wrap" @click.stop>
                   <span class="inline-block">
                     <q-btn flat dense round size="sm" icon="how_to_reg" color="green-8" aria-label="Верифікувати" :disable="!canVerify" :data-testid="`verify-${props.row.testCode}`" @click="openVerify(props.row)" />
@@ -53,7 +53,7 @@
                     <q-tooltip>{{ canWork ? 'Коригувати результат' : workHint }}</q-tooltip>
                   </span>
                   <span class="inline-block">
-                    <q-btn flat dense round size="sm" icon="replay" color="purple-6" aria-label="Повторити дослідження" :disable="!canWork" @click="rerun(props.row)" />
+                    <q-btn flat dense round size="sm" icon="replay" color="purple-6" aria-label="Повторити дослідження" :disable="!canWork" @click="askRerun(props.row)" />
                     <q-tooltip>{{ canWork ? 'Повторити дослідження' : workHint }}</q-tooltip>
                   </span>
                   <span class="inline-block">
@@ -129,6 +129,7 @@
       </q-tab-panel>
     </q-tab-panels>
 
+    <rerun-dialog v-model="rerunOpen" :row="activeRow" @done="afterRerun" @failed="notifyError" />
     <verify-result-dialog v-model="verifyOpen" :row="activeRow" @verified="afterVerify" />
     <result-editor-dialog v-model="editorOpen" :row="activeRow" @saved="load" />
     <panic-call-dialog v-model="callOpen" :result="activeRow" :call="activeCall" @saved="load" />
@@ -167,7 +168,7 @@ export default {
         { value: 'RESULTED', label: 'Є результат' }
       ],
       pagination: { rowsPerPage: 25 },
-      verifyOpen: false, editorOpen: false, callOpen: false, rejectOpen: false, deleteCallOpen: false,
+      verifyOpen: false, rerunOpen: false, editorOpen: false, callOpen: false, rejectOpen: false, deleteCallOpen: false,
       columns: [
         { name: 'patient', label: 'Пацієнт', align: 'left' },
         { name: 'test', label: 'Показник', align: 'left' },
@@ -191,7 +192,7 @@ export default {
       callColumns: [
         { name: 'notifiedAt', label: 'Коли', field: 'notifiedAt', align: 'left', sortable: true },
         { name: 'patientName', label: 'Пацієнт', field: 'patientName', align: 'left' },
-        { name: 'testCode', label: 'Показник', field: 'testCode', align: 'left' },
+        { name: 'testCode', label: 'Показник', field: r => this.testLabel(r.testCode), align: 'left' },
         { name: 'value', label: 'Значення', field: 'value', align: 'right' },
         { name: 'doctor', label: 'Лікар', field: r => r.doctorNotifiedName || r.doctorName, align: 'left' },
         { name: 'phone', label: 'Телефон', field: 'phone', align: 'left' },
@@ -218,6 +219,7 @@ export default {
   created () {
     if (this.$route.query.tab === 'panic' || this.$route.query.tab === 'pending') this.tab = 'pending';
     else if (this.$route.query.tab === 'calls') this.tab = 'calls';
+    this.$store.dispatch('dictionaries/load', 'tests');
     this.load();
   },
   methods: {
@@ -230,6 +232,11 @@ export default {
       return e ? (e.fullName || e.name) : '—';
     },
     /** «18.60 %» → «18,6 %»: кома і без зайвих нулів */
+    /** Показник з назвою: «Гемоглобін (HGB)»; код без довідника лишається кодом */
+    testLabel (code) {
+      const t = this.$store.getters['dictionaries/items']('tests').find(x => x.code === code);
+      return t && t.name ? (t.name.includes(`(${code})`) ? t.name : `${t.name} (${code})`) : (code || '—');
+    },
     callValue (v) {
       if (v === null || v === undefined || v === '') return '—';
       return String(v).replace(/^(-?\d+)\.(\d+)/, (m, a, b) => { const t = b.replace(/0+$/, ''); return t ? `${a},${t}` : a; });
@@ -290,7 +297,9 @@ export default {
         this.load();
       } catch (e) { this.notifyError(e); }
     },
-    async rerun (row) { try { await this.$api.rerunResult(row.orderTestId); this.notifyOk(`Показник ${row.testCode} відправлено на повтор`); this.load(); } catch (e) { this.notifyError(e); } },
+    /** Повтор — той самий діалог (причина, розведення), що й у лаборанта; кнопка недоступна, поки діалог відкритий */
+    askRerun (row) { if (this.rerunOpen) return; this.activeRow = row; this.rerunOpen = true; },
+    afterRerun ({ row, factor }) { this.notifyOk(`Показник ${row.testCode} відправлено на повтор${factor ? ' з розведенням 1:' + factor : ''}`); this.load(); },
     askReject (row) { this.activeRow = row; this.rejectOpen = true; },
     async doReject (reason) { try { await this.$api.rejectResult(this.activeRow.orderTestId, reason); this.notifyOk('Результат відхилено'); this.load(); } catch (e) { this.notifyError(e); } }
   }

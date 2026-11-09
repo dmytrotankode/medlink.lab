@@ -40,6 +40,7 @@
             <q-td key="status" :props="props">
               <q-badge v-if="expired(props.row)" color="negative" label="Прострочено" />
               <q-badge v-else-if="empty(props.row)" color="negative" label="Вичерпано" />
+              <q-badge v-else-if="belowMin(props.row)" color="negative" label="Нижче мінімуму" />
               <q-badge v-else-if="low(props.row)" color="warning" text-color="dark" label="Залишок мінімальний" />
               <q-badge v-else-if="soon(props.row)" color="orange-7" label="Спливає за ≤ 30 днів" />
               <q-badge v-else color="positive" label="Норма" />
@@ -192,6 +193,7 @@ export default {
     initial (l) { return Number(l.testsInitial) || 0; },
     empty (l) { return this.remaining(l) <= 0; },
     ratio (l) { return this.initial(l) ? Math.min(1, this.remaining(l) / this.initial(l)) : 0; },
+    belowMin (l) { const min = Number(l.minimumTests); return !!min && this.remaining(l) < min; },
     low (l) { const min = Number(l.minimumTests); return min ? this.remaining(l) <= min : this.remaining(l) <= 0; },
     expired (l) { return l.expiryDate && new Date(l.expiryDate) < new Date(); },
     soon (l) { if (!l.expiryDate) return false; const d = (new Date(l.expiryDate) - new Date()) / 86400000; return d >= 0 && d <= 30; },

@@ -160,11 +160,21 @@ public sealed class WorklistService
         return await q.OrderByDescending(p => p.NotifiedAt).ToListAsync();
     }
 
+    /// <summary>Телефон лікаря: цифри, +, пробіли, дужки, дефіс; 7–15 цифр.</summary>
+    private static void EnsurePhone(string phone)
+    {
+        var t = phone.Trim();
+        var digits = t.Count(char.IsDigit);
+        if (!System.Text.RegularExpressions.Regex.IsMatch(t, @"^\+?[\d\s().\-]+$") || digits < 7 || digits > 15)
+            throw ValidationException.Field("phone", "Вкажіть коректний телефон: цифри, +, пробіли, дужки, дефіс (7–15 цифр)");
+    }
+
     public async Task<LabPanicCall> CreatePanicCallAsync(PanicCallRequest req)
     {
         _policy.Require("Реєстрація панічного дзвінка", LabRoles.Admin, LabRoles.Doctor, LabRoles.Technician);
         if (string.IsNullOrWhiteSpace(req.DoctorName)) throw ValidationException.Field("doctorName", "Вкажіть ПІБ лікаря, який прийняв повідомлення");
         if (string.IsNullOrWhiteSpace(req.Phone)) throw ValidationException.Field("phone", "Вкажіть телефон");
+        EnsurePhone(req.Phone);
         var result = await _db.Results.Include(r => r.OrderTest).ThenInclude(t => t!.Order).ThenInclude(o => o!.Patient).FirstOrDefaultAsync(r => r.Id == req.ResultId)
                      ?? throw NotFoundException.For("Результат", req.ResultId);
         var call = new LabPanicCall
@@ -186,7 +196,7 @@ public sealed class WorklistService
         var call = await _db.PanicCalls.FirstOrDefaultAsync(p => p.Id == id) ?? throw NotFoundException.For("Панічний дзвінок", id);
         var before = new { call.DoctorNotifiedName, call.Phone, call.Department, call.ReadbackConfirmed, call.Comments };
         if (!string.IsNullOrWhiteSpace(req.DoctorName)) call.DoctorNotifiedName = req.DoctorName;
-        if (!string.IsNullOrWhiteSpace(req.Phone)) call.Phone = req.Phone;
+        if (!string.IsNullOrWhiteSpace(req.Phone)) { EnsurePhone(req.Phone); call.Phone = req.Phone; }
         call.Department = req.Department ?? call.Department;
         call.ReadbackConfirmed = req.ReadbackConfirmed;
         call.Comments = req.Comments ?? call.Comments;

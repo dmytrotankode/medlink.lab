@@ -9,6 +9,8 @@ public sealed class AutoVerificationInput
     public string? AnalyzerFlags { get; init; }
     public bool DeltaAlert { get; init; }
     public bool RequiresManualVerification { get; init; }
+    /// <summary>Уточнена причина ручної верифікації (наприклад, призначений виконавець); порожньо — загальне формулювання.</summary>
+    public string? ManualVerificationReason { get; init; }
     public bool HasActiveLockout { get; init; }
     public bool HasValue { get; init; } = true;
     /// <summary>Причина неправдоподібності (PlausibilityChecker); null — значення правдоподібне.</summary>
@@ -37,7 +39,7 @@ public static class AutoVerificationEngine
         else if (input.Flag != ResultFlags.Normal) reasons.Add("Результат поза нормою" + (input.Flag switch { "LOW" => " (нижче)", "HIGH" => " (вище)", _ => "" }));
         if (!AnalyzerFlagsAreClean(input.AnalyzerFlags)) reasons.Add($"Прапорці аналізатора: {input.AnalyzerFlags}");
         if (input.DeltaAlert) reasons.Add("Різка зміна відносно попереднього результату");
-        if (input.RequiresManualVerification) reasons.Add("Тест вимагає ручної верифікації");
+        if (input.RequiresManualVerification) reasons.Add(string.IsNullOrWhiteSpace(input.ManualVerificationReason) ? "Тест вимагає ручної верифікації" : input.ManualVerificationReason);
         if (input.HasActiveLockout) reasons.Add("Аналізатор заблоковано контролем якості");
         if (!string.IsNullOrEmpty(input.ImplausibleReason)) reasons.Add(input.ImplausibleReason);
         return new AutoVerificationDecision { Approved = reasons.Count == 0, BlockReasons = reasons };

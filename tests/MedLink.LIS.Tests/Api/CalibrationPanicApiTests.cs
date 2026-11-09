@@ -77,7 +77,8 @@ public class CalibrationPanicApiTests
         // Реєстрація дзвінка: валідація
         await Problem(await doctor.PostAsJsonAsync($"{Base}/panic-calls", new { resultId, phone = "+380501112233" }), HttpStatusCode.BadRequest);
         await Problem(await doctor.PostAsJsonAsync($"{Base}/panic-calls", new { resultId, doctorName = "Лікар" }), HttpStatusCode.BadRequest);
-        await Problem(await doctor.PostAsJsonAsync($"{Base}/panic-calls", new { resultId = "no-such", doctorName = "Лікар", phone = "1" }), HttpStatusCode.NotFound);
+        await Problem(await doctor.PostAsJsonAsync($"{Base}/panic-calls", new { resultId, doctorName = "Лікар", phone = "abc" }), HttpStatusCode.BadRequest);
+        await Problem(await doctor.PostAsJsonAsync($"{Base}/panic-calls", new { resultId = "no-such", doctorName = "Лікар", phone = "+380501234567" }), HttpStatusCode.NotFound);
         await Problem(await _f.As(DemoDataSeeder.Registrar).PostAsJsonAsync($"{Base}/panic-calls", new { resultId, doctorName = "Лікар", phone = "1" }), HttpStatusCode.Forbidden);
         // і досі заблоковано
         await Problem(await doctor.PostAsJsonAsync($"{Base}/orders/{orderId}/release", new { }), HttpStatusCode.Conflict, "PANIC_CALL_REQUIRED");

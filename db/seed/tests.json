@@ -2,6 +2,7 @@
  {
   "code": "WBC",
   "name": "Лейкоцити (WBC)",
+  "nameEn": "White blood cells (WBC)",
   "shortName": "WBC",
   "loincCode": "6690-2",
   "unit": "10^9/л",
@@ -27,6 +28,7 @@
  {
   "code": "RBC",
   "name": "Еритроцити (RBC)",
+  "nameEn": "Red blood cells (RBC)",
   "shortName": "RBC",
   "loincCode": "789-8",
   "unit": "10^12/л",
@@ -52,6 +54,7 @@
  {
   "code": "HGB",
   "name": "Гемоглобін (HGB)",
+  "nameEn": "Hemoglobin (HGB)",
   "shortName": "HGB",
   "loincCode": "718-7",
   "unit": "г/л",
@@ -77,6 +80,7 @@
  {
   "code": "HCT",
   "name": "Гематокрит (HCT)",
+  "nameEn": "Hematocrit (HCT)",
   "shortName": "HCT",
   "loincCode": "4544-3",
   "unit": "%",
@@ -102,11 +106,13 @@
  {
   "code": "MCV",
   "name": "Середній об'єм еритроцита (MCV)",
+  "nameEn": "Mean corpuscular volume (MCV)",
+  "formula": "HCT * 10 / RBC",
   "shortName": "MCV",
   "loincCode": "787-2",
   "unit": "фл",
   "decimalPlaces": 1,
-  "resultType": "NUMERIC",
+  "resultType": "CALCULATED",
   "labSectionCode": "HEM",
   "category": "HEMATOLOGY",
   "biomaterialCode": "BM_18",
@@ -127,11 +133,13 @@
  {
   "code": "MCH",
   "name": "Середній вміст гемоглобіну в еритроциті (MCH)",
+  "nameEn": "Mean corpuscular hemoglobin (MCH)",
+  "formula": "HGB / RBC",
   "shortName": "MCH",
   "loincCode": "785-6",
   "unit": "пг",
   "decimalPlaces": 1,
-  "resultType": "NUMERIC",
+  "resultType": "CALCULATED",
   "labSectionCode": "HEM",
   "category": "HEMATOLOGY",
   "biomaterialCode": "BM_18",
@@ -152,11 +160,13 @@
  {
   "code": "MCHC",
   "name": "Середня концентрація гемоглобіну в еритроциті (MCHC)",
+  "nameEn": "Mean corpuscular hemoglobin concentration (MCHC)",
+  "formula": "HGB * 100 / HCT",
   "shortName": "MCHC",
   "loincCode": "786-4",
   "unit": "г/л",
   "decimalPlaces": 0,
-  "resultType": "NUMERIC",
+  "resultType": "CALCULATED",
   "labSectionCode": "HEM",
   "category": "HEMATOLOGY",
   "biomaterialCode": "BM_18",
@@ -177,6 +187,7 @@
  {
   "code": "PLT",
   "name": "Тромбоцити (PLT)",
+  "nameEn": "Platelets (PLT)",
   "shortName": "PLT",
   "loincCode": "777-3",
   "unit": "10^9/л",
@@ -202,6 +213,7 @@
  {
   "code": "NEUT_PCT",
   "name": "Нейтрофіли, %",
+  "nameEn": "Neutrophils, %",
   "shortName": "NEUT%",
   "loincCode": "770-8",
   "unit": "%",
@@ -227,6 +239,7 @@
  {
   "code": "LYMPH_PCT",
   "name": "Лімфоцити, %",
+  "nameEn": "Lymphocytes, %",
   "shortName": "LYMPH%",
   "loincCode": "736-9",
   "unit": "%",
@@ -252,6 +265,7 @@
  {
   "code": "ESR",
   "name": "Швидкість осідання еритроцитів (ШОЕ)",
+  "nameEn": "Erythrocyte sedimentation rate (ESR)",
   "shortName": "ESR",
   "loincCode": "30341-2",
   "unit": "мм/год",
@@ -277,6 +291,7 @@
  {
   "code": "GLU",
   "name": "Глюкоза сироватки",
+  "nameEn": "Serum glucose",
   "shortName": "GLU",
   "loincCode": "2345-7",
   "unit": "ммоль/л",
@@ -302,6 +317,7 @@
  {
   "code": "CREAT",
   "name": "Креатинін сироватки",
+  "nameEn": "Serum creatinine",
   "shortName": "CREA",
   "loincCode": "2160-0",
   "unit": "мкмоль/л",
@@ -327,6 +343,7 @@
  {
   "code": "UREA",
   "name": "Сечовина",
+  "nameEn": "Urea",
   "shortName": "UREA",
   "loincCode": "3094-0",
   "unit": "ммоль/л",
@@ -352,6 +369,7 @@
  {
   "code": "ALT",
   "name": "Аланінамінотрансфераза (АЛТ)",
+  "nameEn": "Alanine aminotransferase (ALT)",
   "shortName": "ALT",
   "loincCode": "1742-6",
   "unit": "Од/л",
@@ -377,6 +395,7 @@
  {
   "code": "AST",
   "name": "Аспартатамінотрансфераза (АСТ)",
+  "nameEn": "Aspartate aminotransferase (AST)",
   "shortName": "AST",
   "loincCode": "1920-8",
   "unit": "Од/л",
@@ -402,6 +421,7 @@
  {
   "code": "BIL_TOT",
   "name": "Білірубін загальний",
+  "nameEn": "Total bilirubin",
   "shortName": "TBIL",
   "loincCode": "1975-2",
   "unit": "мкмоль/л",
@@ -427,6 +447,7 @@
  {
   "code": "PROT_TOT",
   "name": "Загальний білок",
+  "nameEn": "Total protein",
   "shortName": "TP",
   "loincCode": "2885-2",
   "unit": "г/л",
@@ -452,6 +473,7 @@
  {
   "code": "ALB",
   "name": "Альбумін",
+  "nameEn": "Albumin",
   "shortName": "ALB",
   "loincCode": "1751-7",
   "unit": "г/л",
@@ -477,6 +499,7 @@
  {
   "code": "GGT",
   "name": "Гамма-глутамілтрансфераза (ГГТ)",
+  "nameEn": "Gamma-glutamyl transferase (GGT)",
   "shortName": "GGT",
   "loincCode": "2324-2",
   "unit": "Од/л",
@@ -502,6 +525,7 @@
  {
   "code": "ALP",
   "name": "Лужна фосфатаза",
+  "nameEn": "Alkaline phosphatase",
   "shortName": "ALP",
   "loincCode": "6768-6",
   "unit": "Од/л",
@@ -527,6 +551,7 @@
  {
   "code": "AMYL",
   "name": "Альфа-амілаза",
+  "nameEn": "Alpha-amylase",
   "shortName": "AMY",
   "loincCode": "1798-8",
   "unit": "Од/л",
@@ -552,6 +577,7 @@
  {
   "code": "CHOL",
   "name": "Холестерин загальний",
+  "nameEn": "Total cholesterol",
   "shortName": "CHOL",
   "loincCode": "2093-3",
   "unit": "ммоль/л",
@@ -577,6 +603,7 @@
  {
   "code": "HDL",
   "name": "Холестерин ЛПВЩ (HDL)",
+  "nameEn": "HDL cholesterol",
   "shortName": "HDL",
   "loincCode": "2085-9",
   "unit": "ммоль/л",
@@ -602,6 +629,7 @@
  {
   "code": "LDL",
   "name": "Холестерин ЛПНЩ (LDL)",
+  "nameEn": "LDL cholesterol",
   "shortName": "LDL",
   "loincCode": "2089-1",
   "unit": "ммоль/л",
@@ -627,6 +655,7 @@
  {
   "code": "TG",
   "name": "Тригліцериди",
+  "nameEn": "Triglycerides",
   "shortName": "TG",
   "loincCode": "2571-8",
   "unit": "ммоль/л",
@@ -652,6 +681,7 @@
  {
   "code": "URIC",
   "name": "Сечова кислота",
+  "nameEn": "Uric acid",
   "shortName": "UA",
   "loincCode": "3084-1",
   "unit": "мкмоль/л",
@@ -677,6 +707,7 @@
  {
   "code": "CRP",
   "name": "С-реактивний білок (CRP)",
+  "nameEn": "C-reactive protein (CRP)",
   "shortName": "CRP",
   "loincCode": "1988-5",
   "unit": "мг/л",
@@ -702,6 +733,7 @@
  {
   "code": "K",
   "name": "Калій",
+  "nameEn": "Potassium",
   "shortName": "K",
   "loincCode": "2823-3",
   "unit": "ммоль/л",
@@ -727,6 +759,7 @@
  {
   "code": "NA",
   "name": "Натрій",
+  "nameEn": "Sodium",
   "shortName": "Na",
   "loincCode": "2951-2",
   "unit": "ммоль/л",
@@ -752,6 +785,7 @@
  {
   "code": "CL",
   "name": "Хлориди",
+  "nameEn": "Chloride",
   "shortName": "Cl",
   "loincCode": "2075-0",
   "unit": "ммоль/л",
@@ -777,6 +811,7 @@
  {
   "code": "CA",
   "name": "Кальцій загальний",
+  "nameEn": "Total calcium",
   "shortName": "Ca",
   "loincCode": "17861-6",
   "unit": "ммоль/л",
@@ -802,6 +837,7 @@
  {
   "code": "FE",
   "name": "Залізо сироватки",
+  "nameEn": "Serum iron",
   "shortName": "Fe",
   "loincCode": "2498-4",
   "unit": "мкмоль/л",
@@ -827,6 +863,7 @@
  {
   "code": "HBA1C",
   "name": "Глікований гемоглобін (HbA1c)",
+  "nameEn": "Glycated hemoglobin (HbA1c)",
   "shortName": "HbA1c",
   "loincCode": "4548-4",
   "unit": "%",
@@ -852,6 +889,7 @@
  {
   "code": "TROP_I",
   "name": "Тропонін I високочутливий (hs-cTnI)",
+  "nameEn": "High-sensitivity troponin I (hs-cTnI)",
   "shortName": "hs-TnI",
   "loincCode": "89579-7",
   "unit": "нг/л",
@@ -877,6 +915,7 @@
  {
   "code": "LACTATE",
   "name": "Лактат",
+  "nameEn": "Lactate",
   "shortName": "Lac",
   "loincCode": "2524-7",
   "unit": "ммоль/л",
@@ -902,6 +941,7 @@
  {
   "code": "PT",
   "name": "Протромбіновий час",
+  "nameEn": "Prothrombin time",
   "shortName": "PT",
   "loincCode": "5902-2",
   "unit": "сек",
@@ -927,6 +967,7 @@
  {
   "code": "INR",
   "name": "Міжнародне нормалізоване відношення (МНВ / INR)",
+  "nameEn": "International normalized ratio (INR)",
   "shortName": "INR",
   "loincCode": "6301-6",
   "unit": "од",
@@ -952,6 +993,7 @@
  {
   "code": "APTT",
   "name": "Активований частковий тромбопластиновий час (АЧТЧ)",
+  "nameEn": "Activated partial thromboplastin time (aPTT)",
   "shortName": "APTT",
   "loincCode": "3173-2",
   "unit": "сек",
@@ -977,6 +1019,7 @@
  {
   "code": "FIBRINOGEN",
   "name": "Фібриноген за Клаусом",
+  "nameEn": "Fibrinogen (Clauss)",
   "shortName": "FIB",
   "loincCode": "3255-7",
   "unit": "г/л",
@@ -1002,6 +1045,7 @@
  {
   "code": "TSH",
   "name": "Тиреотропний гормон (ТТГ)",
+  "nameEn": "Thyroid-stimulating hormone (TSH)",
   "shortName": "TSH",
   "loincCode": "3016-3",
   "unit": "мкМО/мл",
@@ -1027,6 +1071,7 @@
  {
   "code": "FT4",
   "name": "Тироксин вільний (вТ4)",
+  "nameEn": "Free thyroxine (FT4)",
   "shortName": "FT4",
   "loincCode": "3024-7",
   "unit": "пмоль/л",
@@ -1052,6 +1097,7 @@
  {
   "code": "PSA",
   "name": "Простатспецифічний антиген загальний (PSA)",
+  "nameEn": "Total prostate-specific antigen (PSA)",
   "shortName": "PSA",
   "loincCode": "2857-1",
   "unit": "нг/мл",
@@ -1077,6 +1123,7 @@
  {
   "code": "FPSA",
   "name": "Простатспецифічний антиген вільний (fPSA)",
+  "nameEn": "Free prostate-specific antigen (fPSA)",
   "shortName": "fPSA",
   "loincCode": "10886-0",
   "unit": "нг/мл",
@@ -1102,6 +1149,7 @@
  {
   "code": "U_SG",
   "name": "Питома вага сечі",
+  "nameEn": "Urine specific gravity",
   "shortName": "SG",
   "loincCode": "5811-5",
   "unit": "",
@@ -1127,6 +1175,7 @@
  {
   "code": "U_PH",
   "name": "pH сечі",
+  "nameEn": "Urine pH",
   "shortName": "pH",
   "loincCode": "5803-2",
   "unit": "",
@@ -1152,6 +1201,7 @@
  {
   "code": "U_PRO",
   "name": "Білок у сечі",
+  "nameEn": "Urine protein",
   "shortName": "PRO",
   "loincCode": "5804-0",
   "unit": "",
@@ -1177,6 +1227,7 @@
  {
   "code": "U_GLU",
   "name": "Глюкоза в сечі",
+  "nameEn": "Urine glucose",
   "shortName": "GLU",
   "loincCode": "5792-7",
   "unit": "",
@@ -1202,6 +1253,7 @@
  {
   "code": "U_KET",
   "name": "Кетонові тіла в сечі",
+  "nameEn": "Urine ketones",
   "shortName": "KET",
   "loincCode": "5797-6",
   "unit": "",
@@ -1227,6 +1279,7 @@
  {
   "code": "U_LEU",
   "name": "Лейкоцити в сечі (естераза)",
+  "nameEn": "Urine leukocytes (esterase)",
   "shortName": "LEU",
   "loincCode": "5799-2",
   "unit": "",
@@ -1252,6 +1305,7 @@
  {
   "code": "U_ERY",
   "name": "Еритроцити в сечі",
+  "nameEn": "Urine erythrocytes",
   "shortName": "ERY",
   "loincCode": "5794-3",
   "unit": "",
@@ -1277,6 +1331,7 @@
  {
   "code": "U_NIT",
   "name": "Нітрити в сечі",
+  "nameEn": "Urine nitrites",
   "shortName": "NIT",
   "loincCode": "5802-4",
   "unit": "",
@@ -1302,6 +1357,7 @@
  {
   "code": "U_COLOR",
   "name": "Колір сечі",
+  "nameEn": "Urine color",
   "shortName": "Колір",
   "loincCode": "5778-6",
   "unit": "",
@@ -1336,6 +1392,7 @@
  {
   "code": "U_CLARITY",
   "name": "Прозорість сечі",
+  "nameEn": "Urine clarity",
   "shortName": "Прозорість",
   "loincCode": "5767-9",
   "unit": "",
@@ -1365,6 +1422,7 @@
  {
   "code": "HISTO",
   "name": "Патогістологічне дослідження біопсійного/операційного матеріалу",
+  "nameEn": "Histopathology of biopsy/surgical specimen",
   "shortName": "Гістологія",
   "loincCode": "22637-3",
   "unit": "",
@@ -1390,6 +1448,7 @@
  {
   "code": "CYTO",
   "name": "Цитологічне дослідження (мазок, рідинна цитологія)",
+  "nameEn": "Cytology (smear, liquid-based)",
   "shortName": "Цитологія",
   "loincCode": "47527-7",
   "unit": "",
@@ -1415,6 +1474,7 @@
  {
   "code": "URINE_CULTURE",
   "name": "Бактеріологічний посів сечі з антибіотикограмою",
+  "nameEn": "Urine culture with antibiotic susceptibility",
   "shortName": "Посів сечі",
   "loincCode": "630-4",
   "unit": "",
@@ -1440,6 +1500,7 @@
  {
   "code": "VITD",
   "name": "25-OH вітамін D (загальний)",
+  "nameEn": "25-OH vitamin D (total)",
   "shortName": "VITD",
   "loincCode": "62292-8",
   "unit": "нг/мл",
@@ -1465,6 +1526,7 @@
  {
   "code": "AMH",
   "name": "Антимюллерів гормон (АМГ)",
+  "nameEn": "Anti-Mullerian hormone (AMH)",
   "shortName": "AMH",
   "loincCode": "38476-3",
   "unit": "нг/мл",

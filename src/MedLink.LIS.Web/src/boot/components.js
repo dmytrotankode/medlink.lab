@@ -8,6 +8,7 @@ import ApiErrorBanner from '../components/common/ApiErrorBanner.vue';
 import EmptyState from '../components/common/EmptyState.vue';
 import BarcodeSvg from '../components/common/BarcodeSvg.vue';
 import ConfirmDialog from '../components/common/ConfirmDialog.vue';
+import RerunDialog from '../components/results/RerunDialog.vue';
 import { formatDate, formatDateTime, formatNumber, formatMoney, formatPercent, formatMinutes } from '../utils/format';
 
 export default ({ Vue }) => {
@@ -22,6 +23,7 @@ export default ({ Vue }) => {
   Vue.component('EmptyState', EmptyState);
   Vue.component('BarcodeSvg', BarcodeSvg);
   Vue.component('ConfirmDialog', ConfirmDialog);
+  Vue.component('RerunDialog', RerunDialog);
 
   Vue.filter('date', formatDate);
   Vue.filter('datetime', formatDateTime);

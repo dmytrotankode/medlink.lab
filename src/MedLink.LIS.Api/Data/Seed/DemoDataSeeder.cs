@@ -189,8 +189,9 @@ public sealed class DemoDataSeeder
             await CollectReceive(o);
             await Enter(o, new()
             {
-                ["WBC"] = wbc, ["RBC"] = rbc, ["HGB"] = hgb, ["HCT"] = Math.Round(hgb * 0.3, 1), ["PLT"] = 240, ["MCV"] = Math.Round(hgb * 3 / rbc, 1),
-                ["MCH"] = Math.Round(hgb / rbc, 1), ["MCHC"] = 333, ["NEUT_PCT"] = 82, ["LYMPH_PCT"] = 11, ["ESR"] = 38
+                ["WBC"] = wbc, ["RBC"] = rbc, ["HGB"] = hgb, ["HCT"] = Math.Round(hgb * 0.3, 1), ["PLT"] = 240,
+                // MCV/MCH/MCHC — розрахункові показники, рахуються з RBC/HGB/HCT автоматично
+                ["NEUT_PCT"] = 82, ["LYMPH_PCT"] = 11, ["ESR"] = 38
             }, analyzer);
             await VerifyAll(o, "Критичний гемоглобін — повідомлено лікаря ВРІТ телефоном");
             foreach (var crit in (await _orders.LoadAsync(o.Id)).Tests.Where(t => t.Result != null && Core.Clinical.ResultFlags.IsCritical(t.Result.Flag)))
