@@ -112,6 +112,7 @@ public class LisDbContext : DbContext
     public DbSet<LabOrderItemIndicator> OrderItemIndicators => Set<LabOrderItemIndicator>();
     public DbSet<LabRoutingLog> RoutingLog => Set<LabRoutingLog>();
     public DbSet<LabMisEventLog> MisEvents => Set<LabMisEventLog>();
+    public DbSet<LabNotifyChannel> NotifyChannelSettings => Set<LabNotifyChannel>();
     public DbSet<LabServicePackage> ServicePackages => Set<LabServicePackage>();
     public DbSet<LabEhealthSession> EhealthSessions => Set<LabEhealthSession>();
     public DbSet<LabEhealthSubmission> EhealthSubmissions => Set<LabEhealthSubmission>();
@@ -239,6 +240,10 @@ public class LisDbContext : DbContext
         mb.Entity<LabRoutingLog>().HasIndex(l => l.OrderTestId);
         mb.Entity<LabRoutingLog>().HasIndex(l => l.At);
         mb.Entity<LabMisEventLog>().HasIndex(l => new { l.OrderId, l.At });
+        mb.Entity<LabMisEventLog>().HasIndex(l => new { l.Status, l.NextAttemptAt });
+        mb.Entity<LabNotifyChannel>().HasIndex(c => c.Channel).IsUnique();
+        mb.Entity<LabPatientNotification>().HasIndex(n => n.IdempotencyKey).IsUnique();
+        mb.Entity<LabPatientNotification>().HasIndex(n => new { n.Status, n.NextAttemptAt });
         mb.Entity<LabServicePackage>().HasIndex(p => p.Code).IsUnique();
         mb.Entity<LabEhealthSession>().HasIndex(s => new { s.EmployeeId, s.ClosedAt });
         mb.Entity<LabEhealthSubmission>().HasIndex(s => new { s.OrderId, s.Status });

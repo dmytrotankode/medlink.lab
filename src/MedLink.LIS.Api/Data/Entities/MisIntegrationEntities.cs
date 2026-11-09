@@ -80,6 +80,13 @@ public static class MisEvents
         CriticalResult = "CRITICAL_RESULT", ItemIndicatorsChanged = "ITEM_INDICATORS_CHANGED", CatalogChanged = "CATALOG_CHANGED",
         Rejected = "REJECTED", Query = "QUERY", StageChanged = "STAGE_CHANGED", AdditionalStudyOrdered = "ADDITIONAL_STUDY_ORDERED",
         ResultPreliminary = "RESULT_PRELIMINARY", ResultFinal = "RESULT_FINAL", Addendum = "ADDENDUM";
+
+    public static string Label(string e) => e switch
+    {
+        Received => "Прийнято в роботу", Collected => "Матеріал отримано", ResultReady => "Результат готовий", Completed => "Направлення виконано", Cancelled => "Скасовано",
+        CriticalResult => "Критичний результат", ItemIndicatorsChanged => "Змінено показники", CatalogChanged => "Змінено каталог", Rejected => "Відхилено", Query => "Запит лікаря",
+        StageChanged => "Змінено етап", AdditionalStudyOrdered => "Призначено додаткове дослідження", ResultPreliminary => "Попередній результат", ResultFinal => "Остаточний результат", Addendum => "Доповнення", _ => e
+    };
 }
 
 /// <summary>Статуси відправки DiagnosticReport в ЕСОЗ (розд. 21.13).</summary>
@@ -249,11 +256,18 @@ public class LabMisEventLog : GuidEntity
     [MaxLength(64)] public string? MisReferralId { get; set; }
     [MaxLength(64)] public string Event { get; set; } = "";
     public string? Payload { get; set; }
-    /// <summary>QUEUED | DELIVERED | FAILED</summary>
-    [MaxLength(16)] public string Status { get; set; } = "DELIVERED";
-    public int Attempts { get; set; } = 1;
+    /// <summary>QUEUED | SENDING | DELIVERED | FAILED | NOT_CONFIGURED (MisDeliveryStatuses). Id запису = ключ ідемпотентності доставки.</summary>
+    [MaxLength(16)] public string Status { get; set; } = "QUEUED";
+    public int Attempts { get; set; }
     [MaxLength(1024)] public string? LastError { get; set; }
     public DateTime At { get; set; } = DateTime.UtcNow;
+    public DateTime? NextAttemptAt { get; set; }
+    public DateTime? DeliveredAt { get; set; }
+    /// <summary>HTTP-код останньої відповіді МІС.</summary>
+    public int? HttpStatus { get; set; }
+    [MaxLength(96)] public string? LockedBy { get; set; }
+    public DateTime? LockedUntil { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }
 
 /// <summary>[ЛІС, дзеркало МІС] Пакет послуг (FR-PKG-001): набір послуг ЕСОЗ із типовими показниками.</summary>

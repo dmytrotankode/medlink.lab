@@ -29,7 +29,7 @@ public class EhealthFactory : WebApplicationFactory<Program>
         {
             var d = new Dictionary<string, string?>
             {
-                ["Database:SqlitePath"] = _dbPath, ["Database:GuideSqlitePath"] = _guidePath, ["Lab:SeedDemoData"] = "true", ["Lab:PublicBaseUrl"] = "http://localhost:5055", ["Logging:LogLevel:Default"] = "Warning",
+                ["Database:SqlitePath"] = _dbPath, ["Database:GuideSqlitePath"] = _guidePath, ["Lab:SeedDemoData"] = "true", ["Lab:PublicBaseUrl"] = "http://localhost:5055", ["Auth:Mode"] = "Header", ["Logging:LogLevel:Default"] = "Warning",
                 ["Ehealth:Http:RetryBaseDelayMs"] = "1", ["Ehealth:Http:SyncJobPollDelaysMs:0"] = "1", ["Ehealth:Http:SyncJobWaitSeconds"] = "5", ["Ehealth:Outbox:BackoffJitter"] = "0"
             };
             foreach (var kv in _extra) d[kv.Key] = kv.Value;
