@@ -10921,7 +10921,7 @@
             "strategies": [
               {
                 "type": "testid",
-                "value": "[data-testid=\"dictImportDry\"]",
+                "value": "[data-testid=\"dictImportPreview\"]",
                 "weight": 100
               }
             ]

@@ -6093,7 +6093,7 @@
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
-          "transcript": "У колонці ціни введіть нове значення в гривнях і вийдіть з поля , збережеться автоматично.",
+          "transcript": "Відкрийте вкладку «Тарифи» і змініть ціну у відповідному рядку таблиці; зміна записується в довідник.",
           "anchor": {
             "code": "lab.path.dict.price",
             "caption": "Поле ціни методики",
@@ -6101,12 +6101,12 @@
             "strategies": [
               {
                 "type": "testid",
-                "value": "[data-testid^=\"price-\"]",
+                "value": "[data-testid=\"pathTab-path-prices\"]",
                 "weight": 100
               }
             ],
             "fingerprint": {
-              "tag": "input"
+              "tag": "div"
             }
           }
         },
