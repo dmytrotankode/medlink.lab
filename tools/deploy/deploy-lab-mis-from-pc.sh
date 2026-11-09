@@ -10,11 +10,11 @@ OUT="$(mktemp -d)"
 
 echo "==> 1/4 фронтенд (підпапка /lab/)"
 MSYS_NO_PATHCONV=1 MSYS2_ENV_CONV_EXCL=LIS_PUBLIC_PATH LIS_PUBLIC_PATH=/lab/ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./build.ps1 -SkipInstall
-git checkout src/MedLink.LIS.Api/wwwroot/index.html src/MedLink.LIS.Web/.quasar/client-entry.js 2>/dev/null || true
 
 echo "==> 2/4 dotnet publish (linux-x64)"
 dotnet publish src/MedLink.LIS.Api/MedLink.LIS.Api.csproj -c Release -r linux-x64 --self-contained false -o "$OUT/app" --nologo -v q
 
+git checkout src/MedLink.LIS.Api/wwwroot/index.html src/MedLink.LIS.Web/.quasar/client-entry.js 2>/dev/null || true
 echo "==> 3/4 архів і завантаження"
 tar -czf "$OUT/lab-mis-app.tgz" -C "$OUT/app" .
 scp -i "$KEY" "$OUT/lab-mis-app.tgz" "$HOST:/tmp/lab-mis-app.tgz"
