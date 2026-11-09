@@ -9,37 +9,37 @@
     {
       "code": "start",
       "caption": "Початок роботи",
-      "icon": "🚀",
+      "icon": "rocket_launch",
       "sortOrder": 10
     },
     {
       "code": "preanalytics",
       "caption": "Преаналітика",
-      "icon": "🩸",
+      "icon": "bloodtype",
       "sortOrder": 30
     },
     {
       "code": "analytics",
       "caption": "Аналітика та результати",
-      "icon": "🔬",
+      "icon": "biotech",
       "sortOrder": 40
     },
     {
       "code": "validation",
       "caption": "Верифікація та критичні значення",
-      "icon": "✅",
+      "icon": "task_alt",
       "sortOrder": 50
     },
     {
       "code": "mis",
       "caption": "Інтеграція з МІС",
-      "icon": "🔗",
+      "icon": "link",
       "sortOrder": 60
     },
     {
       "code": "quality",
       "caption": "Контроль якості",
-      "icon": "📈",
+      "icon": "trending_up",
       "sortOrder": 70
     }
   ],

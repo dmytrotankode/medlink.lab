@@ -101,7 +101,7 @@ export class HelpPanel {
       folders.filter(f => (f.parentId || null) === (parentId || null)).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).forEach(f => {
         if (q && !hasContent(f.id)) return;
         const isOpen = q ? true : this.open[f.id];
-        container.appendChild(decorate(h('div', { class: 'node fold', onclick: () => { this.open[f.id] = !this.open[f.id]; this.render(); } }, h('span', { text: isOpen ? '▾' : '▸' }), h('span', { class: 'nm', text: (f.icon && /[^\u0000-\u007f]/.test(f.icon) ? f.icon : '📁') + ' ' + f.caption }), dots(f)), f));
+        container.appendChild(decorate(h('div', { class: 'node fold', onclick: () => { this.open[f.id] = !this.open[f.id]; this.render(); } }, h('span', { text: isOpen ? '▾' : '▸' }), h('span', { class: 'nm', text: f.caption }), dots(f)), f));
         if (isOpen) { const kids = h('div', { class: 'kids' }); build(f.id, kids); scenarios.filter(s => s.folderId === f.id).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).forEach(s => kids.appendChild(item(s))); container.appendChild(kids); }
       });
     };
@@ -115,7 +115,7 @@ export class HelpPanel {
 
     this.drawer.innerHTML = '';
     this.drawer.appendChild(h('div', { class: 'dh' }, h('b', { text: 'Інструкції' }),
-      editor ? h('button', { text: '🎞 Набори', title: 'Керування наборами інструкцій', onclick: () => { this.close(); this.ctx.openSets(); } }) : null,
+      editor ? h('button', { text: 'Набори', title: 'Керування наборами інструкцій', onclick: () => { this.close(); this.ctx.openSets(); } }) : null,
       editor ? h('button', { text: '＋ Конструктор', onclick: () => { this.close(); this.ctx.openBuilder(); } }) : null,
       h('button', { text: '✕', onclick: () => this.close() })));
     this.drawer.appendChild(h('div', { class: 'srch' }, search));
@@ -133,7 +133,7 @@ export class HelpPanel {
     const unavailable = st.unavailableCount || 0;
     const card = h('div', { class: 'setcard', style: { borderLeftColor: color } },
       h('div', { class: 'sh', onclick: () => { this.openSets[st.id] = !open; this.render(); } },
-        h('b', { text: (st.icon && /[^\u0000-\u007f]/.test(st.icon) ? st.icon + ' ' : '') + st.caption }), h('span', { text: open ? '▾' : '▸' })),
+        h('b', { text: st.caption }), h('span', { text: open ? '▾' : '▸' })),
       st.description ? h('div', { class: 'sd', text: st.description }) : null,
       h('div', { class: 'sm', title: unavailable ? 'Решта інструкцій набору не показуються вашій ролі' : '', text: (unavailable ? n + ' з ' + (n + unavailable) + ' інструкцій доступні для вашої ролі' : n + ' ' + word) + ' · ' + time + ' · пройдено ' + done + ' з ' + n }),
       h('div', { class: 'pbar' }, h('i', { style: { width: (n ? Math.round(done * 100 / n) : 0) + '%', background: color } })),

@@ -63,10 +63,12 @@ public sealed class AnalyticsService
             var vals = data.Select(d => d.Tat.Stages.First(s => s.Name == name).Minutes).Where(m => m.HasValue).Select(m => m!.Value).ToList();
             return new { name, medianMin = Round(TatCalculator.Median(vals)), p90Min = Round(TatCalculator.P90(vals)), n = vals.Count };
         }).ToList();
-        var byProfile = data.Where(d => d.ProfileName != null).GroupBy(d => new { d.ProfileId, d.ProfileName, d.SlaHours }).Select(g =>
+        // Один рядок на послугу: термінові (CITO) і планові замовлення однієї послуги не розділяємо, лише кожне порівнюємо з власною нормою часу
+        var byProfile = data.Where(d => d.ProfileName != null).GroupBy(d => new { d.ProfileId, d.ProfileName }).Select(g =>
         {
-            var vals = g.Where(d => d.Tat.TotalMinutes.HasValue).Select(d => d.Tat.TotalMinutes!.Value).ToList();
-            return new { profileId = g.Key.ProfileId, profileName = g.Key.ProfileName, slaHours = g.Key.SlaHours, n = g.Count(), completed = vals.Count, medianMin = Round(TatCalculator.Median(vals)), p90Min = Round(TatCalculator.P90(vals)), slaViolations = vals.Count(v => v > g.Key.SlaHours * 60) };
+            var done = g.Where(d => d.Tat.TotalMinutes.HasValue).ToList();
+            var vals = done.Select(d => d.Tat.TotalMinutes!.Value).ToList();
+            return new { profileId = g.Key.ProfileId, profileName = g.Key.ProfileName, slaHours = g.Max(d => d.SlaHours), n = g.Count(), completed = vals.Count, medianMin = Round(TatCalculator.Median(vals)), p90Min = Round(TatCalculator.P90(vals)), slaViolations = done.Count(d => d.Tat.TotalMinutes! > d.SlaHours * 60) };
         }).OrderBy(x => x.profileName).ToList();
         var violations = data.Where(d => d.Tat.TotalMinutes.HasValue && d.Tat.TotalMinutes > d.SlaHours * 60)
             .Select(d => new { d.OrderId, d.OrderNumber, d.Cito, d.ProfileName, slaHours = d.SlaHours, totalMin = d.Tat.TotalMinutes, overMin = Math.Round(d.Tat.TotalMinutes!.Value - d.SlaHours * 60) }).ToList();

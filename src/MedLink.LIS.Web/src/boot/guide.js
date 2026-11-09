@@ -25,6 +25,22 @@ export default ({ router, store }) => {
         if (role) h['X-MedLink-Roles'] = role;
         return h;
       },
+      // елемент меню в згорнутій бічній панелі (вузьке вікно): відкриваємо меню «гамбургером»
+      revealAnchor: anchor => {
+        const hidden = el => { const r = el.getBoundingClientRect(); return r.right <= 0 || getComputedStyle(el).visibility === 'hidden'; };
+        const sts = (anchor && anchor.strategies) || [];
+        for (let i = 0; i < sts.length; i++) {
+          if (sts[i].type === 'text') continue;
+          let el = null;
+          try { el = document.querySelector(sts[i].value); } catch (e) { el = null; }
+          const drawer = el && el.closest('.q-drawer');
+          if (drawer && hidden(drawer)) {
+            const t = document.querySelector('[data-testid="menuToggle"]');
+            if (t) { t.click(); return true; }
+          }
+        }
+        return false;
+      },
       navigate: route => router.push(route).catch(() => {}),
       currentRoute: () => router.currentRoute.fullPath,
       getRole: () => store.getters['context/currentRole'] || '',

@@ -170,13 +170,13 @@
           "inputMode": "show",
           "optional": false,
           "anchor": {
-            "code": "lab.x.nt.tabs",
-            "caption": "Вкладки сторінки",
+            "code": "lab.x.nt.tab-channels",
+            "caption": "Вкладка «Канали»",
             "routePattern": "*",
             "strategies": [
               {
                 "type": "testid",
-                "value": "[data-testid=\"notifyTabs\"]",
+                "value": "[data-testid=\"notifyTabChannels\"]",
                 "weight": 100
               }
             ]

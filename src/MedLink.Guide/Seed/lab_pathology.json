@@ -702,8 +702,8 @@
             "strategies": [
               {
                 "type": "css",
-                "value": ".q-table tbody tr",
-                "weight": 40
+                "value": "[data-testid=\"pathCasesTable\"] tbody tr",
+                "weight": 75
               }
             ],
             "fingerprint": {
@@ -4659,8 +4659,8 @@
             "strategies": [
               {
                 "type": "css",
-                "value": ".q-table tbody tr",
-                "weight": 40
+                "value": "[data-testid=\"pathCasesTable\"] tbody tr",
+                "weight": 75
               }
             ],
             "fingerprint": {
@@ -6579,8 +6579,8 @@
             "strategies": [
               {
                 "type": "css",
-                "value": ".q-table tbody tr",
-                "weight": 40
+                "value": "[data-testid=\"pathCasesTable\"] tbody tr",
+                "weight": 75
               }
             ],
             "fingerprint": {
