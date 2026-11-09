@@ -29,7 +29,18 @@ public sealed class AuthConfigController : LisControllerBase
                 postLogoutPath = _cfg["Auth:Oidc:PostLogoutPath"] ?? ""
             } : null,
             bridge = new { enabled = !string.IsNullOrWhiteSpace(_cfg["Medlink:ConnectionString"]) },
-            basePath = Request.PathBase.Value + "/"
+            basePath = Request.PathBase.Value + "/",
+            // Підписи «Ця частина належить МедЛінк» і умовна оболонка. Вимкнення: LIS_SHELL_HINTS=0 або Lab:ShellHints=false
+            shellHints = ShellHintsEnabled()
         });
+    }
+
+    private bool ShellHintsEnabled()
+    {
+        var raw = Environment.GetEnvironmentVariable("LIS_SHELL_HINTS");
+        if (string.IsNullOrWhiteSpace(raw)) raw = _cfg["Lab:ShellHints"];
+        if (string.IsNullOrWhiteSpace(raw)) return true; // на стенді ввімкнено за замовчуванням
+        var v = raw.Trim().ToLowerInvariant();
+        return !(v is "0" or "false" or "off" or "no" or "ні");
     }
 }

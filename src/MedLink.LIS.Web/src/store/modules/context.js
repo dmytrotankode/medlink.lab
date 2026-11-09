@@ -23,6 +23,11 @@ function writeStored (value) {
   } catch (e) { /* private mode */ }
 }
 
+const HINTS_KEY = 'medlink.lis.shellHints';
+function readHints () {
+  try { return window.localStorage.getItem(HINTS_KEY) !== '0'; } catch (e) { return true; }
+}
+
 const state = {
   employeeId: readStored(),
   employees: [],
@@ -32,11 +37,15 @@ const state = {
   loaded: false,
   loading: false,
   // Режим входу з /api/v1/lab/auth/config: Oidc — особу визначає токен Identity, «Працюю як…» вимкнено
-  auth: { mode: 'None', runAs: true, bridge: false, error: null }
+  auth: { mode: 'None', runAs: true, bridge: false, shellHints: true, error: null },
+  // Особистий перемикач підписів «Ця частина належить МедЛінк» (діє, лише якщо підписи не вимкнено конфігом)
+  hintsUser: readHints()
 };
 
 const getters = {
   runAsEnabled: s => s.auth.runAs !== false,
+  shellEnabled: s => s.auth.shellHints !== false,
+  shellHints: s => s.auth.shellHints !== false && s.hintsUser,
   oidcMode: s => s.auth.mode === 'Oidc',
   currentEmployee: s => s.employee || s.employees.find(e => e.id === s.employeeId) || null,
   currentRole: (s, g) => (g.currentEmployee && (g.currentEmployee.labRole || g.currentEmployee.role)) || null,
@@ -61,7 +70,11 @@ const mutations = {
     s.loaded = true;
   },
   SET_LAB_SETTINGS (s, v) { s.labSettings = v || null; },
-  SET_AUTH (s, v) { s.auth = Object.assign({ mode: 'None', runAs: true, bridge: false, error: null }, v || {}); },
+  SET_AUTH (s, v) { s.auth = Object.assign({ mode: 'None', runAs: true, bridge: false, shellHints: true, error: null }, v || {}); },
+  SET_HINTS_USER (s, v) {
+    s.hintsUser = !!v;
+    try { window.localStorage.setItem(HINTS_KEY, v ? '1' : '0'); } catch (e) { /* private mode */ }
+  },
   SET_LOADING (s, v) { s.loading = v; }
 };
 

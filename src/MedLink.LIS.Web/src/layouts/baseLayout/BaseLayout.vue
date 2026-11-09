@@ -1,6 +1,7 @@
 <template>
   <q-layout view="hHh LpR fFf" class="base-layout">
     <q-header id="main-header" reveal-offset="80">
+      <medlink-shell />
       <div class="brand-gradient-line" />
       <q-toolbar class="q-px-sm" style="min-height: 52px">
         <q-btn flat dense round icon="menu" color="grey-8" aria-label="Меню" data-testid="menuToggle" @click="toggleDrawer" />
@@ -14,6 +15,7 @@
             <div class="text-caption text-grey-7 ellipsis" style="font-size: 11.5px; line-height: 1.1; max-width: 260px">{{ labName }}</div>
           </div>
         </router-link>
+        <medlink-hint text="Шапка, головне меню та плитка «Лабораторія» — з МІС" detail="У реальній системі верхню смугу, перемикач профілю/організації та плитку модуля надає фронт МедЛінк; лабораторія вбудовується під нею." />
 
         <q-space />
 
@@ -73,6 +75,7 @@
         </router-link>
 
         <!-- Вхід через Identity: поточний співробітник і вихід -->
+        <medlink-hint :text="oidcMode ? 'Вхід і профіль — Identity МедЛінк' : 'Вхід і профіль — з МІС'" detail="Особу визначає токен Identity (sub → співробітник). Перемикач «Працюю як…» існує лише на стенді без входу." />
         <div v-if="oidcMode" class="row items-center no-wrap" data-testid="oidcUser">
           <q-avatar color="primary" text-color="white" size="26px" icon="person" class="q-mr-sm" />
           <div class="column no-wrap" style="line-height: 1.1">
@@ -142,6 +145,8 @@ import { mapState, mapGetters } from 'vuex';
 import MenuDrawer from '../../components/baseElements/menuDrawer.vue';
 import EhealthSessionChip from '../../components/common/EhealthSessionChip.vue';
 import AccessDenied from '../../components/common/AccessDenied.vue';
+import MedlinkHint from '../../components/medlink-shell/MedlinkHint.vue';
+import MedlinkShell from '../../components/medlink-shell/MedlinkShell.vue';
 import roleMixin from '../../mixins/roleMixin';
 import { ROLE } from '../../utils/statuses';
 import { routeAllowed } from '../../utils/menuAccess';
@@ -149,7 +154,7 @@ import { signOut } from '../../services/auth';
 
 export default {
   name: 'BaseLayout',
-  components: { MenuDrawer, EhealthSessionChip, AccessDenied },
+  components: { MenuDrawer, EhealthSessionChip, AccessDenied, MedlinkHint, MedlinkShell },
   mixins: [roleMixin],
   data () {
     return {

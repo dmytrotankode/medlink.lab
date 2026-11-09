@@ -6,7 +6,7 @@ import { initAuth, authState } from '../services/auth';
 
 export default async ({ store }) => {
   const state = await initAuth();
-  store.commit('context/SET_AUTH', { mode: state.mode, runAs: state.runAs, bridge: state.bridge, error: state.error });
+  store.commit('context/SET_AUTH', { mode: state.mode, runAs: state.runAs, bridge: state.bridge, shellHints: state.shellHints, error: state.error });
 };
 
 export { authState };

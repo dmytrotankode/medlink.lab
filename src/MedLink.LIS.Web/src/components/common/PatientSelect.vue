@@ -17,6 +17,7 @@
     :rules="rules"
   >
     <template v-slot:prepend><q-icon name="person_search" /></template>
+    <template v-slot:after><medlink-hint text="Вибір пацієнта — з МІС" detail="У реальній системі пацієнта обирає картка/пошук МІС (cmn_person, mis_patient_card); лабораторія приймає лише patientId. Створення й редагування карток — у МІС." /></template>
     <template v-slot:option="scope">
       <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
         <q-item-section>
@@ -43,10 +44,12 @@
 </template>
 
 <script>
+import MedlinkHint from '../medlink-shell/MedlinkHint.vue';
 import { patientDisplay, genderLabel, maskTaxId } from '../../utils/format';
 
 export default {
   name: 'PatientSelect',
+  components: { MedlinkHint },
   props: {
     value: { type: Object, default: null },
     label: { type: String, default: 'Пацієнт (пошук за ПІБ / телефоном / ІПН)' },

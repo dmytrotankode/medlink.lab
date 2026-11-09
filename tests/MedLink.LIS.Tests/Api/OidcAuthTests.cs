@@ -183,6 +183,7 @@ public class OidcLocalAuthTests : IClassFixture<OidcLocalAuthTests.Fixture>
         Assert.False(json["runAs"]!.GetValue<bool>());
         Assert.Equal(TestIdentity.Issuer, json["oidc"]!["authority"]!.GetValue<string>());
         Assert.Equal("TestLab", json["oidc"]!["clientId"]!.GetValue<string>());
+        Assert.True(json["shellHints"]!.GetValue<bool>()); // підписи «належить МедЛінк» на стенді ввімкнено за замовчуванням
         Assert.DoesNotContain("ecret", await cfg.Content.ReadAsStringAsync()); // секретів у відповіді немає
         // Шлюз коннектора має власний ключ: токен співробітника там не потрібен (відповідь — 403 коннектора, а не 401 входу)
         var conn = await _f.WithToken(null).GetAsync("/api/v1/lab/connector/config");

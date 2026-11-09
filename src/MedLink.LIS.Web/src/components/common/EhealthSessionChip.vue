@@ -9,6 +9,7 @@
     <div class="header-chip cursor-pointer" :class="chipClass" data-testid="ehealthChip" @click="open">
       <q-icon :name="state === 'active' ? 'verified_user' : state === 'none' ? 'login' : 'shield'" size="15px" />
       <span class="gt-sm">{{ status.label || 'ЄСОЗ: не підключено' }}</span>
+      <medlink-hint text="Сесія ЄСОЗ і підпис КЕП — сервіс МІС" detail="Вхід у ЄСОЗ, токени та КЕП виконує eHealth-проксі МедЛінк; лабораторія токена не бачить." />
       <q-tooltip>Сесія ЄСОЗ користувача для підпису й відправки звітів{{ status.simulated ? ' (тестовий режим: проксі імітується)' : '' }}</q-tooltip>
     </div>
 
@@ -50,9 +51,11 @@
 
 <script>
 import { describeApiError } from '../../services/http';
+import MedlinkHint from '../medlink-shell/MedlinkHint.vue';
 
 export default {
   name: 'EhealthSessionChip',
+  components: { MedlinkHint },
   data () {
     return { status: {}, dlg: false, busy: false, timer: null };
   },

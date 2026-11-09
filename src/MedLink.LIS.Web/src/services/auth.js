@@ -9,13 +9,19 @@
 import Oidc from 'oidc-client';
 import { API_BASE } from './http';
 
-const state = { mode: 'None', runAs: true, bridge: false, ready: false, error: null };
+const state = { mode: 'None', runAs: true, bridge: false, shellHints: true, ready: false, error: null };
 let manager = null;
 let user = null;
 
 export const authState = state;
 export const isOidc = () => state.mode === 'Oidc';
 export const getAccessToken = () => (user && !user.expired ? user.access_token : null);
+/** Дані користувача з токена Identity (ім'я, пошта) — лише для відображення в умовній оболонці МедЛінк. */
+export const getTokenProfile = () => {
+  const p = (user && user.profile) || null;
+  if (!p) return null;
+  return { name: p.name || p.preferred_username || p.given_name || '', email: p.email || '', sub: p.sub || '' };
+};
 export const authHeader = () => {
   const t = getAccessToken();
   return t ? { Authorization: `Bearer ${t}` } : {};
@@ -55,6 +61,7 @@ export async function initAuth () {
   state.mode = cfg.mode || 'None';
   state.runAs = cfg.runAs !== false;
   state.bridge = !!(cfg.bridge && cfg.bridge.enabled);
+  state.shellHints = cfg.shellHints !== false;
   if (state.mode !== 'Oidc' || !cfg.oidc || !cfg.oidc.authority) {
     state.ready = true;
     return state;

@@ -7,6 +7,7 @@
         <q-space />
         <q-btn v-if="url" flat dense no-caps icon="open_in_new" label="У новій вкладці" type="a" :href="url" target="_blank" class="q-mr-sm" />
         <q-btn v-if="pdfUrl" flat dense no-caps icon="picture_as_pdf" label="PDF" type="a" :href="pdfUrl" target="_blank" class="q-mr-sm" />
+        <medlink-hint text="Друк і формати бланків — сервіс друку МІС" detail="Підпис КЕП і друк офіційних бланків виконує сервіс МІС; лабораторія віддає HTML/PDF бланка за адресою API." />
         <q-btn flat dense no-caps icon="print" label="Друк" class="q-mr-sm" @click="print" />
         <q-btn flat round dense icon="close" v-close-popup />
       </q-card-section>
@@ -20,8 +21,11 @@
 </template>
 
 <script>
+import MedlinkHint from '../medlink-shell/MedlinkHint.vue';
+
 export default {
   name: 'HtmlPreviewDialog',
+  components: { MedlinkHint },
   props: {
     value: Boolean,
     title: { type: String, default: 'Попередній перегляд' },

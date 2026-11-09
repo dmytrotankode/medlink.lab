@@ -20,6 +20,7 @@
         <div class="text-white text-weight-bold" style="font-size: 13.5px; line-height: 1.1">Модулі лабораторії</div>
         <div class="drawer-header-title" style="font-size: 10px">Навігація процесів ЛІС</div>
       </div>
+      <medlink-hint class="q-ml-auto" text="Навігація модуля — секція «Лабораторія» в меню МІС" detail="У реальній системі пункти цього меню додаються до бічного меню МедЛінк як секція «Лабораторія»; маршрути /laboratory/* лишаються нашими." />
     </div>
 
     <q-scroll-area style="height: calc(100% - 52px)">
@@ -70,10 +71,12 @@
 <script>
 import { mapGetters, mapState } from 'vuex';
 import roleMixin from '../../mixins/roleMixin';
+import MedlinkHint from '../medlink-shell/MedlinkHint.vue';
 import { routeAllowed } from '../../utils/menuAccess';
 
 export default {
   name: 'MenuDrawer',
+  components: { MedlinkHint },
   mixins: [roleMixin],
   props: {
     value: { type: Boolean, default: true }
