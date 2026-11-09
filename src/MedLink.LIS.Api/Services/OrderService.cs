@@ -436,6 +436,19 @@ public sealed class OrderService
         if (pending.Count > 0) throw new ConflictException($"Видача неможлива: не верифіковано тести {string.Join(", ", pending)}");
         if (!order.Tests.Any(t => OrderTestStatuses.VerifiedAny.Contains(t.Status))) throw new ConflictException("Видача неможлива: у замовленні немає верифікованих результатів");
 
+        // FR-VAL-002 / S-06: критичний (панічний) результат не видається без зареєстрованого дзвінка лікарю
+        var criticalTests = order.Tests.Where(t => t.Result != null && Core.Clinical.ResultFlags.IsCritical(t.Result.Flag) && t.Status != OrderTestStatuses.Rejected).ToList();
+        if (criticalTests.Count > 0)
+        {
+            var resultIds = criticalTests.Select(t => t.Result!.Id).ToList();
+            var called = await _db.PanicCalls.AsNoTracking().Where(p => resultIds.Contains(p.ResultId) && p.RecordState != RecordStates.Deleted).Select(p => p.ResultId).ToListAsync();
+            var uncalled = criticalTests.Where(t => !called.Contains(t.Result!.Id)).Select(t => t.TestCode).Distinct().ToList();
+            if (uncalled.Count > 0)
+                throw new ConflictException($"Видача неможлива: для критичних результатів ({string.Join(", ", uncalled)}) не зареєстровано телефонний дзвінок лікарю. " +
+                                            "Відкрийте екран «Валідація та критичні значення», натисніть «Дзвінок» біля критичного результату, вкажіть лікаря, телефон і підтвердіть повторення значення — після цього повторіть видачу.")
+                { Code = "PANIC_CALL_REQUIRED" };
+        }
+
         var now = DateTime.UtcNow;
         order.Status = rule.ToStatus!;
         order.ReleasedAt = now;

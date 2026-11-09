@@ -58,9 +58,9 @@ public sealed class DemoDataSeeder
         await CollectReceive(o1);
         await Enter(o1, new() { ["GLU"] = 5.4, ["CREAT"] = 168, ["UREA"] = 12.1, ["ALT"] = 28, ["AST"] = 24, ["BIL_TOT"] = 11.2, ["PROT_TOT"] = 71, ["K"] = 6.8, ["NA"] = 134 }, Mindray);
         await VerifyAll(o1, "Критична гіперкаліємія 6.8 ммоль/л — повідомлено лікуючого лікаря телефоном");
-        o1 = await _orders.ReleaseAsync(o1.Id);
         var kResult = (await _orders.LoadAsync(o1.Id)).Tests.First(t => t.TestCode == "K").Result!;
         await _worklist.CreatePanicCallAsync(new PanicCallRequest { ResultId = kResult.Id, DoctorName = "Іванчук М.П. (нефролог)", Phone = "+380501234567", Department = "Нефрологічне відділення", ReadbackConfirmed = true, Comments = "Повідомлено про К 6.8 ммоль/л, призначено ЕКГ та корекцію" });
+        o1 = await _orders.ReleaseAsync(o1.Id);
         await Backdate(o1.Id, hoursAgo: 30);
 
         // 2. Біохімія 5 днів тому (база для delta-check), видано
@@ -183,6 +183,8 @@ public sealed class DemoDataSeeder
                 ["MCH"] = Math.Round(hgb / rbc, 1), ["MCHC"] = 333, ["NEUT_PCT"] = 82, ["LYMPH_PCT"] = 11, ["ESR"] = 38
             }, analyzer);
             await VerifyAll(o, "Критичний гемоглобін — повідомлено лікаря ВРІТ телефоном");
+            foreach (var crit in (await _orders.LoadAsync(o.Id)).Tests.Where(t => t.Result != null && Core.Clinical.ResultFlags.IsCritical(t.Result.Flag)))
+                await _worklist.CreatePanicCallAsync(new PanicCallRequest { ResultId = crit.Result!.Id, DoctorName = "Шевченко О. А. (анестезіолог)", Phone = "+380501112233", Department = "ВРІТ", ReadbackConfirmed = true, Comments = "Критичне значення передано телефоном" });
             await _orders.ReleaseAsync(o.Id);
             await Backdate(o.Id, hoursAgo: 24 * days);
         }
