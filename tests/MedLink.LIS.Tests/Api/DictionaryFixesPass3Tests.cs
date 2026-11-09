@@ -4,6 +4,8 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Nodes;
 using MedLink.LIS.Api.Data.Seed;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace MedLink.LIS.Tests.Api;
 
@@ -64,11 +66,15 @@ public class DictionaryFixesPass3Tests
     }
 
     [Fact]
-    public async Task Connector_setup_command_has_no_localhost_when_public_url_is_known()
+    public async Task Connector_setup_command_uses_configured_public_url()
     {
-        var res = JsonNode.Parse(await (await Admin.PostAsJsonAsync("/api/v1/lab/connectors", new { name = "ZZ P3 коннектор" })).Content.ReadAsStringAsync())!;
+        using var f = _f.WithWebHostBuilder(b => b.ConfigureAppConfiguration((_, c) => c.AddInMemoryCollection(new Dictionary<string, string?> { ["Lab:PublicBaseUrl"] = "https://lab.example.org" })));
+        var admin = f.CreateClient();
+        admin.DefaultRequestHeaders.Add("X-MedLink-Employee-Id", DemoDataSeeder.Admin);
+        var res = JsonNode.Parse(await (await admin.PostAsJsonAsync("/api/v1/lab/connectors", new { name = "ZZ P3 коннектор" })).Content.ReadAsStringAsync())!;
         var cmd = res["setupCommand"]!.GetValue<string>();
-        Assert.DoesNotContain("localhost:5055", cmd);
-        await Admin.DeleteAsync($"/api/v1/lab/connectors/{res["id"]}");
+        Assert.Contains("--server https://lab.example.org ", cmd);
+        Assert.DoesNotContain("localhost", cmd);
+        await admin.DeleteAsync($"/api/v1/lab/connectors/{res["id"]}");
     }
 }

@@ -76,7 +76,6 @@ public sealed class NotificationAdminService
             var st = await _dispatcher.ChannelStateAsync(_db);
             if (!st.TryGetValue(row.Channel, out var cs) || !cs.Configured || !cs.Enabled) throw new ConflictException("Канал не налаштовано або вимкнено — повторити не можна. Спочатку налаштуйте канал.");
         }
-            throw new ConflictException("Канал не налаштовано — повторити не можна");
         var now = DateTime.UtcNow;
         row.Status = NotifyStatuses.Queued; row.Attempts = 0; row.NextAttemptAt = now; row.LastError = null; row.ReasonCode = null; row.UpdatedAt = now;
         _audit.Log("NOTIFY_RETRY", "lab_patient_notification", row.Id, null, new { row.Channel });
