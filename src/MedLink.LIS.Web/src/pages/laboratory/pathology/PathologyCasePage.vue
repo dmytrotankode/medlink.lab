@@ -466,7 +466,7 @@
                     menu-anchor="bottom left" menu-self="top left" :popup-content-style="{ maxHeight: '240px' }" @filter="(v, update) => update(() => { morphQuery = v; })">
             <template v-slot:no-option><q-item><q-item-section class="text-grey">Нічого не знайдено</q-item-section></q-item></template>
           </q-select>
-          <q-checkbox v-model="addendum.changesDiagnosis" label="Змінює діагноз або стадію (буде сповіщено мультидисциплінарну комісію)" />
+          <q-checkbox v-model="addendum.changesDiagnosis" data-testid="addendumChangesDx" label="Змінює діагноз або стадію (буде сповіщено мультидисциплінарну комісію)" />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Скасувати" v-close-popup />

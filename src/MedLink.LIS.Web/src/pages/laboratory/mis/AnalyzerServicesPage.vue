@@ -6,7 +6,7 @@
 <template>
   <div data-testid="analyzerServicesPage">
     <page-header title="Послуги ЕСОЗ та аналізатори" icon="fas fa-project-diagram" subtitle="Які прилади виконують послуги ЕСОЗ і з яким пріоритетом" :breadcrumbs="[{ label: 'Послуги ЕСОЗ та аналізатори' }]">
-      <q-btn flat dense color="primary" icon="download" label="Експорт у CSV" type="a" :href="$api.serviceMatrixCsvUrl()" class="q-mr-sm" />
+      <q-btn flat dense color="primary" icon="download" label="Експорт у CSV" data-testid="serviceMatrixCsv" type="a" :href="$api.serviceMatrixCsvUrl()" class="q-mr-sm" />
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
     </page-header>
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />
@@ -66,7 +66,7 @@
         <q-select v-model="ivStatus" dense outlined clearable emit-value map-options label="Готовність" style="min-width: 200px" :options="readinessOptions" @input="loadInterventions" />
         <q-space />
         <span v-for="(n, k) in interventions.summary || {}" :key="k"><q-badge :color="readinessColor(k)" :label="`${readinessText(k)}: ${n}`" /></span>
-        <q-btn outline dense color="primary" icon="sync" label="Оновити довідник інтервенцій з ЕСОЗ" @click="confirmSync"><q-tooltip>Завантажити з ЕСОЗ актуальний перелік послуг (інтервенцій)</q-tooltip></q-btn>
+        <q-btn outline dense color="primary" icon="sync" label="Оновити довідник інтервенцій з ЕСОЗ" data-testid="syncInterventions" @click="confirmSync"><q-tooltip>Завантажити з ЕСОЗ актуальний перелік послуг (інтервенцій)</q-tooltip></q-btn>
       </div>
       <q-table :data="interventions.items || []" :columns="ivColumns" row-key="id" dense flat :pagination="{ rowsPerPage: 30 }">
         <template v-slot:body-cell-readiness="props">

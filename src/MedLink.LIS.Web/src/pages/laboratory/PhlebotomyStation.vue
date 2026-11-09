@@ -88,7 +88,7 @@
           <label-sticker :label="label" />
           <div class="row justify-center q-gutter-sm q-mt-sm">
             <q-btn dense color="primary" icon="print" label="Друк етикетки" :disable="!label.zpl" @click="printLabelsViaAgent([label])" />
-            <q-btn dense outline color="primary" icon="content_copy" label="Копіювати код" :disable="!label.zpl" @click="copyZpl" />
+            <q-btn dense outline color="primary" icon="content_copy" label="Копіювати код" data-testid="labelCopyZpl" :disable="!label.zpl" @click="copyZpl" />
             <q-btn dense outline color="grey-8" icon="open_in_full" label="Збільшити" @click="labelsOpen = true" />
           </div>
         </div>

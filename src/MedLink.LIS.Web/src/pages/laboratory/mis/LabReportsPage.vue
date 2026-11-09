@@ -25,7 +25,7 @@
           <q-input v-model="from" dense outlined type="date" label="З" stack-label />
           <q-input v-model="to" dense outlined type="date" label="По" stack-label />
           <template v-if="type === 'cumulative'">
-            <q-btn-toggle v-model="group" dense unelevated toggle-color="primary" color="grey-2" text-color="grey-9" :options="[{ label: 'За дослідженням', value: 'service' }, { label: 'За аналізатором', value: 'analyzer' }]" />
+            <q-btn-toggle v-model="group" data-testid="reportGroupToggle" dense unelevated toggle-color="primary" color="grey-2" text-color="grey-9" :options="[{ label: 'За дослідженням', value: 'service' }, { label: 'За аналізатором', value: 'analyzer' }]" />
             <q-toggle v-model="abnormalOnly" dense label="Лише відхилення" />
           </template>
           <q-select v-else v-model="source" dense outlined clearable emit-value map-options :options="sourceOptions" label="Джерело" style="min-width: 170px" />

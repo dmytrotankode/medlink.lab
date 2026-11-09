@@ -24,7 +24,7 @@
           <div class="col-6 col-md-2"><q-select v-model="filters.status" dense outlined label="Статус" :options="statusFilterOptions" emit-value map-options @input="load" /></div>
           <div class="col-6 col-md-2"><q-select v-model="filters.flag" dense outlined clearable label="Прапорець" :options="flagOptions" emit-value map-options @input="load" /></div>
           <div class="col-6 col-md-2"><q-toggle v-model="filters.cito" label="CITO" color="deep-orange-6" keep-color @input="load" /></div>
-          <div class="col-6 col-md-3 text-right text-caption text-grey-7">Для критичних значень коментар лікаря обов’язковий. Результат із блокуванням ВКЯ верифікується лише з підтвердженням винятку.</div>
+          <div class="col-6 col-md-3 text-right text-caption text-grey-7" data-testid="validationRulesHint">Для критичних значень коментар лікаря обов’язковий. Результат із блокуванням ВКЯ верифікується лише з підтвердженням винятку.</div>
         </div>
         <div class="medlink-card">
           <q-table :data="rows" :columns="columns" row-key="orderTestId" dense flat :loading="loading" :selected.sync="selected" selection="multiple" :pagination.sync="pagination" :rows-per-page-options="[25, 50, 100]" no-data-label="Результатів на верифікацію немає" data-testid="reviewTable">

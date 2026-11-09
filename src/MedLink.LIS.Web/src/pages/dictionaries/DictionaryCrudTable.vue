@@ -60,8 +60,8 @@
       <q-card style="min-width: 520px">
         <q-card-section class="row items-center bg-primary text-white q-py-sm"><div class="text-subtitle1 text-weight-bold">Імпорт довідника «{{ schema.title }}» (JSON/CSV)</div><q-space /><q-btn flat round dense icon="close" v-close-popup /></q-card-section>
         <q-card-section class="q-gutter-y-sm">
-          <q-file v-model="importFile" outlined dense label="Файл JSON або CSV" accept=".json,.csv" />
-          <div class="row q-gutter-sm"><q-btn outline color="primary" label="Попередній перегляд" :disable="!importFile" :loading="importing" @click="runImport(true)" /><q-btn color="primary" label="Імпортувати" :disable="!importFile || !importPreview" :loading="importing" @click="runImport(false)" /></div>
+          <q-file v-model="importFile" outlined dense label="Файл JSON або CSV" data-testid="dictImportFile" accept=".json,.csv" />
+          <div class="row q-gutter-sm"><q-btn outline color="primary" label="Попередній перегляд" data-testid="dictImportDry" :disable="!importFile" :loading="importing" @click="runImport(true)" /><q-btn color="primary" label="Імпортувати" data-testid="dictImportRun" :disable="!importFile || !importPreview" :loading="importing" @click="runImport(false)" /></div>
           <pre v-if="importPreview" class="mono bg-grey-2 q-pa-sm" style="max-height: 240px; overflow: auto; font-size: 11px">{{ JSON.stringify(importPreview, null, 2) }}</pre>
         </q-card-section>
       </q-card>

@@ -34,7 +34,7 @@
               </div>
             </div>
             <div class="col">
-              <q-file v-model="logoFile" outlined dense label="Логотип (PNG, SVG або JPG до 300 КБ)" accept="image/*" @input="readLogo" />
+              <q-file v-model="logoFile" data-testid="settingsLogoFile" outlined dense label="Логотип (PNG, SVG або JPG до 300 КБ)" accept="image/*" @input="readLogo" />
               <q-btn v-if="form.logoBase64" flat dense color="negative" label="Прибрати" class="q-mt-xs" @click="form.logoBase64 = null" />
             </div>
           </div>

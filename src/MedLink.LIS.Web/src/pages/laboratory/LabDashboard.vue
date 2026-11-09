@@ -11,7 +11,7 @@
     <div class="row q-col-gutter-md q-mb-md">
       <div v-for="tile in tiles" :key="tile.key" class="col-6 col-md-3">
         <router-link :to="tile.to" style="text-decoration: none">
-          <div class="kpi-tile" :class="tile.cls">
+          <div class="kpi-tile" :class="tile.cls" :data-testid="`dashTile-${tile.key}`">
             <div class="kpi-tile__label">{{ tile.label }}</div>
             <div class="kpi-tile__value">{{ tile.value }}</div>
             <div class="kpi-tile__hint">{{ tile.hint }}</div>
@@ -106,7 +106,7 @@
 
       <!-- Коннектори / аналізатори -->
       <div class="col-12 col-md-6 col-lg-4">
-        <div class="medlink-card">
+        <div class="medlink-card" data-testid="dashDevicesCard">
           <div class="medlink-card__title">
             <span><q-icon name="wifi" color="teal-6" class="q-mr-xs" />Прилади онлайн: {{ devicesOnline }} з {{ devicesTotal }}</span>
             <q-btn flat dense size="sm" color="primary" label="Коннектори" :to="{ name: 'lab-analyzers' }" />
@@ -140,7 +140,7 @@
 
       <!-- TAT сьогодні -->
       <div class="col-12 col-lg-4">
-        <div class="medlink-card">
+        <div class="medlink-card" data-testid="dashTatCard">
           <div class="medlink-card__title">
             <span><q-icon name="timer" color="indigo-5" class="q-mr-xs" />Терміни виконання сьогодні</span>
             <q-btn flat dense size="sm" color="primary" label="Аналітика" :to="{ name: 'lab-analytics-tat' }" />
@@ -148,7 +148,7 @@
           <div v-if="hasTat" class="q-pa-md">
             <div class="row q-col-gutter-sm q-mb-sm">
               <div class="col-6">
-                <div class="kpi-tile kpi-tile--accent">
+                <div class="kpi-tile kpi-tile--accent" data-testid="dashTatMedian">
                   <div class="kpi-tile__label">Типовий час</div>
                   <div class="kpi-tile__value">{{ tat.medianMin | minutes }}</div>
                 </div>

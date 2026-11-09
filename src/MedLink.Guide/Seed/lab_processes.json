@@ -126,7 +126,19 @@
           "expect": "next",
           "inputValue": "",
           "inputMode": "show",
-          "optional": false
+          "optional": false,
+          "anchor": {
+            "code": "lab.nav.orders-page",
+            "caption": "Черга замовлень",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"ordersPage\"]",
+                "weight": 100
+              }
+            ]
+          }
         }
       ]
     },

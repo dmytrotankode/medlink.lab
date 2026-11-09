@@ -269,16 +269,11 @@
             "routePattern": "/laboratory/dashboard",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Прилади онлайн",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"dashDevicesCard\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "span",
-              "text": "Прилади онлайн",
-              "label": "Блок «Прилади онлайн»"
-            },
             "parentLevels": 1
           }
         },
@@ -301,16 +296,11 @@
             "routePattern": "/laboratory/dashboard",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Час виконання сьогодні",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"dashTatCard\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "span",
-              "text": "Час виконання сьогодні",
-              "label": "Блок «Час виконання сьогодні»"
-            },
             "parentLevels": 1
           }
         },
@@ -761,16 +751,11 @@
             "routePattern": "/laboratory/dashboard",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Час виконання сьогодні",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"dashTatCard\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "span",
-              "text": "Час виконання сьогодні",
-              "label": "Блок «Час виконання сьогодні»"
-            },
             "parentLevels": 1
           }
         },
@@ -5130,16 +5115,11 @@
             "routePattern": "/laboratory/refs",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Очікують",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"irStateToggle\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "span",
-              "text": "Очікують",
-              "label": "Перемикач «Очікують»"
-            },
             "parentLevels": 0
           }
         },
@@ -5162,16 +5142,11 @@
             "routePattern": "/laboratory/refs",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|Усі за добу",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"irStateToggle\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "span",
-              "text": "Усі за добу",
-              "label": "Перемикач «Усі за добу»"
-            },
             "parentLevels": 0
           }
         },
@@ -5793,16 +5768,11 @@
             "routePattern": "/laboratory/order-matrix",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Лікар-замовник",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"mxDoctor\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "div",
-              "text": "Лікар-замовник",
-              "label": "Лікар-замовник"
-            },
             "parentLevels": 1
           }
         },
@@ -6013,16 +5983,11 @@
             "routePattern": "/laboratory/order-matrix",
             "strategies": [
               {
-                "type": "text",
-                "value": "i|star_border",
-                "weight": 60
+                "type": "testid",
+                "value": "[data-testid=\"mxFavorite\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "i",
-              "text": "star_border",
-              "label": "Зірочка «Обране»"
-            },
             "parentLevels": 0
           }
         },
@@ -6191,16 +6156,11 @@
             "routePattern": "/laboratory/order-matrix",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Лікар-замовник",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"mxDoctor\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "div",
-              "text": "Лікар-замовник",
-              "label": "Лікар-замовник"
-            },
             "parentLevels": 1
           }
         }
@@ -7030,8 +6990,8 @@
         },
         {
           "stepType": "info",
-          "title": "ZPL",
-          "body": "«ZPL» копіює команди для термопринтера, «Перегляд / SVG» відкриває розширений вигляд.",
+          "title": "Копіювати код",
+          "body": "«Копіювати код» копіює команди для термопринтера, «Збільшити» відкриває розширений вигляд етикетки.",
           "route": "/laboratory/phlebotomy",
           "highlight": "element",
           "parentLevels": 0,
@@ -7040,23 +7000,18 @@
           "inputValue": "",
           "inputMode": "show",
           "optional": false,
-          "transcript": "Команди принтера можна скопіювати кнопкою «ZPL».",
+          "transcript": "Копіювати код. «Копіювати код» копіює команди для термопринтера, «Збільшити» відкриває розширений вигляд етикетки.",
           "anchor": {
             "code": "lab.ol.ph-label-zpl",
             "caption": "Кнопка «ZPL»",
             "routePattern": "/laboratory/phlebotomy",
             "strategies": [
               {
-                "type": "text",
-                "value": "span|ZPL",
-                "weight": 70
+                "type": "testid",
+                "value": "[data-testid=\"labelCopyZpl\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "span",
-              "text": "ZPL",
-              "label": "Кнопка «ZPL»"
-            },
             "parentLevels": 0
           }
         }
@@ -8819,16 +8774,11 @@
             "routePattern": "/laboratory/logistics",
             "strategies": [
               {
-                "type": "text",
-                "value": "div|Звідки (відділення / пункт забору)",
-                "weight": 80
+                "type": "testid",
+                "value": "[data-testid=\"lgOrigin\"]",
+                "weight": 100
               }
             ],
-            "fingerprint": {
-              "tag": "div",
-              "text": "Звідки (відділення / пункт забору)",
-              "label": "Звідки"
-            },
             "parentLevels": 1
           }
         },

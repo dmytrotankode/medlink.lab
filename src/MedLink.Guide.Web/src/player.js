@@ -7,6 +7,7 @@ import { toast } from './ui.js';
 import * as narration from './narration.js';
 
 const RUN_KEY = 'mlg.run';
+const FIND_TIMEOUT_MS = 3000;
 
 export class Player {
   constructor (ctx) {
@@ -173,13 +174,15 @@ export class Player {
         buttons: [{ text: 'Закрити', kind: 'dng', onClick: () => this.stop() }, { spacer: true }, { text: 'Пропустити крок →', onClick: () => this.next() }] });
     }, 600);
     const tFind = Date.now();
-    const found = await this.waitFor(() => resolveAnchor(step.anchor, undefined, Date.now() - tFind < 2500), step.timeoutMs || 8000);
+    // очікування появи елемента ~3 с (N6): довше не чекаємо, щоб користувач не дивився на порожню підказку
+    const waitMs = Math.min(step.timeoutMs || FIND_TIMEOUT_MS, 5000);
+    const found = await this.waitFor(() => resolveAnchor(step.anchor, undefined, Date.now() - tFind < 1500), waitMs);
     clearTimeout(searchTimer);
     if (stale()) return;
     if (!found) {
       this.report(step, null, 'missing');
       if (step.optional) return this.next();
-      return this.showStep({ step, title, body, i, total, el: null, value, r, warn: 'Не вдалося показати цей крок.' + (this.run.preview || this.ctx.opts.reportAnchors === false ? '' : ' Ми вже повідомили автору інструкції.') + ' Натисніть «Пропустити крок →», щоб продовжити.' });
+      return this.showStep({ step, title, body, i, total, el: null, value, r, warn: 'Не вдалося показати цей крок: елемент «' + ((step.anchor && step.anchor.caption) || step.title || 'без назви') + '» не знайдено на екрані (' + this.ctx.host.currentRoute() + ').' + (this.run.preview || this.ctx.opts.reportAnchors === false ? '' : ' Ми вже повідомили автору інструкції.') + ' Натисніть «Пропустити крок →», щоб продовжити.' });
     }
     this.report(step, found, found.healed ? 'healed' : 'ok');
     const el = found.el;
@@ -200,7 +203,7 @@ export class Player {
     const noHole = step.highlight === 'none';
     let hlEl = el && !noHole ? climb(el, step.highlight === 'parent' ? Math.max(1, step.parentLevels || 1) : (step.parentLevels || 0)) : null;
     // поле вводу всередині обгортки UI-бібліотеки (Quasar q-field тощо) — підсвічуємо всю обгортку, а не нативний input
-    if (hlEl === el && step.highlight !== 'none' && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && !/^(checkbox|radio)$/.test(el.type || '')) { const w = el.closest('.q-field, .q-select, .v-input, .el-input, .ant-input-affix-wrapper'); if (w) hlEl = w; }
+    if (el && hlEl === el && step.highlight !== 'none' && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && !/^(checkbox|radio)$/.test(el.type || '')) { const w = el.closest('.q-field, .q-select, .v-input, .el-input, .ant-input-affix-wrapper'); if (w) hlEl = w; }
     // дуже малий/згорнутий елемент (напр. поле в адаптивній шапці) — підсвічуємо найближчого достатньо великого предка
     for (let n = 0; hlEl && n < 3; n++) { const b = hlEl.getBoundingClientRect(); if ((b.width >= 24 && b.height >= 14) || !hlEl.parentElement || hlEl.parentElement === document.body) break; hlEl = hlEl.parentElement; }
     const mode = r.mode;

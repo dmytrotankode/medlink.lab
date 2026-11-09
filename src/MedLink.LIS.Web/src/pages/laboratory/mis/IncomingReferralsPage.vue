@@ -6,7 +6,7 @@
 <template>
   <div data-testid="incomingReferralsPage">
     <page-header title="Вхідні направлення" icon="fas fa-inbox" :breadcrumbs="[{ label: 'Вхідні направлення' }]">
-      <q-btn-toggle v-model="state" dense unelevated toggle-color="primary" color="grey-2" text-color="grey-9" class="q-mr-sm"
+      <q-btn-toggle v-model="state" data-testid="irStateToggle" dense unelevated toggle-color="primary" color="grey-2" text-color="grey-9" class="q-mr-sm"
         :options="[{ label: 'Очікують', value: 'pending' }, { label: 'Усі за добу', value: 'all' }]" />
       <q-select v-model="source" dense outlined clearable emit-value map-options :options="sourceOptions" label="Джерело" style="min-width: 190px" class="q-mr-sm" />
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
