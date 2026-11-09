@@ -49,7 +49,7 @@
           </q-td>
         </template>
         <template v-slot:body-cell-source="p">
-          <q-td :props="p">{{ p.row.sourceLabel }}<div v-if="p.row.department" class="text-caption text-grey-7 ellipsis" style="max-width: 260px">{{ p.row.department }}</div></q-td>
+          <q-td :props="p">{{ p.row.sourceLabel }}<div v-if="deptShort(p.row)" class="text-caption text-grey-7 ellipsis" style="max-width: 260px">{{ deptShort(p.row) }}</div></q-td>
         </template>
         <template v-slot:body-cell-stage="p">
           <q-td :props="p">
@@ -68,10 +68,10 @@
             </template>
             <template v-else-if="p.row.cito && p.row.citoMinutes !== null">
               <q-badge :color="p.row.citoMinutes > target ? 'negative' : 'orange-7'" :label="`${p.row.citoMinutes} хв від надходження`" data-testid="citoTimer" />
-              <div v-if="p.row.citoNotifiedAt" class="text-caption text-positive">повідомлено в операційну {{ p.row.citoNotifiedAt | datetime }}</div>
+              <div v-if="p.row.citoNotifiedAt" class="text-caption text-positive" style="white-space: normal; min-width: 150px">повідомлено в операційну {{ p.row.citoNotifiedAt | datetime }}</div>
             </template>
             <span v-else :class="p.row.overdue ? 'text-negative text-weight-bold' : ''">{{ p.row.slaDueAt | datetime }}</span>
-            <q-icon v-if="p.row.overdue && p.row.stage !== 'SIGNED'" name="timer_off" color="negative" class="q-ml-xs"><q-tooltip>Строк виконання минув</q-tooltip></q-icon>
+            <q-icon v-if="p.row.overdue && p.row.stage !== 'SIGNED'" name="timer_off" color="negative" class="q-ml-xs"><q-tooltip>{{ p.row.cito ? (p.row.citoNotifiedAt ? `Повідомлено пізніше за ціль (${target} хв)` : `Ціль ${target} хв минула, результат ще не повідомлено`) : 'Строк виконання минув' }}</q-tooltip></q-icon>
             <div class="text-caption text-grey-7">прийнято {{ p.row.receivedAt | datetime }}</div>
           </q-td>
         </template>
@@ -175,6 +175,10 @@ export default {
       return i < idx || row.stage === 'SIGNED' ? 'done' : i === idx ? 'cur' : '';
     },
     segmentLabel (i) { return (this.cyto ? CYTO_SEGMENTS : HISTO_SEGMENTS)[i] || ''; },
+    /** Відділення без повтору назви джерела: «Поліклініка · гінеколог» під підписом «Поліклініка» → «гінеколог» */
+    deptShort (row) {
+      return String(row.department || '').split('·').map(s => s.trim()).filter(s => s && s !== row.sourceLabel).join(' · ');
+    },
     resetFilters () { this.stage = 'all'; this.src = null; this.q = ''; },
     openCase (r) { this.$router.push({ name: 'lab-path-case', params: { id: r.id } }); }
   }

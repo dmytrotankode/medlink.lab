@@ -71,6 +71,7 @@
             </q-td>
             <q-td key="department" :props="props">{{ props.row.departmentName || departmentName(props.row.departmentId) }}</q-td>
             <q-td key="totalPrice" :props="props" class="text-right">{{ props.row.totalPrice | money }}</q-td>
+            <q-td key="payment" :props="props"><q-badge v-if="payInfo(props.row)" :color="payInfo(props.row).color" :label="payInfo(props.row).label" /><span v-else class="text-grey-5">—</span></q-td>
             <q-td key="status" :props="props"><status-chip :value="props.row.status" type="order" icon /></q-td>
             <q-td key="actions" :props="props" @click.stop>
               <q-btn flat dense round size="sm" icon="open_in_new" color="primary" @click="openOrder(props.row)"><q-tooltip>Картка направлення</q-tooltip></q-btn>
@@ -127,6 +128,7 @@ export default {
         { name: 'tests', label: 'Дослідження', align: 'left' },
         { name: 'department', label: 'Відділення', align: 'left' },
         { name: 'totalPrice', label: 'Сума', field: 'totalPrice', align: 'right', sortable: true },
+        { name: 'payment', label: 'Оплата', align: 'center' },
         { name: 'status', label: 'Статус', field: 'status', align: 'center', sortable: true },
         { name: 'actions', label: '', align: 'right' }
       ]
@@ -153,6 +155,15 @@ export default {
     this.load();
   },
   methods: {
+    /** Стан оплати рядка черги: платник-організація, сплачено, частково або не сплачено */
+    payInfo (r) {
+      if (!r || !(Number(r.totalPrice) > 0)) return null;
+      if (r.payerKind && r.payerKind !== 'PATIENT' && !(Number(r.patientAmount) > 0)) return { label: 'Платник', color: 'purple-5' };
+      const due = Number(r.patientAmount) || Number(r.totalPrice) || 0; const paid = Number(r.paidAmount) || 0;
+      if (paid >= due && due > 0) return { label: 'Сплачено', color: 'positive' };
+      if (paid > 0) return { label: 'Частково', color: 'orange-7' };
+      return { label: 'Не сплачено', color: 'grey-6' };
+    },
     rowClass: orderRowClass,
     patientName (row) { return patientDisplay(row.patient) !== '—' ? patientDisplay(row.patient) : (row.patientName || '—'); },
     patientMeta (row) {

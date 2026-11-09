@@ -1,6 +1,6 @@
 <template>
   <div data-testid="clientsPage">
-    <page-header title="Клієнти (клініки-партнери)" icon="fas fa-handshake" :breadcrumbs="[{ label: 'Клієнти' }]">
+    <page-header title="Клієнти (клініки)" icon="fas fa-handshake" :breadcrumbs="[{ label: 'Клієнти' }]">
       <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
     </page-header>
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" @retry="load" />

@@ -65,7 +65,7 @@
             </div>
             <div class="row q-gutter-sm q-mt-md">
               <q-btn v-if="sample.status === 'PENDING'" color="teal-6" icon="colorize" label="Забрати" data-testid="collectBtn" @click="collectOpen = true" />
-              <q-btn color="primary" icon="print" label="Друк етикетки" data-testid="printLabelAgent" @click="printSampleLabel(sample.barcode, { patientName, orderNumber: order.orderNumber })" />
+              <q-btn v-if="!label" color="primary" icon="print" label="Друк етикетки" data-testid="printLabelAgent" @click="printSampleLabel(sample.barcode, { patientName, orderNumber: order.orderNumber })" />
               <q-btn-dropdown flat color="grey-8" icon="more_horiz" label="Ще" no-caps>
                 <q-list dense>
                   <q-item v-close-popup clickable @click="showLabel(sample.barcode)"><q-item-section avatar><q-icon name="label" /></q-item-section><q-item-section>Переглянути етикетку</q-item-section></q-item>
@@ -147,7 +147,7 @@ import CreateOrderDialog from './orders/CreateOrderDialog.vue';
 import TubePlanList from '../../components/samples/TubePlanList.vue';
 import { TUBE_PLAN_REASONS, SAMPLE_STATUS } from '../../utils/statuses';
 import labelPrintMixin from '../../mixins/labelPrintMixin';
-import { patientDisplay, genderLabel, ageFromBirthDate, formatDateTime, todayIso, toIsoDate, copyToClipboard } from '../../utils/format';
+import { patientDisplay, genderLabel, ageFromBirthDate, formatDateTime, todayIso, toIsoDate, copyToClipboard, testTitle, tubeTitle } from '../../utils/format';
 
 export default {
   name: 'PhlebotomyStation',
@@ -172,7 +172,7 @@ export default {
         { name: 'barcode', label: 'Штрихкод', field: 'barcode', align: 'left' },
         { name: 'patient', label: 'Пацієнт', field: r => r.patientName || patientDisplay(r.patient), align: 'left' },
         { name: 'order', label: '№ направлення', field: r => r.orderNumber || '—', align: 'left' },
-        { name: 'tube', label: 'Пробірка', field: r => r.tubeName || (r.tube && r.tube.name) || this.tubeNameById(r.tubeTypeId), align: 'left' },
+        { name: 'tube', label: 'Пробірка', field: r => tubeTitle(r.tubeName || (r.tube && r.tube.name) || this.tubeNameById(r.tubeTypeId)), align: 'left' },
         { name: 'collectedAt', label: 'Забрано', field: r => formatDateTime(r.collectedAt), align: 'left' },
         { name: 'actions', label: '', align: 'right' }
       ]
@@ -190,7 +190,7 @@ export default {
       return [age !== null ? `${age} р.` : null, genderLabel(p.gender) !== '—' ? genderLabel(p.gender) : null, p.phone].filter(Boolean).join(' · ');
     },
     tube () { return this.sample ? ((this.sample.tube && typeof this.sample.tube === 'object') ? this.sample.tube : this.$store.getters['dictionaries/byId']('tube-types', this.sample.tubeTypeId)) : null; },
-    tubeName () { return (this.tube && this.tube.name) || (this.sample && this.sample.tubeName) || 'Пробірка'; },
+    tubeName () { return tubeTitle((this.tube && this.tube.name) || (this.sample && this.sample.tubeName) || 'Пробірка'); },
     tubeColor () { return (this.tube && this.tube.colorCode) || '#bbb'; },
     biomaterialName () {
       const b = this.sample ? this.$store.getters['dictionaries/byId']('biomaterials', this.sample.biomaterialTypeId) : null;
@@ -204,7 +204,7 @@ export default {
           const tube = this.$store.getters['dictionaries/byId']('tube-types', s.tubeTypeId) || {};
           return {
             key: s.id, index: i + 1, color: s.tubeColor || tube.colorCode, tubeName: s.tubeTypeName || tube.name, biomaterialName: s.biomaterialName,
-            tests: (s.testCodes || []).map(code => ({ code })), usedVolumeMl: s.plannedVolumeMl, capacityMl: s.capacityMl,
+            tests: (s.testCodes || []).map(code => { const ot = (this.order.tests || []).find(t => t.sampleId === s.id && t.testCode === code); return { code, name: ot && ot.testName ? testTitle(ot.testName) : code }; }), usedVolumeMl: s.plannedVolumeMl, capacityMl: s.capacityMl,
             reasonTexts: (s.planReasons || []).map(r => TUBE_PLAN_REASONS[r] || r), isSeparate: (s.planReasons || []).includes('SEPARATE_REQUIRED'),
             inversionsCount: tube.inversionsCount, barcode: s.barcode, status: s.status
           };

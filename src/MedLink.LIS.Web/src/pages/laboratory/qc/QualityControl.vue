@@ -195,7 +195,7 @@
       <q-card style="min-width: 520px" data-testid="resolveDialog">
         <q-card-section class="row items-center bg-negative text-white q-py-sm"><q-icon name="lock_open" class="q-mr-sm" /><div class="text-subtitle1 text-weight-bold">Протокол зняття блокування</div><q-space /><q-btn flat round dense icon="close" v-close-popup /></q-card-section>
         <q-card-section class="q-gutter-y-sm">
-          <div v-if="activeLockout" class="text-body2">{{ analyzerName(activeLockout.analyzerId) }} <span v-if="activeLockout.testCode">· {{ activeLockout.testCode }}</span> — <b>{{ activeLockout.reason }}</b></div>
+          <div v-if="activeLockout" class="text-body2">{{ analyzerName(activeLockout.analyzerId) }} <span v-if="activeLockout.testCode">· {{ testLabel(activeLockout.testCode) }}</span> — <b>{{ lockoutReason(activeLockout) }}</b></div>
           <q-select v-model="resolve.cause" outlined dense label="Встановлена причина *" :options="causes" use-input new-value-mode="add-unique" data-testid="resolveCause" />
           <q-select v-model="resolve.action" outlined dense label="Коригувальна дія *" :options="actions" use-input new-value-mode="add-unique" data-testid="resolveAction" />
           <q-input v-model="resolve.comment" outlined dense autogrow label="Коментар / результат повторного контролю *" data-testid="resolveComment" />

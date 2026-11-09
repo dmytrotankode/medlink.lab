@@ -127,7 +127,7 @@ export default {
     }
   },
   methods: {
-    cell (v) { return typeof v === 'number' ? v.toLocaleString('uk-UA') : v; },
+    cell (v) { if (v === null || v === undefined || v === '') return '—'; return typeof v === 'number' ? v.toLocaleString('uk-UA') : v; },
     select (t) { this.type = t; this.table = null; this.cumulative = null; if (t !== 'cumulative') this.run(); },
     fileUrl (format) {
       if (this.type === 'cumulative') return this.patientId ? this.$api.cumulativeReportUrl(this.patientId, { ...this.params, format }) : null;

@@ -16,7 +16,7 @@
     </div>
 
     <div v-if="tat" class="row q-col-gutter-sm q-mb-md">
-      <div class="col-6 col-md-3"><div class="kpi-tile kpi-tile--accent"><div class="kpi-tile__label">Медіана часу виконання</div><div class="kpi-tile__value">{{ tat.medianMin | minutes }}</div><div class="kpi-tile__hint">від замовлення до видачі</div></div></div>
+      <div class="col-6 col-md-3"><div class="kpi-tile kpi-tile--accent"><div class="kpi-tile__label">Медіана терміну виконання</div><div class="kpi-tile__value">{{ tat.medianMin | minutes }}</div><div class="kpi-tile__hint">від замовлення до видачі</div></div></div>
       <div class="col-6 col-md-3"><div class="kpi-tile" :class="Number(tat.slaViolations) ? 'kpi-tile--warning' : 'kpi-tile--positive'"><div class="kpi-tile__label">90-й процентиль</div><div class="kpi-tile__value">{{ tat.p90Min | minutes }}</div><div class="kpi-tile__hint">90 % замовлень виконано швидше</div></div></div>
       <div class="col-6 col-md-3"><div class="kpi-tile" :class="Number(tat.slaViolations) ? 'kpi-tile--negative' : 'kpi-tile--positive'"><div class="kpi-tile__label">Порушень норм часу</div><div class="kpi-tile__value">{{ tat.slaViolations || 0 }}</div><div class="kpi-tile__hint">понад встановлений строк послуги</div></div></div>
       <div class="col-6 col-md-3"><div class="kpi-tile"><div class="kpi-tile__label">Замовлень</div><div class="kpi-tile__value">{{ tat.orders || 0 }}</div><div class="kpi-tile__hint">за період, виконано повністю: {{ tat.completed || 0 }}</div></div></div>

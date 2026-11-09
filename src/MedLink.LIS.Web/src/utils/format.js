@@ -172,3 +172,25 @@ export function plural (n, one, few, many) {
 export function pluralN (n, one, few, many) {
   return `${n} ${plural(n, one, few, many)}`;
 }
+
+/** Назва показника без латинського коду в кінці: «Лейкоцити (WBC)» → «Лейкоцити» */
+export function testTitle (name) {
+  const s = String(name == null ? '' : name).trim();
+  const t = s.replace(/\s*\([A-Za-z0-9%#_\-./ ]{1,16}\)\s*$/, '').trim();
+  return t || s;
+}
+
+/** Маскування ІПН у списках і картках: показуємо лише останні 4 цифри */
+export function maskTaxId (v) {
+  const s = String(v == null ? '' : v).trim();
+  return s.length > 4 ? '******' + s.slice(-4) : s;
+}
+
+/** Назва пробірки для показу: десяткова кома, єдине написання ЕДТА К2/К3, літій-гепарин */
+export function tubeTitle (name) {
+  let s = String(name == null ? '' : name);
+  s = s.replace(/[КK][23]\s*(?:ЕДТА|EDTA)\s*\/\s*[КK][23]\s*(?:ЕДТА|EDTA)/i, 'ЕДТА К2/К3');
+  s = s.replace(/[КK]([23])\s*\/\s*[КK]([23])\s*(?:ЕДТА|EDTA)/i, 'ЕДТА К$1/К$2').replace(/EDTA/gi, 'ЕДТА');
+  s = s.replace(/\bLi[-\s]?гепарин/i, 'Літій-гепарин').replace(/\bNa[-\s]?гепарин/i, 'Натрій-гепарин');
+  return s.replace(/(\d)\.(\d)/g, '$1,$2');
+}

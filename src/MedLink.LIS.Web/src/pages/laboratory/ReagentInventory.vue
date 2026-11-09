@@ -64,8 +64,8 @@
             <div class="col-12"><q-input v-model="form.manufacturer" outlined dense label="Виробник" /></div>
             <div class="col-6"><q-select v-model="form.analyzerId" outlined dense clearable label="Аналізатор" :options="analyzerOptions" emit-value map-options /></div>
             <div class="col-6"><q-select v-model="form.testCode" outlined dense clearable label="Показник" :options="testOptions" emit-value map-options use-input input-debounce="0" @filter="filterTests" /></div>
-            <div class="col-4"><q-input v-model="form.testsInitial" outlined dense type="number" min="1" label="Тестів у партії *" :error="touched && !(Number(form.testsInitial) > 0)" hide-bottom-space /></div>
-            <div class="col-4"><q-input v-model="form.testsRemaining" outlined dense type="number" min="0" label="Залишок тестів" /></div>
+            <div class="col-4"><q-input v-model="form.testsInitial" @input="onInitialChange" outlined dense type="number" min="1" label="Тестів у партії *" :error="touched && !(Number(form.testsInitial) > 0)" hide-bottom-space /></div>
+            <div class="col-4"><q-input v-model="form.testsRemaining" @input="remainingEdited = true" outlined dense type="number" min="0" label="Залишок тестів" /></div>
             <div class="col-4"><q-input v-model="form.minimumTests" outlined dense type="number" min="0" label="Мінімальний залишок" /></div>
             <div class="col-4"><q-input v-model="form.expiryDate" outlined dense type="date" stack-label label="Придатний до *" data-testid="lotExpiry" :error="touched && !form.expiryDate" hide-bottom-space /></div>
             <div class="col-4"><q-input v-model="form.openedAt" outlined dense type="date" stack-label label="Відкрито" /></div>
@@ -123,7 +123,7 @@ export default {
   mixins: [apiMixin, roleMixin],
   data () {
     return {
-      touched: false, lots: [], alerts: [], search: '', onlyProblems: false, testFilter: '',
+      touched: false, remainingEdited: false, lots: [], alerts: [], search: '', onlyProblems: false, testFilter: '',
       lotOpen: false, consumeOpen: false, cardOpen: false, deleteOpen: false,
       form: {}, formError: '', saving: false, active: null, consumeTests: 1, consumeError: '',
       columns: [
@@ -158,6 +158,7 @@ export default {
   methods: {
     analyzerName (id) { const a = this.analyzers.find(x => x.id === id); return a ? a.name : '—'; },
     testLabel (code) { if (!code) return '—'; const t = this.allTests.find(x => x.code === code); return t && t.name ? `${t.name} (${code})` : code; },
+    onInitialChange (v) { if (!this.form.id && !this.remainingEdited) this.form.testsRemaining = v; }, // у новому лоті залишок = обсяг партії, поки його не змінили вручну
     remaining (l) { return Number(l.testsRemaining) || 0; },
     initial (l) { return Number(l.testsInitial) || 0; },
     empty (l) { return this.remaining(l) <= 0; },
@@ -180,7 +181,7 @@ export default {
       // Поля форми збігаються з контрактом API: reagentName, testsInitial, testsRemaining, testCode
       this.form = l ? { id: l.id, reagentName: l.reagentName, lotNumber: l.lotNumber, manufacturer: l.manufacturer || '', analyzerId: l.analyzerId, testCode: l.testCode, testsInitial: this.initial(l), testsRemaining: this.remaining(l), minimumTests: l.minimumTests, expiryDate: (l.expiryDate || '').slice(0, 10), openedAt: (l.openedAt || '').slice(0, 10), onboardStabilityDays: l.onboardStabilityDays, isActive: l.isActive !== false }
         : { id: null, reagentName: '', lotNumber: '', manufacturer: '', analyzerId: null, testCode: null, testsInitial: 100, testsRemaining: 100, minimumTests: 50, expiryDate: '', openedAt: '', onboardStabilityDays: null, isActive: true };
-      this.formError = ''; this.touched = false; this.lotOpen = true;
+      this.formError = ''; this.touched = false; this.remainingEdited = false; this.lotOpen = true;
     },
     async saveLot () {
       this.touched = true; this.formError = '';

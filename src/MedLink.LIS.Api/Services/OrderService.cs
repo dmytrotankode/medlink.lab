@@ -103,7 +103,7 @@ public sealed class OrderService
                 o.Patient.Birthday, o.Patient.GenderId, o.OrderDatetime, o.Status, o.IsUrgentCito, DepartmentName = o.Department!.Caption, DoctorName = o.Doctor!.Caption,
                 TestsTotal = o.Tests.Count, TestsVerified = o.Tests.Count(t => t.Status == OrderTestStatuses.Verified || t.Status == OrderTestStatuses.AutoVerified),
                 SamplesCount = o.Samples.Count, HasCritical = o.Tests.Any(t => t.Result != null && (t.Result.Flag == "CRIT_HIGH" || t.Result.Flag == "CRIT_LOW")),
-                o.TotalPrice
+                o.TotalPrice, o.PatientAmount, o.PaidAmount, PayerKind = o.Payer!.Kind
             }).ToListAsync();
 
         return new PagedResult<OrderListItemDto>
@@ -114,7 +114,7 @@ public sealed class OrderService
                 Id = o.Id, OrderNumber = o.OrderNumber, PatientId = o.PatientId, PatientName = o.PatientName.Trim(),
                 PatientAgeGender = DtoMapper.AgeGender(o.Birthday, MedLinkEnums.GenderCode(o.GenderId), o.OrderDatetime),
                 OrderDatetime = o.OrderDatetime, Status = o.Status, IsUrgentCito = o.IsUrgentCito, DepartmentName = o.DepartmentName, DoctorName = o.DoctorName,
-                TestsTotal = o.TestsTotal, TestsVerified = o.TestsVerified, SamplesCount = o.SamplesCount, HasCritical = o.HasCritical, TotalPrice = o.TotalPrice,
+                TestsTotal = o.TestsTotal, TestsVerified = o.TestsVerified, SamplesCount = o.SamplesCount, HasCritical = o.HasCritical, TotalPrice = o.TotalPrice, PatientAmount = o.PatientAmount, PaidAmount = o.PaidAmount, PayerKind = o.PayerKind,
                 AllowedActions = _policy.AllowedActions(LisEntities.Order, o.Status)
             }).ToList()
         };

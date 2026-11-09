@@ -95,7 +95,7 @@
             <q-item v-for="l in lockouts" :key="l.id">
               <q-item-section avatar><q-icon name="lock" color="negative" /></q-item-section>
               <q-item-section>
-                <q-item-label>{{ analyzerName(l.analyzerId) }} <span v-if="l.testName || l.testCode" class="text-grey-7">· {{ l.testName || l.testCode }}</span></q-item-label>
+                <q-item-label>{{ analyzerName(l.analyzerId) }} <span v-if="l.testName || l.testCode" class="text-grey-7">· {{ testLabel(l.testName || l.testCode) }}</span></q-item-label>
                 <q-item-label caption>{{ lockoutReason(l.reason) }} · з {{ l.startedAt | datetime }}</q-item-label>
               </q-item-section>
             </q-item>
@@ -142,7 +142,7 @@
       <div class="col-12 col-lg-4">
         <div class="medlink-card">
           <div class="medlink-card__title">
-            <span><q-icon name="timer" color="indigo-5" class="q-mr-xs" />Час виконання сьогодні</span>
+            <span><q-icon name="timer" color="indigo-5" class="q-mr-xs" />Терміни виконання сьогодні</span>
             <q-btn flat dense size="sm" color="primary" label="Аналітика" :to="{ name: 'lab-analytics-tat' }" />
           </div>
           <div v-if="hasTat" class="q-pa-md">
@@ -178,7 +178,7 @@
 <script>
 import { mapState } from 'vuex';
 import apiMixin from '../../mixins/apiMixin';
-import { todayIso } from '../../utils/format';
+import { todayIso, testTitle } from '../../utils/format';
 
 /** Українська множина: plural(5, ['тест', 'тести', 'тестів']) */
 function plural (n, forms) {
@@ -253,6 +253,7 @@ export default {
   },
   created () {
     this.load();
+    this.$store.dispatch('dictionaries/loadMany', ['tests']).catch(() => {});
   },
   methods: {
     async load () {
@@ -278,8 +279,20 @@ export default {
     // технічну причину блокування показуємо людською мовою
     lockoutReason (r) {
       let t = String(r || '').replace(/^Lockout ВКЯ:\s*/i, 'Блокування за ВКЯ: ');
-      t = t.replace(/порушено\s+([\w_]+);\s*z=([+-]?[\d.]+)/i, (m, rule, z) => `Порушено правило ${rule}: відхилення ${z.replace('.', ',')} SD`);
+      t = t.replace(/порушено\s+([\w_]+);\s*z=([+-]?[\d.]+)/i, (m, rule, z) => `Порушено правило: ${this.qcRuleText(rule)}, відхилення ${z.replace('.', ',')} SD`);
+      t = t.replace(/:\s*([A-Za-z0-9_%#-]+)\s*\(правило\s+([\w_]+)\)/i, (m, code, rule) => `: ${this.testLabel(code)} (${this.qcRuleText(rule)})`);
       return t || 'Причина не вказана';
+    },
+    /** Назва показника замість його коду (довідник показників) */
+    testLabel (v) {
+      const s = String(v || '');
+      const t = this.$store.getters['dictionaries/items']('tests').find(x => x.code === s);
+      return t ? testTitle(t.name) : s;
+    },
+    /** Правило контролю якості (Вестгарда) людською мовою */
+    qcRuleText (rule) {
+      const map = { '1_2S': 'одне вимірювання за межами ±2 SD', '1_3S': 'одне вимірювання за межами ±3 SD', '2_2S': 'два поспіль за межами ±2 SD', 'R_4S': 'розмах між двома вимірюваннями понад 4 SD', '4_1S': 'чотири поспіль за межами ±1 SD', '10X': 'десять поспіль по один бік від середнього' };
+      return map[String(rule || '').toUpperCase()] || String(rule || '');
     },
     stageLabel (name) { return STAGE_LABELS[name] || name; },
     stageWidth (s) {

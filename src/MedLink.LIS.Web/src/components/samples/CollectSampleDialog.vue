@@ -49,7 +49,7 @@
         </div>
         <q-banner v-if="earlierPending.length" dense rounded class="bg-orange-1 text-deep-orange-9 q-mt-sm" data-testid="orderOfDrawWarning">
           <template v-slot:avatar><q-icon name="warning" color="deep-orange" /></template>
-          Спочатку заберіть пробірки, які йдуть раніше за порядком: {{ earlierPending.join(', ') }}. Порушення порядку може вплинути на результати.
+          Спочатку заберіть пробірки, які йдуть раніше за порядком забору (№ {{ earlierPending.join(', ') }}). Порушення порядку може вплинути на результати.
           <q-checkbox v-model="orderOverride" dense color="deep-orange" label="Все одно забрати цю пробірку" class="q-mt-xs" />
         </q-banner>
         <div v-if="error" class="text-negative q-mt-sm">{{ error }}</div>
@@ -64,7 +64,7 @@
 </template>
 
 <script>
-import { parseDecimal, pluralN } from '../../utils/format';
+import { parseDecimal, pluralN, tubeTitle } from '../../utils/format';
 
 export default {
   name: 'CollectSampleDialog',
@@ -80,7 +80,8 @@ export default {
       saving: false,
       error: '',
       earlierPending: [],
-      orderOverride: false
+      orderOverride: false,
+      pendingCheck: null
     };
   },
   computed: {
@@ -94,7 +95,7 @@ export default {
       if (this.sample.biomaterial && typeof this.sample.biomaterial === 'object') return this.sample.biomaterial;
       return this.$store.getters['dictionaries/byId']('biomaterials', this.sample.biomaterialTypeId);
     },
-    tubeName () { return (this.tube && this.tube.name) || this.sample.tubeName || 'Пробірка'; },
+    tubeName () { return tubeTitle((this.tube && this.tube.name) || this.sample.tubeName || 'Пробірка'); },
     tubeColor () { return (this.tube && this.tube.colorCode) || '#bbb'; },
     biomaterialName () { return (this.biomaterial && this.biomaterial.name) || this.sample.biomaterialName || ''; },
     inversions () { return this.tube && this.tube.inversionsCount; },
@@ -119,7 +120,7 @@ export default {
         this.error = '';
         this.earlierPending = [];
         this.orderOverride = false;
-        this.loadEarlierPending();
+        this.pendingCheck = this.loadEarlierPending();
         this.$store.dispatch('dictionaries/loadMany', ['tube-types', 'biomaterials']);
       }
     }
@@ -133,17 +134,21 @@ export default {
       try {
         const order = await this.$api.orderByBarcode(s.barcode);
         const me = (order.samples || []).find(x => x.barcode === s.barcode);
+        const main = (order.samples || []).filter(x => !x.parentSampleId).slice().sort((a, b) => a.groupNumb - b.groupNumb);
         const myIndex = me ? (me.orderOfDrawIndex || 99) : 99;
         this.earlierPending = (order.samples || [])
           .filter(x => !x.parentSampleId && x.barcode !== s.barcode && x.status === 'PENDING' && (x.orderOfDrawIndex || 99) < myIndex)
           .sort((a, b) => (a.orderOfDrawIndex || 99) - (b.orderOfDrawIndex || 99))
-          .map(x => x.barcode);
+          .map(x => { const n = main.findIndex(m => m.barcode === x.barcode) + 1; return n || x.barcode; });
       } catch (e) { this.earlierPending = []; }
     },
     async confirm () {
       this.saving = true;
       this.error = '';
       try {
+        // порядок забору перевіряємо ще раз до запису, навіть якщо відповідь сервера прийшла із запізненням
+        if (this.pendingCheck) await this.pendingCheck;
+        if (this.earlierPending.length && !this.orderOverride) { this.saving = false; return; }
         const res = await this.$api.collectSample(this.sample.barcode, { checklist: { ...this.checklist }, volumeMl: parseDecimal(this.volumeMl) });
         this.$q.notify({ type: 'positive', message: `Пробу ${this.sample.barcode} забрано` });
         this.$emit('collected', res || this.sample);

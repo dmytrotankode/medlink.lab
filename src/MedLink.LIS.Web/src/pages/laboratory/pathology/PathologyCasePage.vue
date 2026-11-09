@@ -7,7 +7,7 @@
 <template>
   <div data-testid="pathologyCasePage">
     <page-header :title="pageTitle" icon="fas fa-folder-open" :subtitle="subtitle" :breadcrumbs="crumbs">
-      <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
+      <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load(true)" />
     </page-header>
     <api-error-banner v-if="apiError && !apiOffline" :message="apiError" :retryable="apiErrorRetryable" @retry="load" @dismiss="apiError = null" />
 
@@ -30,7 +30,7 @@
           <q-icon :name="c.citoTimer.notifiedAt ? 'check_circle' : 'timer'" size="22px" class="q-mr-sm" />
           <div class="col">
             <template v-if="c.citoTimer.notifiedAt">
-              Повідомлено в операційну <b>{{ c.citoTimer.notifiedAt | datetime }}</b> — через <b>{{ c.citoTimer.minutes }} хв</b> від надходження (ціль {{ c.citoTimer.targetMinutes }} хв)
+              Повідомлено в операційну <b>{{ c.citoTimer.notifiedAt | datetime }}</b> — через <b>{{ c.citoTimer.minutes }} хв</b> від надходження (ціль {{ c.citoTimer.targetMinutes }} хв)<span v-if="citoLate" class="text-deep-orange-9"> · із запізненням</span>
             </template>
             <template v-else>
               <b>{{ c.citoTimer.minutes }} хв</b> від надходження (ціль {{ c.citoTimer.targetMinutes }} хв)
@@ -39,7 +39,7 @@
           <span>
             <q-btn unelevated :color="c.citoTimer.notifiedAt ? 'grey-7' : 'negative'" icon="phone_in_talk" :label="c.citoTimer.notifiedAt ? 'Повторити повідомлення' : 'Повідомити результат в операційну'"
                    :disable="!citoCanNotify" data-testid="citoNoticeBtn" @click="openCito" />
-            <q-tooltip v-if="citoHint">{{ citoHint }}</q-tooltip>
+            <q-tooltip v-if="citoHint" max-width="380px" :content-style="{ whiteSpace: 'normal' }">{{ citoHint }}</q-tooltip>
           </span>
         </div>
       </div>
@@ -126,7 +126,7 @@
           <q-btn flat color="primary" icon="save" label="Зберегти" :disable="!canPath" @click="saveGross(false)" />
           <span>
             <q-btn unelevated color="primary" icon="done_all" label="Завершити вирізку" data-testid="finishGross" :disable="!canFinishGross" @click="saveGross(true)" />
-            <q-tooltip v-if="!canFinishGross">{{ !canPath ? roleHint('LAB_DOCTOR') : `Бракує: ${grossMissing.join(', ')}` }}</q-tooltip>
+            <q-tooltip v-if="!canFinishGross" max-width="380px" :content-style="{ whiteSpace: 'normal' }">{{ !canPath ? roleHint('LAB_DOCTOR') : `Бракує: ${grossMissing.join(', ')}` }}</q-tooltip>
           </span>
         </div>
         <div v-else class="text-caption text-grey-7">Вирізку завершено {{ c.grossFinishedAt | datetime }} — скельця створено за обраними методиками. Вкладка лише для перегляду. Патолог: {{ c.pathologist && c.pathologist.name }}; вирізку провів: {{ c.assistant && c.assistant.name }}.</div>
@@ -205,12 +205,13 @@
                     <q-btn v-if="s.status === 'IHC_IN_WORK'" flat dense no-caps size="sm" color="positive" icon="done" label="Готове" class="q-ml-sm" :disable="!canLab" @click="slideReady(s)"><q-tooltip>{{ canLab ? 'Скельце забарвлено, результат готовий' : roleHint('LAB_TECHNICIAN') }}</q-tooltip></q-btn>
                     <span v-if="s.status === 'DISPOSED'" class="text-caption text-negative q-ml-xs">· утилізовано: {{ s.disposeReason }}</span>
                     <q-icon v-else-if="s.coveredAt" name="layers" size="xs" color="teal-7" class="q-ml-xs"><q-tooltip>Покрито покривним склом {{ s.coveredAt | datetime }}</q-tooltip></q-icon>
-                    <q-btn v-if="s.status === 'IN_WORK' && !s.isIhc && b.stage === 'STAIN'" flat dense no-caps size="sm" color="primary" icon="brush" label="Забарвлено" class="q-ml-sm" :disable="!canLab" @click="slideReady(s)">
+                    <q-btn v-if="s.status === 'IN_WORK' && !s.isIhc && b.stage === 'STAIN' && !slideStained(s)" flat dense no-caps size="sm" color="primary" icon="brush" label="Забарвлено" class="q-ml-sm" :disable="!canLab" @click="slideReady(s)">
                       <q-tooltip>{{ canLab ? 'Нове скельце: після фарбування позначте його, потім покрийте склом' : roleHint('LAB_TECHNICIAN') }}</q-tooltip>
                     </q-btn>
-                    <q-btn v-if="s.status !== 'DISPOSED' && b.stage === 'STAIN' && !s.coveredAt" flat dense no-caps size="sm" color="teal-7" icon="layers" label="Покрити" class="q-ml-sm" :disable="!canLab" @click="coverSlide(s)">
-                      <q-tooltip>{{ canLab ? 'Покрити покривним склом' : roleHint('LAB_TECHNICIAN') }}</q-tooltip>
-                    </q-btn>
+                    <span v-if="s.status !== 'DISPOSED' && b.stage === 'STAIN' && !s.coveredAt" class="q-ml-sm">
+                      <q-btn flat dense no-caps size="sm" color="teal-7" icon="layers" label="Покрити" :disable="!canLab || !slideStained(s)" :data-testid="`cover-${s.code}`" @click="coverSlide(s)" />
+                      <q-tooltip>{{ !canLab ? roleHint('LAB_TECHNICIAN') : slideStained(s) ? 'Покрити покривним склом' : s.isIhc ? 'ІГХ ще в роботі: спершу натисніть «Готове», потім покрийте склом' : 'Спершу позначте скельце «Забарвлено», потім покрийте склом' }}</q-tooltip>
+                    </span>
                     <q-btn v-if="s.status !== 'DISPOSED' && !s.isExternal" flat dense no-caps size="sm" color="negative" icon="delete_outline" label="Утилізувати" class="q-ml-md" :disable="!canLab" @click="disposeSlide(s)">
                       <q-tooltip>{{ canLab ? 'Утилізувати скельце з браком' : roleHint('LAB_TECHNICIAN') }}</q-tooltip>
                     </q-btn>
@@ -246,11 +247,11 @@
           </q-banner>
           <div v-if="c.stage === 'MICRO'" class="row q-gutter-sm items-center q-mt-xs">
             <q-input v-model="screenNote" dense outlined placeholder="Примітка лаборанта" style="min-width: 260px" :readonly="!canScreen" />
-            <span>
+            <span v-if="!c.cyto.screening || c.cyto.screening.assessment !== 'NORMAL'">
               <q-btn unelevated color="positive" :label="c.cyto.screening ? 'Змінити на «Норма»' : 'Норма'" data-testid="screenNormal" :disable="!canScreen" @click="screen('NORMAL')" />
               <q-tooltip v-if="!canScreen">{{ roleHint('LAB_TECHNICIAN', 'LAB_DOCTOR') }}</q-tooltip>
             </span>
-            <span>
+            <span v-if="!c.cyto.screening || c.cyto.screening.assessment !== 'SUSPECT'">
               <q-btn unelevated color="orange-8" :label="c.cyto.screening ? 'Змінити на «Підозра»' : 'Підозра'" data-testid="screenSuspect" :disable="!canScreen" @click="screen('SUSPECT')" />
               <q-tooltip v-if="!canScreen">{{ roleHint('LAB_TECHNICIAN', 'LAB_DOCTOR') }}</q-tooltip>
             </span>
@@ -273,22 +274,26 @@
           <div class="col-12 col-md-5">
             <div v-if="isCyto" class="row q-col-gutter-xs" data-testid="cytoFields">
               <div class="col-12"><q-select v-model="rep.adequacy" dense outlined emit-value map-options :options="adequacyOptions" label="Адекватність матеріалу *" :readonly="signed || !canPath" menu-anchor="bottom left" menu-self="top left" data-testid="adequacy" /></div>
-              <div class="col-12"><q-select v-model="rep.cytoCategory" dense outlined clearable emit-value map-options :options="categoryOptions" label="Категорія висновку *" :readonly="signed || !canPath" menu-anchor="bottom left" menu-self="top left" :popup-content-style="{ maxHeight: '300px' }" data-testid="cytoCategory" /></div>
+              <div class="col-12"><q-select v-model="rep.cytoCategory" dense outlined clearable emit-value map-options :options="categoryOptions" label="Категорія висновку *" :readonly="signed || !canPath" menu-anchor="bottom left" menu-self="top left" :popup-content-style="{ maxHeight: '260px' }" data-testid="cytoCategory" @focus="revealField">
+                <template v-slot:option="sc"><q-item v-bind="sc.itemProps" v-on="sc.itemEvents"><q-item-section><q-item-label style="white-space: normal">{{ sc.opt.label }}</q-item-label></q-item-section></q-item></template>
+              </q-select></div>
               <div class="col-12"><q-input v-model="rep.recommendation" dense outlined type="textarea" autogrow label="Рекомендації" :readonly="signed || !canPath" /></div>
-              <div class="col-12"><q-input v-model="rep.icd10" dense outlined label="МКХ-10" hint="Наприклад, N87.0" :rules="icd10Rules" lazy-rules :readonly="signed || !canPath" /></div>
+              <div class="col-12"><q-select v-model="rep.icd10" dense outlined clearable use-input fill-input hide-selected input-debounce="0" emit-value map-options :options="icd10Shown" label="МКХ-10" hint="Оберіть зі списку або введіть код, наприклад N87.0" :rules="icd10Rules" lazy-rules :readonly="signed || !canPath"
+                            menu-anchor="bottom left" menu-self="top left" :popup-content-style="{ maxHeight: '220px' }" data-testid="icd10Cyto" @focus="revealField" @filter="icd10Filter" @new-value="icd10New" /></div>
             </div>
             <div v-else class="row q-col-gutter-xs">
-              <div class="col-6"><q-input v-model="rep.icd10" dense outlined label="МКХ-10" hint="Наприклад, C50.4" :rules="icd10Rules" lazy-rules :readonly="signed || !canPath" /></div>
+              <div class="col-6"><q-select v-model="rep.icd10" dense outlined clearable use-input fill-input hide-selected input-debounce="0" emit-value map-options :options="icd10Shown" label="МКХ-10" hint="Зі списку або код, наприклад C50.4" :rules="icd10Rules" lazy-rules :readonly="signed || !canPath"
+                            menu-anchor="bottom left" menu-self="top left" :popup-content-style="{ maxHeight: '220px' }" data-testid="icd10" @focus="revealField" @filter="icd10Filter" @new-value="icd10New" /></div>
               <div class="col-6"><q-select v-model="rep.grade" dense outlined clearable :options="['G1', 'G2', 'G3', 'GX']" label="Ступінь диференціювання (G)" :readonly="signed || !canPath" /></div>
               <div class="col-12">
                 <q-select v-model="rep.icdoTopo" dense outlined clearable use-input fill-input hide-selected input-debounce="0" emit-value map-options :options="topoShown" label="МКХ-О топографія *" placeholder="Код або назва" :readonly="signed || !canPath"
-                          menu-anchor="bottom left" menu-self="top left" :popup-content-style="{ maxHeight: '280px' }" data-testid="icdoTopo" @filter="(v, update) => update(() => { topoQuery = v; })">
+                          menu-anchor="bottom left" menu-self="top left" :popup-content-style="{ maxHeight: '220px' }" data-testid="icdoTopo" @focus="revealField" @filter="(v, update) => update(() => { topoQuery = v; })">
                   <template v-slot:no-option><q-item><q-item-section class="text-grey">Нічого не знайдено</q-item-section></q-item></template>
                 </q-select>
               </div>
               <div class="col-12">
                 <q-select v-model="rep.icdoMorph" dense outlined clearable use-input fill-input hide-selected input-debounce="0" emit-value map-options :options="morphShown" label="МКХ-О морфологія *" placeholder="Код або назва" :readonly="signed || !canPath"
-                          menu-anchor="bottom left" menu-self="top left" :popup-content-style="{ maxHeight: '280px' }" data-testid="icdoMorph" @filter="(v, update) => update(() => { morphQuery = v; })">
+                          menu-anchor="bottom left" menu-self="top left" :popup-content-style="{ maxHeight: '220px' }" data-testid="icdoMorph" @focus="revealField" @filter="(v, update) => update(() => { morphQuery = v; })">
                   <template v-slot:no-option><q-item><q-item-section class="text-grey">Нічого не знайдено</q-item-section></q-item></template>
                 </q-select>
               </div>
@@ -326,7 +331,7 @@
             <q-btn outline color="amber-9" icon="schedule_send" label="Попередній у МІС" :disable="!canPath" @click="prelimOpen = true" />
             <span>
               <q-btn unelevated color="primary" icon="draw" label="Підписати КЕП" data-testid="signBtn" :disable="!canSign" @click="sign" />
-              <q-tooltip v-if="!canSign">{{ !canPath ? roleHint('LAB_DOCTOR') : `Бракує: ${signMissing.join('; ')}` }}</q-tooltip>
+              <q-tooltip v-if="!canSign" max-width="380px" :content-style="{ whiteSpace: 'normal' }">{{ !canPath ? roleHint('LAB_DOCTOR') : `Бракує: ${signMissing.join('; ')}` }}</q-tooltip>
             </span>
           </template>
           <template v-else>
@@ -553,9 +558,9 @@ export default {
   props: { id: { type: String, required: true } },
   data () {
     return {
-      c: null, tab: this.$route.query.tab || 'ref', dict: { templates: [], topo: [], morph: [], stains: [], prices: {} }, form: null, highlight: true,
+      c: null, tab: this.$route.query.tab || 'ref', dict: { templates: [], topo: [], morph: [], stains: [], icd10: [], prices: {} }, form: null, highlight: true,
       gross: { macro: '', templateName: null, objects: [] }, prep: { objects: [], note: '' }, screenNote: '', rep: this.emptyReport(), microTemplate: null, scan: '', composing: false,
-      topoQuery: '', morphQuery: '',
+      topoQuery: '', morphQuery: '', icd10Query: '', repSnapshot: '',
       addOpen: false, add: { blockId: null, methods: [], source: 'LAB' }, prelimOpen: false, prelimText: '',
       addendumOpen: false, addendum: { type: null, text: '', reason: '', consultantName: '', icdoMorph: null, changesDiagnosis: false },
       citoOpen: false, cito: { text: '', notifiedPerson: '', method: 'PHONE', readBack: false, repeat: false },
@@ -576,7 +581,9 @@ export default {
     subtitle () {
       if (!this.c) return '';
       // той самий текст двічі (джерело й відділення «Поліклініка») не повторюємо
-      return [this.c.patient.name, this.c.kindLabel, this.c.sourceLabel, this.c.department].filter((v, i, a) => v && a.indexOf(v) === i).join(' · ');
+      // відділення з МІС може вже містити назву джерела («Поліклініка · гінеколог») — розбираємо на частини й прибираємо повтори
+      const parts = [this.c.patient.name, this.c.kindLabel, this.c.sourceLabel].concat(String(this.c.department || '').split('·')).map(trim);
+      return parts.filter((v, i, a) => v && a.indexOf(v) === i).join(' · ');
     },
     crumbs () {
       const cyto = this.c ? this.isCyto : this.$route.query.kind === 'cyto';
@@ -591,7 +598,8 @@ export default {
     canDispatch () { return this.canDo('LAB_DOCTOR', 'REGISTRAR', 'LAB_TECHNICIAN'); },
     citoTarget () { return this.c && this.c.citoTimer ? this.c.citoTimer.targetMinutes : 0; },
     citoLate () { return !!(this.c && this.c.citoTimer && this.c.citoTimer.minutes > this.citoTarget); },
-    citoClass () { return this.c.citoTimer.notifiedAt ? (this.citoLate ? 'late' : 'done') : (this.citoLate ? 'late' : ''); },
+    // повідомлення вже зафіксовано — банер спокійний (зелений) навіть із запізненням: червоним лишається лише таймер, що іде
+    citoClass () { return this.c.citoTimer.notifiedAt ? 'done' : (this.citoLate ? 'late' : ''); },
     citoHasResult () { return !!(this.c && (this.c.preliminary || trim(this.rep.conclusionText) || trim(this.c.report && this.c.report.conclusionText) || ['MICRO', 'SIGNED'].includes(this.c.stage))); },
     citoCanNotify () { return this.canPath && this.citoHasResult; },
     citoHint () {
@@ -621,7 +629,8 @@ export default {
     cytoDict () { return this.dict.cytology || { materials: [], adequacy: [], categories: [], slidePrice: 0 }; },
     cytoPrice () { return this.cytoDict.slidePrice; },
     adequacyOptions () { return this.cytoDict.adequacy.map(a => ({ label: a.name, value: a.code })); },
-    categoryOptions () { return this.cytoDict.categories.map(a => ({ label: `${a.name} (${a.code})${a.high ? ' — критично' : ''}`, value: a.code })); },
+    // категорії залежать від виду матеріалу (гінекологічний мазок — шкала шийки матки; пунктат, виділення — загальні); вибрану раніше не ховаємо
+    categoryOptions () { return this.cytoDict.categories.filter(a => !a.materials || !this.c || !this.c.cyto || a.materials.includes(this.c.cyto.material) || a.code === this.rep.cytoCategory).map(a => ({ label: `${a.name} (${a.code})${a.high ? ' — критично' : ''}`, value: a.code })); },
     cytoMethodOptions () { return this.dict.stains.filter(s => !s.isIhc).map(s => ({ label: s.name, value: s.code })).concat(this.dict.stains.some(s => s.code === 'PAP') ? [] : [{ label: 'Папаніколау', value: 'PAP' }]); },
     prepSum () { return this.prep.objects.reduce((n, o) => n + o.slides.reduce((m, s) => m + ((this.dict.stains.find(x => x.code === s.method) || {}).price || this.cytoPrice), 0), 0); },
     prepTotal () { return this.prep.objects.reduce((n, o) => n + o.slides.length, 0); },
@@ -646,6 +655,9 @@ export default {
     templateOptions () { return this.dict.templates.map(t => ({ label: t.name, value: t.name })); },
     topoOptions () { return this.dict.topo.map(t => ({ label: `${t.code} ${t.name}`, value: t.code })); },
     morphOptions () { return this.dict.morph.map(t => ({ label: `${t.code} ${t.name}`, value: t.code })); },
+    // стартовий набір поширених кодів МКХ-10 (не повний класифікатор): інший код вводиться вручну й перевіряється за форматом
+    icd10Options () { return (this.dict.icd10 || []).map(t => ({ label: `${t.code} ${t.name}`, value: t.code })); },
+    icd10Shown () { return this.filterOptions(this.icd10Options, this.icd10Query); },
     topoShown () { return this.filterOptions(this.topoOptions, this.topoQuery); },
     morphShown () { return this.filterOptions(this.morphOptions, this.morphQuery); },
     blockOptions () { return this.c ? this.c.objects.flatMap(o => o.blocks.map(b => ({ label: `${b.code}${o.description ? ' — ' + o.description : ''}${b.status === 'ISSUED' ? ' (видано)' : ''}`, value: b.id, disable: b.status === 'ISSUED' }))) : []; },
@@ -667,6 +679,10 @@ export default {
         const t = new Date(l.performedAt).getTime();
         let comment = l.comment || '';
         if (l.stage === 'RCV') comment = comment.replace(/^Прийнято\s+/i, '');
+        // службові коди джерела в тексті журналу → українські слова; «Підписано · Підписано КЕП» → «Підписано · КЕП»
+        comment = comment.replace(/Дозамовлено \(LAB\)/, 'Дозамовлено лабораторією').replace(/Дозамовлено \(MIS\)/, 'Дозамовлено від МІС')
+          .replace(/Дозамовлено \(MDK\)/, 'Дозамовлено від мультидисциплінарної комісії').replace(/Дозамовлено \(лабораторією\)/, 'Дозамовлено лабораторією')
+          .replace(/Дозамовлено \(від ([^)]+)\)/, 'Дозамовлено від $1').replace(/^Підписано КЕП:/i, 'КЕП:');
         const target = l.slideId && slideCode[l.slideId] ? { text: slideCode[l.slideId], slide: true } : l.blockId && blockCode[l.blockId] ? { text: blockCode[l.blockId], slide: false } : null;
         const last = groups[groups.length - 1];
         if (target && last && last.stage === l.stage && last.by === l.performedByName && last.comment === comment && last.slide === target.slide && Math.abs(t - last.t) < 120000) {
@@ -680,7 +696,7 @@ export default {
     misEvents () { return ((this.c && this.c.events) || []).map(e => this.eventView(e)); }
   },
   watch: {
-    id () { this.load(); },
+    id () { this.repSnapshot = ''; this.load(true); },
     tab (v) {
       if (v === 'print') this.loadForm();
       this.apiError = null; // застаріла помилка не повинна «висіти» на іншій вкладці
@@ -706,6 +722,22 @@ export default {
     orderedFromLabel (s) { return { MIS: 'МІС', MDK: 'мультидисциплінарної комісії', LAB: 'лабораторії' }[s] || s; },
     citoMethodLabel (m) { const t = CITO_METHODS[m] || m; return t.charAt(0).toUpperCase() + t.slice(1); },
     eventColor (e) { return { RECEIVED: 'primary', REJECTED: 'negative', CRITICAL_RESULT: 'negative', RESULT_FINAL: 'positive', ADDENDUM: 'teal-6', RESULT_PRELIMINARY: 'amber-9', ADDITIONAL_STUDY_ORDERED: 'purple-5' }[e] || 'grey-7'; },
+    icd10Filter (v, update) { update(() => { this.icd10Query = v; }); },
+    /** Код, якого немає в стартовому наборі, приймаємо лише у форматі МКХ-10 (латинська літера і дві цифри, далі крапка й до двох цифр) */
+    icd10New (v, done) {
+      const code = trim(v).toUpperCase();
+      if (/^[A-Z]\d{2}(\.\d{1,2})?$/.test(code)) done(code, 'add-unique');
+      else this.$q.notify({ type: 'warning', message: 'Код у форматі C50.4' });
+    },
+    /** Поле з випадним списком підсуваємо до середини екрана, щоб список відкривався вниз, а не накладався на шапку */
+    revealField (e) {
+      const el = e && e.target && e.target.closest ? e.target.closest('.q-field') : null;
+      if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center' });
+    },
+    /** Скельце забарвлено: «Готово», або первинне скельце при завершеному фарбуванні (те саме правило перевіряє сервер) */
+    slideStained (s) {
+      return s.status === 'READY' || (s.status === 'IN_WORK' && !s.isIhc && !s.replacesSlideId && !s.orderedFrom && !!this.c && this.c.stage === 'STAIN');
+    },
     slideCode (id) { const s = this.c && this.c.objects.flatMap(o => o.blocks).flatMap(b => b.slides).find(x => x.id === id); return s ? s.code : '—'; },
     filterOptions (options, query) {
       const q = trim(query).toLowerCase();
@@ -745,7 +777,15 @@ export default {
           break;
         }
         case 'ADDITIONAL_STUDY_ORDERED': text = `Блок ${p.block || ''}: ${(p.methods || []).join(', ')}`; break;
-        case 'CRITICAL_RESULT': text = short(p.text); break;
+        case 'CRITICAL_RESULT':
+          // одна подія МІС для трьох різних ситуацій: називаємо кожну своїм іменем і пояснюємо причину
+          if (p.cito) { title = 'Результат повідомлено в операційну'; text = short(p.text); }
+          else if (p.reason === 'unexpected-malignancy') {
+            title = 'Критична знахідка: злоякісна пухлина';
+            text = `Клінічний діагноз у направленні${p.clinicalDiagnosis ? ` (${trim(p.clinicalDiagnosis).split(' ')[0]})` : ''} не передбачав злоякісного новоутворення. Направнику потрібно підтвердити ознайомлення. ${short(String(p.text || '').replace(/^(Неочікувана злоякісність|Виявлено злоякісну пухлину[^:]*):\s*/i, ''))}`.trim();
+          } else if (p.reason === 'cytology-high-grade') { title = 'Критична знахідка: високий ступінь підозри'; text = short(String(p.text || '').replace(/^Цитологія:\s*/i, '')); }
+          else text = short(p.text);
+          break;
         default: break;
       }
       let details = '';
@@ -776,11 +816,26 @@ export default {
       const part = !mm ? '' : /^\d+([.,]\d+)?$/.test(mm) ? `${mm} мм` : mm;
       return [this.rep.marginClass, part].filter(Boolean).join(', ');
     },
-    async load () {
+    async load (force) {
       const c = await this.callApi(() => this.$api.pathCase(this.id));
-      if (c) this.apply(c);
+      if (c) this.apply(c, force === true);
     },
-    apply (c) {
+    /**
+     * Застосувати відповідь сервера. Незбережені правки висновку не затираємо: оцінка скринінгу, покриття скельця, дозамовлення
+     * та інші дії оновлюють картку, але не очищають введені поля. Повна заміна — лише після власного збереження (force).
+     */
+    apply (c, force) {
+      const keepRep = !force && this.repSnapshot !== '' && JSON.stringify(this.rep) !== this.repSnapshot;
+      const keptRep = keepRep ? this.rep : null;
+      this.applyCase(c);
+      if (keptRep) {
+        // нові ІГХ-скельця додаємо до рядків, решту не чіпаємо
+        this.rep.ihc.filter(i => !keptRep.ihc.some(k => k.marker === i.marker)).forEach(i => keptRep.ihc.push(i));
+        this.rep = keptRep;
+      }
+      if (!keptRep) this.repSnapshot = JSON.stringify(this.rep);
+    },
+    applyCase (c) {
       this.c = c;
       const caseTitle = c.kind === 'CYTO' ? 'Справа цитології' : 'Справа ПГД';
       document.title = `${caseTitle} ${c.caseNo || c.orderNumber} — MedLink LIS`;
@@ -905,7 +960,7 @@ export default {
     },
     async saveReport (silent) {
       const c = await this.callApi(() => this.$api.pathSaveReport(this.c.id, this.reportBody()), { success: silent ? null : 'Висновок збережено' });
-      if (c) this.apply(c);
+      if (c) this.apply(c, true);
       return c;
     },
     async compose () {
@@ -971,6 +1026,8 @@ export default {
 </script>
 
 <style scoped>
+/* неактивна кнопка має явно відрізнятися від активної (сірий, без насиченого кольору) */
+.q-btn.disabled { opacity: 0.45 !important; filter: grayscale(0.85); cursor: not-allowed; }
 .stages { gap: 3px; overflow-x: auto; }
 .stage { flex: 1; min-width: 86px; text-align: center; font-size: 11px; padding: 5px 4px; border-radius: 4px; background: #eef1f5; color: #6b7785; white-space: nowrap; }
 .stage.done { background: #e3f2e5; color: #2e7d32; }

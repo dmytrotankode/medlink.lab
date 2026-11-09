@@ -28,10 +28,10 @@
               <tr v-for="row in cat.rows" :key="row.key" :class="{ 'matrix-row--selected': isSelected(row), 'matrix-row--profile': row.kind === 'PROFILE' }" class="cursor-pointer" :data-testid="`matrix-${row.code}`" @click="toggle(row)">
                 <td @click.stop><q-checkbox :value="isSelected(row)" dense @input="toggle(row)" /></td>
                 <td @click.stop><q-icon :name="isFavorite(row) ? 'star' : 'star_border'" :color="isFavorite(row) ? 'amber-7' : 'grey-4'" size="18px" class="cursor-pointer" @click="toggleFavorite(row)" /></td>
-                <td class="mono">{{ row.code }}<q-badge v-if="row.kind === 'PROFILE'" color="primary" label="профіль" class="q-ml-xs" /></td>
-                <td><div>{{ row.name }}</div><div v-if="row.kind === 'PROFILE'" class="text-caption text-grey-6">{{ (row.memberTestCodes || []).join(', ') }}</div></td>
+                <td class="mono text-caption">{{ row.code }}<q-badge v-if="row.kind === 'PROFILE'" color="primary" label="профіль" class="q-ml-xs" /></td>
+                <td><div>{{ row.name }}</div><div v-if="row.kind === 'PROFILE'" class="text-caption text-grey-6">{{ (row.memberTestCodes || []).map(testName).join(', ') }}</div></td>
                 <td class="text-caption">{{ row.biomaterialName || '—' }}</td>
-                <td class="text-center"><div v-if="row.tubeColor" :style="{ background: row.tubeColor, width: '14px', height: '22px', borderRadius: '3px 3px 7px 7px', border: '1px solid #999', margin: '0 auto' }" :title="row.tubeName || 'Пробірка'" /><span v-else class="text-grey-5">—</span></td>
+                <td class="text-center"><div v-if="row.tubeColor" :style="{ background: row.tubeColor, width: '14px', height: '22px', borderRadius: '3px 3px 7px 7px', border: '1px solid #999', margin: '0 auto' }" :title="row.tubeName || 'Пробірка'" /><span v-else-if="row.tubeName" class="text-caption">{{ tubeTitle(row.tubeName) }}</span><span v-else class="text-grey-5">—</span></td>
                 <td class="text-right">{{ row.price | money }}</td>
                 <td class="text-center text-caption">{{ row.turnaroundHours ? row.turnaroundHours + ' год' : '—' }}</td>
               </tr>
@@ -50,7 +50,7 @@
           <q-list v-if="tubePlan.length" dense separator>
             <q-item v-for="t in tubePlan" :key="t.key">
               <q-item-section avatar><div :style="{ background: t.color, width: '18px', height: '28px', borderRadius: '3px 3px 8px 8px', border: '1px solid #999' }" /></q-item-section>
-              <q-item-section><q-item-label>{{ t.tubeName }} <span class="text-grey-7">· {{ t.biomaterialName }}</span></q-item-label><q-item-label caption>{{ t.tests.map(testName).join(', ') }}</q-item-label></q-item-section>
+              <q-item-section><q-item-label>{{ tubeTitle(t.tubeName) }} <span v-if="t.biomaterialName" class="text-grey-7">· {{ t.biomaterialName }}</span></q-item-label><q-item-label caption>{{ t.tests.map(testName).join(', ') }}</q-item-label></q-item-section>
               <q-item-section side><q-badge color="grey-7" :label="pluralN(t.tests.length, 'показник', 'показники', 'показників')" /></q-item-section>
             </q-item>
           </q-list>
@@ -78,7 +78,7 @@
  * Fallback (404): будується з довідників profiles/tests/biomaterials/tube-types.
  */
 import { LAB_SECTIONS } from '../../utils/statuses';
-import { pluralN } from '../../utils/format';
+import { pluralN, testTitle, tubeTitle } from '../../utils/format';
 
 export default {
   name: 'OrderMatrix',
@@ -128,7 +128,7 @@ export default {
         const t = testRows.find(r => r.code === code);
         if (!t) return;
         const key = `${t.biomaterialName || 'x'}|${t.tubeName || 'def'}`;
-        if (!groups[key]) groups[key] = { key, biomaterialName: t.biomaterialName || 'Біоматеріал', tubeName: t.tubeName || 'Пробірка за замовчуванням', color: t.tubeColor || '#bbb', order: t.orderOfDrawIndex || 99, tests: [] };
+        if (!groups[key]) groups[key] = { key, biomaterialName: t.biomaterialName || '', tubeName: t.tubeName || 'Пробірка за замовчуванням', color: t.tubeColor || '#bbb', order: t.orderOfDrawIndex || 99, tests: [] };
         groups[key].tests.push(code);
       });
       return Object.values(groups).sort((a, b) => a.order - b.order);
@@ -157,6 +157,7 @@ export default {
       try {
         const res = await this.$api.orderMatrix();
         this.rows = this.flatten(res).map(r => this.normalize(r));
+        await this.fillTubes();
       } catch (e) {
         if (e.apiStatus === 404) await this.buildFallback();
         else if (!e.isOffline) this.error = e.userMessage;
@@ -189,9 +190,10 @@ export default {
     },
     testName (code) {
       const t = this.rows.find(r => r.kind === 'TEST' && r.code === code);
-      return t ? (t.shortName || t.name) : code;
+      return t ? testTitle(t.name || t.shortName) : code;
     },
     pluralN,
+    tubeTitle,
     normalize (r) {
       const kind = (r.kind || r.type || (r.memberTestIds || r.items ? 'PROFILE' : 'TEST')).toUpperCase();
       return {
@@ -203,8 +205,24 @@ export default {
         memberTestCodes: r.memberTestCodes || (r.items || []).map(i => i.testCode).filter(Boolean),
         tubeColor: r.tubeColor || r.tubeColorCode || (r.tube && r.tube.colorCode),
         tubeName: r.tubeName || (r.tube && r.tube.name),
-        biomaterialName: r.biomaterialName || (r.biomaterial && r.biomaterial.name)
+        // сервер повертає біоматеріал рядком (назва), довідник — об’єктом
+        biomaterialName: r.biomaterialName || (typeof r.biomaterial === 'string' ? r.biomaterial : (r.biomaterial && r.biomaterial.name)) || null
       };
+    },
+    /** Якщо сервер не вказав пробірку, підбираємо її за типовою тарою біоматеріалу з довідників */
+    async fillTubes () {
+      if (!this.rows.some(r => r.kind === 'TEST' && r.biomaterialName && !r.tubeName)) return;
+      try {
+        await this.$store.dispatch('dictionaries/loadMany', ['biomaterials', 'tube-types']);
+        const g = n => this.$store.getters['dictionaries/items'](n);
+        const bios = g('biomaterials'); const tubes = g('tube-types');
+        this.rows = this.rows.map(r => {
+          if (r.tubeName || !r.biomaterialName) return r;
+          const bio = bios.find(b => b.name === r.biomaterialName);
+          const tube = tubes.find(tt => bio && bio.defaultContainer && (tt.code === bio.defaultContainer || tt.name === bio.defaultContainer));
+          return tube ? { ...r, tubeName: tube.name, tubeColor: r.tubeColor || tube.colorCode, orderOfDrawIndex: r.orderOfDrawIndex || tube.orderOfDrawIndex } : r;
+        });
+      } catch (e) { /* довідники недоступні — лишаємо як є */ }
     },
     async buildFallback () {
       await this.$store.dispatch('dictionaries/loadMany', ['profiles', 'tests', 'biomaterials', 'tube-types']);

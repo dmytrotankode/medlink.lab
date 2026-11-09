@@ -98,7 +98,8 @@ export default {
       if (l.pregnancyWeekFrom || l.pregnancyWeekTo) parts.push(`вагітність ${l.pregnancyWeekFrom || '…'}–${l.pregnancyWeekTo || '…'} тиж.`);
       if (l.menstrualPhase) parts.push(`фаза ${(MENSTRUAL_PHASES.find(p => p.value === l.menstrualPhase) || {}).label || l.menstrualPhase}`);
       if (l.icd10Code) parts.push(`МКХ ${l.icd10Code}`);
-      if (l.normLow !== undefined || l.normHigh !== undefined) parts.push(`норма ${l.normLow !== null && l.normLow !== undefined ? l.normLow : '…'}–${l.normHigh !== null && l.normHigh !== undefined ? l.normHigh : '…'}`);
+      const nf = v => String(v).replace('.', ',');
+      if (l.normLow !== undefined || l.normHigh !== undefined) parts.push(`норма ${l.normLow !== null && l.normLow !== undefined ? nf(l.normLow) : '…'} – ${l.normHigh !== null && l.normHigh !== undefined ? nf(l.normHigh) : '…'}`);
       return parts.join(' · ');
     },
     async resolve () {

@@ -47,6 +47,10 @@ public static class PathStages
         Received => "Прийнято", Gross => "Вирізка", Decalcification => "Декальцинація", Coverslip => "Покриття скла", Processing => "Проводка", Embedding => "Заливка", Sectioning => "Мікротомія", Staining => "Фарбування",
         Microscopy => "Мікроскопія й опис", Signed => "Підписано", _ => s ?? "—"
     };
+    /// <summary>Назва етапу для виду справи: у цитології немає «вирізки» й «мікроскопії й опису» — приготування препаратів і скринінг із висновком.</summary>
+    public static string LabelFor(string? kind, string? s) => kind == "CYTO"
+        ? s switch { Received => "Прийом і приготування", Gross => "Приготування препаратів", Microscopy => "Скринінг і висновок", _ => Label(s) }
+        : Label(s);
     public static string? Next(string stage) { var i = Array.IndexOf(All, stage); return i >= 0 && i < All.Length - 1 ? All[i + 1] : null; }
 }
 
@@ -70,6 +74,11 @@ public static class PathCytology
         ("HSIL", "Плоскоклітинне інтраепітеліальне ураження високого ступеня", true), ("AGC", "Атипові залозисті клітини", true),
         ("BENIGN", "Доброякісні зміни", false), ("ATYPICAL", "Атипові клітини", false), ("SUSPICIOUS", "Підозра на злоякісність", true), ("MALIGNANT", "Злоякісні клітини", true)
     };
+    /// <summary>Категорії за видом матеріалу: гінекологічний мазок — шкала шийки матки + карцинома; пунктат, виділення, серозна рідина — загальні; рідинна цитологія — усі.</summary>
+    private static readonly string[] GynCategories = { "NILM", "ASC-US", "LSIL", "ASC-H", "HSIL", "AGC", "MALIGNANT" };
+    private static readonly string[] GeneralCategories = { "BENIGN", "ATYPICAL", "SUSPICIOUS", "MALIGNANT" };
+    public static bool CategoryAllowed(string? material, string? category) =>
+        category == null || material switch { null or "" or "LIQUID" => true, "GYN" => GynCategories.Contains(category), _ => GeneralCategories.Contains(category) };
     public static readonly string[] Assessments = { "NORMAL", "SUSPECT" };
     public static bool IsHigh(string? c) => Categories.Any(x => x.High && x.Code == c);
     public static bool IsNormal(string? c) => c is "NILM" or "BENIGN";

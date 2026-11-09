@@ -186,8 +186,8 @@ public sealed class ResultPipelineService
         result.Flag = flag;
         result.AppliedLayerId = resolution.WinningLayer?.Id;
         result.AppliedLayerName = resolution.WinningLayer?.NormName;
-        result.DeltaPercent = delta.DeltaPercent;
-        result.DeltaAlert = delta.IsAlert;
+        result.DeltaPercent = delta.HasPrevious ? delta.DeltaPercent : null; // без попереднього результату дельти немає
+        result.DeltaAlert = delta.HasPrevious && delta.IsAlert;
         result.PreviousValue = delta.HasPrevious ? delta.PreviousValue : null;
         result.PreviousAt = delta.HasPrevious ? delta.PreviousAt : null;
         result.AnalyzerId = analyzerId;

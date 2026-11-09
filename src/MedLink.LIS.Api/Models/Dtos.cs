@@ -233,6 +233,10 @@ public sealed class OrderListItemDto
     public int SamplesCount { get; set; }
     public bool HasCritical { get; set; }
     public decimal TotalPrice { get; set; }
+    /// <summary>Сума до сплати пацієнтом, сплачено та вид платника — для колонки «Оплата» черги.</summary>
+    public decimal PatientAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public string? PayerKind { get; set; }
     public List<AllowedActionDto> AllowedActions { get; set; } = new();
 }
 

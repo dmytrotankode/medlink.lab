@@ -343,6 +343,14 @@ $@"MedLink LabConnector — інструкція з встановлення (і
                        ?? throw new ValidationException($"Аналізатор {batch.AnalyzerId} не знайдено");
         if (analyzer.ConnectorId != null && analyzer.ConnectorId != c.Id) throw new ForbiddenConnectorException("Аналізатор належить іншій інсталяції коннектора");
         analyzer.LastMessageAt = DateTime.UtcNow; analyzer.IsOnline = true; analyzer.OfflineSince = null;
+        // «Останнє повідомлення» має мати запис у журналі обміну: якщо коннектор не надіслав окремого запису, фіксуємо прийняту партію результатів
+        var since = analyzer.LastMessageAt.Value.AddMinutes(-2);
+        if (!await _db.AnalyzerMessages.AnyAsync(m => m.AnalyzerId == analyzer.Id && m.Direction == "IN" && m.ReceivedAt >= since))
+            _db.AnalyzerMessages.Add(new LabAnalyzerMessage
+            {
+                AnalyzerId = analyzer.Id, Direction = "IN", Protocol = "ASTM", ParsedOk = true, ReceivedAt = analyzer.LastMessageAt.Value, ResultsCount = batch.Results.Count,
+                RawText = $"Прийнято результатів: {batch.Results.Count}" + (string.IsNullOrEmpty(batch.RawMessageId) ? "" : $" (повідомлення {batch.RawMessageId})")
+            });
         var response = new AnalyzerResultsAcceptedDto { Accepted = batch.Results.Count };
 
         if (batch.IsQc)

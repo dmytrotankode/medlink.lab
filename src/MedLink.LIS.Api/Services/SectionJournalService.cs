@@ -138,13 +138,15 @@ public sealed class SectionJournalService
     /// <summary>Атомарний інкремент лічильника з автоскиданням за ключем періоду.</summary>
     private async Task<long> NextAsync(string code, string periodKey, string name)
     {
-        if (!await _db.Numerators.AsNoTracking().AnyAsync(n => n.Code == code))
-        {
-            _db.Numerators.Add(new LabNumerator { Code = code, Name = name, Mask = "{seq}", CurrentValue = 0, PeriodKey = periodKey, ResetByPeriod = true });
-            await _db.SaveChangesAsync();
-        }
-        await _db.Database.ExecuteSqlInterpolatedAsync($"UPDATE lab_numerator SET current_value = 0, period_key = {periodKey} WHERE code = {code} AND (period_key IS NULL OR period_key <> {periodKey})");
-        return (await _db.Database.SqlQuery<long>($"UPDATE lab_numerator SET current_value = current_value + 1, modified_on = {DateTime.UtcNow} WHERE code = {code} RETURNING current_value AS \"Value\"").ToListAsync()).First();
+        var mask = "{seq}";
+        // Створення без гонки + скидання періоду й інкремент одним оператором (див. NumeratorService.NextFormattedAsync)
+        await _db.Database.ExecuteSqlInterpolatedAsync(
+            $"INSERT INTO lab_numerator (code, name, mask, current_value, period_key, reset_by_period, modified_on) VALUES ({code}, {name}, {mask}, 0, {periodKey}, {true}, {DateTime.UtcNow}) ON CONFLICT (code) DO NOTHING");
+        return (await _db.Database.SqlQuery<long>(
+            $@"UPDATE lab_numerator SET
+                 current_value = CASE WHEN period_key IS NULL OR period_key <> {periodKey} THEN 1 ELSE current_value + 1 END,
+                 period_key = {periodKey}, modified_on = {DateTime.UtcNow}
+               WHERE code = {code} RETURNING current_value AS ""Value""").ToListAsync()).First();
     }
 
     public async Task<(string number, long seq, int daySeq, string? secondary, string periodKey)> NextJournalNumberAsync(LabSection section, DateTime at)

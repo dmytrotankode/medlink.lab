@@ -42,6 +42,10 @@
             <q-badge color="blue-grey-6" :label="isCyto ? 'Дані направлення — лише перегляд' : 'Лицьова сторона 014/о — лише перегляд'" />
           </div>
 
+          <q-banner v-if="current.priorCases && current.priorCases.length" dense class="bg-amber-1 text-amber-10 q-mb-sm" data-testid="priorCases">
+            <q-icon name="history" /> У пацієнта вже є прийняті справи — перевірте, чи це не повторне направлення:
+            <template v-for="(p, i) in current.priorCases"><span :key="p.id"><span v-if="i">, </span><router-link :to="{ name: 'lab-path-case', params: { id: p.id } }" class="text-amber-10 text-weight-bold">{{ p.caseNo }}</router-link> ({{ p.kindLabel.toLowerCase() }}, {{ p.stageLabel.toLowerCase() }})</span></template>.
+          </q-banner>
           <q-markup-table dense flat bordered wrap-cells class="q-mb-md form014">
             <tbody>
               <tr v-if="facility"><td>Заклад</td><td>{{ facility }}</td></tr>
@@ -207,4 +211,6 @@ export default {
 <style scoped>
 .kind-toggle { border: 1px solid #c5ccd6; }
 .form014 td:first-child { width: 190px; color: #5f6b7a; white-space: nowrap; }
+/* неактивна кнопка явно відрізняється від активної */
+.q-btn.disabled { opacity: 0.45 !important; filter: grayscale(0.85); cursor: not-allowed; }
 </style>

@@ -115,6 +115,7 @@ public sealed class WorkReportsService
     {
         var tests = await LoadAsync(f);
         var s = await _routing.SnapshotAsync();
+        var testNames = (await _db.Tests.AsNoTracking().Select(t => new { t.Code, t.Name }).ToListAsync()).GroupBy(t => t.Code).ToDictionary(g => g.Key, g => g.First().Name);
         return new
         {
             analyzers = s.Analyzers.Values.OrderBy(a => a.Kind == AnalyzerKinds.Manual).ThenBy(a => a.Location).ThenBy(a => a.Name).Select(a =>
@@ -124,6 +125,7 @@ public sealed class WorkReportsService
                 {
                     a.Id, a.Name, a.Kind, a.Location, a.IsOnline, longOffline = s.IsLongOffline(a), a.ServiceStatus, a.AvgTatMinutes, lastError = a.LastError,
                     lockouts = s.Lockouts.Where(l => l.AnalyzerId == a.Id).Select(l => l.TestCode).ToList(),
+                    lockoutNames = s.Lockouts.Where(l => l.AnalyzerId == a.Id).Select(l => l.TestCode == null ? "усі показники" : testNames.TryGetValue(l.TestCode, out var tn) && !string.IsNullOrWhiteSpace(tn) ? $"{tn} ({l.TestCode})" : l.TestCode).ToList(),
                     queue = mine.Count(t => ViewStatus(t) == "queue"), inAnalysis = mine.Count(t => ViewStatus(t) == "run"), results = mine.Count(t => ViewStatus(t) == "res"),
                     cito = mine.Count(t => t.Order!.IsUrgentCito && ViewStatus(t) is "queue" or "run")
                 };
@@ -282,6 +284,7 @@ public sealed class WorkReportsService
     {
         f.Status ??= "all";
         f.From ??= DateTime.UtcNow.Date.AddDays(-30);
+        if (f.To.HasValue && f.To.Value.TimeOfDay == TimeSpan.Zero) f.To = f.To.Value.Date.AddDays(1).AddTicks(-1); // «До» — дата без часу: включаємо весь день
         f.To ??= DateTime.UtcNow;
         var tests = await LoadAsync(f);
         if (!string.IsNullOrWhiteSpace(f.AnalyzerId)) tests = tests.Where(t => Performer(t) == f.AnalyzerId).ToList();
@@ -303,6 +306,22 @@ public sealed class WorkReportsService
         return table;
     }
 
+    /// <summary>Години блокування аналізатора в межах періоду звіту (активні блокування рахуються до кінця періоду/зараз).</summary>
+    internal static double LockoutHours(IEnumerable<LabAnalyzerLockout> lockouts, string analyzerId, WorkFilter f)
+    {
+        var now = DateTime.UtcNow;
+        var periodEnd = f.To.HasValue && f.To.Value < now ? f.To.Value : now;
+        var periodStart = f.From ?? DateTime.MinValue;
+        double total = 0;
+        foreach (var l in lockouts.Where(x => x.AnalyzerId == analyzerId))
+        {
+            var from = l.StartedAt > periodStart ? l.StartedAt : periodStart;
+            var to = l.ResolvedAt.HasValue && l.ResolvedAt.Value < periodEnd ? l.ResolvedAt.Value : periodEnd;
+            if (to > from) total += (to - from).TotalHours;
+        }
+        return Math.Round(total, 1);
+    }
+
     private async Task<ReportTable> LoadReportAsync(List<LabOrderTest> tests, Dictionary<string, string> analyzers, WorkFilter f)
     {
         var lockouts = await _db.Lockouts.AsNoTracking().Where(l => l.StartedAt <= f.To && (l.ResolvedAt == null || l.ResolvedAt >= f.From)).ToListAsync();
@@ -313,13 +332,24 @@ public sealed class WorkReportsService
             ["inpatient"] = g.Count(t => ReferralSources.Of(t.Order!) == ReferralSources.Inpatient), ["polyclinic"] = g.Count(t => ReferralSources.Of(t.Order!) == ReferralSources.Polyclinic),
             ["ehealth"] = g.Count(t => ReferralSources.Of(t.Order!) == ReferralSources.Ehealth), ["reruns"] = g.Count(t => (t.Result?.Version ?? 1) > 1 || t.Status == OrderTestStatuses.Rerun),
             ["manual"] = g.Count(t => t.RoutedBy == "MANUAL"), ["tatMedian"] = Median(g.Select(TatMinutes).Where(x => x.HasValue).Select(x => x!.Value)),
-            ["lockoutHours"] = Math.Round(lockouts.Where(l => l.AnalyzerId == g.Key).Sum(l => ((l.ResolvedAt ?? DateTime.UtcNow) - l.StartedAt).TotalHours), 1),
+            ["lockoutHours"] = LockoutHours(lockouts, g.Key, f),
             ["queueNow"] = queue.GetValueOrDefault(g.Key)
-        }).OrderByDescending(r => r["tests"]).ToList();
+        }).ToList();
+        // прилади, заблоковані за період, але без тестів у вибірці, теж мають бути у звіті
+        foreach (var aid in lockouts.Select(l => l.AnalyzerId).Distinct())
+        {
+            if (aid == null || tests.Any(t => Performer(t) == aid)) continue;
+            rows.Add(new Dictionary<string, object?>
+            {
+                ["analyzer"] = analyzers.GetValueOrDefault(aid, aid), ["tests"] = 0, ["cito"] = 0, ["inpatient"] = 0, ["polyclinic"] = 0, ["ehealth"] = 0, ["reruns"] = 0, ["manual"] = 0,
+                ["tatMedian"] = null, ["lockoutHours"] = LockoutHours(lockouts, aid, f), ["queueNow"] = queue.GetValueOrDefault(aid)
+            });
+        }
+        rows = rows.OrderByDescending(r => (int)r["tests"]!).ThenByDescending(r => (double)r["lockoutHours"]!).ToList();
         return new ReportTable
         {
             Columns = new() { new("analyzer", "Аналізатор"), new("tests", "Тестів", true), new("cito", "Термінових", true), new("inpatient", "Стаціонар", true), new("polyclinic", "Поліклініка", true),
-                new("ehealth", "ЕСОЗ", true), new("reruns", "Повтори", true), new("manual", "Перенаправлено вручну", true), new("tatMedian", "Час виконання (медіана), хв", true), new("lockoutHours", "Блокування, год", true), new("queueNow", "У черзі зараз", true) },
+                new("ehealth", "ЕСОЗ", true), new("reruns", "Повтори", true), new("manual", "Перенаправлено вручну", true), new("tatMedian", "Термін виконання (медіана), хв", true), new("lockoutHours", "Блокування, год", true), new("queueNow", "У черзі зараз", true) },
             Rows = rows, Note = "Тести рахуються за фактичним виконавцем з урахуванням перенаправлень"
         };
     }

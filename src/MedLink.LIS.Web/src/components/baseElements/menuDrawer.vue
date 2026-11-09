@@ -110,7 +110,7 @@ export default {
             { name: 'biobank', label: 'Біобанк', icon: 'fas fa-snowflake', to: { name: 'lab-biobank' } },
             { name: 'reagents', label: 'Реагенти', icon: 'fas fa-boxes', to: { name: 'lab-reagents' } },
             { name: 'microbiology', label: 'Мікробіологія', icon: 'fas fa-bacterium', to: { name: 'lab-microbiology' } },
-            { name: 'tat', label: 'Аналітика часу виконання', icon: 'fas fa-chart-pie', to: { name: 'lab-analytics-tat' } },
+            { name: 'tat', label: 'Аналітика термінів виконання', icon: 'fas fa-chart-pie', to: { name: 'lab-analytics-tat' } },
             { name: 'reports', label: 'Звіти лабораторії', icon: 'fas fa-file-alt', to: { name: 'lab-reports' } },
             { name: 'ehealth', label: 'Відправка в ЕСОЗ', icon: 'fas fa-cloud-upload-alt', to: { name: 'lab-ehealth' } }
           ]

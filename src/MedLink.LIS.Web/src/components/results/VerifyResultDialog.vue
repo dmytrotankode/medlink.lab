@@ -22,7 +22,7 @@
             <flag-marker :flag="row.flag" show-label class="q-mt-xs" />
           </div>
         </div>
-        <q-banner v-if="row.deltaAlert" dense rounded class="bg-orange-1 text-orange-9 q-mb-sm">
+        <q-banner v-if="row.deltaAlert && row.previousValue != null" dense rounded class="bg-orange-1 text-orange-9 q-mb-sm">
           <q-icon name="trending_up" /> Різка зміна відносно попереднього результату: {{ row.deltaPercent | pct }} (було {{ row.previousValue | num }}, {{ row.previousAt | datetime }})
         </q-banner>
         <q-banner v-if="row.isLockedOut" dense rounded class="bg-purple-1 text-purple-9 q-mb-sm">

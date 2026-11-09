@@ -53,11 +53,12 @@ export const ROUTE_ROLES = {
   'lab-analytics-tat': [DOCTOR], // ТЗ 3.2: аналітика — лікар-лаборант
 
   // ----- Патоморфологія / цитологія -----
-  'lab-path-cases': PATH_ALL,
-  'lab-cyto-cases': PATH_ALL,
+  // реєстратор лише приймає матеріал (IntakeRoles); журнал справ, термінові й архів — для лікаря й лаборанта
+  'lab-path-cases': [DOCTOR, TECH],
+  'lab-cyto-cases': [DOCTOR, TECH],
   'lab-path-intake': [REG, TECH, DOCTOR],
   'lab-path-cito': [DOCTOR, TECH],
-  'lab-path-archive': PATH_ALL,
+  'lab-path-archive': [DOCTOR, TECH],
   'lab-path-dictionaries': [], // лише адміністратор
   'lab-path-case': PATH_ALL,
 

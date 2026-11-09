@@ -169,7 +169,10 @@ public class ApiIntegrationTests
         }));
         Assert.Equal(7, accepted["matched"]!.GetValue<int>());
         Assert.Single(accepted["unmatched"]!.AsArray());
-        var unmatched = await Json(await admin.GetAsync("/api/v1/lab/results/unmatched"));
+        // «Останнє повідомлення» приладу має запис у журналі обміну
+        var exchangeLog = await Json(await admin.GetAsync($"/api/v1/lab/analyzers/{DemoDataSeeder.Mindray}/messages"));
+        Assert.NotEmpty((exchangeLog["items"] ?? exchangeLog).AsArray());
+        var unmatched =await Json(await admin.GetAsync("/api/v1/lab/results/unmatched"));
         Assert.Contains(unmatched.AsArray(), u => u!["barcode"]!.GetValue<string>() == "99999999");
 
         var kRow = await Json(await admin.GetAsync($"/api/v1/lab/results/{TestId("K")}"));
@@ -229,6 +232,28 @@ public class ApiIntegrationTests
         var resolved = await Json(await doctor.PostAsJsonAsync($"/api/v1/lab/qc/lockouts/{lockoutId}/resolve", new { cause = "Калібрувальна крива застаріла", action = "Перекалібровано, повторний контроль у нормі", comment = "ок" }));
         Assert.NotNull(resolved["resolvedAt"]);
         Assert.Contains("ПРОТОКОЛ РОЗБЛОКУВАННЯ", resolved["protocolText"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Reports_with_date_only_period_include_todays_lockouts_and_blocked_analyzer_without_tests()
+    {
+        var tech = _f.As(DemoDataSeeder.Technician);
+        var doctor = _f.As(DemoDataSeeder.Doctor);
+        // блокування, створене сьогодні; «До» у запиті — дата без часу (так надсилає вебінтерфейс)
+        var qc = await Json(await tech.PostAsJsonAsync("/api/v1/lab/qc/results", new { qcMaterialId = "09c00000-0000-0000-0000-000000000003", testCode = "GLU", measuredValue = 4.8 }));
+        Assert.True(qc["lockoutEnforced"]!.GetValue<bool>());
+        var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        var from = DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd");
+
+        var qcReport = await Json(await doctor.GetAsync($"/api/v1/lab/qc/report?from={from}&to={today}"));
+        var lockouts = qcReport["lockouts"]!.AsArray();
+        Assert.NotEmpty(lockouts);
+        var analyzerName = lockouts[0]!["analyzerName"]!.GetValue<string>();
+
+        var load = await Json(await doctor.GetAsync($"/api/v1/lab/reports/load?from={from}&to={today}"));
+        var row = load["rows"]!.AsArray().FirstOrDefault(r => r!["analyzer"]!.GetValue<string>() == analyzerName);
+        Assert.NotNull(row); // заблокований прилад є у звіті навіть без тестів
+        Assert.True(row!["lockoutHours"]!.GetValue<double>() >= 0);
     }
 
     [Theory]

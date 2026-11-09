@@ -386,6 +386,7 @@ const labApi = {
   pathDispatches: id => data(http.get(`/pathology/cases/${id}/dispatches`)),
   pathForm014: id => data(http.get(`/pathology/cases/${id}/form014`)),
   pathForm014PdfUrl: (id, sides = '1,2') => absoluteUrl(`/pathology/cases/${id}/form014.pdf?sides=${sides}`),
+  pathIssueActUrl: issueId => absoluteUrl(`/pathology/issues/${issueId}/act.pdf`),
 
   // ---------- Кабінет пацієнта ----------
   portalOrders: patientId => data(http.get(`/portal/${patientId}/orders`)),

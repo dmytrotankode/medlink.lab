@@ -192,7 +192,12 @@ export default {
         .map(s => ({ value: s.barcode, label: [s.barcode, s.patientName, s.tubeTypeName].filter(Boolean).join(' · ') }))
         .filter(o => !f || o.label.toLowerCase().includes(f));
     },
-    destinationOptions () { return this.depOptions.filter(o => o.value !== this.form.originDepartmentId); },
+    // отримувач — лише лабораторія; якщо жодна не позначена в довіднику, показуємо всі підрозділи
+    destinationOptions () {
+      const all = this.depOptions.filter(o => o.value !== this.form.originDepartmentId);
+      const labs = all.filter(o => o.item && o.item.labKind === 'LABORATORY');
+      return labs.length ? labs : all;
+    },
     sameRoute () { return !!this.form.originDepartmentId && this.form.originDepartmentId === this.form.destinationDepartmentId; },
     missingFields () {
       const m = [];

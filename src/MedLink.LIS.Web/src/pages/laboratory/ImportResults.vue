@@ -22,14 +22,14 @@
             </span>
           </div>
           <div v-if="error" class="text-negative q-mt-sm">{{ error }}</div>
-          <div v-if="applied" class="q-mt-md">
+          <div v-if="applied" class="q-mt-md" data-testid="importApplied">
             <q-banner dense rounded class="bg-green-1 text-green-9"><q-icon name="check_circle" /> Імпортовано рядків: {{ applied.applied }}; з помилками: {{ applied.errors }}; пропущено: {{ applied.skipped }}</q-banner>
           </div>
         </div>
       </div>
       <div class="col-12 col-md-8">
         <div class="medlink-card">
-          <div class="medlink-card__title"><span>Попередній перегляд</span><span v-if="preview" class="text-caption text-grey-6">рядків: {{ rows.length }} · готово до імпорту: {{ readyCount }} · помилок: {{ errorsCount }} · пропущено: {{ skippedCount }}</span></div>
+          <div class="medlink-card__title"><span>Попередній перегляд</span><span v-if="preview" class="text-caption text-grey-6">рядків: {{ rows.length }} · <template v-if="applied">імпортовано: {{ applied.applied }}</template><template v-else>готово до імпорту: {{ readyCount }}</template> · помилок: {{ errorsCount }} · пропущено: {{ skippedCount }}</span></div>
           <q-table v-if="preview" :data="rows" :columns="columns" dense flat row-key="line" :pagination="{ rowsPerPage: 25 }" no-data-label="Рядків немає" data-testid="importPreview">
             <template v-slot:body-cell-state="props">
               <q-td :props="props">

@@ -20,7 +20,7 @@
         <template v-slot:body-cell-journalNumber="props"><q-td :props="props"><b class="mono">{{ props.row.journalNumber }}</b></q-td></template>
         <template v-slot:body-cell-order="props"><q-td :props="props"><router-link v-if="props.row.orderId" :to="{ name: 'lab-order-card', params: { id: props.row.orderId } }" class="text-primary">{{ props.row.orderNumber }}</router-link><span v-else>{{ props.row.orderNumber }}</span></q-td></template>
         <template v-slot:body-cell-barcode="props"><q-td :props="props"><router-link v-if="props.row.barcode" :to="{ name: 'lab-sample-processing', params: { barcode: props.row.barcode } }" class="mono text-primary">{{ props.row.barcode }}</router-link></q-td></template>
-        <template v-slot:body-cell-tests="props"><q-td :props="props" class="text-caption">{{ testsText(props.row) }}</q-td></template>
+        <template v-slot:body-cell-tests="props"><q-td :props="props" class="text-caption" style="white-space: normal; min-width: 180px; max-width: 360px">{{ testsText(props.row) }}</q-td></template>
         <template v-slot:body-cell-status="props"><q-td :props="props"><q-badge :color="entryStatus(props.row.status).color" :label="entryStatus(props.row.status).label" /></q-td></template>
         <template v-slot:body-cell-registeredAt="props"><q-td :props="props">{{ props.row.registeredAt || props.row.createdOn || props.row.at | datetime }}</q-td></template>
         <template v-slot:body-cell-actions="props">
@@ -36,7 +36,7 @@
 
 <script>
 import apiMixin from '../../../mixins/apiMixin';
-import { todayIso, toIsoDate } from '../../../utils/format';
+import { todayIso, toIsoDate, testTitle } from '../../../utils/format';
 
 export default {
   name: 'DepartmentJournalPage',
@@ -75,7 +75,7 @@ export default {
       return m[s] || { label: s ? 'Інший стан' : '—', color: 'grey-5' };
     },
     testsText (r) {
-      const names = (r.tests || []).map(t => t.testName || t.testCode).filter(Boolean);
+      const names = (r.tests || []).map(t => (t.testName ? testTitle(t.testName) : t.testCode)).filter(Boolean);
       if (!names.length) return '—';
       return names.length > 3 ? `${names.slice(0, 3).join(', ')} +${names.length - 3}` : names.join(', ');
     },

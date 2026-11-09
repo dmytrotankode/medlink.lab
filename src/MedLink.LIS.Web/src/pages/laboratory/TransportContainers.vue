@@ -12,6 +12,7 @@
         </q-input>
       </div>
       <div class="col-12 col-md-5 text-right">
+        <q-btn flat dense color="primary" icon="refresh" label="Оновити" :loading="loading" @click="load" />
         <q-btn flat dense color="primary" icon="settings" label="Типи тари" data-testid="containerTypesBtn" @click="openTypes" />
         <q-btn outline color="cyan-7" icon="inbox" label="Прийняти контейнер" class="q-ml-sm" data-testid="receiveContainerBtn" @click="openReceiveByScan" />
         <q-btn unelevated color="primary" icon="add" label="Новий контейнер" class="q-ml-sm" data-testid="createContainerBtn" @click="openCreate" />
@@ -33,7 +34,7 @@
               <q-icon v-if="props.row.isColdChainViolated" name="warning" color="negative" class="q-ml-xs"><q-tooltip>Порушення холодового ланцюга</q-tooltip></q-icon>
               <q-icon v-else-if="props.row.hasDiscrepancies" name="rule" color="orange-8" class="q-ml-xs"><q-tooltip>Є розбіжності при прийомі</q-tooltip></q-icon>
             </q-td>
-            <q-td key="status" :props="props"><status-chip :value="props.row.status" type="container" icon /></q-td>
+            <q-td key="status" :props="props"><q-badge v-if="props.row.status === 'RECEIVED' && props.row.isColdChainViolated" color="negative" class="status-chip"><q-icon name="warning" size="12px" class="q-mr-xs" />Прийнято з порушенням</q-badge><status-chip v-else :value="props.row.status" type="container" icon /></q-td>
             <q-td key="createdOn" :props="props">{{ props.row.createdOn | datetime }}</q-td>
           </q-tr>
         </template>
@@ -69,7 +70,7 @@
           <q-icon name="inventory_2" class="q-mr-sm" />
           <div class="text-subtitle1 text-weight-bold mono" data-testid="containerCardBarcode">{{ active.barcode }}</div>
           <div class="q-ml-sm text-caption">{{ active.typeName }} · {{ active.itemsCount }} / {{ active.capacity }}</div>
-          <q-space /><status-chip :value="active.status" type="container" /><q-btn flat round dense icon="close" v-close-popup class="q-ml-sm" />
+          <q-space /><q-badge v-if="active.status === 'RECEIVED' && active.isColdChainViolated" color="negative" class="status-chip"><q-icon name="warning" size="12px" class="q-mr-xs" />Прийнято з порушенням</q-badge><status-chip v-else :value="active.status" type="container" /><q-btn flat round dense icon="close" v-close-popup class="q-ml-sm" />
         </q-card-section>
         <q-card-section v-if="active" class="q-gutter-y-sm">
           <q-banner v-if="active.isColdChainViolated" dense rounded class="bg-red-1 text-negative" data-testid="containerColdBanner">
@@ -355,7 +356,12 @@ export default {
   computed: {
     depOptions () { return this.$store.getters['dictionaries/options']('departments'); },
     typeOptions () { return this.types.map(t => ({ value: t.id, label: t.name })); },
-    destinationOptions () { return this.depOptions.filter(o => o.value !== this.createForm.originDepartmentId); },
+    // отримувач — лише лабораторія; якщо жодна не позначена в довіднику, показуємо всі підрозділи
+    destinationOptions () {
+      const all = this.depOptions.filter(o => o.value !== this.createForm.originDepartmentId);
+      const labs = all.filter(o => o.item && o.item.labKind === 'LABORATORY');
+      return labs.length ? labs : all;
+    },
     createMissing () {
       const m = [];
       if (!this.createForm.typeId) m.push('тип тари');

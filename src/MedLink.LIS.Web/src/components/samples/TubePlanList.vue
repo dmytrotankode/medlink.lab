@@ -7,13 +7,13 @@
       </q-item-section>
       <q-item-section>
         <q-item-label>
-          <b>{{ t.tubeName }}</b> <span class="text-grey-7">· {{ t.biomaterialName }}</span>
+          <b>{{ tubeTitle(t.tubeName) }}</b> <span class="text-grey-7">· {{ t.biomaterialName }}</span>
           <span v-if="t.barcode" class="mono text-primary q-ml-xs">{{ t.barcode }}</span>
           <q-badge v-if="t.existing" color="grey-6" label="наявна пробірка" class="q-ml-xs" />
           <q-badge v-if="t.isSeparate" color="deep-orange-5" label="окремо" class="q-ml-xs" />
         </q-item-label>
         <q-item-label caption>
-          <span v-for="(c, i) in t.tests" :key="c.code" :class="c.isNew === false ? 'text-grey-5' : ''">{{ c.name || c.code }}{{ i < t.tests.length - 1 ? ', ' : '' }}</span>
+          <span v-for="(c, i) in t.tests" :key="c.code" :class="c.isNew === false ? 'text-grey-5' : ''">{{ c.name ? title(c.name) : c.code }}{{ i < t.tests.length - 1 ? ', ' : '' }}</span>
         </q-item-label>
         <q-item-label v-if="t.reasonTexts && t.reasonTexts.length" caption class="text-deep-orange-8">
           <q-icon name="call_split" size="14px" /> {{ t.reasonTexts.join('; ') }}
@@ -34,7 +34,7 @@
 
 <script>
 import StatusChip from '../common/StatusChip.vue';
-import { pluralN } from '../../utils/format';
+import { pluralN, testTitle, tubeTitle } from '../../utils/format';
 
 /**
  * План пробірок (FR-PRE-004) у порядку забору. Елемент:
@@ -50,6 +50,8 @@ export default {
   },
   methods: {
     pluralN,
+    title: testTitle,
+    tubeTitle,
     fmt (v) { return v == null ? '—' : Number(v).toLocaleString('uk-UA', { maximumFractionDigits: 2 }); }
   }
 };

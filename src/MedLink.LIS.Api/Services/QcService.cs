@@ -298,6 +298,7 @@ public sealed class QcService
     {
         var f = from ?? DateTime.UtcNow.AddDays(-30);
         var t = to ?? DateTime.UtcNow;
+        if (to.HasValue && to.Value.TimeOfDay == TimeSpan.Zero) t = to.Value.Date.AddDays(1).AddTicks(-1); // «До» приходить датою без часу: включаємо весь останній день
         var results = await _db.QcResults.AsNoTracking().Include(r => r.Material).ThenInclude(m => m!.Analyzer)
             .Where(r => r.RunAt >= f && r.RunAt <= t && (analyzerId == null || r.AnalyzerId == analyzerId)).ToListAsync();
         var lockouts = await _db.Lockouts.AsNoTracking().Include(l => l.Analyzer).Where(l => l.StartedAt <= t && (l.ResolvedAt == null || l.ResolvedAt >= f) && (analyzerId == null || l.AnalyzerId == analyzerId)).ToListAsync(); // блокування, що перетинають період (зокрема активні, розпочаті раніше)

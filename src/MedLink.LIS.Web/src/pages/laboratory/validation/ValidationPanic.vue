@@ -40,7 +40,7 @@
                   <span v-if="props.row.previousValue !== null && props.row.previousValue !== undefined">{{ props.row.previousValue | num }} <span class="text-caption text-grey-6">{{ props.row.previousAt | date }}</span></span>
                   <span v-else class="text-grey-5">—</span>
                 </q-td>
-                <q-td key="delta" :props="props" class="text-right"><span :class="props.row.deltaAlert ? 'text-orange-9 text-weight-bold' : ''">{{ props.row.deltaPercent | pct }}</span></q-td>
+                <q-td key="delta" :props="props" class="text-right"><span v-if="props.row.previousValue != null" :class="props.row.deltaAlert ? 'text-orange-9 text-weight-bold' : ''">{{ props.row.deltaPercent | pct }}</span><span v-else>—</span></q-td>
                 <q-td key="status" :props="props"><status-chip :value="props.row.status" type="test" /><q-badge v-if="props.row.isLockedOut" color="purple-6" class="q-ml-xs"><q-icon name="lock" size="10px" /><q-tooltip>Аналізатор заблоковано контролем якості</q-tooltip></q-badge></q-td>
                 <q-td key="actions" :props="props" class="text-right no-wrap" @click.stop>
                   <span class="inline-block">

@@ -4,7 +4,7 @@
       <template v-slot:title-after><status-chip v-if="current" :value="current.status" type="sample" icon /></template>
       <q-input v-model="scan" dense outlined placeholder="Інший штрихкод" style="width: 200px" @keyup.enter="$router.push({ name: 'lab-sample-processing', params: { barcode: scan } })"><template v-slot:prepend><q-icon name="qr_code_scanner" /></template></q-input>
       <q-btn flat dense color="primary" icon="refresh" :loading="loading" @click="load"><q-tooltip>Оновити</q-tooltip></q-btn>
-      <q-btn v-if="canReceive" unelevated dense color="cyan-7" icon="inbox" label="Прийняти пробу" data-testid="receiveBtn" @click="receiveOpen = true" />
+      <q-btn v-if="canReceive || awaitingReceive" unelevated dense color="cyan-7" icon="inbox" label="Прийняти пробу" :disable="!canReceive" data-testid="receiveBtn" @click="receiveOpen = true"><q-tooltip v-if="!canReceive">Пробу приймає лаборант або кур’єр. Для вашої ролі прийом недоступний.</q-tooltip></q-btn>
       <q-btn outline dense color="primary" icon="print" label="Друк етикетки" @click="printSampleLabel(barcode, { patientName })" />
       <q-btn unelevated dense color="teal-7" icon="call_split" label="Розділити" :disable="!canSplit" data-testid="splitBtn" @click="openSplit"><q-tooltip v-if="!canSplit">{{ splitDisabledHint }}</q-tooltip></q-btn>
     </page-header>
@@ -65,7 +65,7 @@
               </q-item>
             </q-list>
           </div>
-          <empty-state v-else-if="!loading" title="Етапи ще недоступні" icon="route" :hint="canReceive ? 'Спочатку прийміть пробу в лабораторії — кнопка «Прийняти пробу» вгорі.' : 'Етапи з’являться після прийому проби в лабораторії або коли для підрозділу налаштовано робочий процес.'" />
+          <empty-state v-else-if="!loading" title="Етапи ще недоступні" icon="route" :hint="canReceive ? 'Спочатку прийміть пробу в лабораторії — кнопка «Прийняти пробу» вгорі.' : (awaitingReceive ? 'Етапи з’являться після прийому проби: її приймає лаборант або кур’єр.' : 'Етапи з’являться після прийому проби в лабораторії або коли для підрозділу налаштовано робочий процес.')" />
         </div>
       </div>
     </div>
@@ -110,7 +110,7 @@ export default {
     return {
       tree: null, stagesData: null, sections: [], scan: '', selectedBarcode: null,
       stageForm: { stageCode: null, temperature: '', instrument: null, note: '' },
-      receiveOpen: false,
+      receiveOpen: false, orderInfo: null,
       splitOpen: false, split: { derivationType: 'ALIQUOT', count: 2, volumeEachMl: '', targetSectionIds: [], printLabels: true }, splitError: '', saving: false,
       derivationTypes: DERIVATION_TYPES,
       instrumentOptions: ['Центрифуга Eppendorf 5702', 'Мікротом Leica RM2235', 'Гістопроцесор Thermo Excelsior', 'Термостат 37 °C', 'Фарбувальний автомат']
@@ -120,13 +120,14 @@ export default {
     root () { if (!this.tree) return null; return this.tree.root || this.tree.sample || this.tree; },
     orderId () { return this.root && (this.root.orderId || (this.tree && this.tree.orderId)); },
     orderNumber () { return (this.root && this.root.orderNumber) || (this.tree && this.tree.orderNumber) || ''; },
-    patientName () { return (this.root && (this.root.patientName || patientDisplay(this.root.patient))) || (this.tree && this.tree.patientName) || ''; },
+    patientName () { return (this.root && (this.root.patientName || patientDisplay(this.root.patient))) || (this.tree && this.tree.patientName) || (this.orderInfo && patientDisplay(this.orderInfo.patient)) || ''; },
     /** Вузол дерева, що відповідає відсканованому штрихкоду */
     current () {
       if (!this.root) return null;
       const find = n => (n.barcode === this.barcode ? n : (n.children || []).reduce((f, c) => f || find(c), null));
       return find(this.root) || this.root;
     },
+    awaitingReceive () { return !!this.current && ['COLLECTED', 'IN_TRANSIT'].includes(this.current.status); },
     canReceive () { return !!this.current && ['COLLECTED', 'IN_TRANSIT'].includes(this.current.status) && this.canDo('LAB_TECHNICIAN', 'LAB_DOCTOR', 'LOGISTICS_COURIER'); },
     receiveSamples () { return this.current ? [{ barcode: this.current.barcode, status: this.current.status, tubeName: this.current.tubeType }] : []; },
     canSplit () { return !!this.current && ['RECEIVED', 'PROCESSING', 'STORED'].includes(this.current.status) && this.canDo('LAB_DOCTOR', 'LAB_TECHNICIAN'); },
@@ -167,6 +168,9 @@ export default {
       const failed = results[0].status === 'rejected' ? results[0].reason : null;
       this.apiError = failed && !this.apiOffline && failed.apiStatus !== 404 ? failed.userMessage : null;
       this.loading = false;
+      // у дереві зразка пацієнта може не бути — беремо з направлення
+      this.orderInfo = null;
+      if (this.tree && !this.patientName && this.orderId) { try { this.orderInfo = await this.$api.getOrder(this.orderId); } catch (e) { /* пацієнт лишиться порожнім */ } }
       const open = this.stages.find((s, i) => this.isCurrent(s, i));
       this.stageForm.stageCode = open ? (open.code || open.name) : null;
     },

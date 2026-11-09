@@ -40,7 +40,7 @@
           <span class="mono text-weight-bold">{{ props.row.barcode }}</span>
           <q-badge v-if="props.row.isCito" color="deep-orange-6" label="CITO" class="q-ml-xs" />
         </q-td>
-        <q-td key="orderNumber" :props="props">
+        <q-td v-if="colVisible('orderNumber')" key="orderNumber" :props="props">
           <a href="#" class="text-primary" @click.prevent.stop="$emit('open-order', props.row)">{{ props.row.orderNumber }}</a>
           <div v-if="props.row.journalNumber" class="text-caption text-grey-6 mono">{{ props.row.journalNumber }}</div>
         </q-td>
@@ -48,13 +48,13 @@
           <div class="ellipsis" style="max-width: 160px">{{ props.row.patientName }}</div>
           <div class="text-caption text-grey-7">{{ props.row.patientAgeGender }}</div>
         </q-td>
-        <q-td key="analyzer" :props="props">
+        <q-td v-if="colVisible('analyzer')" key="analyzer" :props="props">
           <span>{{ props.row.analyzerName || 'Вручну' }}</span>
           <q-badge v-if="props.row.isLockedOut" color="purple-6" class="q-ml-xs"><q-icon name="lock" size="10px" class="q-mr-xs" />Блокування ВКЯ</q-badge>
         </q-td>
         <q-td key="test" :props="props">
           <span class="text-weight-bold">{{ props.row.testCode }}</span>
-          <span class="text-grey-7 q-ml-xs">{{ props.row.testName }}</span>
+          <span class="text-grey-7 q-ml-xs ellipsis inline-block" style="max-width: 130px; vertical-align: bottom">{{ props.row.testName }}<q-tooltip v-if="props.row.testName && props.row.testName.length > 18">{{ props.row.testName }}</q-tooltip></span>
         </q-td>
         <q-td key="value" :props="props" class="text-right value-cell" @click.stop>
           <div v-if="editingId === props.row.orderTestId" class="row no-wrap items-center justify-end">
@@ -98,8 +98,8 @@
         <q-td key="reference" :props="props">{{ referenceDisplay(props.row) || '—' }}</q-td>
         <q-td key="flag" :props="props" class="text-center"><flag-marker :flag="props.row.flag || 'NONE'" /></q-td>
         <q-td v-if="colVisible('delta')" key="delta" :props="props" class="text-right">
-          <span :class="props.row.deltaAlert ? 'text-orange-9 text-weight-bold' : 'text-grey-8'">{{ props.row.deltaPercent | pct }}</span>
-          <q-icon v-if="props.row.deltaAlert" name="trending_up" color="orange-9" size="14px"><q-tooltip>Контроль змін: попереднє значення {{ props.row.previousValue | num }} ({{ props.row.previousAt | datetime }})</q-tooltip></q-icon>
+          <span v-if="props.row.previousValue != null" :class="props.row.deltaAlert ? 'text-orange-9 text-weight-bold' : 'text-grey-8'">{{ props.row.deltaPercent | pct }}</span><span v-else class="text-grey-6">—</span>
+          <q-icon v-if="props.row.deltaAlert && props.row.previousValue != null" name="trending_up" color="orange-9" size="14px"><q-tooltip>Контроль змін: попереднє значення {{ props.row.previousValue | num }} ({{ props.row.previousAt | datetime }})</q-tooltip></q-icon>
         </q-td>
         <q-td key="status" :props="props" class="wl-sticky wl-sticky--status"><status-chip :value="props.row.status" type="test" /></q-td>
         <q-td key="actions" :props="props" class="text-right no-wrap wl-sticky wl-sticky--actions" @click.stop>
@@ -178,10 +178,12 @@ export default {
       get () { return this.selected; },
       set (v) { this.$emit('update:selected', v); }
     },
-    narrow () { return this.$q.screen.width < 1400; },
+    narrow () { return this.$q.screen.width < 1750; },
     visibleColumns () {
       // На вужчих екранах прибираємо другорядні колонки (деталі є в панелі нижче)
-      return this.allColumns.filter(c => !(this.narrow && c.name === 'delta'));
+      const w = this.$q.screen.width;
+      // 1024–1200 px: також ховаємо «Аналізатор» і «№ замовлення» (є в панелі деталей), щоб Результат, Норма, Прапорець і Статус лишалися у видимій зоні
+      return this.allColumns.filter(c => !(this.narrow && c.name === 'delta') && !(w < 1200 && (c.name === 'analyzer' || c.name === 'orderNumber')));
     },
     tests () { return this.$store.getters['dictionaries/items']('tests'); }
   },
@@ -317,7 +319,7 @@ export default {
   &.q-table--loading thead tr:last-child th
     top 28px
   .value-cell
-    min-width 190px
+    min-width 140px
   // Статус і «Дії» закріплені праворуч — доступні без горизонтальної прокрутки
   .wl-sticky
     position sticky

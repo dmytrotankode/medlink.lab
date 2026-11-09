@@ -91,7 +91,7 @@ public class AutoVerificationEngineTests
     {
         var d = AutoVerificationEngine.Evaluate(new AutoVerificationInput { Flag = "NORMAL", DeltaAlert = true });
         Assert.False(d.Approved);
-        Assert.Contains(d.BlockReasons, r => r.Contains("delta"));
+        Assert.Contains(d.BlockReasons, r => r.Contains("Різка зміна"));
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public class AutoVerificationEngineTests
     {
         var d = AutoVerificationEngine.Evaluate(new AutoVerificationInput { Flag = "NORMAL", HasActiveLockout = true });
         Assert.False(d.Approved);
-        Assert.Contains(d.BlockReasons, r => r.Contains("lockout"));
+        Assert.Contains(d.BlockReasons, r => r.Contains("заблоковано"));
     }
 
     [Fact]

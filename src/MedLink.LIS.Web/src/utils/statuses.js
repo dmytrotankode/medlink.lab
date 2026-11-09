@@ -114,7 +114,7 @@ export const ROLE = {
   LAB_DOCTOR: 'Лікар-лаборант',
   LAB_TECHNICIAN: 'Лаборант',
   PHLEBOTOMIST: 'Медсестра пункту забору',
-  LOGISTICS_COURIER: "Кур'єр",
+  LOGISTICS_COURIER: 'Кур’єр',
   REGISTRAR: 'Реєстратор'
 };
 

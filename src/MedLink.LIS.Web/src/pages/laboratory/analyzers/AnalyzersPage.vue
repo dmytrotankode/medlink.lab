@@ -46,7 +46,7 @@
         <template v-slot:body-cell-online="props">
           <q-td :props="props">
             <span v-if="isManual(props.row)" class="text-grey-6">—</span>
-            <q-badge v-else :color="props.row.isOnline ? 'positive' : 'grey-6'" :label="props.row.isOnline ? 'Онлайн' : 'Не в мережі'" />
+            <q-badge v-else :color="onlineState(props.row).color" :label="onlineState(props.row).label" />
             <q-icon v-if="lockedAnalyzers.has(props.row.id)" name="lock" color="purple-6" class="q-ml-xs"><q-tooltip>Заблоковано контролем якості</q-tooltip></q-icon>
           </q-td>
         </template>
@@ -132,7 +132,7 @@
               <tr><td class="text-grey-7">Модель</td><td>{{ typeName(activeAnalyzer.analyzerTypeId) }} · {{ protocolOf(activeAnalyzer) }}</td></tr>
               <tr><td class="text-grey-7">Підключення</td><td>{{ connectionText(activeAnalyzer) }}</td></tr>
               <tr><td class="text-grey-7">Коннектор</td><td>{{ connectorName(activeAnalyzer.connectorId) }}</td></tr>
-              <tr><td class="text-grey-7">Стан</td><td><q-badge :color="activeAnalyzer.isOnline ? 'positive' : 'grey-6'" :label="activeAnalyzer.isOnline ? 'Онлайн' : 'Не в мережі'" /> останнє повідомлення {{ activeAnalyzer.lastMessageAt | datetime }}</td></tr>
+              <tr><td class="text-grey-7">Стан</td><td><q-badge :color="onlineState(activeAnalyzer).color" :label="onlineState(activeAnalyzer).label" /> <template v-if="activeAnalyzer.lastMessageAt">останнє повідомлення {{ activeAnalyzer.lastMessageAt | datetime }}</template></td></tr>
               <tr v-if="activeAnalyzer.lastError"><td class="text-grey-7">Помилка</td><td class="text-negative">{{ activeAnalyzer.lastError }}</td></tr>
               <tr><td class="text-grey-7">Карта параметрів</td><td><q-chip v-for="p in (activeAnalyzer.parameterMap || [])" :key="p.analyzerCode" dense size="sm" color="blue-1" text-color="primary">{{ p.analyzerCode }} → {{ p.testCode }}</q-chip><span v-if="!(activeAnalyzer.parameterMap || []).length" class="text-grey-6">—</span></td></tr>
             </tbody>
@@ -264,6 +264,13 @@ export default {
     protocolOf (a) { const p = a.protocol || (this.types.find(x => x.id === a.analyzerTypeId) || {}).exchType; return p ? String(p).split('_')[0] : '—'; },
     // «Ручна постановка» — віртуальний прилад без підключення
     isManual (a) { return a.code === 'MANUAL' || /^ручна/i.test(a.name || ''); },
+    // Стан узгоджено з шапкою «Шлюз аналізаторів»: «Онлайн» лише для налаштованого підключення з активним коннектором
+    onlineState (a) {
+      if (this.connectionText(a) === 'Підключення не налаштовано') return { label: 'Не налаштовано', color: 'grey-5' };
+      const c = a.connectorId ? this.connectors.find(x => x.id === a.connectorId) : null;
+      if (c && c.status !== 'ACTIVE') return { label: 'Коннектор не підключено', color: 'orange-7' };
+      return a.isOnline ? { label: 'Онлайн', color: 'positive' } : { label: 'Не в мережі', color: 'grey-6' };
+    },
     connectorName (id) { const c = this.connectors.find(x => x.id === id); return c ? c.name : '—'; },
     analyzerName (id) { const a = this.analyzers.find(x => x.id === id); return a ? a.name : (id || ''); },
     connectionText (a) {

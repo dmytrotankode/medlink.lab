@@ -38,6 +38,8 @@ public sealed class PathologyController : LisControllerBase
     /// <summary>Архів блоків і скелець (FR-PAT-070…072): status=ARCHIVED|ISSUED|overdue.</summary>
     [HttpGet("pathology/archive")] public async Task<IActionResult> Archive([FromQuery] string? q, [FromQuery] string? status) => Ok(await _svc.ArchiveAsync(q, status));
     [HttpPost("pathology/blocks/{id}/issue")] public async Task<IActionResult> Issue(string id, [FromBody] PathIssueRequest req) => Ok(await _svc.IssueAsync(id, req));
+    /// <summary>Друкований акт видачі (PDF) за ідентифікатором видачі.</summary>
+    [HttpGet("pathology/issues/{id}/act.pdf")] public async Task<IActionResult> IssueAct(string id) => File(await _svc.IssueActPdfAsync(id), "application/pdf", "issue-act.pdf");
     [HttpPost("pathology/blocks/{id}/return")] public async Task<IActionResult> Return(string id) => Ok(await _svc.ReturnAsync(id));
 
     [HttpPost("pathology/slides/{id}/dispose")] public async Task<IActionResult> DisposeSlide(string id, [FromBody] PathDisposeRequest req) => Ok(await _svc.DisposeSlideAsync(id, req));

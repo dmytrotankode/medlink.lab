@@ -310,9 +310,10 @@ public sealed class MisReferralService
         return rows.Select(o => new
         {
             orderId = o.Id, o.OrderNumber, o.MisReferralId, referralNumber = o.MisReferralNumber, o.CreatedOn, patientName = o.Patient?.Caption, context = o.ReferralContext,
-            source = ReferralSources.Of(o), o.PackageCode, o.Status, o.DistributionStatus, department = o.RequestingDepartmentName,
+            source = ReferralSources.Of(o), o.PackageCode, o.PackageName, o.Status, o.DistributionStatus, department = o.RequestingDepartmentName,
             misStatus = o.Status == OrderStatuses.Released ? "Виконано" : o.Status == OrderStatuses.Cancelled ? "Скасовано" : "В роботі",
-            items = o.Items.OrderBy(i => i.DisplayOrder).Select(i => i.InterventionCode)
+            items = o.Items.OrderBy(i => i.DisplayOrder).Select(i => i.InterventionCode),
+            services = o.Items.OrderBy(i => i.DisplayOrder).Select(i => i.InterventionName ?? i.InterventionCode)
         });
     }
 

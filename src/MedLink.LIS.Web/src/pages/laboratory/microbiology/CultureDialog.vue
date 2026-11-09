@@ -15,7 +15,7 @@
           <div class="col-12 col-sm-6"><q-input v-model="form.incubationHoursRecommended" outlined dense inputmode="numeric" label="Рекомендована тривалість інкубації, год" /></div>
           <template v-if="form.id">
             <div class="col-12 col-sm-4"><q-toggle v-model="form.growthDetected" label="Є ріст" color="deep-orange-6" /></div>
-            <div class="col-12 col-sm-4"><q-input v-model="form.growthIntensity" outlined dense label="Інтенсивність росту" /></div>
+            <div class="col-12 col-sm-4"><q-select v-model="form.growthIntensity" outlined dense clearable emit-value map-options label="Інтенсивність росту" :options="[{ value: 'NO_GROWTH', label: 'Росту немає' }, { value: 'SCANTY_1+', label: 'Скудний ріст (1+)' }, { value: 'MODERATE_2+', label: 'Помірний ріст (2+)' }, { value: 'HEAVY_3+', label: 'Рясний ріст (3+)' }, { value: 'PROFUSE_4+', label: 'Дуже рясний ріст (4+)' }]" /></div>
             <div class="col-12 col-sm-4"><q-input v-model="form.cfuPerMl" outlined dense label="КУО/мл" /></div>
             <div class="col-12"><q-input v-model="form.preliminaryReport" outlined dense autogrow label="Попередній висновок" /></div>
             <div class="col-12"><q-input v-model="form.finalMicroscopyDescription" outlined dense autogrow label="Опис мікроскопії" /></div>

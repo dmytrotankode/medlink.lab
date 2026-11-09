@@ -33,7 +33,8 @@
           <q-td :props="p">
             <q-btn v-if="p.row.status === 'ARCHIVED'" flat dense no-caps size="sm" color="grey-8" icon="place" label="Місце" :disable="!canManage" :data-testid="`place-${p.row.code}`" @click="openPlace(p.row)"><q-tooltip>{{ canManage ? 'Місце зберігання' : roleHint('REGISTRAR', 'LAB_TECHNICIAN') }}</q-tooltip></q-btn>
             <q-btn v-if="p.row.status === 'ARCHIVED'" flat dense no-caps size="sm" color="primary" icon="outbox" label="Видати" :disable="!canManage" :data-testid="`issue-${p.row.code}`" @click="openIssue(p.row)"><q-tooltip v-if="!canManage">{{ roleHint('REGISTRAR', 'LAB_TECHNICIAN') }}</q-tooltip></q-btn>
-            <q-btn v-else flat dense no-caps size="sm" color="positive" icon="move_to_inbox" label="Прийняти назад" :disable="!canManage" :data-testid="`return-${p.row.code}`" @click="ret(p.row)"><q-tooltip>{{ canManage ? 'Повернути блок в архів' : roleHint('REGISTRAR', 'LAB_TECHNICIAN') }}</q-tooltip></q-btn>
+            <q-btn v-if="p.row.status === 'ISSUED' && p.row.issue" flat dense no-caps size="sm" color="grey-8" icon="print" label="Акт" type="a" :href="$api.pathIssueActUrl(p.row.issue.id)" target="_blank" :disable="!canManage" :data-testid="`act-${p.row.code}`"><q-tooltip>{{ canManage ? 'Друкувати акт видачі' : roleHint('REGISTRAR', 'LAB_TECHNICIAN') }}</q-tooltip></q-btn>
+            <q-btn v-if="p.row.status !== 'ARCHIVED'" flat dense no-caps size="sm" color="positive" icon="move_to_inbox" label="Прийняти назад" :disable="!canManage" :data-testid="`return-${p.row.code}`" @click="ret(p.row)"><q-tooltip>{{ canManage ? 'Повернути блок в архів' : roleHint('REGISTRAR', 'LAB_TECHNICIAN') }}</q-tooltip></q-btn>
           </q-td>
         </template>
       </q-table>
@@ -113,7 +114,12 @@ export default {
     },
     async doIssue () {
       const r = await this.callApi(() => this.$api.pathIssue(this.issueRow.id, { ...this.issue, dueBack: this.issue.dueBack || null }), { success: `${this.issueRow.kind === 'CYTO' ? 'Препарат' : 'Блок'} ${this.issueRow.code} видано: ${this.issue.recipient.trim()}` });
-      if (r) { this.issueOpen = false; await this.load(); }
+      if (r) {
+        this.issueOpen = false;
+        // акт видачі — окремий друкований документ; пропонуємо його одразу
+        this.$q.notify({ type: 'info', message: `Акт видачі № ${r.actNo}`, timeout: 12000, actions: [{ label: 'Друкувати акт', color: 'white', handler: () => window.open(this.$api.pathIssueActUrl(r.issueId), '_blank') }, { icon: 'close', color: 'white' }] });
+        await this.load();
+      }
     },
     openPlace (row) { this.placeRow = row; this.place = { roomId: row.roomId || null, location: row.storageLocation || '' }; this.placeOpen = true; },
     async doPlace () {
@@ -136,6 +142,8 @@ export default {
 <style scoped>
 .status-toggle { border: 1px solid #c5ccd6; }
 /* Колонка дій завжди на екрані: на вузьких вікнах таблиця прокручується, а кнопки лишаються праворуч */
-.archive-table >>> th:last-child, .archive-table >>> td:last-child { position: sticky; right: 0; background: #fff; box-shadow: -4px 0 4px -4px rgba(0, 0, 0, 0.15); }
+.archive-table >>> th:last-child, .archive-table >>> td:last-child { white-space: nowrap; min-width: 210px; padding-right: 12px; position: sticky; right: 0; background: #fff; box-shadow: -4px 0 4px -4px rgba(0, 0, 0, 0.15); }
 .archive-table >>> tr.bg-red-1 td:last-child { background: #ffebee; }
+/* неактивна кнопка явно відрізняється від активної */
+.q-btn.disabled { opacity: 0.45 !important; filter: grayscale(0.85); cursor: not-allowed; }
 </style>

@@ -361,6 +361,116 @@ public class PathologyApiTests
     }
 
     [Fact]
+    public async Task Issue_act_pdf_is_printable_and_contains_act_number()
+    {
+        var id = await CaseAtMicroscopy(new[] { 1 });
+        await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{id}/report", new { micro = "Фіброаденома", conclusionText = "Фіброаденома молочної залози.", icdoTopo = "C50.4", icdoMorph = "9010/0" }));
+        await Json(await Pathologist.PostAsJsonAsync($"{B}/cases/{id}/report/sign", new { signer = await Cert(Pathologist) }));
+        var blockId = S((await Json(await Pathologist.GetAsync($"{B}/cases/{id}")))["objects"]![0]!["blocks"]![0]!["id"]);
+        var issued = await Json(await Registrar.PostAsJsonAsync($"{B}/blocks/{blockId}/issue", new { recipient = "Іваненко І. І.", document = "Довіреність №5", purpose = "Друга думка" }));
+        Assert.Matches(@"^АВ-\d{6}-[0-9A-F]{6}$", S(issued["actNo"]));
+        // друкувати акт може той, хто видає; лікар-патолог — ні
+        Assert.Equal(HttpStatusCode.Forbidden, (await Pathologist.GetAsync($"{B}/issues/{S(issued["issueId"])}/act.pdf")).StatusCode);
+        var pdf = await Registrar.GetAsync($"{B}/issues/{S(issued["issueId"])}/act.pdf");
+        Assert.Equal(HttpStatusCode.OK, pdf.StatusCode);
+        Assert.StartsWith("%PDF", System.Text.Encoding.ASCII.GetString((await pdf.Content.ReadAsByteArrayAsync())[..4]));
+        Assert.True(await Db(db => db.AuditLog.AnyAsync(a => a.Action == "PATH_BLOCK_ISSUE_ACT" && a.EntityId == blockId)));
+        Assert.Equal(HttpStatusCode.NotFound, (await Registrar.GetAsync($"{B}/issues/{Guid.NewGuid()}/act.pdf")).StatusCode);
+    }
+
+    [Fact]
+    public async Task New_slide_after_dispose_cannot_be_covered_before_it_is_stained()
+    {
+        var id = await CaseAtMicroscopy(new[] { 1 });
+        var slide = (await Json(await Pathologist.GetAsync($"{B}/cases/{id}")))["objects"]![0]!["blocks"]![0]!["slides"]![0]!;
+        var disp = await Json(await Histotech.PostAsJsonAsync($"{B}/slides/{S(slide["id"])}/dispose", new { reason = "Брак зрізу", recreate = true }));
+        var fresh = disp["created"]!;
+        // нове скельце ще не забарвлено: покриття заборонене, відповідь зрозуміла
+        Assert.Equal("slide-not-stained", await Problem(await Histotech.PostAsJsonAsync($"{B}/scan", new { barcode = S(fresh["barcode"]), stage = "COVER" }), HttpStatusCode.Conflict));
+        await Json(await Histotech.PostAsync($"{B}/slides/{S(fresh["id"])}/ready", null));
+        var cov = await Json(await Histotech.PostAsJsonAsync($"{B}/scan", new { barcode = S(fresh["barcode"]), stage = "COVER" }));
+        Assert.Equal("COVER", S(cov["stage"]));
+        // повторне покриття того самого скельця — теж відмова
+        Assert.Equal(HttpStatusCode.Conflict, (await Histotech.PostAsJsonAsync($"{B}/scan", new { barcode = S(fresh["barcode"]), stage = "COVER" })).StatusCode);
+    }
+
+    [Fact]
+    public async Task Compose_skips_ihc_without_result_and_does_not_copy_micro_description()
+    {
+        var x = new LabPathReport
+        {
+            Micro = "Інвазивна карцинома, ступінь 2.", Grade = "G2", Pt = "pT1c", Pn = "pN0", Lvi = false, Pni = true,
+            IcdoTopo = "C50.4", IcdoMorph = "8500/3"
+        };
+        x.Ihc.Add(new LabPathIhcResult { Marker = "Ki-67" });
+        x.Ihc.Add(new LabPathIhcResult { Marker = "ER", ResultText = "позитивний", Score = "8" });
+        var text = PathologyService.Compose(x);
+        Assert.DoesNotContain("Ki-67", text);
+        Assert.DoesNotContain("очікується", text);
+        Assert.DoesNotContain("Інвазивна карцинома, ступінь", text); // мікроопис у висновок не копіюється
+        Assert.Contains("ER — позитивний (8", text);
+        Assert.Contains("G2 pT1c pN0", text);
+        Assert.Contains("Лімфоваскулярної інвазії не виявлено", text);
+        Assert.Contains("Периневральну інвазію виявлено", text);
+        Assert.DoesNotContain("L0", text);
+        Assert.DoesNotContain("Pn1", text);
+    }
+
+    [Fact]
+    public async Task Malignancy_with_neoplasm_clinical_diagnosis_is_not_a_critical_finding_but_with_benign_one_is_explained()
+    {
+        // D48.5 (новоутворення невизначеного характеру) — онкологічну підозру направник уже мав: критичної знахідки немає
+        var expected = await CaseAtMicroscopy(new[] { 1 }, diagnosis: "D48.5 Новоутворення шкіри невизначеного характеру");
+        await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{expected}/report", new { micro = "Меланома", conclusionText = "Злоякісна меланома шкіри.", icdoTopo = "C44.5", icdoMorph = "8720/3" }));
+        await Json(await Pathologist.PostAsJsonAsync($"{B}/cases/{expected}/report/sign", new { signer = await Cert(Pathologist) }));
+        Assert.DoesNotContain(MisEvents.CriticalResult, await Events(expected));
+
+        // доброякісний клінічний діагноз: критична знахідка з поясненням, без слова «зловісність»
+        var surprise = await CaseAtMicroscopy(new[] { 1 }, diagnosis: "N60.1 Дифузна кістозна мастопатія");
+        await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{surprise}/report", new { micro = "Карцинома", conclusionText = "Інвазивна карцинома.", icdoTopo = "C50.4", icdoMorph = "8500/3" }));
+        var signed = await Json(await Pathologist.PostAsJsonAsync($"{B}/cases/{surprise}/report/sign", new { signer = await Cert(Pathologist) }));
+        var warning = S(signed["warnings"]![0]);
+        Assert.Contains("N60.1", warning);
+        Assert.DoesNotContain("зловісн", warning, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(MisEvents.CriticalResult, await Events(surprise));
+    }
+
+    [Fact]
+    public async Task Cytology_category_must_match_material_and_dictionary_lists_categories_per_material()
+    {
+        var dict = await Json(await Pathologist.GetAsync($"{B}/dictionaries"));
+        var atypical = dict["cytology"]!["categories"]!.AsArray().First(x => S(x!["code"]) == "ATYPICAL")!;
+        Assert.DoesNotContain(atypical["materials"]!.AsArray(), m => S(m) == "GYN");
+        Assert.Contains(atypical["materials"]!.AsArray(), m => S(m) == "ASPIRATE");
+        Assert.NotEmpty(dict["icd10"]!.AsArray()); // стартовий набір кодів МКХ-10
+
+        var gyn = await Accept(await ReferCyto());
+        Assert.Equal(HttpStatusCode.BadRequest, (await Pathologist.PutAsJsonAsync($"{B}/cases/{S(gyn["id"])}/report", new { cytoCategory = "ATYPICAL" })).StatusCode);
+        var asp = await Accept(await ReferCyto("ASPIRATE", null, 1));
+        await Json(await Pathologist.PutAsJsonAsync($"{B}/cases/{S(asp["id"])}/report", new { cytoCategory = "ATYPICAL" }));
+        Assert.Equal(HttpStatusCode.BadRequest, (await Pathologist.PutAsJsonAsync($"{B}/cases/{S(asp["id"])}/report", new { cytoCategory = "HSIL" })).StatusCode);
+    }
+
+    [Fact]
+    public async Task Cytology_stage_labels_use_cytology_wording_and_incoming_shows_prior_cases()
+    {
+        var c = await Accept(await ReferCyto("ASPIRATE", null, 1));
+        var id = S(c["id"]);
+        await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/prepare", new { objects = new[] { new { objectId = S(c["objects"]![0]!["id"]), slides = new[] { new { method = "PAP" } } } } }));
+        var adv = await Json(await Histotech.PostAsJsonAsync($"{B}/cases/{id}/advance", new { stage = "STAIN" }));
+        Assert.Equal("Скринінг і висновок", S(adv["stageLabel"]));
+        Assert.Contains(adv["stageLog"]!.AsArray(), l => S(l!["stage"]) == "GROSS" && S(l["stageLabel"]) == "Приготування препаратів");
+        Assert.DoesNotContain(adv["stageLog"]!.AsArray(), l => S(l!["stageLabel"]) == "Вирізка");
+        var row = (await Json(await Pathologist.GetAsync($"{B}/cases?group=cyto")))["items"]!.AsArray().First(i => S(i!["id"]) == id)!;
+        Assert.Equal("Скринінг і висновок", S(row["stageLabel"]));
+
+        // друге направлення того ж пацієнта: у черзі видно попередню справу
+        var next = await ReferCyto("ASPIRATE", null, 1);
+        var queued = (await Json(await Registrar.GetAsync($"{B}/incoming"))).AsArray().First(i => S(i!["id"]) == S(next["id"]))!;
+        Assert.Contains(queued["priorCases"]!.AsArray(), p => S(p!["id"]) == id);
+    }
+
+    [Fact]
     public async Task Demo_data_has_six_cases_three_incoming_one_unlabelled()
     {
         var cases = await Json(await Pathologist.GetAsync($"{B}/cases"));

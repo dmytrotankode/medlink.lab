@@ -26,7 +26,7 @@ export default [
       lab('work', 'lab-work', 'Робота за направленнями', () => import('pages/laboratory/mis/WorkByReferralsPage.vue')),
       lab('reports', 'lab-reports', 'Звіти лабораторії', () => import('pages/laboratory/mis/LabReportsPage.vue')),
       lab('ehealth', 'lab-ehealth', 'Відправка в ЕСОЗ', () => import('pages/laboratory/mis/EhealthSubmissionsPage.vue')),
-      lab('orders/:id', 'lab-order-card', 'Картка замовлення', () => import('pages/laboratory/orders/OrderCard.vue'), { props: true }),
+      lab('orders/:id', 'lab-order-card', 'Направлення', () => import('pages/laboratory/orders/OrderCard.vue'), { props: true }),
       lab('order-matrix', 'lab-order-matrix', 'Матриця призначень', () => import('pages/laboratory/orders/OrderMatrixPage.vue')),
       lab('phlebotomy', 'lab-phlebotomy', 'Пункт забору біоматеріалу', () => import('pages/laboratory/PhlebotomyStation.vue')),
       lab('samples/:barcode', 'lab-sample-processing', 'Обробка зразка', () => import('pages/laboratory/samples/SampleProcessing.vue'), { props: true }),
@@ -50,7 +50,7 @@ export default [
       lab('pathology/archive', 'lab-path-archive', 'Архів блоків і скелець', () => import('pages/laboratory/pathology/PathologyArchivePage.vue')),
       lab('pathology/dictionaries', 'lab-path-dictionaries', 'Довідники патоморфології', () => import('pages/laboratory/pathology/PathologyDictionariesPage.vue')),
       lab('pathology/cases/:id', 'lab-path-case', 'Справа ПГД', () => import('pages/laboratory/pathology/PathologyCasePage.vue'), { props: true }),
-      lab('analytics-tat', 'lab-analytics-tat', 'Аналітика часу виконання', () => import('pages/laboratory/LabAnalyticsTat.vue')),
+      lab('analytics-tat', 'lab-analytics-tat', 'Аналітика термінів виконання', () => import('pages/laboratory/LabAnalyticsTat.vue')),
 
       // ----- Довідники -----
       lab('pricing', 'lab-pricing', 'Прайси та платники', () => import('pages/laboratory/PricingPage.vue')),

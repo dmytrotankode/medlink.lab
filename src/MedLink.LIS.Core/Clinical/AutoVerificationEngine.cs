@@ -34,11 +34,11 @@ public static class AutoVerificationEngine
         var reasons = new List<string>();
         if (!input.HasValue) reasons.Add("Результат порожній");
         if (ResultFlags.IsCritical(input.Flag)) reasons.Add("Критичне (панічне) значення — потрібен лікар-лаборант");
-        else if (input.Flag != ResultFlags.Normal) reasons.Add($"Результат поза нормою ({input.Flag})");
+        else if (input.Flag != ResultFlags.Normal) reasons.Add("Результат поза нормою" + (input.Flag switch { "LOW" => " (нижче)", "HIGH" => " (вище)", _ => "" }));
         if (!AnalyzerFlagsAreClean(input.AnalyzerFlags)) reasons.Add($"Прапорці аналізатора: {input.AnalyzerFlags}");
-        if (input.DeltaAlert) reasons.Add("Спрацював delta-check");
+        if (input.DeltaAlert) reasons.Add("Різка зміна відносно попереднього результату");
         if (input.RequiresManualVerification) reasons.Add("Тест вимагає ручної верифікації");
-        if (input.HasActiveLockout) reasons.Add("Активний lockout аналізатора (ВКЯ)");
+        if (input.HasActiveLockout) reasons.Add("Аналізатор заблоковано контролем якості");
         if (!string.IsNullOrEmpty(input.ImplausibleReason)) reasons.Add(input.ImplausibleReason);
         return new AutoVerificationDecision { Approved = reasons.Count == 0, BlockReasons = reasons };
     }

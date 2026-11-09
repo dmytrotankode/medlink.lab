@@ -33,7 +33,7 @@
           <q-td :props="props"><status-chip :value="props.row.status" type="order" /></q-td>
         </template>
         <template v-slot:body-cell-sum="props">
-          <q-td :props="props" class="text-right">{{ props.row.totalPrice | money }}<q-badge v-if="props.row.referralType === 'EHEALTH' && !props.row.totalPrice" color="orange-7" class="q-ml-xs" label="Потрібен вибір показників" /></q-td>
+          <q-td :props="props" class="text-right">{{ props.row.totalPrice | money }}<div v-if="props.row.referralType === 'EHEALTH' && !props.row.totalPrice"><q-badge color="orange-7" label="Потрібен вибір показників" /></div></q-td>
         </template>
         <template v-slot:body-cell-type="props">
           <q-td :props="props"><q-badge :color="typeColor(props.row.referralType)" :label="props.row.referralTypeName" /></q-td>

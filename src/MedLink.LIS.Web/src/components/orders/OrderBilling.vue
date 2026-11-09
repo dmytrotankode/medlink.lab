@@ -4,8 +4,8 @@
       <span><q-icon name="payments" class="q-mr-xs" />Оплата</span>
       <span v-if="b" class="text-caption">
         <q-badge :color="b.payerKind === 'PATIENT' ? 'grey-7' : b.payerKind === 'NSZU' ? 'teal-6' : 'purple-5'" :label="b.payerKind === 'PATIENT' ? 'Оплата: пацієнт' : b.payerName" />
-        <span v-if="b.insurancePolicyNumber" class="q-ml-xs">поліс {{ b.insurancePolicyNumber }}</span>
-        <span v-if="b.authorizationNumber" class="q-ml-xs">гар. лист {{ b.authorizationNumber }}<q-tooltip>Гарантійний лист страхової компанії</q-tooltip></span>
+        <span v-if="b.insurancePolicyNumber" class="q-ml-sm">· поліс {{ b.insurancePolicyNumber }}</span>
+        <span v-if="b.authorizationNumber" class="q-ml-sm">· гарантійний лист {{ b.authorizationNumber }}<q-tooltip>Гарантійний лист страхової компанії</q-tooltip></span>
       </span>
     </div>
     <div v-if="b" class="q-pa-sm">
@@ -13,7 +13,7 @@
         <thead><tr><th class="text-left">Послуга</th><th class="text-right">Вартість</th><th class="text-right">Страховик / клієнт</th><th class="text-right">Пацієнт</th><th></th></tr></thead>
         <tbody>
           <tr v-for="c in b.charges" :key="c.id">
-            <td>{{ c.name }}
+            <td>{{ c.name }}&nbsp;
               <q-badge v-if="c.isPackage" color="primary" label="пакет" class="q-ml-xs" />
               <q-badge v-if="c.isNotCovered" color="deep-orange-5" label="не покривається" class="q-ml-xs" />
               <q-badge v-if="c.isPatientChoice" color="grey-6" label="сплачує сам" class="q-ml-xs" />

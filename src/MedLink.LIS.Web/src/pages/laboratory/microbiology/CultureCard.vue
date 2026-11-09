@@ -95,6 +95,7 @@
           <q-input v-if="suscForm.method === 'DISK'" v-model="suscForm.zoneMm" outlined dense label="Зона затримки росту, мм *" inputmode="decimal" autofocus data-testid="zoneInput" @keyup.enter="saveSusc" />
           <q-input v-else v-model="suscForm.mic" outlined dense label="МІК, мг/л *" inputmode="decimal" autofocus data-testid="micInput" @keyup.enter="saveSusc" />
           <template v-if="needManual">
+            <div class="text-caption text-orange-9">Для цього антибіотика й мікроорганізму немає порогових значень — оберіть інтерпретацію вручну та вкажіть обґрунтування.</div>
             <q-btn-toggle v-model="suscForm.override" spread no-caps dense toggle-color="orange-8" :options="[{ value: 'S', label: 'S — чутливий' }, { value: 'I', label: 'I — проміжний' }, { value: 'R', label: 'R — стійкий' }]" />
             <q-input v-model="suscForm.overrideReason" outlined dense label="Обґрунтування ручної інтерпретації *" />
           </template>
@@ -155,7 +156,7 @@ export default {
     workHint () { return this.roleHint('LAB_DOCTOR', 'LAB_TECHNICIAN'); },
     isolates () { return (this.culture && this.culture.isolates) || []; },
     hasGrowth () { const c = this.culture; return !!(c && (c.growthDetected === true || c.hasGrowth === true || this.isolates.length)); },
-    growthText () { const c = this.culture; return c ? [c.growthIntensity, c.cfuPerMl].filter(Boolean).join(' · ') : ''; },
+    growthText () { const c = this.culture; if (!c) return ''; const names = { 'NO_GROWTH': 'росту немає', 'SCANTY_1+': 'скудний (1+)', 'MODERATE_2+': 'помірний (2+)', 'HEAVY_3+': 'рясний (3+)', 'PROFUSE_4+': 'дуже рясний (4+)' }; const it = c.growthIntensity ? (names[c.growthIntensity] || String(c.growthIntensity).replace(/_/g, ' ')) : ''; return [it, c.cfuPerMl].filter(Boolean).join(' · '); },
     subtitle () { const c = this.culture; return [c.specimenLocus, c.patientName].filter(Boolean).join(' · '); },
     organisms () { return this.$store.getters['dictionaries/items']('organisms'); },
     antibiotics () { return this.$store.getters['dictionaries/items']('antibiotics'); },
@@ -164,6 +165,10 @@ export default {
     suscReady () { return !!this.suscForm.antibioticId && !!(this.suscForm.method === 'DISK' ? this.suscForm.zoneMm : this.suscForm.mic) && (!this.needManual || (!!this.suscForm.override && !!(this.suscForm.overrideReason || '').trim())); }
   },
   created () { this.$store.dispatch('dictionaries/loadMany', ['organisms', 'antibiotics']); this.load(); },
+  watch: {
+    // зміна антибіотика скидає ручний режим і застарілі повідомлення: пороги визначаються для кожного антибіотика окремо
+    'suscForm.antibioticId' () { this.needManual = false; this.suscError = ''; if (this.suscForm) { this.suscForm.override = null; this.suscForm.overrideReason = ''; } }
+  },
   methods: {
     formatNumber,
     statusLabel (s) { return (CULTURE_STATUS[s] || {}).label || s; },
@@ -225,6 +230,8 @@ export default {
       // Enter у полі значення обходить неактивну кнопку, тому перевіряємо заповнення тут
       if (!this.suscForm.antibioticId) { this.suscError = 'Оберіть антибіотик'; return; }
       if (!(this.suscForm.method === 'DISK' ? this.suscForm.zoneMm : this.suscForm.mic)) { this.suscError = this.suscForm.method === 'DISK' ? 'Введіть зону затримки росту, мм' : 'Введіть значення МІК, мг/л'; return; }
+      if (this.needManual && !this.suscForm.override) { this.suscError = 'Для цього антибіотика немає порогових значень: оберіть інтерпретацію S, I або R'; return; }
+      if (this.needManual && !(this.suscForm.overrideReason || '').trim()) { this.suscError = 'Вкажіть обґрунтування ручної інтерпретації'; return; }
       this.saving = true; this.suscError = '';
       const body = { antibioticId: this.suscForm.antibioticId, method: this.suscForm.method === 'MIC' ? 'MIC' : 'DISK_DIFFUSION', zoneMm: this.suscForm.method === 'DISK' ? parseDecimal(this.suscForm.zoneMm) : null, mic: this.suscForm.method === 'MIC' ? parseDecimal(this.suscForm.mic) : null };
       if (this.needManual) { body.overrideInterpretation = this.suscForm.override; body.overrideReason = this.suscForm.overrideReason; }

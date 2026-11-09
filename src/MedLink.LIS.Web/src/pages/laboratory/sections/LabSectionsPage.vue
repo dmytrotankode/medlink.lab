@@ -66,7 +66,7 @@
       </q-card>
     </q-dialog>
 
-    <confirm-dialog v-model="deleteOpen" title="Вимкнути підрозділ?" message="Підрозділ буде вимкнено; журнальні записи й пов’язані показники збережуться. Підрозділ без жодних зв’язків буде видалено остаточно." ok-label="Вимкнути" color="negative" icon="power_settings_new" @confirm="doDelete" />
+    <confirm-dialog v-model="deleteOpen" title="Вимкнути підрозділ?" message="Якщо підрозділ уже використовується (є журнальні записи або показники), його лише вимкнуть — усі дані збережуться. Якщо підрозділ ніде не використовувався, його буде видалено без можливості відновлення." ok-label="Підтвердити" color="negative" icon="power_settings_new" @confirm="doDelete" />
   </div>
 </template>
 

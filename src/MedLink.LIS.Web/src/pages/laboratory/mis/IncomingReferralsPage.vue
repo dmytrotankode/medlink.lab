@@ -33,17 +33,17 @@
                   <b>{{ r.referralNumber }}</b> <q-badge v-if="r.isCito" color="deep-orange-6" label="CITO" />
                   <q-badge v-if="r.packageCode" color="purple-5" class="q-ml-xs" :label="r.packageName || r.packageCode" />
                 </q-item-label>
-                <q-item-label caption>{{ r.patientName }} · {{ r.sourceLabel }}<span v-if="r.department"> · {{ r.department }}</span><span v-if="r.bed"> · {{ r.bed }}</span></q-item-label>
+                <q-item-label caption>{{ r.patientName }} · {{ r.sourceLabel }}<span v-if="r.department && r.department !== r.sourceLabel"> · {{ r.department }}</span><span v-if="r.bed"> · {{ r.bed }}</span></q-item-label>
                 <q-item-label caption>{{ r.services.join(', ') }} · <span v-if="r.indicators">показників {{ r.indicators }}</span><span v-else class="text-negative">показники не обрані</span></q-item-label>
               </q-item-section>
               <q-item-section side>
                 <q-badge :color="stateColor(r)" :label="r.state" />
                 <div class="text-caption text-grey-7">{{ r.receivedAt | datetime }}</div>
-                <div v-if="r.overdue" class="text-caption text-negative row items-center no-wrap"><q-icon name="timer_off" class="q-mr-xs" />час очікування вичерпано<q-tooltip>Розподіл триває довше {{ inbox.targetMinutes }} хв</q-tooltip></div>
+                <div v-if="r.overdue" class="text-caption text-negative row items-center no-wrap"><q-icon name="timer_off" class="q-mr-xs" />час очікування вичерпано<q-tooltip>Розподіл направлення триває довше за встановлені {{ inbox.targetMinutes }} хв</q-tooltip></div>
               </q-item-section>
             </q-item>
           </q-list>
-          <empty-state v-if="!inboxItems.length" title="Направлень немає" hint="Направлення МІС з'являються тут після надходження" icon="inbox" />
+          <empty-state v-if="!inboxItems.length" title="Направлень немає" hint="Направлення МІС з’являються тут після надходження" icon="inbox" />
         </div>
       </div>
 
@@ -101,7 +101,7 @@
               :disable="current.distributionStatus === 'NEEDS_SELECTION' || current.distributionStatus === 'CONFIRMED'" @click="confirm" />
           </div>
         </div>
-        <empty-state v-else title="Оберіть направлення" hint="Ліворуч — вхідні направлення; праворуч з'явиться пропозиція розподілу по аналізаторах" icon="call_split" />
+        <empty-state v-else title="Оберіть направлення" hint="Ліворуч — вхідні направлення; праворуч з’явиться пропозиція розподілу по аналізаторах" icon="call_split" />
       </div>
     </div>
 
@@ -159,7 +159,7 @@
       </q-table>
     </div>
 
-    <!-- Скасування направлення в МІС: причина обов'язкова, дію не можна відмінити -->
+    <!-- Скасування направлення в МІС: причина обов’язкова, дію не можна відмінити -->
     <q-dialog v-model="cancelOpen" persistent>
       <q-card style="width: 440px" data-testid="cancelMisDialog">
         <q-card-section class="text-subtitle1 text-weight-bold">{{ cancelTitle }}</q-card-section>
@@ -230,8 +230,8 @@ export default {
         { name: 'at', label: 'Надійшло', field: r => this.$options.filters.datetime(r.createdOn), align: 'left' },
         { name: 'patient', label: 'Пацієнт', field: 'patientName', align: 'left' },
         { name: 'source', label: 'Джерело', field: r => dash(SOURCE_LABELS[r.source] || r.source), align: 'left' },
-        { name: 'package', label: 'Пакет', field: r => dash(r.packageCode), align: 'left' },
-        { name: 'items', label: 'Послуги', field: r => dash((r.items || []).join(', ')), align: 'left', classes: 'text-caption' },
+        { name: 'package', label: 'Пакет', field: r => dash(r.packageName || r.packageCode), align: 'left' },
+        { name: 'items', label: 'Послуги', field: r => dash((r.services && r.services.length ? r.services : (r.items || [])).join(', ')), align: 'left', classes: 'text-caption' },
         { name: 'dist', label: 'Розподіл', field: r => dash(DIST_LABELS[r.distributionStatus] || r.distributionStatus), align: 'left' },
         { name: 'mis', label: 'Статус для МІС', field: 'misStatus', align: 'left' },
         { name: 'actions', label: '', field: 'orderId' }

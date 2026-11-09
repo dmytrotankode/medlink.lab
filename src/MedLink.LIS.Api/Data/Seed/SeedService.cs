@@ -413,6 +413,20 @@ public sealed class SeedService
         }
         var node = await _db.PathTemplates.FirstOrDefaultAsync(t => t.Name == "Лімфатичний вузол · сторожовий");
         if (node?.Macro != null && node.Macro.Contains("1,2×0,8×0,6")) node.Macro = node.Macro.Replace("1,2×0,8×0,6", "{a}×{b}×{c}");
+        // безіменні заготовки {a}, {x}, {ln}… у шаблонах → зрозумілі назви (лікар бачить, що саме вписати)
+        const string dims = "{a}×{b}×{c}", dimsNew = "{довжина}×{ширина}×{висота}";
+        var renames = new Dictionary<string, (string From, string To)[]>
+        {
+            ["Молочна залоза · секторальна резекція"] = new[] { (dims, dimsNew), ("{t}", "{тубули}"), ("{p}", "{поліморфізм}"), ("{m}", "{мітози}"), ("{s}", "{сума балів}"), ("{lvi}", "{наявність ЛВІ}"), ("{dcis}", "{компонент in situ}"), ("{r}", "{стан країв}") },
+            ["Лімфатичний вузол · сторожовий"] = new[] { (dims, dimsNew), ("{ln}", "{опис лімфовузла}") },
+            ["Сечовий міхур · ТУР-біопсія"] = new[] { ("{g}", "{ступінь}"), ("{inv}", "{глибина інвазії}"), ("{mp}", "{наявність м’язової оболонки}") },
+            ["Шлунок · резекція"] = new[] { ("{a}", "{довжина малої кривизни}"), ("{b}", "{довжина великої кривизни}"), ("{c}", "{розміри пухлини}"), ("{g}", "{ступінь}"), ("{inv}", "{глибина інвазії}") },
+            ["Шкіра · ексцизійна біопсія"] = new[] { (dims, dimsNew), ("{d}", "{розмір утворення}"), ("{x}", "{опис ураження}"), ("{r}", "{стан країв}") },
+            ["Ендометрій · зіскрібок"] = new[] { ("{a}", "{об’єм}"), ("{x}", "{опис фрагментів}"), ("{y}", "{наявність атипії}") }
+        };
+        var tplNames = renames.Keys.ToList();
+        foreach (var t in await _db.PathTemplates.Where(t => tplNames.Contains(t.Name)).ToListAsync())
+            foreach (var (from, to) in renames[t.Name]) { t.Macro = t.Macro?.Replace(from, to); t.Micro = t.Micro?.Replace(from, to); }
         foreach (var o in await _db.PathObjects.Where(o => o.Description != null && (o.Description.Contains("Зскрібок") || o.Description.Contains("зскрібок"))).ToListAsync())
             o.Description = o.Description!.Replace("Зскрібок", "Зіскрібок").Replace("зскрібок", "зіскрібок");
         var cito = await _db.PathMaterialTypes.FirstOrDefaultAsync(t => t.Code == "CITO");

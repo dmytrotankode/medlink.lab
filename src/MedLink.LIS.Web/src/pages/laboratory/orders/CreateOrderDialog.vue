@@ -10,7 +10,7 @@
       </q-card-section>
 
       <q-form @submit.prevent="submit">
-        <q-card-section class="q-gutter-y-sm" style="max-height: 70vh; overflow: auto">
+        <q-card-section class="q-gutter-y-sm" style="max-height: calc(100vh - 190px); overflow: auto">
           <!-- Пацієнт -->
           <div class="section-title">1. Пацієнт</div>
           <div v-if="!newPatientMode" class="row q-col-gutter-sm items-start">
@@ -193,6 +193,7 @@
         </q-card-section>
 
         <q-card-actions align="right" class="bg-grey-1">
+          <span class="text-caption text-grey-8 q-mr-md">Показників: <b>{{ testsTotal }}</b> · пробірок: <b>{{ planItems.length }}</b> · до сплати пацієнтом: <b class="text-primary">{{ (quote ? quote.patientAmount : 0) | money }}</b></span>
           <div v-if="submitError" class="text-negative text-caption q-mr-md ellipsis" style="max-width: 50%">{{ submitError }}</div>
           <span v-if="!canSubmit && !saving" class="text-caption text-grey-7 q-mr-sm" data-testid="createOrderHint">Не заповнено: {{ missingFields.join(', ') }}</span>
           <q-btn flat label="Скасувати" @click="tryClose" />

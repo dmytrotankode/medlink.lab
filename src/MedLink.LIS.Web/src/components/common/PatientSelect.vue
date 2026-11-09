@@ -24,7 +24,7 @@
           <q-item-label caption>
             {{ scope.opt.birthDate | date }} · {{ genderLabel(scope.opt.gender) }}
             <span v-if="scope.opt.phone"> · {{ scope.opt.phone }}</span>
-            <span v-if="scope.opt.taxId"> · ІПН {{ scope.opt.taxId }}</span>
+            <span v-if="scope.opt.taxId"> · ІПН {{ mask(scope.opt.taxId) }}</span>
           </q-item-label>
         </q-item-section>
       </q-item>
@@ -43,7 +43,7 @@
 </template>
 
 <script>
-import { patientDisplay, genderLabel } from '../../utils/format';
+import { patientDisplay, genderLabel, maskTaxId } from '../../utils/format';
 
 export default {
   name: 'PatientSelect',
@@ -57,6 +57,7 @@ export default {
     return { options: [], loading: false, lastQuery: '' };
   },
   methods: {
+    mask: maskTaxId,
     genderLabel,
     async filterFn (val, update, abort) {
       this.lastQuery = (val || '').trim();

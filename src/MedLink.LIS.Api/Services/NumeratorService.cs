@@ -30,37 +30,33 @@ public sealed class NumeratorService : INumeratorService
     public Task<string> NextManifestNumberAsync(DateTime at, CancellationToken ct = default) => NextFormattedAsync(ManifestNumerator, "MAN-{yyMMdd}-{0000}", at, ct);
     public Task<string> NextBatchCodeAsync(DateTime at, CancellationToken ct = default) => NextFormattedAsync(BatchNumerator, "WL-{yyMMdd}-{000}", at, ct);
 
-    private async Task<string> NextFormattedAsync(string code, string defaultMask, DateTime at, CancellationToken ct)
+    /// <summary>Наступний номер за кодом нумератора (створює нумератор, якщо його ще немає).</summary>
+    public async Task<string> NextFormattedAsync(string code, string defaultMask, DateTime at, CancellationToken ct = default)
     {
-        var numerator = await _db.Numerators.FirstOrDefaultAsync(n => n.Code == code, ct);
+        var numerator = await _db.Numerators.AsNoTracking().FirstOrDefaultAsync(n => n.Code == code, ct);
         if (numerator == null)
         {
-            numerator = new LabNumerator { Code = code, Name = code, Mask = defaultMask, CurrentValue = 0, ResetByPeriod = true };
-            _db.Numerators.Add(numerator);
-            await _db.SaveChangesAsync(ct);
+            // Створення рядка нумератора без гонки: паралельні перші виклики не дають помилки унікального ключа
+            await _db.Database.ExecuteSqlInterpolatedAsync(
+                $"INSERT INTO lab_numerator (code, name, mask, current_value, period_key, reset_by_period, modified_on) VALUES ({code}, {code}, {defaultMask}, 0, NULL, {true}, {DateTime.UtcNow}) ON CONFLICT (code) DO NOTHING", ct);
+            numerator = await _db.Numerators.AsNoTracking().FirstAsync(n => n.Code == code, ct);
         }
         var periodKey = PeriodKey(numerator.Mask, at);
-        if (numerator.ResetByPeriod && numerator.PeriodKey != periodKey)
-        {
-            // Атомарне скидання періоду
-            await _db.Database.ExecuteSqlInterpolatedAsync(
-                $"UPDATE lab_numerator SET current_value = 0, period_key = {periodKey} WHERE code = {code} AND (period_key IS NULL OR period_key <> {periodKey})", ct);
-        }
-        // Атомарний інкремент (SQLite серіалізує записи; у PostgreSQL — рядкове блокування)
+        // Скидання періоду й інкремент — ОДНИМ оператором: між ними немає вікна для гонки, рядок блокується до кінця транзакції
+        // (PostgreSQL перевіряє WHERE повторно після очікування блокування; SQLite серіалізує записи).
         var value = (await _db.Database.SqlQuery<long>(
-            $"UPDATE lab_numerator SET current_value = current_value + 1, modified_on = {DateTime.UtcNow} WHERE code = {code} RETURNING current_value AS \"Value\"").ToListAsync(ct)).First();
-        _db.Entry(numerator).State = EntityState.Detached;
+            $@"UPDATE lab_numerator SET
+                 current_value = CASE WHEN reset_by_period AND (period_key IS NULL OR period_key <> {periodKey}) THEN 1 ELSE current_value + 1 END,
+                 period_key = CASE WHEN reset_by_period THEN {periodKey} ELSE period_key END,
+                 modified_on = {DateTime.UtcNow}
+               WHERE code = {code} RETURNING current_value AS ""Value""").ToListAsync(ct)).First();
         return ApplyMask(numerator.Mask, at, value);
     }
 
     public async Task<long> NextCounterAsync(string counterCode, CancellationToken ct = default)
     {
-        var exists = await _db.Counters.AsNoTracking().AnyAsync(c => c.CounterCode == counterCode, ct);
-        if (!exists)
-        {
-            _db.Counters.Add(new LabCounter { CounterCode = counterCode, CounterValue = 0 });
-            await _db.SaveChangesAsync(ct);
-        }
+        await _db.Database.ExecuteSqlInterpolatedAsync(
+            $"INSERT INTO lab_counter (counter_code, counter_value) VALUES ({counterCode}, 0) ON CONFLICT (counter_code) DO NOTHING", ct);
         // Атомарно (один оператор UPDATE … RETURNING): без дублів номерів при паралельних запитах (SQLite ≥ 3.35 і PostgreSQL)
         var next = await _db.Database.SqlQuery<long>(
             $"UPDATE lab_counter SET counter_value = counter_value + 1 WHERE counter_code = {counterCode} RETURNING counter_value AS \"Value\"").ToListAsync(ct);

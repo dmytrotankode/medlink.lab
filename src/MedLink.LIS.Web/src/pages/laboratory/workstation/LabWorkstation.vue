@@ -6,7 +6,7 @@
       <q-btn outline dense color="primary" icon="playlist_add" :label="selected.length ? `Робочий лист (${selected.length})` : 'Робочі листи'" data-testid="wsBatch" @click="batchOpen = true" />
       <span class="inline-block">
         <q-btn unelevated dense color="teal-7" icon="verified" label="Автоверифікація" data-testid="wsAutoverify" :disable="!canDo(...ENTER_ROLES)" @click="autoverify" />
-        <q-tooltip v-if="!canDo(...ENTER_ROLES)">{{ roleHint(...ENTER_ROLES) }}</q-tooltip>
+        <q-tooltip>{{ canDo(...ENTER_ROLES) ? 'Автоматично верифікує показники зі статусом «Є результат» (виділені або всі) за правилами; решту залишає лікарю' : roleHint(...ENTER_ROLES) }}</q-tooltip>
       </span>
     </page-header>
 
@@ -241,7 +241,7 @@ export default {
         const ids = this.selected.length ? this.selected.map(r => r.orderTestId) : undefined;
         const res = await this.$api.autoverify(ids);
         const blocked = (res && res.blocked) || [];
-        this.$q.notify({ type: blocked.length ? 'warning' : 'positive', message: `Автоверифіковано: ${(res && res.verified) || 0}; заблоковано: ${blocked.length}${blocked.length ? ' — ' + blocked.slice(0, 3).map(b => this.reasonText(b.reason)).join('; ') : ''}`, timeout: 6000 });
+        this.$q.notify({ type: blocked.length ? 'warning' : 'positive', message: `Автоверифіковано: ${(res && res.verified) || 0}; заблоковано: ${blocked.length}${blocked.length ? ' — ' + this.reasonSummary(blocked) : ''}`, timeout: 6000 });
         this.load();
       } catch (e) { this.notifyError(e); }
     },
@@ -261,6 +261,12 @@ export default {
         this.selected = [];
         this.load();
       } catch (e) { this.notifyError(e); }
+    },
+    /** Згортає однакові причини: «Результат поза нормою — 5; Прапорці аналізатора — 2» */
+    reasonSummary (items) {
+      const counts = {};
+      items.forEach(b => { const t = this.reasonText(b.reason).replace(/\s*\((ABNORMAL|LOW|HIGH|NORMAL)\)/g, ''); counts[t] = (counts[t] || 0) + 1; });
+      return Object.keys(counts).map(t => counts[t] > 1 ? `${t} — ${counts[t]}` : t).join('; ');
     },
     /** Причина пропуску/блокування від сервера: не показуємо технічні коди статусів */
     reasonText (reason) {

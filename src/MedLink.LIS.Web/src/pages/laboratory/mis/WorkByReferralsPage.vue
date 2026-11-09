@@ -41,7 +41,7 @@
                 <q-badge v-if="a.cito" color="deep-orange-6" :label="`Термінових: ${a.cito}`" />
               </div>
               <div v-if="a.longOffline" class="text-caption text-negative q-mt-xs"><q-icon name="wifi_off" /> Немає зв’язку</div>
-              <div v-if="a.lockouts.length" class="text-caption text-negative"><q-icon name="lock" /> Заблоковано: {{ a.lockouts.map(testName).join(', ') }}</div>
+              <div v-if="a.lockouts.length" class="text-caption text-negative"><q-icon name="lock" /> Заблоковано: {{ (a.lockoutNames || a.lockouts.map(testName)).join(', ') }}</div>
             </q-card-section>
           </q-card>
         </div>

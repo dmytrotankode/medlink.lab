@@ -175,7 +175,7 @@
             <q-table :data="tests" :columns="testColumns" row-key="id" dense flat hide-pagination :pagination="{ rowsPerPage: 0 }" no-data-label="Показників немає">
               <template v-slot:body="props">
                 <q-tr :props="props" :class="{ 'bg-red-1': isCritical(resultOf(props.row).flag) }" @dblclick="testCan(props.row, 'EDIT_RESULT', 'LAB_DOCTOR', 'LAB_TECHNICIAN') && editResult(props.row)" :data-testid="`test-row-${props.row.testCode}`">
-                  <q-td key="testName" :props="props"><span class="text-weight-bold">{{ props.row.testName }}</span> <span class="text-caption text-grey-7">({{ props.row.testCode }})</span> <q-badge v-if="props.row.isReflex" color="purple-5" label="додатковий" class="q-ml-xs" /> <q-badge v-if="props.row.performerName" color="purple-5" :label="`→ ${props.row.performerName}`" data-testid="performerBadge"><q-tooltip>Виконує зовнішня лабораторія</q-tooltip></q-badge></q-td>
+                  <q-td key="testName" :props="props"><span class="text-weight-bold">{{ title(props.row.testName) }}</span>&nbsp;<span class="text-caption text-grey-7">({{ props.row.testCode }})</span> <q-badge v-if="props.row.isReflex" color="purple-5" label="додатковий" class="q-ml-xs" /> <q-badge v-if="props.row.performerName" color="purple-5" :label="`→ ${props.row.performerName}`" data-testid="performerBadge"><q-tooltip>Виконує зовнішня лабораторія</q-tooltip></q-badge></q-td>
                   <q-td key="sample" :props="props" class="mono">{{ sampleBarcode(props.row.sampleId) }}</q-td>
                   <q-td key="value" :props="props" class="text-right">
                     <span :class="flagCss(resultOf(props.row).flag)" class="text-weight-bold">{{ valueOf(props.row) }}</span>
@@ -183,7 +183,7 @@
                   </q-td>
                   <q-td key="reference" :props="props">{{ referenceDisplay(resultOf(props.row)) || '—' }}</q-td>
                   <q-td key="flag" :props="props" class="text-center"><flag-marker :flag="resultOf(props.row).flag || 'NONE'" /></q-td>
-                  <q-td key="delta" :props="props" class="text-right" :class="resultOf(props.row).deltaAlert ? 'text-orange-9 text-weight-bold' : ''">{{ resultOf(props.row).deltaPercent | pct }}</q-td>
+                  <q-td key="delta" :props="props" class="text-right" :class="resultOf(props.row).deltaAlert ? 'text-orange-9 text-weight-bold' : ''"><template v-if="resultOf(props.row).previousValue != null">{{ resultOf(props.row).deltaPercent | pct }}</template><template v-else>—</template></q-td>
                   <q-td key="status" :props="props"><status-chip :value="props.row.status" type="test" /></q-td>
                   <q-td key="actions" :props="props" class="text-right no-wrap">
                     <q-btn v-if="testCan(props.row, 'EDIT_RESULT', 'LAB_DOCTOR', 'LAB_TECHNICIAN') || testCan(props.row, 'ENTER_RESULT', 'LAB_DOCTOR', 'LAB_TECHNICIAN')" flat dense round size="sm" icon="edit_note" color="primary" @click="editResult(props.row)"><q-tooltip>Ввести / змінити результат</q-tooltip></q-btn>
@@ -299,7 +299,7 @@ import labelPrintMixin from '../../../mixins/labelPrintMixin';
 import roleMixin from '../../../mixins/roleMixin';
 import { resolveActions } from '../../../utils/orderActions';
 import { isCritical, flagMeta, ROLE } from '../../../utils/statuses';
-import { formatDateTime, formatNumber, patientDisplay, genderLabel, ageFromBirthDate, referenceDisplay } from '../../../utils/format';
+import { formatDateTime, formatNumber, patientDisplay, genderLabel, ageFromBirthDate, referenceDisplay, maskTaxId, testTitle, tubeTitle } from '../../../utils/format';
 
 export default {
   name: 'OrderCard',
@@ -378,7 +378,7 @@ export default {
     patientMeta () {
       const p = (this.order && this.order.patient) || {};
       const age = ageFromBirthDate(p.birthDate);
-      return [p.birthDate ? `${formatDateTime(p.birthDate).slice(0, 10)}` : null, age !== null ? `${age} р.` : null, genderLabel(p.gender) !== '—' ? genderLabel(p.gender) : null, p.phone, p.taxId ? `ІПН ${p.taxId}` : null].filter(Boolean).join(' · ');
+      return [p.birthDate ? `${formatDateTime(p.birthDate).slice(0, 10)}` : null, age !== null ? `${age} р.` : null, genderLabel(p.gender) !== '—' ? genderLabel(p.gender) : null, p.phone, p.taxId ? `ІПН ${maskTaxId(p.taxId)}` : null].filter(Boolean).join(' · ');
     },
     actionsResolved () { return resolveActions(this.order, this.transitions); },
     actions () { return this.actionsResolved.actions; },
@@ -402,6 +402,7 @@ export default {
     });
   },
   methods: {
+    title: testTitle,
     formatDateTime, isCritical, referenceDisplay,
     /** Дія доступна за відповіддю сервера (статус + роль); якщо її немає — за роллю */
     allowedBy (item, action, roles) {
@@ -464,7 +465,7 @@ export default {
       return s ? s.barcode : '—';
     },
     tube (s) { return (s.tube && typeof s.tube === 'object') ? s.tube : this.$store.getters['dictionaries/byId']('tube-types', s.tubeTypeId); },
-    tubeName (s) { const t = this.tube(s); return (t && t.name) || s.tubeName || '—'; },
+    tubeName (s) { const t = this.tube(s); return tubeTitle((t && t.name) || s.tubeName || '—'); },
     tubeColor (s) { const t = this.tube(s); return (t && t.colorCode) || '#bbb'; },
     biomaterialName (s) { const b = (s.biomaterial && typeof s.biomaterial === 'object') ? s.biomaterial : this.$store.getters['dictionaries/byId']('biomaterials', s.biomaterialTypeId); return (b && b.name) || s.biomaterialName || '—'; },
     employeeName (id) { const e = this.$store.getters['dictionaries/byId']('employees', id); return e ? (e.fullName || e.name) : (id ? String(id).slice(0, 8) : '—'); },
