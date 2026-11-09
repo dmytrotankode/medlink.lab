@@ -74,6 +74,10 @@ public class LisDbContext : DbContext
     public DbSet<LabArchiveRack> Racks => Set<LabArchiveRack>();
     public DbSet<LabArchiveCell> Cells => Set<LabArchiveCell>();
     public DbSet<LabReagentLot> ReagentLots => Set<LabReagentLot>();
+    public DbSet<LabReportArchive> ReportArchive => Set<LabReportArchive>();
+    public DbSet<LabPatientConsent> PatientConsents => Set<LabPatientConsent>();
+    public DbSet<LabSop> Sops => Set<LabSop>();
+    public DbSet<LabStaffCompetency> Competencies => Set<LabStaffCompetency>();
 
     // --- microbiology ---
     public DbSet<LabCultureOrder> Cultures => Set<LabCultureOrder>();
@@ -162,6 +166,11 @@ public class LisDbContext : DbContext
         // Унікальні індекси та індекси для швидких вибірок робочого листа
         mb.Entity<LabOrder>().HasIndex(o => o.OrderNumber).IsUnique();
         mb.Entity<LabOrder>().HasIndex(o => o.Status);
+        mb.Entity<LabPatientConsent>().HasIndex(c => new { c.PatientId, c.Kind }).IsUnique();
+        mb.Entity<LabSop>().HasIndex(s => new { s.Code, s.Version }).IsUnique();
+        mb.Entity<LabStaffCompetency>().HasIndex(c => new { c.EmployeeId, c.Kind, c.TargetCode });
+        mb.Entity<LabReportArchive>().HasIndex(a => new { a.OrderId, a.VersionNo }).IsUnique();
+        mb.Entity<LabReportArchive>().HasIndex(a => new { a.OrderId, a.VersionNo }).IsUnique();
         mb.Entity<LabOrder>().HasIndex(o => o.PatientId);
         mb.Entity<LabOrder>().HasIndex(o => o.OrderDatetime);
         mb.Entity<LabOrder>().HasIndex(o => o.VerifyToken);

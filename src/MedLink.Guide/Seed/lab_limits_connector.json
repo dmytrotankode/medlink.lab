@@ -1,0 +1,619 @@
+{
+  "format": "medlink-guide-bundle",
+  "version": 1,
+  "app": {
+    "code": "lab",
+    "caption": "MedLink LIS"
+  },
+  "folders": [
+    {
+      "code": "lim-connector",
+      "caption": "Коннектор: версія та один екземпляр",
+      "icon": "settings_ethernet",
+      "sortOrder": 410
+    },
+    {
+      "code": "lim-routing",
+      "caption": "Перенаправлення на інший прилад",
+      "icon": "alt_route",
+      "sortOrder": 420
+    },
+    {
+      "code": "lim-report",
+      "caption": "Бланк: мова, архів, дублікат",
+      "icon": "translate",
+      "sortOrder": 430
+    },
+    {
+      "code": "lim-biobank",
+      "caption": "Біобанк: видача на повтор і акт списання",
+      "icon": "inventory_2",
+      "sortOrder": 440
+    },
+    {
+      "code": "lim-import",
+      "caption": "Ліміти пакетних операцій",
+      "icon": "upload_file",
+      "sortOrder": 450
+    }
+  ],
+  "scenarios": [
+    {
+      "code": "lab.an.connector-version",
+      "folderCode": "lim-connector",
+      "caption": "Перевірити версію коннектора на ПК лабораторії",
+      "description": "Картка коннектора показує, чи версія коннектора достатня. Застаріла версія позначається червоним попередженням.",
+      "icon": "system_update",
+      "startRoute": "/laboratory/analyzers",
+      "requiredRoles": [
+        "LAB_ADMIN"
+      ],
+      "tags": [
+        "коннектор",
+        "версія",
+        "оновлення"
+      ],
+      "estMinutes": 2,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Список коннекторів",
+          "body": "У стовпці «Версія» застарілі версії позначені червоним із потрібною мінімальною версією.",
+          "route": "/laboratory/analyzers",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Список коннекторів. У стовпці «Версія» застарілі версії позначені червоним із потрібною мінімальною версією.",
+          "anchor": {
+            "code": "lim.an.connectors",
+            "caption": "Список коннекторів",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": ".q-table",
+                "weight": 80
+              }
+            ],
+            "fingerprint": {
+              "label": "Список коннекторів"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 10
+        },
+        {
+          "stepType": "info",
+          "title": "Що робити із попередженням",
+          "body": "Оновіть коннектор на ПК лабораторії. Другий екземпляр коннектора на тому самому ПК не запуститься — це захист від подвійного опитування приладів.",
+          "route": "/laboratory/analyzers",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "transcript": "Що робити із попередженням. Оновіть коннектор на ПК лабораторії. Другий екземпляр коннектора на тому самому ПК не запуститься — це захист від подвійного опитування приладів.",
+          "anchor": {
+            "code": "lim.an.connectors2",
+            "caption": "Список коннекторів",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": ".q-table",
+                "weight": 80
+              }
+            ],
+            "fingerprint": {
+              "label": "Список коннекторів"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 20
+        }
+      ]
+    },
+    {
+      "code": "lab.orders.reroute-order",
+      "folderCode": "lim-routing",
+      "caption": "Перенаправити замовлення на інший прилад",
+      "description": "Перенесіть показники, що чекають на виконання, на інший прилад із обов'язковою причиною. Дія потрапляє в журнал маршрутизації та аудит.",
+      "icon": "alt_route",
+      "startRoute": "/laboratory/orders",
+      "requiredRoles": [
+        "LAB_DOCTOR",
+        "LAB_TECHNICIAN"
+      ],
+      "tags": [
+        "прилад",
+        "черга",
+        "перенаправлення"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Відкрийте замовлення",
+          "body": "Оберіть замовлення, показники якого ще не виконано.",
+          "route": "/laboratory/orders",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "route",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте замовлення. Оберіть замовлення, показники якого ще не виконано.",
+          "anchor": {
+            "code": "lim.ol.row",
+            "caption": "Рядок замовлення",
+            "routePattern": "/laboratory/orders",
+            "strategies": [
+              {
+                "type": "css",
+                "value": ".orders-queue tbody tr.cursor-pointer",
+                "weight": 80
+              }
+            ],
+            "fingerprint": {
+              "label": "Рядок замовлення"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 10,
+          "waitRoute": "/laboratory/orders/:id"
+        },
+        {
+          "stepType": "click",
+          "title": "Меню «Ще»",
+          "body": "У меню оберіть «Перенаправити на інший прилад».",
+          "route": "/laboratory/orders/:id",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Меню «Ще». У меню оберіть «Перенаправити на інший прилад».",
+          "anchor": {
+            "code": "lim.oc.reroute",
+            "caption": "Перенаправити на інший прилад",
+            "routePattern": "/laboratory/orders/:id",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"orderReroute\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "label": "Перенаправити на інший прилад"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 20
+        },
+        {
+          "stepType": "select",
+          "title": "Оберіть прилад",
+          "body": "У списку недоступні прилади позначені причиною (обслуговування, немає зв'язку, блокування контролю якості).",
+          "route": "/laboratory/orders/:id",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "change",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Оберіть прилад. У списку недоступні прилади позначені причиною (обслуговування, немає зв'язку, блокування контролю якості).",
+          "anchor": {
+            "code": "lim.oc.reroute-analyzer",
+            "caption": "Прилад",
+            "routePattern": "/laboratory/orders/:id",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"rerouteAnalyzer\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "label": "Прилад"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 30
+        },
+        {
+          "stepType": "input",
+          "title": "Вкажіть причину",
+          "body": "Причина обов'язкова: без неї кнопка «Перенаправити» неактивна.",
+          "route": "/laboratory/orders/:id",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "input",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Вкажіть причину. Причина обов'язкова: без неї кнопка «Перенаправити» неактивна.",
+          "anchor": {
+            "code": "lim.oc.reroute-reason",
+            "caption": "Причина",
+            "routePattern": "/laboratory/orders/:id",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"rerouteReason\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "label": "Причина"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 40
+        },
+        {
+          "stepType": "click",
+          "title": "Перенаправити",
+          "body": "Показники, які прилад не виконує, залишаться на попередньому приладі — система покаже, що саме не перенесено.",
+          "route": "/laboratory/orders/:id",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Перенаправити. Показники, які прилад не виконує, залишаться на попередньому приладі — система покаже, що саме не перенесено.",
+          "anchor": {
+            "code": "lim.oc.reroute-save",
+            "caption": "Перенаправити",
+            "routePattern": "/laboratory/orders/:id",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"rerouteSave\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "label": "Перенаправити"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 50
+        }
+      ]
+    },
+    {
+      "code": "lab.orders.report-lang-archive",
+      "folderCode": "lim-report",
+      "caption": "Бланк англійською, архів та дублікат",
+      "description": "Відкрийте бланк потрібною мовою, знайдіть збережену копію виданого бланка та надрукуйте дублікат із позначкою.",
+      "icon": "translate",
+      "startRoute": "/laboratory/orders",
+      "requiredRoles": [],
+      "tags": [
+        "бланк",
+        "англійська",
+        "дублікат",
+        "архів"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "click",
+          "title": "Відкрийте видане замовлення",
+          "body": "Оберіть замовлення зі статусом «Видано».",
+          "route": "/laboratory/orders",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "route",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Відкрийте видане замовлення. Оберіть замовлення зі статусом «Видано».",
+          "anchor": {
+            "code": "lim.ol.row2",
+            "caption": "Рядок замовлення",
+            "routePattern": "/laboratory/orders",
+            "strategies": [
+              {
+                "type": "css",
+                "value": ".orders-queue tbody tr.cursor-pointer",
+                "weight": 80
+              }
+            ],
+            "fingerprint": {
+              "label": "Рядок замовлення"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 10,
+          "waitRoute": "/laboratory/orders/:id"
+        },
+        {
+          "stepType": "click",
+          "title": "Меню «Бланк»",
+          "body": "Тут обирають варіант бланка та мову: українська, англійська або двомовна.",
+          "route": "/laboratory/orders/:id",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Меню «Бланк». Тут обирають варіант бланка та мову: українська, англійська або двомовна.",
+          "anchor": {
+            "code": "lim.oc.report-variant",
+            "caption": "Бланк",
+            "routePattern": "/laboratory/orders/:id",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"reportVariant\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "label": "Бланк"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 20
+        },
+        {
+          "stepType": "click",
+          "title": "Мова бланка",
+          "body": "Для англійського бланка назви показників беруться з поля «Назва англійською» у довіднику; якщо його не заповнено, лишається основна назва.",
+          "route": "/laboratory/orders/:id",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "transcript": "Мова бланка. Для англійського бланка назви показників беруться з поля «Назва англійською» у довіднику; якщо його не заповнено, лишається основна назва.",
+          "anchor": {
+            "code": "lim.oc.report-lang",
+            "caption": "Англійська мова",
+            "routePattern": "/laboratory/orders/:id",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"reportLang-en\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "label": "Англійська мова"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 30
+        },
+        {
+          "stepType": "click",
+          "title": "Архів виданих бланків",
+          "body": "Тут усі версії бланка: перша видача та виправлені. Кожна має контрольний хеш, а «Дублікат» друкується з позначкою.",
+          "route": "/laboratory/orders/:id",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "click",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "transcript": "Архів виданих бланків. Тут усі версії бланка: перша видача та виправлені. Кожна має контрольний хеш, а «Дублікат» друкується з позначкою.",
+          "anchor": {
+            "code": "lim.oc.archive",
+            "caption": "Архів виданих бланків",
+            "routePattern": "/laboratory/orders/:id",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"reportArchive\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "label": "Архів виданих бланків"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 40
+        }
+      ]
+    },
+    {
+      "code": "lab.bb.retrieve-dispose",
+      "folderCode": "lim-biobank",
+      "caption": "Видати зразок із біобанку на повтор або списати з актом",
+      "description": "Зразок можна повернути в роботу для повторного дослідження або списати. В обох випадках потрібна причина, списання формує акт.",
+      "icon": "inventory_2",
+      "startRoute": "/laboratory/biobank",
+      "requiredRoles": [
+        "LAB_ADMIN",
+        "LAB_DOCTOR",
+        "LAB_TECHNICIAN"
+      ],
+      "tags": [
+        "біобанк",
+        "списання",
+        "повтор"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Штативи біобанку",
+          "body": "Знайдіть зразок за штрихкодом або оберіть комірку на штативі.",
+          "route": "/laboratory/biobank",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "transcript": "Штативи біобанку. Знайдіть зразок за штрихкодом або оберіть комірку на штативі.",
+          "anchor": {
+            "code": "lim.bb.racks",
+            "caption": "Біобанк",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": ".q-page",
+                "weight": 80
+              }
+            ],
+            "fingerprint": {
+              "label": "Біобанк"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 10
+        },
+        {
+          "stepType": "info",
+          "title": "Видача на повтор",
+          "body": "Обраний зразок змінює статус на «В обробці», комірка звільняється. Причина обов'язкова.",
+          "route": "/laboratory/biobank",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "transcript": "Видача на повтор. Обраний зразок змінює статус на «В обробці», комірка звільняється. Причина обов'язкова.",
+          "anchor": {
+            "code": "lim.bb.retrieve",
+            "caption": "Біобанк",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": ".q-page",
+                "weight": 80
+              }
+            ],
+            "fingerprint": {
+              "label": "Біобанк"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 20
+        },
+        {
+          "stepType": "info",
+          "title": "Списання з актом",
+          "body": "Після списання зразка формується акт списання з номером, причиною та виконавцем — його можна надрукувати.",
+          "route": "/laboratory/biobank",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "transcript": "Списання з актом. Після списання зразка формується акт списання з номером, причиною та виконавцем — його можна надрукувати.",
+          "anchor": {
+            "code": "lim.bb.dispose",
+            "caption": "Біобанк",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": ".q-page",
+                "weight": 80
+              }
+            ],
+            "fingerprint": {
+              "label": "Біобанк"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 30
+        }
+      ]
+    },
+    {
+      "code": "lab.im.limits",
+      "folderCode": "lim-import",
+      "caption": "Ліміти пакетних операцій",
+      "description": "Пакет замовлень — не більше 200 за запит, файл імпорту результатів — не більше 5000 рядків. Більші обсяги треба поділити.",
+      "icon": "upload_file",
+      "startRoute": "/laboratory/orders",
+      "requiredRoles": [],
+      "tags": [
+        "ліміт",
+        "імпорт",
+        "пакет"
+      ],
+      "estMinutes": 1,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Що робити при перевищенні",
+          "body": "Система поверне повідомлення «Забагато записів в одному запиті». Розділіть пакет або файл на кілька частин і повторіть.",
+          "route": "/laboratory/orders",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "auto",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": true,
+          "transcript": "Що робити при перевищенні. Система поверне повідомлення «Забагато записів в одному запиті». Розділіть пакет або файл на кілька частин і повторіть.",
+          "anchor": {
+            "code": "lim.limits.info",
+            "caption": "Реєстрація направлень",
+            "routePattern": "*",
+            "strategies": [
+              {
+                "type": "css",
+                "value": ".q-page",
+                "weight": 80
+              }
+            ],
+            "fingerprint": {
+              "label": "Реєстрація направлень"
+            },
+            "parentLevels": 0
+          },
+          "sortOrder": 10
+        }
+      ]
+    }
+  ]
+}

@@ -19,7 +19,16 @@
             <q-item-section><q-item-label>{{ v.label }}</q-item-label><q-item-label caption>{{ v.caption }}</q-item-label></q-item-section>
           </q-item>
           <q-separator />
-          <q-item clickable v-close-popup tag="a" :href="order ? $api.orderReportPdfUrl(order.id, reportVariant) : '#'" target="_blank">
+          <q-item v-for="l in reportLangs" :key="l.value" clickable v-close-popup :active="reportLang === l.value" :data-testid="'reportLang-' + l.value" @click="reportLang = l.value; openReport()">
+            <q-item-section avatar><q-icon name="translate" /></q-item-section>
+            <q-item-section><q-item-label>Мова: {{ l.label }}</q-item-label></q-item-section>
+          </q-item>
+          <q-separator />
+          <q-item v-if="order && order.status === 'RELEASED'" clickable v-close-popup data-testid="reportArchive" @click="openArchive">
+            <q-item-section avatar><q-icon name="inventory_2" /></q-item-section>
+            <q-item-section><q-item-label>Архів виданих бланків</q-item-label><q-item-label caption>версії, дублікати, перевірка хешу</q-item-label></q-item-section>
+          </q-item>
+          <q-item clickable v-close-popup tag="a" :href="order ? $api.orderReportPdfUrl(order.id, reportVariant, reportLang) : '#'" target="_blank">
             <q-item-section avatar><q-icon name="picture_as_pdf" /></q-item-section>
             <q-item-section><q-item-label>Завантажити PDF</q-item-label><q-item-label caption>бланк «{{ variantLabel }}»</q-item-label></q-item-section>
           </q-item>
@@ -232,7 +241,28 @@
 
     <!-- Діалоги -->
     <labels-dialog v-model="labelsOpen" :labels="labels" :loading="labelsLoading" />
-    <html-preview-dialog v-model="reportOpen" :title="order ? `Бланк результатів ${order.orderNumber} — ${variantLabel}` : 'Бланк'" :html="reportHtml" :url="order ? $api.orderReportUrl(order.id, reportVariant) : ''" :pdf-url="order ? $api.orderReportPdfUrl(order.id, reportVariant) : ''" :loading="reportLoading" :error="reportError" @retry="openReport" />
+    <q-dialog v-model="archiveOpen">
+      <q-card style="width: 760px; max-width: 96vw" data-testid="archiveDialog">
+        <q-card-section class="row items-center bg-blue-grey-7 text-white q-py-sm">
+          <div class="text-subtitle1">Архів виданих бланків {{ order && order.orderNumber }}</div><q-space /><q-btn flat round dense icon="close" v-close-popup />
+        </q-card-section>
+        <q-card-section>
+          <q-table :data="archiveRows" :columns="archiveColumns" row-key="id" dense flat hide-pagination :pagination="{ rowsPerPage: 0 }" :loading="archiveLoading" no-data-label="Копій ще немає">
+            <template v-slot:body-cell-kind="props"><q-td :props="props"><q-badge :color="props.row.kind === 'AMENDED' ? 'orange-8' : 'positive'" :label="props.row.kind === 'AMENDED' ? 'Виправлений' : 'Перша видача'" /></q-td></template>
+            <template v-slot:body-cell-issuedAt="props"><q-td :props="props">{{ props.row.issuedAt | datetime }}</q-td></template>
+            <template v-slot:body-cell-hash="props"><q-td :props="props"><span class="text-caption">{{ String(props.row.contentHash).slice(0, 12) }}…</span></q-td></template>
+            <template v-slot:body-cell-actions="props">
+              <q-td :props="props" class="text-right no-wrap">
+                <q-btn v-if="props.row.hasPdf" flat dense size="sm" icon="picture_as_pdf" label="PDF" type="a" :href="$api.reportArchivePdfUrl(order.id, props.row.versionNo)" target="_blank" />
+                <q-btn flat dense size="sm" icon="content_copy" label="Дублікат" type="a" :href="$api.reportDuplicateUrl(order.id, props.row.versionNo)" target="_blank" />
+              </q-td>
+            </template>
+          </q-table>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <html-preview-dialog v-model="reportOpen" :title="order ? `Бланк результатів ${order.orderNumber} — ${variantLabel}` : 'Бланк'" :html="reportHtml" :url="order ? $api.orderReportUrl(order.id, reportVariant, reportLang) : ''" :pdf-url="order ? $api.orderReportPdfUrl(order.id, reportVariant, reportLang) : ''" :loading="reportLoading" :error="reportError" @retry="openReport" />
     <collect-sample-dialog v-model="collectOpen" :sample="activeSample" :patient-name="patientName" @collected="load" />
     <receive-sample-dialog v-model="receiveOpen" :samples="dialogSamples" @received="load" />
     <reject-sample-dialog v-model="rejectOpen" :samples="dialogSamples" @rejected="load" />
@@ -330,6 +360,18 @@ export default {
       order: null,
       attachments: [],
       transitions: null,
+      reportLang: '',
+      reportLangs: [{ value: '', label: 'за замовчуванням' }, { value: 'uk', label: 'українська' }, { value: 'en', label: 'англійська' }, { value: 'both', label: 'двомовна' }],
+      archiveOpen: false, archiveLoading: false, archiveRows: [],
+      archiveColumns: [
+        { name: 'versionNo', label: 'Версія', field: 'versionNo', align: 'left' },
+        { name: 'kind', label: 'Тип', field: 'kind', align: 'left' },
+        { name: 'issuedAt', label: 'Видано', field: 'issuedAt', align: 'left' },
+        { name: 'issuedBy', label: 'Ким', field: r => r.issuedBy || '—', align: 'left' },
+        { name: 'amendReason', label: 'Причина виправлення', field: r => r.amendReason || '—', align: 'left' },
+        { name: 'hash', label: 'Хеш', align: 'left' },
+        { name: 'actions', label: '', align: 'right' }
+      ],
       reportVariant: 'final',
       reportVariants: [
         { value: 'final', label: 'Остаточний', caption: 'підписаний бланк із QR верифікації', icon: 'verified' },
@@ -573,10 +615,14 @@ export default {
         this.labels = this.asList(res).map(l => ({ patientName: this.patientName, orderNumber: this.order.orderNumber, ...l }));
       } catch (e) { this.notifyError(e); } finally { this.labelsLoading = false; }
     },
+    async openArchive () {
+      this.archiveOpen = true; this.archiveLoading = true;
+      try { this.archiveRows = this.asList(await this.$api.reportArchive(this.order.id)); } catch (e) { this.notifyError(e); } finally { this.archiveLoading = false; }
+    },
     async openReport () {
       this.reportOpen = true; this.reportLoading = true; this.reportError = ''; this.reportHtml = '';
       try {
-        this.reportHtml = await this.$api.orderReportHtml(this.order.id, this.reportVariant);
+        this.reportHtml = await this.$api.orderReportHtml(this.order.id, this.reportVariant, this.reportLang);
       } catch (e) { this.reportError = e.userMessage || 'Не вдалося отримати бланк'; } finally { this.reportLoading = false; }
     },
     editResult (t) { this.activeRow = this.rowForTest(t); this.resultOpen = true; },
