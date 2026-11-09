@@ -44,7 +44,7 @@ public sealed class WorklistController : LisControllerBase
     /// <summary>Ручне введення результату: каскад норм → прапорець → delta → reflex → автоверифікація.</summary>
     [HttpPut("results/{orderTestId}")]
     public async Task<IActionResult> Enter(string orderTestId, [FromBody] ResultInputRequest req)
-        => Ok(await _pipeline.ApplyAsync(new ResultEntry { OrderTestId = orderTestId, NumericValue = req.NumericValue, StringValue = req.StringValue, ReportText = req.ReportText, Comment = req.Comment, Unit = req.Unit, AnalyzerId = req.AnalyzerId }));
+        => Ok(await _pipeline.ApplyAsync(new ResultEntry { OrderTestId = orderTestId, NumericValue = req.NumericValue, StringValue = req.StringValue, ReportText = req.ReportText, Comment = req.Comment, Unit = req.Unit, AnalyzerId = req.AnalyzerId, DilutionFactor = req.DilutionFactor, ValueIsFinal = req.ValueIsFinal }));
 
     [HttpGet("results/{orderTestId}")]
     public async Task<IActionResult> Row(string orderTestId) => Ok(await _pipeline.RowAsync(orderTestId));
@@ -60,7 +60,26 @@ public sealed class WorklistController : LisControllerBase
     public async Task<IActionResult> Reject(string orderTestId, [FromBody] ReasonRequest req) => Ok(await _pipeline.RejectAsync(orderTestId, req.Reason));
 
     [HttpPost("results/{orderTestId}/rerun")]
-    public async Task<IActionResult> Rerun(string orderTestId, [FromBody] ReasonRequest? req) => Ok(await _pipeline.RerunAsync(orderTestId, req?.Reason));
+    public async Task<IActionResult> Rerun(string orderTestId, [FromBody] RerunRequest? req) => Ok(await _pipeline.RerunAsync(orderTestId, req?.Reason, req?.DilutionFactor));
+
+    /// <summary>Усі спроби вимірювання тесту: оригінал і повтори (з розведенням), яка прийнята.</summary>
+    [HttpGet("results/{orderTestId}/attempts")]
+    public async Task<IActionResult> Attempts(string orderTestId) => Ok(await _pipeline.AttemptsAsync(orderTestId));
+
+    /// <summary>Вибір прийнятого значення серед спроб (лікар/адмін, коментар обов'язковий).</summary>
+    [HttpPost("results/{orderTestId}/accept-attempt")]
+    public async Task<IActionResult> AcceptAttempt(string orderTestId, [FromBody] AcceptAttemptRequest req) => Ok(await _pipeline.AcceptAttemptAsync(orderTestId, req.AttemptId, req.Comment));
+
+    /// <summary>Склад розрахунку показника: формула, вхідні значення, чого бракує.</summary>
+    [HttpGet("results/{orderTestId}/calculation")]
+    public async Task<IActionResult> Calculation(string orderTestId) => Ok(await _pipeline.CalculationInfoAsync(orderTestId));
+
+    /// <summary>Перерахувати розрахункові показники замовлення (напр. після додавання тесту).</summary>
+    [HttpPost("orders/{orderId}/recalculate")]
+    public async Task<IActionResult> Recalculate(string orderId)
+    {
+        return Ok(new { orderId, warnings = await _pipeline.RecalculateByUserAsync(orderId) });
+    }
 
     [HttpPost("results/{orderTestId}/reopen")]
     public async Task<IActionResult> Reopen(string orderTestId, [FromBody] ReasonRequest? req) => Ok(await _pipeline.ReopenAsync(orderTestId, req?.Reason));

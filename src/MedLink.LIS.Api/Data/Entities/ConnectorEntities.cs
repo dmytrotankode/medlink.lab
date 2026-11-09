@@ -89,6 +89,12 @@ public class LabAnalyzerParameterMap : GuidEntity
     /// <summary>Пріоритет показника на приладі; null — пріоритет послуги (FR-SVA-002).</summary>
     public int? Priority { get; set; }
     public bool RequiresDilution { get; set; }
+    /// <summary>Нижня межа лінійності приладу для показника (в одиницях результату).</summary>
+    public double? LinearityLow { get; set; }
+    /// <summary>Верхня межа лінійності: вище — автоматичний повтор із розведенням.</summary>
+    public double? LinearityHigh { get; set; }
+    /// <summary>Коефіцієнт авто-розведення (за замовчуванням 10).</summary>
+    public double? AutoDilutionFactor { get; set; }
 
     [ForeignKey(nameof(AnalyzerId))] public LabAnalyzer? Analyzer { get; set; }
 }

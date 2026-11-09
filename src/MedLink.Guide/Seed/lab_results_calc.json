@@ -1,0 +1,390 @@
+{
+  "format": "medlink-guide-bundle",
+  "version": 1,
+  "app": {
+    "code": "lab",
+    "caption": "MedLink LIS"
+  },
+  "folders": [
+    {
+      "code": "ws-calc",
+      "caption": "Розрахункові показники",
+      "icon": "functions",
+      "sortOrder": 205
+    },
+    {
+      "code": "ws-rerun",
+      "caption": "Повтор і розведення",
+      "icon": "replay",
+      "sortOrder": 206
+    },
+    {
+      "code": "rg-consumption",
+      "caption": "Витрати реагентів",
+      "icon": "query_stats",
+      "sortOrder": 207
+    }
+  ],
+  "scenarios": [
+    {
+      "code": "lab.calc.formula",
+      "folderCode": "ws-calc",
+      "caption": "Як задати формулу розрахункового показника",
+      "description": "Розрахунковий показник (наприклад, ЛПНЩ за Фрідвальдом) обчислюється сам, щойно з’являються вхідні результати. Формулу задають у довіднику показників.",
+      "icon": "functions",
+      "startRoute": "/laboratory/dictionaries/tests",
+      "requiredRoles": [],
+      "tags": [
+        "формула",
+        "розрахунок",
+        "довідник"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Довідник показників",
+          "body": "Відкрийте довідник показників і натисніть «Додати» або відкрийте наявний розрахунковий показник.",
+          "route": "/laboratory/dictionaries/tests",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Довідник показників. Відкрийте довідник показників і натисніть «Додати» або відкрийте наявний розрахунковий показник."
+        },
+        {
+          "stepType": "info",
+          "title": "Тип результату — «Розрахунковий»",
+          "body": "Оберіть тип результату «Розрахунковий» — з’явиться поле формули.",
+          "route": "/laboratory/dictionaries/tests",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Тип результату — «Розрахунковий». Оберіть тип результату «Розрахунковий» — з’явиться поле формули."
+        },
+        {
+          "stepType": "info",
+          "title": "Запишіть формулу",
+          "body": "У формулі використовуйте коди показників, дужки та дії + − * / ^. Доступні функції ROUND, MIN, MAX, ABS, SQRT, POW; вік пацієнта — AGE, стать — MALE або FEMALE. Десяткова крапка. Приклад: ROUND(CHOL - HDL - TG / 2.2; 2).",
+          "route": "/laboratory/dictionaries/tests",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Запишіть формулу. У формулі використовуйте коди показників, дужки та дії + − * / ^. Доступні функції ROUND, MIN, MAX, ABS, SQRT, POW; вік пацієнта — AGE, стать — MALE або FEMALE. Десяткова крапка. Приклад: ROUND(CHOL - HDL - TG / 2.2; 2)."
+        },
+        {
+          "stepType": "info",
+          "title": "Перевірка під час збереження",
+          "body": "Система перевіряє дужки, невідомі коди та циклічні посилання (А залежить від Б, а Б від А) і пояснює, що виправити. Зміна формули потрапляє в журнал аудиту.",
+          "route": "/laboratory/dictionaries/tests",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Перевірка під час збереження. Система перевіряє дужки, невідомі коди та циклічні посилання (А залежить від Б, а Б від А) і пояснює, що виправити. Зміна формули потрапляє в журнал аудиту."
+        }
+      ]
+    },
+    {
+      "code": "lab.calc.work",
+      "folderCode": "ws-calc",
+      "caption": "Розрахунковий показник на робочому столі",
+      "description": "Розрахунковий показник не вводять вручну: він з’являється після вхідних результатів, перераховується при їх зміні та знімається, якщо вхідного бракує.",
+      "icon": "functions",
+      "startRoute": "/laboratory/workstation",
+      "requiredRoles": [],
+      "tags": [
+        "розрахунок",
+        "робочий стіл"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 20,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Позначка «розрах.»",
+          "body": "Поруч із розрахунковим значенням стоїть позначка «розрах.»; підказка показує формулу.",
+          "route": "/laboratory/workstation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Позначка «розрах.». Поруч із розрахунковим значенням стоїть позначка «розрах.»; підказка показує формулу.",
+          "anchor": {
+            "code": "lab.res.worklist",
+            "caption": "Черга робочого столу",
+            "routePattern": "/laboratory/workstation",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"worklistTable\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "tag": "div",
+              "label": "Черга робочого столу",
+              "classes": []
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Очікування вхідних",
+          "body": "Поки немає всіх вхідних показників, розрахунковий залишається в статусі «Очікує». Введіть вхідні результати — значення з’явиться саме.",
+          "route": "/laboratory/workstation",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Очікування вхідних. Поки немає всіх вхідних показників, розрахунковий залишається в статусі «Очікує». Введіть вхідні результати — значення з’явиться саме."
+        },
+        {
+          "stepType": "info",
+          "title": "Зміна вхідного",
+          "body": "Якщо вхідний результат повторюють або виправляють, розрахунок оновлюється або чекає нового значення. Введення вручну для розрахункового заблоковане.",
+          "route": "/laboratory/workstation",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Зміна вхідного. Якщо вхідний результат повторюють або виправляють, розрахунок оновлюється або чекає нового значення. Введення вручну для розрахункового заблоковане."
+        }
+      ]
+    },
+    {
+      "code": "lab.rerun.dilution",
+      "folderCode": "ws-rerun",
+      "caption": "Повтор дослідження та розведення",
+      "description": "Повтор і розведення зберігають усі вимірювання: оригінал і кожен повтор. Остаточним лікар обирає одне значення.",
+      "icon": "replay",
+      "startRoute": "/laboratory/workstation",
+      "requiredRoles": [],
+      "tags": [
+        "повтор",
+        "розведення"
+      ],
+      "estMinutes": 4,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Повторити дослідження",
+          "body": "У меню рядка оберіть «Повторити дослідження». За потреби вкажіть розведення 1:N — наприклад, 10, якщо результат вищий за лінійність приладу.",
+          "route": "/laboratory/workstation",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Повторити дослідження. У меню рядка оберіть «Повторити дослідження». За потреби вкажіть розведення 1:N — наприклад, 10, якщо результат вищий за лінійність приладу.",
+          "anchor": {
+            "code": "lab.res.worklist2",
+            "caption": "Черга робочого столу",
+            "routePattern": "/laboratory/workstation",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"worklistTable\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "tag": "div",
+              "label": "Черга робочого столу",
+              "classes": []
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Автоматичне розведення",
+          "body": "Якщо прилад видав значення вище лінійності, система сама призначає повтор з розведенням і показує попередження. Значення не автоверифікується.",
+          "route": "/laboratory/workstation",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Автоматичне розведення. Якщо прилад видав значення вище лінійності, система сама призначає повтор з розведенням і показує попередження. Значення не автоверифікується."
+        },
+        {
+          "stepType": "info",
+          "title": "Нове вимірювання",
+          "body": "Введіть значення, виміряне у розведеному зразку, — система помножить його на коефіцієнт. У рядку буде позначка розведення, а на бланку — «розведення 1:N» та «повторний аналіз».",
+          "route": "/laboratory/workstation",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Нове вимірювання. Введіть значення, виміряне у розведеному зразку, — система помножить його на коефіцієнт. У рядку буде позначка розведення, а на бланку — «розведення 1:N» та «повторний аналіз»."
+        },
+        {
+          "stepType": "info",
+          "title": "Вибір прийнятого значення",
+          "body": "Лікар-лаборант може обрати інше з вимірювань як остаточне, вказавши причину. Усі спроби лишаються в історії.",
+          "route": "/laboratory/workstation",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Вибір прийнятого значення. Лікар-лаборант може обрати інше з вимірювань як остаточне, вказавши причину. Усі спроби лишаються в історії."
+        }
+      ]
+    },
+    {
+      "code": "lab.reagents.consumption",
+      "folderCode": "rg-consumption",
+      "caption": "Автосписання реагентів і звіт про витрати",
+      "description": "Реагент списується автоматично, коли надходить результат. Нестача не блокує роботу — система лише попереджає.",
+      "icon": "query_stats",
+      "startRoute": "/laboratory/reagents",
+      "requiredRoles": [],
+      "tags": [
+        "реагенти",
+        "витрати",
+        "лот"
+      ],
+      "estMinutes": 3,
+      "sortOrder": 10,
+      "publish": true,
+      "variables": [],
+      "steps": [
+        {
+          "stepType": "info",
+          "title": "Норма витрати",
+          "body": "У лоті вкажіть норму витрати на тест. З кожним результатом з приладу система списує стільки одиниць із активного лота.",
+          "route": "/laboratory/reagents",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Норма витрати. У лоті вкажіть норму витрати на тест. З кожним результатом з приладу система списує стільки одиниць із активного лота.",
+          "anchor": {
+            "code": "lab.rg.page",
+            "caption": "Склад реагентів",
+            "routePattern": "/laboratory/reagents",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"reagentsPage\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "tag": "div",
+              "label": "Склад реагентів",
+              "classes": []
+            },
+            "parentLevels": 0
+          }
+        },
+        {
+          "stepType": "info",
+          "title": "Попередження замість блокування",
+          "body": "Якщо залишок мінімальний або реагенту не вистачає, результат усе одно зберігається, а лаборант бачить попередження. Коли лот вичерпано, активується наступний.",
+          "route": "/laboratory/reagents",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Попередження замість блокування. Якщо залишок мінімальний або реагенту не вистачає, результат усе одно зберігається, а лаборант бачить попередження. Коли лот вичерпано, активується наступний."
+        },
+        {
+          "stepType": "info",
+          "title": "Який лот використано",
+          "body": "Для кожного результату зберігається лот реагенту — це видно у звіті про витрати.",
+          "route": "/laboratory/reagents",
+          "highlight": "none",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Який лот використано. Для кожного результату зберігається лот реагенту — це видно у звіті про витрати."
+        },
+        {
+          "stepType": "info",
+          "title": "Звіт про витрати",
+          "body": "Натисніть «Витрати», оберіть період — побачите списання по кожному лоту, нестачу та залишок.",
+          "route": "/laboratory/reagents",
+          "highlight": "element",
+          "parentLevels": 0,
+          "placement": "top",
+          "expect": "next",
+          "inputValue": "",
+          "inputMode": "show",
+          "optional": false,
+          "transcript": "Звіт про витрати. Натисніть «Витрати», оберіть період — побачите списання по кожному лоту, нестачу та залишок.",
+          "anchor": {
+            "code": "lab.rg.report",
+            "caption": "Кнопка звіту про витрати",
+            "routePattern": "/laboratory/reagents",
+            "strategies": [
+              {
+                "type": "testid",
+                "value": "[data-testid=\"consumptionOpen\"]",
+                "weight": 100
+              }
+            ],
+            "fingerprint": {
+              "tag": "div",
+              "label": "Кнопка звіту про витрати",
+              "classes": []
+            },
+            "parentLevels": 0
+          }
+        }
+      ]
+    }
+  ]
+}

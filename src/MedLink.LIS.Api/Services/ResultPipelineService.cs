@@ -34,9 +34,22 @@ public sealed class ResultEntry
     public string? ExternalReference { get; set; }
     /// <summary>Референсний інтервал зовнішньої лабораторії (якщо в довіднику норм ЛІС немає шару для показника).</summary>
     public string? ReferenceText { get; set; }
+    // --- Розрахункові показники (FR-WS-005): внутрішній запис результату після обчислення формули ---
+    public bool IsCalculated { get; set; }
+    public string? CalcFormula { get; set; }
+    public string? CalcInputsJson { get; set; }
+    // --- Повтор і розведення ---
+    /// <summary>Коефіцієнт розведення зразка (≥ 1). null — береться заплановане розведення повтору.</summary>
+    public double? DilutionFactor { get; set; }
+    /// <summary>true — NumericValue уже перераховано на вихідний зразок (так віддають прилади); false — це вимір розведеного зразка, його множимо на коефіцієнт.</summary>
+    public bool ValueIsFinal { get; set; }
+    /// <summary>Прилад повідомив «більше за верхню межу» (значення вийшло за діапазон).</summary>
+    public bool AboveRange { get; set; }
+    /// <summary>Прийняття іншої спроби вимірювання (без нового вимірювання).</summary>
+    public string? AcceptAttemptId { get; set; }
 }
 
-public sealed class ResultPipelineService
+public sealed partial class ResultPipelineService
 {
     private readonly LisDbContext _db;
     private readonly IAuditService _audit;
@@ -48,12 +61,17 @@ public sealed class ResultPipelineService
     private readonly ILogger<ResultPipelineService> _logger;
 
     private readonly BillingService _billing;
+    private readonly ReagentConsumptionService _reagents;
 
     public ResultPipelineService(LisDbContext db, IAuditService audit, IRolePolicy policy, ICurrentEmployee current, OrderStateService state,
-        SampleService samples, ProgressiveReleaseService release, ILogger<ResultPipelineService> logger, BillingService billing)
+        SampleService samples, ProgressiveReleaseService release, ILogger<ResultPipelineService> logger, BillingService billing, ReagentConsumptionService reagents)
     {
-        _db = db; _audit = audit; _policy = policy; _current = current; _state = state; _samples = samples; _release = release; _logger = logger; _billing = billing;
+        _db = db; _audit = audit; _policy = policy; _current = current; _state = state; _samples = samples; _release = release; _logger = logger; _billing = billing; _reagents = reagents;
     }
+
+    /// <summary>Максимальна кількість автоматичних повторів з розведенням для одного тесту.</summary>
+    private const int MaxAutoReruns = 3;
+    private const double MaxDilution = 1000;
 
     private IRolePolicy PolicyFor(bool isSystem) => isSystem ? new SystemRolePolicy() : _policy;
 
@@ -90,13 +108,18 @@ public sealed class ResultPipelineService
         var order = test.Order!;
         var def = test.Test ?? throw new ValidationException($"Тест {test.TestCode} не має визначення у довіднику");
         var policy = PolicyFor(entry.IsSystem);
+        if (def.ResultType == "CALCULATED" && !entry.IsCalculated)
+            throw new ValidationException($"Показник {def.Code} розрахунковий: його значення обчислюється автоматично за формулою, ручне введення заблоковане");
+        if (entry.DilutionFactor is { } df0 && (df0 < 1 || df0 > MaxDilution || double.IsNaN(df0))) throw ValidationException.Field("dilutionFactor", $"Коефіцієнт розведення має бути від 1 до {MaxDilution:0}");
+        var prevStatus = test.Status;
+        var warnings = new List<string>();
 
         if (OrderStatuses.Terminal.Contains(order.Status) || order.Status == OrderStatuses.Released)
             throw new ConflictException($"Замовлення {order.OrderNumber} у статусі «{UkLabels.Status(LisEntities.Order, order.Status)}» — введення результатів неможливе");
 
         // Коннектор: проба на приладі = фактично прийнята
-        if (entry.IsSystem && test.Sample != null) _samples.SystemReceive(test.Sample);
-        if (entry.IsSystem && order.Status == OrderStatuses.New)
+        if (entry.IsSystem && !entry.IsCalculated && test.Sample != null) _samples.SystemReceive(test.Sample);
+        if (entry.IsSystem && !entry.IsCalculated && order.Status == OrderStatuses.New)
             throw new ConflictException($"Замовлення {order.OrderNumber} ще не має відмітки забору біоматеріалу");
 
         var testAction = test.Status is OrderTestStatuses.Resulted or OrderTestStatuses.NeedsReview ? TestActions.EditResult : TestActions.EnterResult;
@@ -114,6 +137,42 @@ public sealed class ResultPipelineService
         if (numeric == null && string.IsNullOrEmpty(text)) throw new ValidationException("Результат порожній: вкажіть numericValue або stringValue");
         if (def.ResultType == "DROPDOWN" && text != null && def.DropdownOptions.Count > 0 && !def.DropdownOptions.Contains(text, StringComparer.OrdinalIgnoreCase))
             throw ValidationException.Field("stringValue", $"Значення має бути одним із: {string.Join(", ", def.DropdownOptions)}");
+        var analyzerId = entry.AnalyzerId ?? test.AssignedAnalyzerId;
+
+        // Розведення: множимо вимір розведеного зразка на коефіцієнт (або беремо вже перераховане значення приладу)
+        double? dilution = entry.DilutionFactor ?? (prevStatus == OrderTestStatuses.Rerun ? test.DilutionFactor : null);
+        if (dilution is <= 1) dilution = null;
+        double? rawValue = null;
+        if (numeric.HasValue && dilution.HasValue)
+        {
+            if (entry.ValueIsFinal) rawValue = numeric.Value / dilution.Value;
+            else { rawValue = numeric.Value; numeric = numeric.Value * dilution.Value; }
+            rawValue = Math.Round(rawValue.Value, 6);
+        }
+
+        // Лінійність приладу: вихід за верхню межу → авто-повтор з розведенням; за нижню → на перегляд
+        string? linearityMsg = null; bool outOfLinearity = false; double? autoFactor = null;
+        if (numeric.HasValue && !entry.IsCalculated && entry.AcceptAttemptId == null && analyzerId != null)
+        {
+            var map = await _db.AnalyzerParameters.AsNoTracking().FirstOrDefaultAsync(m => m.AnalyzerId == analyzerId && m.TestCode == def.Code);
+            var measured = rawValue ?? numeric.Value;
+            var high = entry.AboveRange || (map?.LinearityHigh != null && measured > map.LinearityHigh);
+            var low = map?.LinearityLow != null && measured < map.LinearityLow;
+            if (high || low)
+            {
+                outOfLinearity = true;
+                var inv = CultureInfo.InvariantCulture;
+                var next = (dilution ?? 1) * (map?.AutoDilutionFactor is > 1 ? map.AutoDilutionFactor.Value : 10);
+                if (high && test.RerunCount < MaxAutoReruns && next <= MaxDilution)
+                {
+                    autoFactor = next;
+                    linearityMsg = $"Значення поза лінійністю приладу (вище {map?.LinearityHigh?.ToString("0.##", inv) ?? "діапазону"}): призначено повтор з розведенням 1:{next:0.##}";
+                }
+                else if (high) linearityMsg = $"Значення поза лінійністю приладу (вище {map?.LinearityHigh?.ToString("0.##", inv) ?? "діапазону"}); авто-розведення вичерпано — потрібне рішення лікаря";
+                else linearityMsg = $"Значення поза лінійністю приладу (нижче {map!.LinearityLow!.Value.ToString("0.##", inv)}) — перевірте вручну";
+                warnings.Add(linearityMsg);
+            }
+        }
         if (numeric.HasValue) numeric = Math.Round(numeric.Value, Math.Clamp(def.DecimalPlaces, 0, 6));
 
         var now = DateTime.UtcNow;
@@ -141,7 +200,6 @@ public sealed class ResultPipelineService
         }
 
         // Lockout
-        var analyzerId = entry.AnalyzerId ?? test.AssignedAnalyzerId;
         var locked = await IsLockedOutAsync(analyzerId, def.Code);
 
         // Правдоподібність (FR-RPT-018): фізіологічні межі й співвідношення з іншими результатами замовлення
@@ -153,6 +211,7 @@ public sealed class ResultPipelineService
             var check = PlausibilityChecker.Check(def.Code, numeric.Value, siblings.GroupBy(x => x.TestCode).ToDictionary(g => g.Key, g => g.First().NumericValue!.Value));
             if (!check.IsPlausible) implausible = check.Summary;
         }
+        if (linearityMsg != null) implausible = implausible == null ? linearityMsg : linearityMsg + "; " + implausible;
 
         // Калібрування приладу (FR-GAP-031): прострочене/відхилене → попередження; за налаштуванням — заборона ручного введення
         var calib = await CalibrationService.CheckAsync(_db, analyzerId, def.Code);
@@ -172,6 +231,19 @@ public sealed class ResultPipelineService
         // Результат (одна версія на тест, попередні — в історії)
         var result = test.Result;
         var isNew = result == null;
+        var isNewMeasurement = !entry.IsCalculated && entry.AcceptAttemptId == null && (isNew || prevStatus == OrderTestStatuses.Rerun);
+        var attempts = entry.IsCalculated ? new List<LabResultAttempt>() : await _db.ResultAttempts.Where(a => a.OrderTestId == test.Id).ToListAsync();
+        if (!entry.IsCalculated && result != null && attempts.Count == 0)
+        {
+            // результат створено до появи історії спроб — зберігаємо його як першу (оригінальну) спробу
+            var legacy = new LabResultAttempt
+            {
+                OrderTestId = test.Id, AttemptNo = 1, Kind = "INITIAL", NumericValue = result.NumericValue, StringValue = result.StringValue, Unit = result.Unit, Flag = result.Flag,
+                DilutionFactor = result.DilutionFactor, RawValue = result.RawValue, OutOfLinearity = result.OutOfLinearity, AnalyzerId = result.AnalyzerId, ReagentLotId = result.ReagentLotId,
+                EnteredById = result.EnteredById, EnteredAt = result.EnteredAt, IsAccepted = true
+            };
+            attempts.Add(legacy); _db.ResultAttempts.Add(legacy);
+        }
         if (result == null)
         {
             result = new LabTestResult { OrderTestId = test.Id };
@@ -216,8 +288,20 @@ public sealed class ResultPipelineService
         result.CalibrationId = calib.Status is CalibrationStatuses.None ? null : calib.Calibration?.Id;
         if (calibWarning != null) _audit.Log("CALIBRATION_WARNING", "lab_order_test", test.Id, null, new { test.TestCode, analyzerId, calib.Status, calibrationId = calib.Calibration?.Id });
         result.VerifiedById = null; result.VerifiedAt = null; result.VerificationComment = null;
+        result.IsCalculated = entry.IsCalculated;
+        result.CalcFormula = entry.IsCalculated ? entry.CalcFormula : null;
+        result.CalcInputsJson = entry.IsCalculated ? entry.CalcInputsJson : null;
+        result.DilutionFactor = dilution;
+        result.RawValue = rawValue;
+        result.OutOfLinearity = outOfLinearity;
 
-        if (decision.Approved)
+        if (autoFactor.HasValue)
+        {
+            // Авто-розведення: значення збережено як спробу, тест повертається в чергу з розведенням
+            test.Status = OrderTestStatuses.Rerun; test.ReleasedAt = null; test.DilutionFactor = autoFactor; test.RerunCount++;
+            result.IsAutoVerified = false; result.AutoVerifyBlockReason = linearityMsg;
+        }
+        else if (decision.Approved)
         {
             test.Status = OrderTestStatuses.AutoVerified;
             result.VerifiedAt = now;
@@ -229,7 +313,42 @@ public sealed class ResultPipelineService
             test.Status = ResultFlags.IsCritical(flag) || delta.IsAlert || implausible != null || calibWarning != null ?OrderTestStatuses.NeedsReview : OrderTestStatuses.Resulted;
         }
         test.RejectReason = null;
+        if (autoFactor == null && entry.AcceptAttemptId == null) test.DilutionFactor = null; // заплановане розведення використано
         if (analyzerId != null) test.AssignedAnalyzerId = analyzerId;
+
+        // Спроби вимірювання: оригінал + кожен повтор; прийнята — та, що в результаті
+        if (!entry.IsCalculated)
+        {
+            if (entry.AcceptAttemptId != null)
+            {
+                var chosen = attempts.FirstOrDefault(a => a.Id == entry.AcceptAttemptId) ?? throw NotFoundException.For("Спроба вимірювання", entry.AcceptAttemptId);
+                foreach (var a in attempts) a.IsAccepted = a.Id == chosen.Id;
+                chosen.Flag = flag; chosen.AcceptedById = _current.EmployeeId; chosen.AcceptedAt = now; chosen.Comment = entry.Comment ?? chosen.Comment;
+            }
+            else if (isNewMeasurement)
+            {
+                var prev = attempts.OrderBy(a => a.AttemptNo).LastOrDefault();
+                foreach (var a in attempts) { a.IsAccepted = false; if (prevStatus == OrderTestStatuses.Rerun) a.SupersededByRerun = true; }
+                var att = new LabResultAttempt
+                {
+                    OrderTestId = test.Id, AttemptNo = attempts.Count + 1, NumericValue = numeric, StringValue = result.StringValue, Unit = result.Unit, Flag = flag,
+                    Kind = isNew ? "INITIAL" : dilution.HasValue ? (prev?.OutOfLinearity == true ? "AUTO_DILUTION" : "DILUTION") : "RERUN",
+                    DilutionFactor = dilution, RawValue = rawValue, OutOfLinearity = outOfLinearity, AnalyzerId = analyzerId, EnteredById = result.EnteredById ?? (entry.IsSystem ? "SYSTEM:" + analyzerId : null),
+                    EnteredAt = now, IsAccepted = true, Comment = entry.Comment ?? linearityMsg
+                };
+                attempts.Add(att); _db.ResultAttempts.Add(att);
+            }
+            else
+            {
+                // виправлення поточного значення (не нове вимірювання) — оновлюємо прийняту спробу
+                var cur = attempts.FirstOrDefault(a => a.IsAccepted) ?? attempts.OrderBy(a => a.AttemptNo).Last();
+                cur.NumericValue = numeric; cur.StringValue = result.StringValue; cur.Unit = result.Unit; cur.Flag = flag; cur.DilutionFactor = dilution; cur.RawValue = rawValue; cur.OutOfLinearity = outOfLinearity;
+            }
+        }
+
+        // Автосписання реагенту за нормою витрати (нестача не блокує результат, FR-REA-002)
+        if (isNewMeasurement && analyzerId != null && entry.PerformerId == null && test.PerformerId == null)
+            warnings.AddRange(await _reagents.ConsumeForResultAsync(test, result, analyzerId, isRerun: !isNew));
 
         _db.ResultHistory.Add(new LabResultHistory
         {
@@ -237,6 +356,8 @@ public sealed class ResultPipelineService
             StringValue = result.StringValue, Flag = flag, ActorId = result.EnteredById ?? (entry.IsSystem ? "SYSTEM:" + analyzerId : null), At = now,
             Comment = entry.Comment, SnapshotJson = Snapshot(result)
         });
+        if (autoFactor.HasValue)
+            _db.ResultHistory.Add(new LabResultHistory { OrderTestId = test.Id, ResultId = result.Id, Version = result.Version, Action = "RERUN", NumericValue = numeric, Flag = flag, ActorId = "SYSTEM:AUTO_DILUTION", At = now, Comment = linearityMsg });
 
         // Reflex
         var rules = await _db.ReflexRules.AsNoTracking().Where(r => r.IsActive && r.TriggerTestCode == def.Code).ToListAsync();
@@ -267,9 +388,17 @@ public sealed class ResultPipelineService
         _state.RecomputeCompletion(order);
 
         _audit.Log(isNew ? "RESULT_ENTERED" : "RESULT_CORRECTED", "lab_test_result", result.Id, null,
-            new { test.TestCode, numeric, text, flag, delta.DeltaPercent, delta.IsAlert, autoVerified = decision.Approved, block = result.AutoVerifyBlockReason, layer = result.AppliedLayerName });
+            new
+            {
+                test.TestCode, numeric, text, flag, delta.DeltaPercent, delta.IsAlert, autoVerified = decision.Approved && autoFactor == null, block = result.AutoVerifyBlockReason, layer = result.AppliedLayerName,
+                dilution, rawValue, outOfLinearity, autoDilution = autoFactor, reagentLot = result.ReagentLotNumber, acceptedAttempt = entry.AcceptAttemptId,
+                calculated = entry.IsCalculated, formula = result.CalcFormula, inputs = result.CalcInputsJson
+            });
         await _db.SaveChangesAsync();
-        return await RowAsync(test.Id);
+        if (!entry.IsCalculated) await RecalculateOrderAsync(order.Id, warnings);
+        var row = await RowAsync(test.Id);
+        row.Warnings = warnings.Distinct().ToList();
+        return row;
     }
 
     internal static PatientContext BuildPatientContext(LabOrder order, MisPatientCard? patient, LabTestDefinition def)
@@ -359,22 +488,37 @@ public sealed class ResultPipelineService
         if (test.Result == null && !await _db.Invoices.AnyAsync(i => i.OrderId == test.OrderId && i.Status != "CANCELLED")) await _billing.RecalculateAsync(test.Order!);
         _audit.Log("REJECT", "lab_order_test", test.Id, new { status = before }, new { test.Status, reason });
         await _db.SaveChangesAsync();
+        await RecalculateOrderAsync(test.OrderId, new List<string>());
         return await RowAsync(test.Id);
     }
 
-    public async Task<WorklistRowDto> RerunAsync(string orderTestId, string? reason)
+    /// <summary>Повторне дослідження (за потреби — з розведенням). Попереднє значення залишається спробою; нове вимірювання стане наступною.</summary>
+    public async Task<WorklistRowDto> RerunAsync(string orderTestId, string? reason, double? dilutionFactor = null)
     {
         var test = await LoadAsync(orderTestId);
+        if (test.Test?.ResultType == "CALCULATED") throw new ConflictException($"Показник {test.TestCode} розрахунковий — повторіть вхідні показники, результат перерахується автоматично");
         var rule = _policy.Ensure(LisEntities.OrderTest, TestActions.Rerun, test.Status, $"Тест {test.TestCode}");
+        if (dilutionFactor is { } df && (df < 1 || df > MaxDilution || double.IsNaN(df))) throw ValidationException.Field("dilutionFactor", $"Коефіцієнт розведення має бути від 1 до {MaxDilution:0}");
         var before = test.Status;
         test.Status = rule.ToStatus!;
         test.ReleasedAt = null;
+        test.RerunCount++;
+        test.DilutionFactor = dilutionFactor is > 1 ? dilutionFactor : null;
+        var note = string.IsNullOrWhiteSpace(reason) ? null : reason;
+        if (test.DilutionFactor.HasValue) note = (note == null ? "" : note + ". ") + $"Розведення 1:{test.DilutionFactor:0.##}";
         if (test.Result != null)
-            _db.ResultHistory.Add(new LabResultHistory { OrderTestId = test.Id, ResultId = test.Result.Id, Version = test.Result.Version, Action = "RERUN", NumericValue = test.Result.NumericValue, Flag = test.Result.Flag, ActorId = _current.EmployeeId, Comment = reason });
+        {
+            test.Result.IsAutoVerified = false; test.Result.VerifiedAt = null; test.Result.VerifiedById = null;
+            _db.ResultHistory.Add(new LabResultHistory { OrderTestId = test.Id, ResultId = test.Result.Id, Version = test.Result.Version, Action = "RERUN", NumericValue = test.Result.NumericValue, Flag = test.Result.Flag, ActorId = _current.EmployeeId, Comment = note });
+        }
         _state.RecomputeReopen(test.Order!);
-        _audit.Log("RERUN", "lab_order_test", test.Id, new { status = before }, new { test.Status, reason });
+        _audit.Log("RERUN", "lab_order_test", test.Id, new { status = before }, new { test.Status, reason, dilutionFactor = test.DilutionFactor, test.RerunCount });
         await _db.SaveChangesAsync();
-        return await RowAsync(test.Id);
+        var warnings = new List<string>();
+        await RecalculateOrderAsync(test.OrderId, warnings);
+        var row = await RowAsync(test.Id);
+        row.Warnings = warnings;
+        return row;
     }
 
     public async Task<WorklistRowDto> ReopenAsync(string orderTestId, string? comment)
@@ -410,6 +554,7 @@ public sealed class ResultPipelineService
         _state.RecomputeReopen(test.Order!);
         _audit.Log("RESULT_DELETED", "lab_test_result", result.Id, new { result.NumericValue, result.StringValue, result.Flag }, null, reason);
         await _db.SaveChangesAsync();
+        await RecalculateOrderAsync(test.OrderId, new List<string>());
         return await RowAsync(test.Id);
     }
 

@@ -139,7 +139,11 @@ const labApi = {
   verifyResult: (orderTestId, body) => data(http.post(`/results/${orderTestId}/verify`, body || {})),
   verifyBatch: orderTestIds => data(http.post('/results/verify-batch', { orderTestIds })),
   rejectResult: (orderTestId, reason) => data(http.post(`/results/${orderTestId}/reject`, { reason })),
-  rerunResult: orderTestId => data(http.post(`/results/${orderTestId}/rerun`)),
+  rerunResult: (orderTestId, body) => data(http.post(`/results/${orderTestId}/rerun`, body || {})),
+  resultAttempts: orderTestId => data(http.get(`/results/${orderTestId}/attempts`)),
+  acceptResultAttempt: (orderTestId, attemptId, comment) => data(http.post(`/results/${orderTestId}/accept-attempt`, { attemptId, comment })),
+  resultCalculation: orderTestId => data(http.get(`/results/${orderTestId}/calculation`)),
+  validateTestFormula: (code, formula) => data(http.post('/dictionaries/tests/validate-formula', { code, formula })),
   reopenResult: orderTestId => data(http.post(`/results/${orderTestId}/reopen`)),
   resultHistory: orderTestId => data(http.get(`/results/${orderTestId}/history`)),
   getResult: orderTestId => data(http.get(`/results/${orderTestId}`)),
@@ -217,6 +221,8 @@ const labApi = {
   deleteReagentLot: id => data(http.delete(`/reagents/lots/${id}`)),
   consumeReagent: (id, tests) => data(http.post(`/reagents/lots/${id}/consume`, { tests })),
   reagentAlerts: () => data(http.get('/reagents/alerts')),
+  reagentConsumption: params => data(http.get('/reagents/consumption', { params: clean(params) })),
+  reagentsByResult: orderTestId => data(http.get(`/reagents/by-result/${orderTestId}`)),
 
   // ---------- Мікробіологія ----------
   cultures: params => data(http.get('/microbiology/cultures', { params: clean(params) })),

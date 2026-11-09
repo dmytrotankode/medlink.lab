@@ -15,6 +15,10 @@ public sealed class AnalyzerParameterMapRequest
     public double Factor { get; set; } = 1.0;
     public double Offset { get; set; }
     public string? UnitOverride { get; set; }
+    /// <summary>Межі лінійності приладу для показника та коефіцієнт авто-розведення (за замовчуванням 10).</summary>
+    public double? LinearityLow { get; set; }
+    public double? LinearityHigh { get; set; }
+    public double? AutoDilutionFactor { get; set; }
 }
 
 public sealed class AnalyzerRequest
@@ -79,7 +83,7 @@ public sealed class AnalyzerService
         a.ConnectionMode, a.TcpHost, a.TcpPort, a.IsTcpServer, a.ComPort, a.BaudRate, a.Parity, a.DataBits, a.StopBits, a.FlowControl, a.FilePath, a.FilePollSec,
         a.AutoQueryOrders, a.IsActive, a.IsOnline, a.LastMessageAt, a.LastError, a.CreatedOn,
         isLockedOut = lockouts.Count > 0, activeLockouts = lockouts.Select(l => new { l.Id, l.TestCode, l.Reason, l.StartedAt }),
-        parameterMap = a.ParameterMap.OrderBy(m => m.AnalyzerCode).Select(m => new { m.Id, m.AnalyzerCode, m.TestCode, m.Factor, m.Offset, m.UnitOverride })
+        parameterMap = a.ParameterMap.OrderBy(m => m.AnalyzerCode).Select(m => new { m.Id, m.AnalyzerCode, m.TestCode, m.Factor, m.Offset, m.UnitOverride, m.LinearityLow, m.LinearityHigh, m.AutoDilutionFactor })
     };
 
     public async Task<object> CreateAsync(AnalyzerRequest req)
@@ -137,6 +141,13 @@ public sealed class AnalyzerService
             var codes = await _db.Tests.AsNoTracking().Select(t => t.Code).ToListAsync();
             var missing = req.ParameterMap.Select(m => m.TestCode).Where(c => !codes.Contains(c)).Distinct().ToList();
             if (missing.Count > 0) throw ValidationException.Field("parameterMap", $"Невідомі коди тестів: {string.Join(", ", missing)}");
+            foreach (var m in req.ParameterMap)
+            {
+                if (m.LinearityLow.HasValue && m.LinearityHigh.HasValue && m.LinearityLow >= m.LinearityHigh)
+                    throw ValidationException.Field("parameterMap", $"Показник {m.TestCode}: нижня межа лінійності має бути меншою за верхню");
+                if (m.AutoDilutionFactor.HasValue && (m.AutoDilutionFactor <= 1 || m.AutoDilutionFactor > 1000))
+                    throw ValidationException.Field("parameterMap", $"Показник {m.TestCode}: коефіцієнт авто-розведення має бути більшим за 1 і не більшим за 1000");
+            }
         }
     }
 
@@ -149,7 +160,7 @@ public sealed class AnalyzerService
         if (req.ParameterMap != null)
         {
             _db.AnalyzerParameters.RemoveRange(a.ParameterMap);
-            a.ParameterMap = req.ParameterMap.Select(m => new LabAnalyzerParameterMap { AnalyzerId = a.Id, AnalyzerCode = m.AnalyzerCode.Trim(), TestCode = m.TestCode.Trim(), Factor = m.Factor, Offset = m.Offset, UnitOverride = m.UnitOverride }).ToList();
+            a.ParameterMap = req.ParameterMap.Select(m => new LabAnalyzerParameterMap { AnalyzerId = a.Id, AnalyzerCode = m.AnalyzerCode.Trim(), TestCode = m.TestCode.Trim(), Factor = m.Factor, Offset = m.Offset, UnitOverride = m.UnitOverride, LinearityLow = m.LinearityLow, LinearityHigh = m.LinearityHigh, AutoDilutionFactor = m.AutoDilutionFactor }).ToList();
         }
     }
 

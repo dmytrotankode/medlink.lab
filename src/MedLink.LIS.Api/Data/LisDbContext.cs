@@ -75,6 +75,8 @@ public class LisDbContext : DbContext
     public DbSet<LabArchiveRack> Racks => Set<LabArchiveRack>();
     public DbSet<LabArchiveCell> Cells => Set<LabArchiveCell>();
     public DbSet<LabReagentLot> ReagentLots => Set<LabReagentLot>();
+    public DbSet<LabReagentConsumption> ReagentConsumptions => Set<LabReagentConsumption>();
+    public DbSet<LabResultAttempt> ResultAttempts => Set<LabResultAttempt>();
 
     // --- microbiology ---
     public DbSet<LabCultureOrder> Cultures => Set<LabCultureOrder>();

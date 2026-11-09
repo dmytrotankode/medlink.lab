@@ -27,6 +27,7 @@ export function roleBlockReason (role, allowed) {
 export function enterBlockReason (row, role) {
   const byRole = roleBlockReason(role, ENTER_ROLES);
   if (byRole) return byRole;
+  if (row && row.isCalculated) return 'Розрахунковий показник обчислюється автоматично за формулою — введіть вхідні показники';
   const st = row && row.orderStatus;
   if (!st || ENTER_ORDER_STATUSES.includes(st)) return '';
   if (NOT_RECEIVED.includes(st)) return `Замовлення ${row.orderNumber || ''} ще не прийнято в лабораторії. Спершу відмітьте забір і прийом проби, потім вводьте результат`.replace('  ', ' ');

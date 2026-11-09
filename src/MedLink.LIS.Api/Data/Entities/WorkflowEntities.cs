@@ -223,6 +223,10 @@ public class LabOrderTest : GuidEntity
     public DateTime? EnqueuedOn { get; set; }
     [MaxLength(64)] public string? DistributedById { get; set; }
     public DateTime? DistributedAt { get; set; }
+    /// <summary>Заплановане розведення для наступного вимірювання (повтор з розведенням).</summary>
+    public double? DilutionFactor { get; set; }
+    /// <summary>Скільки разів тест повторювали.</summary>
+    public int RerunCount { get; set; }
 
     [ForeignKey(nameof(OrderId))] public LabOrder? Order { get; set; }
     [ForeignKey(nameof(SampleId))] public LabOrderSample? Sample { get; set; }
@@ -276,9 +280,56 @@ public class LabTestResult : GuidEntity
     [MaxLength(64)] public string? PerformerId { get; set; }
     /// <summary>Номер/посилання на бланк зовнішньої лабораторії.</summary>
     [MaxLength(128)] public string? ExternalReference { get; set; }
+    // --- Розрахункові показники (FR-WS-005) ---
+    /// <summary>Результат обчислено за формулою (ручне введення заблоковане).</summary>
+    public bool IsCalculated { get; set; }
+    /// <summary>Формула на момент обчислення (для аудиту й бланка).</summary>
+    [MaxLength(512)] public string? CalcFormula { get; set; }
+    /// <summary>Вхідні значення розрахунку: {"HGB":132,"RBC":4.4,"AGE":41}.</summary>
+    public string? CalcInputsJson { get; set; }
+    // --- Повтор і розведення ---
+    /// <summary>Коефіцієнт розведення, з яким отримано значення (null або 1 — без розведення).</summary>
+    public double? DilutionFactor { get; set; }
+    /// <summary>Значення, виміряне приладом у розведеному зразку (до множення на коефіцієнт).</summary>
+    public double? RawValue { get; set; }
+    /// <summary>Виміряне значення вийшло за лінійність приладу.</summary>
+    public bool OutOfLinearity { get; set; }
+    // --- Реагент ---
+    [MaxLength(64)] public string? ReagentLotId { get; set; }
+    [MaxLength(64)] public string? ReagentLotNumber { get; set; }
 
     [ForeignKey(nameof(OrderTestId))] public LabOrderTest? OrderTest { get; set; }
     [ForeignKey(nameof(AnalyzerId))] public LabAnalyzer? Analyzer { get; set; }
+}
+
+/// <summary>Спроба вимірювання: оригінал і кожен повтор/розведення зберігаються; одна з них — прийнята (FR-WS-007).</summary>
+[Table("lab_result_attempt")]
+public class LabResultAttempt : GuidEntity
+{
+    [MaxLength(64)] public string OrderTestId { get; set; } = "";
+    public int AttemptNo { get; set; }
+    /// <summary>INITIAL | RERUN | DILUTION | AUTO_DILUTION</summary>
+    [MaxLength(16)] public string Kind { get; set; } = "INITIAL";
+    public double? NumericValue { get; set; }
+    [MaxLength(512)] public string? StringValue { get; set; }
+    [MaxLength(64)] public string? Unit { get; set; }
+    [MaxLength(16)] public string Flag { get; set; } = "NONE";
+    public double? DilutionFactor { get; set; }
+    public double? RawValue { get; set; }
+    public bool OutOfLinearity { get; set; }
+    [MaxLength(64)] public string? AnalyzerId { get; set; }
+    [MaxLength(64)] public string? ReagentLotId { get; set; }
+    [MaxLength(64)] public string? EnteredById { get; set; }
+    public DateTime EnteredAt { get; set; } = DateTime.UtcNow;
+    /// <summary>Це значення, яке стоїть у результаті (на бланку).</summary>
+    public bool IsAccepted { get; set; }
+    /// <summary>Замінена наступним повтором (ознака supersededByRerun).</summary>
+    public bool SupersededByRerun { get; set; }
+    [MaxLength(64)] public string? AcceptedById { get; set; }
+    public DateTime? AcceptedAt { get; set; }
+    [MaxLength(1024)] public string? Comment { get; set; }
+
+    [ForeignKey(nameof(OrderTestId))] public LabOrderTest? OrderTest { get; set; }
 }
 
 [Table("lab_result_history")]

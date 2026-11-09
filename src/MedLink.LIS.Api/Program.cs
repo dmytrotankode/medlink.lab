@@ -152,6 +152,7 @@ builder.Services.AddScoped<AnalyzerService>();
 builder.Services.AddScoped<LogisticsService>();
 builder.Services.AddScoped<BiobankService>();
 builder.Services.AddScoped<ReagentService>();
+builder.Services.AddScoped<ReagentConsumptionService>();
 builder.Services.AddScoped<MicrobiologyService>();
 builder.Services.AddScoped<AnalyticsService>();
 builder.Services.AddScoped<ReportService>();

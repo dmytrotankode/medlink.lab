@@ -54,6 +54,12 @@ public sealed class ResultDto
     public string? EnteredById { get; set; }
     public DateTime EnteredAt { get; set; }
     public int Version { get; set; }
+    public bool IsCalculated { get; set; }
+    public string? CalcFormula { get; set; }
+    public double? DilutionFactor { get; set; }
+    public double? RawValue { get; set; }
+    public bool OutOfLinearity { get; set; }
+    public string? ReagentLotNumber { get; set; }
 }
 
 public sealed class OrderTestDto
@@ -286,6 +292,19 @@ public sealed class WorklistRowDto
     public string? RequestingDepartment { get; set; }
     public string? Bed { get; set; }
     public string? PackageCode { get; set; }
+    // --- Розрахунок, повтор/розведення, реагент ---
+    public bool IsCalculated { get; set; }
+    public string? Formula { get; set; }
+    /// <summary>Скільки разів тест повторювали (0 — жодного).</summary>
+    public int RerunCount { get; set; }
+    /// <summary>Розведення, з яким отримано поточне значення.</summary>
+    public double? DilutionFactor { get; set; }
+    /// <summary>Розведення, заплановане для наступного вимірювання.</summary>
+    public double? PlannedDilution { get; set; }
+    public bool OutOfLinearity { get; set; }
+    public string? ReagentLotNumber { get; set; }
+    /// <summary>Попередження після дії (нестача реагенту, поза лінійністю, помилка розрахунку).</summary>
+    public List<string> Warnings { get; set; } = new();
     public List<AllowedActionDto> AllowedActions { get; set; } = new();
 }
 
@@ -420,6 +439,30 @@ public sealed class ResultInputRequest
     public string? Comment { get; set; }
     public string? Unit { get; set; }
     public string? AnalyzerId { get; set; }
+    /// <summary>Коефіцієнт розведення (≥ 1). Для повтору з розведенням можна не вказувати — береться заплановане.</summary>
+    public double? DilutionFactor { get; set; }
+    /// <summary>true — значення вже перераховане на вихідний зразок; за замовчуванням вважається виміром розведеного зразка і множиться на коефіцієнт.</summary>
+    public bool ValueIsFinal { get; set; }
+}
+
+public sealed class RerunRequest
+{
+    public string? Reason { get; set; }
+    /// <summary>Повтор з розведенням 1:N.</summary>
+    public double? DilutionFactor { get; set; }
+}
+
+public sealed class AcceptAttemptRequest
+{
+    public string AttemptId { get; set; } = "";
+    public string? Comment { get; set; }
+}
+
+public sealed class FormulaCheckRequest
+{
+    /// <summary>Код показника, що редагується (для перевірки циклів).</summary>
+    public string? Code { get; set; }
+    public string? Formula { get; set; }
 }
 
 public sealed class VerifyRequest

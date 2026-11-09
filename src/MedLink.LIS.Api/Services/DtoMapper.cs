@@ -36,7 +36,8 @@ public static class DtoMapper
         PreviousValue = r.PreviousValue, PreviousAt = r.PreviousAt, AnalyzerId = r.AnalyzerId, AnalyzerFlags = r.AnalyzerFlags, RawMessageId = r.RawMessageId,
         IsAutoVerified = r.IsAutoVerified, AutoVerifyBlockReason = r.AutoVerifyBlockReason, VerifiedById = r.VerifiedById, VerifiedByName = verifiedByName,
         VerifiedAt = r.VerifiedAt, VerificationComment = r.VerificationComment, OperatorComment = r.OperatorComment, ReportText = r.ReportText, EnteredById = r.EnteredById,
-        EnteredAt = r.EnteredAt, Version = r.Version
+        EnteredAt = r.EnteredAt, Version = r.Version, IsCalculated = r.IsCalculated, CalcFormula = r.CalcFormula, DilutionFactor = r.DilutionFactor, RawValue = r.RawValue,
+        OutOfLinearity = r.OutOfLinearity, ReagentLotNumber = r.ReagentLotNumber
     };
 
     public static OrderTestDto ToDto(LabOrderTest t, IRolePolicy policy) => new()
@@ -108,6 +109,8 @@ public static class DtoMapper
             AutoVerifyBlockReason = r?.AutoVerifyBlockReason, CalibrationWarning = r?.CalibrationWarning, EnteredAt = r?.EnteredAt, VerifiedAt = r?.VerifiedAt, OrderDatetime = t.Order?.OrderDatetime ?? DateTime.UtcNow,
             RoutingStatus = t.RoutingStatus, RoutedBy = t.RoutedBy, Source = t.Order == null ? null : ReferralSources.Of(t.Order), RequestingDepartment = t.Order?.RequestingDepartmentName,
             Bed = t.Order == null ? null : RoutingService.Bed(t.Order), PackageCode = t.Order?.PackageCode,
+            IsCalculated = t.Test?.ResultType == "CALCULATED", Formula = t.Test?.ResultType == "CALCULATED" ? t.Test.Formula : null, RerunCount = t.RerunCount,
+            DilutionFactor = r?.DilutionFactor, PlannedDilution = t.DilutionFactor, OutOfLinearity = r?.OutOfLinearity ?? false, ReagentLotNumber = r?.ReagentLotNumber,
             AllowedActions = policy.AllowedActions(LisEntities.OrderTest, t.Status)
         };
     }

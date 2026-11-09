@@ -94,6 +94,31 @@ public class LabReagentLot : GuidEntity
     public DateTime? OpenedAt { get; set; }
     public int? OnboardStabilityDays { get; set; }
     public bool IsActive { get; set; } = true;
+    /// <summary>Норма витрати: скільки «тестів» лоту списується на одне вимірювання показника.</summary>
+    public int UnitsPerTest { get; set; } = 1;
 
     [ForeignKey(nameof(AnalyzerId))] public LabAnalyzer? Analyzer { get; set; }
+}
+
+/// <summary>Списання реагенту: ручне або автоматичне під час отримання результату (зв'язок «результат ↔ лот»).</summary>
+[Table("lab_reagent_consumption")]
+public class LabReagentConsumption : GuidEntity
+{
+    [MaxLength(64)] public string LotId { get; set; } = "";
+    [MaxLength(64)] public string? OrderTestId { get; set; }
+    [MaxLength(64)] public string? ResultId { get; set; }
+    [MaxLength(64)] public string? SampleId { get; set; }
+    [MaxLength(64)] public string? AnalyzerId { get; set; }
+    [MaxLength(64)] public string? TestCode { get; set; }
+    /// <summary>Списано одиниць (фактично).</summary>
+    public int Units { get; set; }
+    /// <summary>Скільки не вистачило в лоті (результат не блокується).</summary>
+    public int Shortfall { get; set; }
+    /// <summary>AUTO | RERUN | MANUAL</summary>
+    [MaxLength(16)] public string Kind { get; set; } = "AUTO";
+    [MaxLength(64)] public string? ActorId { get; set; }
+    public DateTime At { get; set; } = DateTime.UtcNow;
+    [MaxLength(512)] public string? Warning { get; set; }
+
+    [ForeignKey(nameof(LotId))] public LabReagentLot? Lot { get; set; }
 }
