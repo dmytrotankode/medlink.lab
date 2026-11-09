@@ -59,6 +59,7 @@ public static class StatusEndpoints
             Online = st.Online,
             LastHeartbeatAt = st.LastHeartbeatAt,
             LastServerError = st.LastServerError ?? api.LastError,
+            VersionWarning = st.VersionWarning,
             ConfigVersion = current.ConfigVersion,
             ConfigSyncedAt = cfg.LastServerSyncAt,
             StartedAtUtc = ConnectorInfo.StartedAtUtc,
@@ -98,6 +99,7 @@ public static class StatusEndpoints
         sb.Append("<div class=cards>");
         Card(sb, "Коннектор", string.IsNullOrEmpty(s.ConnectorId) ? "— (не зареєстровано)" : H(s.ConnectorName ?? "") + (s.ConnectorName != null ? "<br>" : "") + "<span style='font-weight:400;font-size:12px'>" + H(s.ConnectorId) + "</span>");
         Card(sb, "Сервер ЛІС", H(s.ServerUrl ?? "—") + "<br>" + online);
+        if (s.VersionWarning != null) Card(sb, "Версія", "<span class=bad style='font-weight:400;font-size:12px'>" + H(s.VersionWarning) + "</span>");
         Card(sb, "Останній heartbeat", T(s.LastHeartbeatAt) + (s.LastServerError != null ? "<br><span class=bad style='font-weight:400;font-size:12px'>" + H(s.LastServerError) + "</span>" : ""));
         Card(sb, "Конфігурація", $"версія {s.ConfigVersion}<br><span style='font-weight:400;font-size:12px'>синхронізовано {T(s.ConfigSyncedAt)}</span>");
         Card(sb, "Офлайн-буфер", s.BufferedCount == 0 ? "<span class=ok>порожній</span>" : $"<span class=warn>{s.BufferedCount} елемент(ів) очікують</span>");

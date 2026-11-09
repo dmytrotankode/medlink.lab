@@ -55,6 +55,9 @@ public sealed class HeartbeatService : BackgroundService
                     _status.LastServerError = null;
                     if (resp != null)
                     {
+                        if (resp.VersionOutdated && _status.VersionWarning != resp.Warning)
+                            _logger.LogWarning("{Warning}", resp.Warning);
+                        _status.VersionWarning = resp.VersionOutdated ? resp.Warning : null;
                         if (resp.ConfigVersion != 0 && resp.ConfigVersion != _config.ServerConfigVersion)
                         {
                             _logger.LogInformation("Сервер повідомив нову версію конфігурації {New} (поточна {Cur}) — оновлюємо", resp.ConfigVersion, _config.ServerConfigVersion);

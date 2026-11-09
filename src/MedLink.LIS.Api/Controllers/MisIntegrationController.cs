@@ -104,6 +104,14 @@ public sealed class RoutingPreviewRequest
     public bool Cito { get; set; }
 }
 
+public sealed class RerouteOrderRequest
+{
+    public string AnalyzerId { get; set; } = "";
+    public string? Reason { get; set; }
+    /// <summary>Лише ці тести замовлення; порожньо — усі тести в черзі.</summary>
+    public List<string>? OrderTestIds { get; set; }
+}
+
 public sealed class ReassignRequest
 {
     public string AnalyzerId { get; set; } = "";
@@ -114,7 +122,24 @@ public sealed class RoutingController : LisControllerBase
 {
     private readonly RoutingService _routing;
     private readonly Data.LisDbContext _db;
-    public RoutingController(RoutingService routing, Data.LisDbContext db) { _routing = routing; _db = db; }
+    private readonly Domain.IRolePolicy _policy;
+    public RoutingController(RoutingService routing, Data.LisDbContext db, Domain.IRolePolicy policy) { _routing = routing; _db = db; _policy = policy; }
+
+    private static readonly string[] RerouteRoles = { Domain.LabRoles.Admin, Domain.LabRoles.Doctor, Domain.LabRoles.Technician };
+
+    /// <summary>Прилади-кандидати для тесту замовлення з доступністю й причиною недоступності.</summary>
+    [HttpGet("order-tests/{id}/analyzer-candidates")]
+    public async Task<IActionResult> TestCandidates(string id) => Ok(await _routing.CandidatesForTestAsync(id));
+
+    /// <summary>Перенаправлення замовлення на інший прилад (S-56): причина обов'язкова, ролі — адмін/лікар/лаборант, запис в аудит і журнал маршрутизації.</summary>
+    [HttpPost("orders/{id}/reroute")]
+    public async Task<IActionResult> RerouteOrder(string id, [FromBody] RerouteOrderRequest req)
+    {
+        _policy.Require("Перенаправлення замовлення на інший прилад", RerouteRoles);
+        var res = await _routing.RerouteOrderAsync(id, req.AnalyzerId, req.Reason, req.OrderTestIds);
+        await _db.SaveChangesAsync();
+        return Ok(res);
+    }
 
     [HttpPost("routing/preview")] public async Task<IActionResult> Preview([FromBody] RoutingPreviewRequest req) => Ok(await _routing.PreviewAsync(req.ProfileId, req.TestCodes, req.Cito));
     [HttpGet("routing/log")] public async Task<IActionResult> Log([FromQuery] string? orderTestId, [FromQuery] string? orderId, [FromQuery] int take = 200) => Ok(await _routing.LogAsync(orderTestId, orderId, take));
@@ -124,6 +149,7 @@ public sealed class RoutingController : LisControllerBase
     [HttpPut("order-tests/{id}/analyzer")]
     public async Task<IActionResult> Reassign(string id, [FromBody] ReassignRequest req)
     {
+        _policy.Require("Перенаправлення показника на інший прилад", RerouteRoles);
         var t = await _routing.ReassignAsync(id, req.AnalyzerId, req.Reason);
         await _db.SaveChangesAsync();
         return Ok(new { orderTestId = t.Id, t.TestCode, analyzerId = t.AssignedAnalyzerId, t.RoutedBy, t.RoutingStatus });
@@ -133,6 +159,7 @@ public sealed class RoutingController : LisControllerBase
     [HttpPost("analyzers/{id}/reroute")]
     public async Task<IActionResult> Reroute(string id, [FromBody] ReasonBody? body)
     {
+        _policy.Require("Переназначення черги приладу", RerouteRoles);
         var res = await _routing.RerouteFromAsync(id, null, body?.Reason ?? "Прилад без зв'язку", onlineOnly: true);
         await _db.SaveChangesAsync();
         return Ok(res);

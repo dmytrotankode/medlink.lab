@@ -50,3 +50,24 @@ public sealed class DomainProblemException : LisException
 {
     public DomainProblemException(int statusCode, string code, string title, string detail, IDictionary<string, string[]>? errors = null) : base(statusCode, title, detail, errors) => Code = code;
 }
+
+/// <summary>Перевищено ліміт пакетної операції (413): замовлення в batch, рядки імпорту.</summary>
+public sealed class PayloadTooLargeException : LisException
+{
+    public PayloadTooLargeException(string detail) : base(413, "Забагато записів в одному запиті", detail) { Code = "batch-too-large"; }
+}
+
+/// <summary>Ліміти пакетних операцій (FR-GAP / розд. 19 ТЗ).</summary>
+public static class BatchLimits
+{
+    public const int OrdersPerBatch = 200;
+    public const int ImportRows = 5000;
+    public static void CheckOrders(int count)
+    {
+        if (count > OrdersPerBatch) throw new PayloadTooLargeException($"У пакеті {count} замовлень, дозволено не більше {OrdersPerBatch}. Розділіть пакет на кілька запитів.");
+    }
+    public static void CheckImportRows(int count)
+    {
+        if (count > ImportRows) throw new PayloadTooLargeException($"У файлі {count} рядків, дозволено не більше {ImportRows}. Розділіть файл на кілька частин.");
+    }
+}

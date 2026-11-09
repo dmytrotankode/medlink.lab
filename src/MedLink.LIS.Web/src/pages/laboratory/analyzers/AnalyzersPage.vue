@@ -109,7 +109,8 @@
         <q-card-section class="row items-center bg-grey-8 text-white q-py-sm"><div class="text-subtitle1 text-weight-bold">{{ activeConnector && activeConnector.name }}</div><q-space /><status-chip v-if="activeConnector" :value="activeConnector.status" type="connector" /><q-btn flat round dense icon="close" v-close-popup class="q-ml-sm" /></q-card-section>
         <q-card-section v-if="activeConnector">
           <div class="row q-col-gutter-sm text-body2">
-            <div class="col-6">Хост: <b>{{ activeConnector.hostName || '—' }}</b> · версія {{ activeConnector.version || '—' }}</div>
+            <div class="col-6">Хост: <b>{{ activeConnector.hostName || '—' }}</b> · версія {{ activeConnector.version || '—' }}<q-badge v-if="activeConnector.versionOutdated" color="negative" class="q-ml-sm" label="Застаріла версія" /></div>
+            <div v-if="activeConnector.versionOutdated" class="col-12 text-negative">{{ activeConnector.versionWarning }}</div>
             <div class="col-6">Останній сигнал: {{ activeConnector.lastHeartbeatAt | datetime }} · у буфері: <b>{{ activeConnector.bufferedCount || 0 }}</b></div>
             <div class="col-12">Аналізатори: {{ analyzers.filter(a => a.connectorId === activeConnector.id).map(a => a.name).join(', ') || '—' }}</div>
           </div>
@@ -223,7 +224,7 @@ export default {
       connectorColumns: [
         { name: 'name', label: 'Назва', field: 'name', align: 'left' },
         { name: 'hostName', label: 'Хост', field: r => r.hostName || '—', align: 'left' },
-        { name: 'version', label: 'Версія', field: r => r.version || '—', align: 'left' },
+        { name: 'version', label: 'Версія', field: r => (r.version || '—') + (r.versionOutdated ? ' (застаріла, потрібна ' + r.minVersion + '+)' : ''), align: 'left', classes: r => r.versionOutdated ? 'text-negative' : '' },
         { name: 'status', label: 'Статус', field: 'status', align: 'left' },
         { name: 'lastHeartbeatAt', label: 'Останній сигнал', field: 'lastHeartbeatAt', align: 'left' },
         { name: 'bufferedCount', label: 'Буфер', field: r => r.bufferedCount || 0, align: 'center' },

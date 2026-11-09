@@ -151,6 +151,7 @@ public sealed class OrderService
     public async Task<List<OrderDto>> CreateBatchAsync(List<CreateOrderRequest> reqs)
     {
         _policy.Require("Створення замовлень", CreatorRoles);
+        BatchLimits.CheckOrders(reqs.Count);
         var ids = new List<string>();
         foreach (var r in reqs) ids.Add((await BuildOrderAsync(r)).Id);
         await _db.SaveChangesAsync();

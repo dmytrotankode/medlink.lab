@@ -223,6 +223,41 @@ public sealed class RoutingService
         return t;
     }
 
+    /// <summary>Прилади-кандидати для тесту замовлення (екран перенаправлення, FR-RTE-006): доступність і причина недоступності.</summary>
+    public async Task<object> CandidatesForTestAsync(string orderTestId)
+    {
+        var t = await _db.OrderTests.AsNoTracking().FirstOrDefaultAsync(x => x.Id == orderTestId) ?? throw NotFoundException.For("Тест замовлення", orderTestId);
+        var s = await SnapshotAsync();
+        return new
+        {
+            orderTestId = t.Id, t.TestCode, t.Status, currentAnalyzerId = t.AssignedAnalyzerId, movable = MovableStatuses.Contains(t.Status),
+            candidates = Candidates(s, t.TestCode, t.ProfileId).Select(c => new { c.AnalyzerId, c.Name, c.Priority, c.Queue, c.Available, c.Reason, c.Online, current = c.AnalyzerId == t.AssignedAnalyzerId })
+        };
+    }
+
+    /// <summary>Перенаправлення замовлення на інший прилад (S-56): усі (або вибрані) тести в черзі, які прилад може виконати; решта — у «пропущено» з причиною.</summary>
+    public async Task<object> RerouteOrderAsync(string orderId, string analyzerId, string? reason, IReadOnlyCollection<string>? orderTestIds)
+    {
+        if (string.IsNullOrWhiteSpace(analyzerId)) throw ValidationException.Field("analyzerId", "Оберіть прилад");
+        if (string.IsNullOrWhiteSpace(reason)) throw ValidationException.Field("reason", "Вкажіть причину перенаправлення");
+        var order = await _db.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderId) ?? throw NotFoundException.For("Замовлення", orderId);
+        var target = await _db.Analyzers.AsNoTracking().FirstOrDefaultAsync(a => a.Id == analyzerId) ?? throw NotFoundException.For("Прилад", analyzerId);
+        var tests = await _db.OrderTests.Where(t => t.OrderId == orderId && t.Status != OrderTestStatuses.Rejected).ToListAsync();
+        if (orderTestIds is { Count: > 0 }) tests = tests.Where(t => orderTestIds.Contains(t.Id)).ToList();
+        var moved = new List<object>(); var skipped = new List<object>(); var skipTexts = new List<string>();
+        foreach (var t in tests)
+        {
+            if (t.AssignedAnalyzerId == analyzerId) { skipped.Add(new { orderTestId = t.Id, t.TestCode, reason = "Уже на цьому приладі" }); skipTexts.Add($"{t.TestCode} — вже на цьому приладі"); continue; }
+            try { await ReassignAsync(t.Id, analyzerId, reason); moved.Add(new { orderTestId = t.Id, t.TestCode }); }
+            catch (LisException ex) { skipped.Add(new { orderTestId = t.Id, t.TestCode, reason = ex.Message }); skipTexts.Add($"{t.TestCode} — {ex.Message}"); }
+        }
+        if (tests.Count == 0) throw new ConflictException("У замовленні немає показників для перенаправлення");
+        if (moved.Count == 0 && !tests.All(t => t.AssignedAnalyzerId == analyzerId))
+            throw new ConflictException($"На прилад {target.Name} не вдалося перенаправити жоден показник: {string.Join("; ", skipTexts.Take(5))}");
+        _audit.Log("REROUTE_ORDER", "lab_order", orderId, null, new { analyzerId, moved = moved.Count, skipped = skipped.Count }, reason);
+        return new { orderId, order.OrderNumber, analyzerId, analyzer = target.Name, moved, skipped };
+    }
+
     /// <summary>Тести в черзі приладу (для показника, якщо задано), які зачепить вимкнення/локаут (FR-EQP-007).</summary>
     public async Task<List<LabOrderTest>> AffectedAsync(string analyzerId, string? testCode = null, string? profileId = null) =>
         await _db.OrderTests.Include(t => t.Order).Include(t => t.Test)

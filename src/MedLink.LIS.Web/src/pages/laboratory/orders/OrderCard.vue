@@ -29,6 +29,7 @@
         <q-list dense>
           <q-item clickable v-close-popup @click="openLabels"><q-item-section avatar><q-icon name="label" /></q-item-section><q-item-section>Переглянути етикетки</q-item-section></q-item>
           <q-item v-if="canDo('REGISTRAR', 'LAB_DOCTOR')" clickable v-close-popup @click="editOpen = true" data-testid="orderEdit"><q-item-section avatar><q-icon name="edit" /></q-item-section><q-item-section>Редагувати направлення</q-item-section></q-item>
+          <q-item v-if="canDo('LAB_DOCTOR', 'LAB_TECHNICIAN') && movableTests.length" clickable v-close-popup @click="openAnalyzerReroute(null)" data-testid="orderReroute"><q-item-section avatar><q-icon name="alt_route" color="purple-6" /></q-item-section><q-item-section>Перенаправити на інший прилад</q-item-section></q-item>
           <q-item clickable v-close-popup @click="goWorkstation"><q-item-section avatar><q-icon name="fas fa-microscope" /></q-item-section><q-item-section>Відкрити на робочому столі</q-item-section></q-item>
           <q-item clickable v-close-popup @click="goPortal" :disable="!order || !order.patientId"><q-item-section avatar><q-icon name="person" /></q-item-section><q-item-section>Кабінет пацієнта</q-item-section></q-item>
           <template v-if="canDo('REGISTRAR')">
@@ -190,6 +191,7 @@
                     <q-btn v-if="testCan(props.row, 'VERIFY', 'LAB_DOCTOR')" flat dense round size="sm" icon="how_to_reg" color="green-8" @click="verifyResult(props.row)"><q-tooltip>Верифікувати</q-tooltip></q-btn>
                     <q-btn-dropdown flat dense round size="sm" dropdown-icon="more_vert" no-icon-animation color="grey-8">
                       <q-list dense>
+                        <q-item v-if="canDo('LAB_DOCTOR', 'LAB_TECHNICIAN') && ['PENDING', 'RERUN'].includes(props.row.status)" v-close-popup clickable data-testid="rerouteTest" @click="openAnalyzerReroute(props.row)"><q-item-section avatar><q-icon name="alt_route" color="purple-6" /></q-item-section><q-item-section>Перенаправити на інший прилад</q-item-section></q-item>
                         <q-item v-if="canRoute(props.row)" v-close-popup clickable data-testid="routeTest" @click="openRoute(props.row)"><q-item-section avatar><q-icon name="share" color="purple-6" /></q-item-section><q-item-section>Виконати в іншій лабораторії</q-item-section></q-item>
                         <q-item v-if="testCan(props.row, 'RERUN', 'LAB_DOCTOR', 'LAB_TECHNICIAN')" v-close-popup clickable @click="rerun(props.row)"><q-item-section avatar><q-icon name="replay" color="purple-6" /></q-item-section><q-item-section>Повторити дослідження</q-item-section></q-item>
                         <q-item v-if="testCan(props.row, 'REJECT', 'LAB_DOCTOR', 'LAB_TECHNICIAN')" v-close-popup clickable @click="rejectResult(props.row)"><q-item-section avatar><q-icon name="block" color="negative" /></q-item-section><q-item-section>Відхилити результат</q-item-section></q-item>
@@ -259,6 +261,23 @@
         <q-card-actions align="right">
           <q-btn flat label="Скасувати" v-close-popup />
           <q-btn unelevated color="primary" label="Зберегти" :loading="acting" :disable="routePerformerId === undefined" data-testid="routeSave" @click="doRoute" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="arOpen">
+      <q-card style="width: 480px; max-width: 96vw" data-testid="rerouteDialog">
+        <q-card-section class="row items-center bg-purple-6 text-white q-py-sm">
+          <div class="text-subtitle1">Перенаправити на інший прилад</div><q-space /><q-btn flat round dense icon="close" v-close-popup />
+        </q-card-section>
+        <q-card-section class="q-gutter-sm">
+          <div class="text-caption text-grey-7">{{ arTest ? `Показник: ${arTest.testName || arTest.testCode}` : 'Усі показники замовлення, що чекають на виконання' }}</div>
+          <q-select v-model="arAnalyzerId" outlined dense emit-value map-options :options="arOptions" label="Прилад *" :loading="arLoading" data-testid="rerouteAnalyzer" />
+          <q-input v-model="arReason" outlined dense autogrow label="Причина *" data-testid="rerouteReason" />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Скасувати" v-close-popup />
+          <q-btn unelevated color="primary" label="Перенаправити" :loading="acting" :disable="!arAnalyzerId || !arReason.trim()" data-testid="rerouteSave" @click="doAnalyzerReroute" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -337,6 +356,7 @@ export default {
       resultOpen: false, verifyOpen: false, editOpen: false, cancelOpen: false, deleteOpen: false,
       deleteSampleOpen: false, deleteResultOpen: false, rejectResultOpen: false, releaseOpen: false,
       historyOpen: false, history: [],
+      arOpen: false, arTest: null, arAnalyzerId: null, arReason: '', arOptions: [], arLoading: false,
       routeOpen: false, routeTest: null, routePerformerId: undefined, routeReason: '', routeOptions: [], routeLoading: false,
       activeSample: null, activeRow: {}, dialogSamples: [],
       sampleColumns: [
@@ -389,6 +409,7 @@ export default {
       if (!s || !this.order) return '';
       return `Пробу ${s.barcode} (${this.patientName}, направлення ${this.order.orderNumber}) буде видалено. Відновити її неможливо.`;
     },
+    movableTests () { return this.tests.filter(t => ['PENDING', 'RERUN'].includes(t.status) && !t.performerId); },
     resultedIds () { return this.tests.filter(t => ['RESULTED', 'NEEDS_REVIEW'].includes(t.status)).map(t => t.id); },
     currentEmployeeId () { return this.$store.state.context.employeeId; }
   },
@@ -580,6 +601,25 @@ export default {
       const t = this.routeTest;
       await this.runAction(() => this.$api.routeOrderTest(t.id, this.routePerformerId, this.routeReason || null), this.routePerformerId ? `Показник ${t.testName} передано в зовнішню лабораторію` : `Показник ${t.testName} виконується в нашій лабораторії`);
       this.routeOpen = false;
+    },
+    // перенаправлення на інший прилад (S-56): кандидати з сервера, причина обов'язкова
+    async openAnalyzerReroute (t) {
+      this.arTest = t; this.arAnalyzerId = null; this.arReason = ''; this.arOptions = []; this.arOpen = true; this.arLoading = true;
+      try {
+        const probe = t || this.movableTests[0];
+        const res = await this.$api.analyzerCandidates(probe.id);
+        this.arOptions = ((res && res.candidates) || []).filter(c => !c.current).map(c => ({ value: c.analyzerId, label: `${c.name} · черга ${c.queue}${c.available ? '' : ' · недоступний: ' + c.reason}`, disable: !c.available }));
+      } catch (e) { this.notifyError(e); } finally { this.arLoading = false; }
+    },
+    async doAnalyzerReroute () {
+      const ids = this.arTest ? [this.arTest.id] : null;
+      await this.runAction(async () => {
+        const res = await this.$api.rerouteOrder(this.order.id, this.arAnalyzerId, this.arReason.trim(), ids);
+        const sk = (res && res.skipped) || [];
+        if (sk.length) this.$q.notify({ type: 'warning', message: `Перенаправлено: ${(res.moved || []).length}; не перенесено: ${sk.map(s => s.testCode + ' — ' + s.reason).join('; ')}`, timeout: 7000 });
+        else this.notifyOk(`Перенаправлено на ${res.analyzer}: ${(res.moved || []).length}`);
+      });
+      this.arOpen = false;
     },
     async showHistory (t) {
       this.activeRow = this.rowForTest(t); this.historyOpen = true; this.history = [];
