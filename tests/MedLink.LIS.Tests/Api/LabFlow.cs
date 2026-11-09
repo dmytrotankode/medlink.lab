@@ -62,15 +62,46 @@ public static class LabFlow
     public static async Task<JsonNode> Enter(LisApiFactory f, string employee, FlowOrder o, string code, double value, string? analyzerId = null)
         => await Json(await f.As(employee).PutAsJsonAsync($"/api/v1/lab/results/{o.Test(code)}", new { numericValue = value, analyzerId }));
 
-    public static async Task<string> NewConnectorKey(LisApiFactory f, string installName)
+    /// <summary>Нова інсталяція коннектора, зареєстрована за install key → (id, apiKey).</summary>
+    public static async Task<(string Id, string ApiKey, string InstallKey)> NewConnector(LisApiFactory f, string? name = null)
     {
         var admin = f.As(DemoDataSeeder.Admin);
-        var created = await Json(await admin.PostAsJsonAsync("/api/v1/lab/connectors", new { name = installName }));
-        var reg = await Json(await f.CreateClient().PostAsJsonAsync("/api/v1/lab/connector/register", new { installKey = created["installKey"]!.GetValue<string>(), hostName = "TEST-PC", osDescription = "test", version = "4.0.0" }));
-        return reg["apiKey"]!.GetValue<string>();
+        var created = await Json(await admin.PostAsJsonAsync("/api/v1/lab/connectors", new { name = name ?? "Тест-" + Guid.NewGuid().ToString("N")[..6] }));
+        var installKey = created["installKey"]!.GetValue<string>();
+        var reg = await Json(await f.CreateClient().PostAsJsonAsync("/api/v1/lab/connector/register", new { installKey, hostName = "TEST-PC", osDescription = "test", version = "4.0.0" }));
+        return (created["id"]!.GetValue<string>(), reg["apiKey"]!.GetValue<string>(), installKey);
     }
 
-    public static HttpClient Connector(LisApiFactory f, string apiKey)
+    public static async Task<string> NewConnectorKey(LisApiFactory f, string installName) => (await NewConnector(f, installName)).ApiKey;
+
+    /// <summary>Аналізатор на заданому коннекторі (тип — як у демо-Mindray) з мапою «код приладу → код тесту».</summary>
+    public static async Task<string> NewAnalyzer(LisApiFactory f, string connectorId, params (string AnalyzerCode, string TestCode, double Factor, double Offset)[] map)
+    {
+        var admin = f.As(DemoDataSeeder.Admin);
+        var mindray = await Json(await admin.GetAsync($"/api/v1/lab/analyzers/{DemoDataSeeder.Mindray}"));
+        var a = await Json(await admin.PostAsJsonAsync("/api/v1/lab/analyzers", new
+        {
+            code = "AN" + Guid.NewGuid().ToString("N")[..8].ToUpper(), name = "Тестовий аналізатор", analyzerTypeId = mindray["analyzerTypeId"]!.GetValue<int>(),
+            connectorId, connectionMode = "TCP", tcpHost = "127.0.0.1", tcpPort = 5100,
+            parameterMap = map.Select(m => new { analyzerCode = m.AnalyzerCode, testCode = m.TestCode, factor = m.Factor, offset = m.Offset }).ToArray()
+        }));
+        return a["id"]!.GetValue<string>();
+    }
+
+    public static async Task<string> NewCustomTest(LisApiFactory f, double? deltaPct = null, bool manual = false)
+    {
+        var code = "AV" + Guid.NewGuid().ToString("N")[..6].ToUpper();
+        await Json(await f.As(DemoDataSeeder.Admin).PostAsJsonAsync("/api/v1/lab/dictionaries/tests", new
+        {
+            code, name = "Тестовий показник " + code, unit = "од", biomaterialTypeId = 4, category = "BIOCHEM", decimalPlaces = 1,
+            deltaCheckMaxPct = deltaPct, deltaCheckHours = 72, requiresManualVerification = manual
+        }));
+        // без шару норми результат має флаг NONE і за правилами завжди йде на ручну верифікацію — задаємо норму 0–100
+        await Json(await f.As(DemoDataSeeder.Admin).PostAsJsonAsync("/api/v1/lab/norms/combinations", new { testCode = code, layerType = "BASELINE", normName = "Тестова норма", normLow = 0.0, normHigh = 100.0 }));
+        return code;
+    }
+
+    public static HttpClient ConnectorClient(LisApiFactory f, string apiKey)
     {
         var c = f.CreateClient();
         c.DefaultRequestHeaders.Add("X-MedLink-ApiKey", apiKey);
