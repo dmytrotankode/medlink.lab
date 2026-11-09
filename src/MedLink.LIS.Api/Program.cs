@@ -124,6 +124,7 @@ builder.Services.AddScoped<SampleService>();
 builder.Services.AddScoped<ResultPipelineService>();
 builder.Services.AddScoped<WorklistService>();
 builder.Services.AddScoped<QcService>();
+builder.Services.AddScoped<CalibrationService>();
 builder.Services.AddScoped<ConnectorService>();
 builder.Services.AddScoped<ConnectorApiKeyFilter>();
 builder.Services.AddScoped<AnalyzerService>();

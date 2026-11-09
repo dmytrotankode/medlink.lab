@@ -38,6 +38,7 @@ export default [
       lab('workstation', 'lab-workstation', 'Робочий стіл лаборанта', () => import('pages/laboratory/workstation/LabWorkstation.vue')),
       lab('validation', 'lab-validation', 'Валідація та критичні значення', () => import('pages/laboratory/validation/ValidationPanic.vue')),
       lab('quality-control', 'lab-qc', 'Контроль якості (ВКЯ)', () => import('pages/laboratory/qc/QualityControl.vue')),
+      lab('calibration', 'lab-calibration', 'Калібрування приладів', () => import('pages/laboratory/qc/CalibrationJournal.vue')),
       lab('biobank', 'lab-biobank', 'Біобанк та кріо-архів', () => import('pages/laboratory/BiobankArchive.vue')),
       lab('reagents', 'lab-reagents', 'Склад реагентів', () => import('pages/laboratory/ReagentInventory.vue')),
       lab('microbiology', 'lab-microbiology', 'Мікробіологія', () => import('pages/laboratory/microbiology/MicrobiologyCultures.vue')),

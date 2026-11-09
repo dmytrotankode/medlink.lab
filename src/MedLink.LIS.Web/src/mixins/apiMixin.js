@@ -38,7 +38,7 @@ export default {
         const actionError = !info.offline && info.status >= 400 && info.status < 500 && info.status !== 404 && info.status !== 408;
         if (!silent) this.apiError = actionError ? null : info.message;
         if (!info.offline && !silent) {
-          this.$q.notify({ type: 'negative', message: info.message, timeout: 4000 });
+          this.notifyProblem(info);
         }
         if (rethrow) throw e;
         return undefined;
@@ -47,8 +47,17 @@ export default {
       }
     },
     notifyError (e) {
-      const info = describeApiError(e);
-      this.$q.notify({ type: 'negative', message: info.message, timeout: 4000 });
+      this.notifyProblem(describeApiError(e));
+    },
+    /** Тост помилки; для відомих кодів додає кнопку переходу до потрібного екрана (що робити далі) */
+    notifyProblem (info) {
+      const code = info && info.raw && info.raw.code;
+      const target = { PANIC_CALL_REQUIRED: ['lab-validation', 'Журнал викликів'], CALIBRATION_EXPIRED: ['lab-calibration', 'Журнал калібрувань'] }[code];
+      if (!target) { this.$q.notify({ type: 'negative', message: info.message, timeout: 4000 }); return; }
+      this.$q.notify({
+        type: 'negative', message: info.message, timeout: 12000, multiLine: true,
+        actions: [{ label: target[1], color: 'white', handler: () => { if (this.$router) this.$router.push({ name: target[0] }); } }, { icon: 'close', color: 'white', round: true, dense: true }]
+      });
     },
     notifyOk (message) {
       this.$q.notify({ type: 'positive', message });

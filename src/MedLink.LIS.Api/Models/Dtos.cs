@@ -275,6 +275,7 @@ public sealed class WorklistRowDto
     public bool IsLockedOut { get; set; }
     public bool IsReflex { get; set; }
     public string? AutoVerifyBlockReason { get; set; }
+    public string? CalibrationWarning { get; set; }
     public DateTime? EnteredAt { get; set; }
     public DateTime? VerifiedAt { get; set; }
     public DateTime OrderDatetime { get; set; }

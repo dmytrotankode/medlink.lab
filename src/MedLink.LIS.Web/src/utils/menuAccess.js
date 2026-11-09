@@ -46,6 +46,7 @@ export const ROUTE_ROLES = {
   'lab-workstation': LAB_STAFF,
   'lab-validation': LAB_STAFF,
   'lab-qc': LAB_STAFF,
+  'lab-calibration': LAB_STAFF,
   'lab-biobank': LAB_STAFF,
   'lab-reagents': LAB_STAFF,
   'lab-microbiology': LAB_STAFF,

@@ -157,6 +157,14 @@ const labApi = {
   deleteBatch: id => data(http.delete(`/worklist/batches/${id}`)),
   panicPending: () => data(http.get('/panic/pending')),
 
+  // ---------- Калібрування приладів ----------
+  calibrations: params => data(http.get('/calibrations', { params: clean(params) })),
+  calibrationSummary: params => data(http.get('/calibrations/summary', { params: clean(params) })),
+  calibrationCheck: params => data(http.get('/calibrations/check', { params: clean(params) })),
+  createCalibration: body => data(http.post('/calibrations', body)),
+  updateCalibration: (id, body) => data(http.put(`/calibrations/${id}`, body)),
+  deleteCalibration: (id, reason) => data(http.delete(`/calibrations/${id}`, { params: { reason } })),
+
   // ---------- 2.8 Контроль якості ----------
   qcMaterials: params => data(http.get('/qc/materials', { params: clean(params) })),
   createQcMaterial: body => data(http.post('/qc/materials', body)),

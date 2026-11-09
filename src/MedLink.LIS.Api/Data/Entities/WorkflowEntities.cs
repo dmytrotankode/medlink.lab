@@ -258,6 +258,10 @@ public class LabTestResult : GuidEntity
     [MaxLength(64)] public string? RawMessageId { get; set; }
     public bool IsAutoVerified { get; set; }
     [MaxLength(512)] public string? AutoVerifyBlockReason { get; set; }
+    /// <summary>Попередження про прострочене/відхилене калібрування приладу на момент вимірювання (FR-GAP-031).</summary>
+    [MaxLength(512)] public string? CalibrationWarning { get; set; }
+    /// <summary>Калібрування, що діяло для приладу й показника на момент вимірювання (FR-GAP-030/031).</summary>
+    [MaxLength(64)] public string? CalibrationId { get; set; }
     [MaxLength(64)] public string? VerifiedById { get; set; }
     public DateTime? VerifiedAt { get; set; }
     [MaxLength(1024)] public string? VerificationComment { get; set; }

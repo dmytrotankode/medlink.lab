@@ -105,7 +105,7 @@ public static class DtoMapper
             AnalyzerId = r?.AnalyzerId ?? t.AssignedAnalyzerId, AnalyzerName = r?.Analyzer?.Name ?? t.AssignedAnalyzer?.Name,
             LabSectionId = t.Test?.LabSectionId, LabSectionName = t.Test?.LabSection?.Name, JournalNumber = journalNumber, ReleasedAt = t.ReleasedAt,
             IsCito = t.Order?.IsUrgentCito ?? false, IsAutoVerified = r?.IsAutoVerified ?? false, IsLockedOut = isLockedOut, IsReflex = t.IsReflex,
-            AutoVerifyBlockReason = r?.AutoVerifyBlockReason, EnteredAt = r?.EnteredAt, VerifiedAt = r?.VerifiedAt, OrderDatetime = t.Order?.OrderDatetime ?? DateTime.UtcNow,
+            AutoVerifyBlockReason = r?.AutoVerifyBlockReason, CalibrationWarning = r?.CalibrationWarning, EnteredAt = r?.EnteredAt, VerifiedAt = r?.VerifiedAt, OrderDatetime = t.Order?.OrderDatetime ?? DateTime.UtcNow,
             RoutingStatus = t.RoutingStatus, RoutedBy = t.RoutedBy, Source = t.Order == null ? null : ReferralSources.Of(t.Order), RequestingDepartment = t.Order?.RequestingDepartmentName,
             Bed = t.Order == null ? null : RoutingService.Bed(t.Order), PackageCode = t.Order?.PackageCode,
             AllowedActions = policy.AllowedActions(LisEntities.OrderTest, t.Status)

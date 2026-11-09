@@ -21,7 +21,7 @@ export const ACTION_LABELS = {
   REJECT: 'Відхилення', RELEASE: 'Видача результату', REMOVE: 'Вилучення', REMOVE_ITEM: 'Видалено позицію', REMOVE_TEST: 'Видалено показник', REOPEN: 'Повторне відкриття',
   REPLACE: 'Заміна', REPORT_ACCESS: 'Перегляд бланка', REROUTE: 'Зміна маршруту', RERUN: 'Повторне виконання', RESULT_DELETED: 'Видалено результат',
   RETURN: 'Повернення', ROTATE_KEY: 'Перевипуск ключа', ROUTE_TEST: 'Маршрут показника', SAVE_FAVORITES: 'Збереження обраного', SEAL: 'Опломбування', SPLIT: 'Розділення проби',
-  STAGE: 'Етап обробки', STAIN_PRICE: 'Зміна ціни фарбування', START_ANALYSIS: 'Початок аналізу', SUSCEPTIBILITY: 'Антибіотикограма', TEST_RELEASED: 'Показник видано',
+  STAGE: 'Етап обробки', STAIN_PRICE: 'Зміна ціни фарбування', START_ANALYSIS: 'Початок аналізу', CALIBRATION_WARNING: 'Попередження про калібрування', SUSCEPTIBILITY: 'Антибіотикограма', TEST_RELEASED: 'Показник видано',
   UNCOLLECT: 'Скасовано забір', UNPACK: 'Розпакування', VERIFY: 'Верифікація'
 };
 
@@ -29,6 +29,7 @@ export const ENTITY_LABELS = {
   lab_order: 'Замовлення', LabOrder: 'Замовлення', lab_order_sample: 'Пробірка', LabOrderSample: 'Пробірка', lab_order_test: 'Показник замовлення', LabOrderTest: 'Показник замовлення',
   lab_order_item: 'Позиція замовлення', lab_order_charge: 'Нарахування', lab_order_favorite: 'Обране', lab_order_attachment: 'Вкладення замовлення',
   lab_test_result: 'Результат', LabTestResult: 'Результат', lab_panic_call: 'Дзвінок про критичне значення', LabPanicCall: 'Дзвінок про критичне значення',
+  lab_calibration: 'Калібрування приладу', LabCalibration: 'Калібрування приладу',
   lab_qc_result: 'Результат ВКЯ', LabQcResult: 'Результат ВКЯ', lab_qc_material: 'Контрольний матеріал', LabQcMaterial: 'Контрольний матеріал', lab_qc_target: 'Цільове значення ВКЯ',
   lab_analyzer_lockout: 'Блокування аналізатора', LabAnalyzerLockout: 'Блокування аналізатора', lab_analyzer: 'Аналізатор', LabAnalyzer: 'Аналізатор',
   lab_analyzer_service: 'Послуга аналізатора', lab_connector_installation: 'Коннектор', LabConnectorInstallation: 'Коннектор',
