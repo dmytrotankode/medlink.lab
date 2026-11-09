@@ -34,6 +34,9 @@ const labApi = {
   dictCreate: (name, body) => data(http.post(`/dictionaries/${name}`, body)),
   dictUpdate: (name, id, body) => data(http.put(`/dictionaries/${name}/${id}`, body)),
   dictDelete: (name, id) => data(http.delete(`/dictionaries/${name}/${id}`)),
+  // Одиниці виміру: перерахунок значення показника та правила перерахунку
+  convertUnit: (testCode, value, from, to) => data(http.get('/dictionaries/units/convert', { params: { testCode, value, from, to } })),
+  unitConversions: testCode => data(http.get('/dictionaries/units/conversions', { params: { testCode } })),
   testProfiles: code => data(http.get(`/dictionaries/tests/${encodeURIComponent(code)}/profiles`)),
   dictImport: (formData, dryRun) => data(http.post('/dictionaries/import', formData, {
     params: { dryRun: !!dryRun }, headers: { 'Content-Type': 'multipart/form-data' }

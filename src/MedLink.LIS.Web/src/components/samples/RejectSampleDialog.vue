@@ -10,7 +10,7 @@
       <q-card-section>
         <q-select v-if="samples.length > 1" v-model="barcode" outlined dense label="Проба" :options="samples.map(s => ({ value: s.barcode, label: `${s.barcode} · ${s.tubeName || (s.tube && s.tube.name) || ''}` }))" emit-value map-options class="q-mb-sm" />
         <div v-else-if="samples.length === 1" class="q-mb-sm">Проба <b class="mono">{{ samples[0].barcode }}</b></div>
-        <q-select v-model="reason" outlined dense label="Причина відхилення *" :options="reasons" use-input new-value-mode="add-unique" @new-value="(v, done) => done(v, 'add-unique')" />
+        <q-select v-model="reason" outlined dense label="Причина відхилення *" :options="reasonList" use-input new-value-mode="add-unique" @new-value="(v, done) => done(v, 'add-unique')" />
         <q-toggle v-model="createRepeatOrder" label="Створити повторне замовлення на забір" color="primary" class="q-mt-sm" />
         <div v-if="error" class="text-negative q-mt-sm">{{ error }}</div>
       </q-card-section>
@@ -23,8 +23,11 @@
 </template>
 
 <script>
+import reasonsMixin from '../../mixins/reasonsMixin';
+
 export default {
   name: 'RejectSampleDialog',
+  mixins: [reasonsMixin],
   props: {
     value: Boolean,
     samples: { type: Array, default: () => [] }
@@ -38,6 +41,12 @@ export default {
       error: '',
       reasons: ['Гемоліз', 'Згусток у пробірці', 'Недостатній об’єм', 'Ліпемія', 'Невідповідність пробірки', 'Порушення холодового ланцюга', 'Немає ідентифікації / штрихкоду', 'Пошкоджено при транспортуванні']
     };
+  },
+  computed: {
+    /** Причини з довідника «Причини браку»; поки довідник не завантажено — типовий перелік */
+    reasonList () {
+      return this.rejectionReasonNames.length ? this.rejectionReasonNames : this.reasons;
+    }
   },
   watch: {
     value (v) {
