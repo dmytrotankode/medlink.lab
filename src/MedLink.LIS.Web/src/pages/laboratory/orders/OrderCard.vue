@@ -270,11 +270,11 @@
     <result-editor-dialog v-model="resultOpen" :row="activeRow" @saved="load" />
     <verify-result-dialog v-model="verifyOpen" :row="activeRow" @verified="load" />
     <edit-order-dialog v-model="editOpen" :order="order || {}" @saved="load" />
-    <confirm-dialog v-model="cancelOpen" title="Скасувати направлення" :message="`Направлення ${order && order.orderNumber} буде скасовано. Вкажіть причину.`" ok-label="Скасувати направлення" color="grey-8" icon="cancel" with-reason reason-required @confirm="doCancel" />
+    <confirm-dialog v-model="cancelOpen" title="Скасувати направлення" :message="`Направлення ${order && order.orderNumber} буде скасовано. Вкажіть причину.`" ok-label="Скасувати направлення" color="grey-8" icon="cancel" with-reason reason-required :reason-options="cancelReasonNames" @confirm="doCancel" />
     <confirm-dialog v-model="deleteOpen" title="Видалити направлення" message="Направлення буде видалено. Відновити його неможливо." ok-label="Видалити" color="negative" icon="delete_forever" @confirm="doDelete" />
     <confirm-dialog v-model="deleteSampleOpen" title="Видалити пробу" :message="deleteSampleMessage" ok-label="Видалити" color="negative" icon="delete" @confirm="doDeleteSample" />
     <confirm-dialog v-model="deleteResultOpen" title="Видалити результат" :message="`Запис результату ${activeRow.testCode} буде видалено; показник повернеться до статусу «Очікує».`" ok-label="Видалити" color="negative" icon="delete" @confirm="doDeleteResult" />
-    <confirm-dialog v-model="rejectResultOpen" title="Відхилити результат" :message="`Результат ${activeRow.testCode} буде відхилено.`" ok-label="Відхилити" color="negative" icon="block" with-reason reason-required @confirm="doRejectResult" />
+    <confirm-dialog v-model="rejectResultOpen" title="Відхилити результат" :message="`Результат ${activeRow.testCode} буде відхилено.`" ok-label="Відхилити" color="negative" icon="block" with-reason reason-required :reason-options="rejectionReasonNames" @confirm="doRejectResult" />
     <confirm-dialog v-model="releaseOpen" title="Видати результати" message="Усі показники мають бути верифіковані. Пацієнт отримає сповіщення, бланк отримає QR верифікації." ok-label="Видати" color="positive" icon="verified" @confirm="doRelease" />
 
     <q-dialog v-model="routeOpen">
@@ -346,13 +346,14 @@ import VerifyResultDialog from '../../../components/results/VerifyResultDialog.v
 import EditOrderDialog from './EditOrderDialog.vue';
 import labelPrintMixin from '../../../mixins/labelPrintMixin';
 import roleMixin from '../../../mixins/roleMixin';
+import reasonsMixin from '../../../mixins/reasonsMixin';
 import { resolveActions } from '../../../utils/orderActions';
 import { isCritical, flagMeta, ROLE } from '../../../utils/statuses';
 import { formatDateTime, formatNumber, patientDisplay, genderLabel, ageFromBirthDate, referenceDisplay, maskTaxId, testTitle, tubeTitle } from '../../../utils/format';
 
 export default {
   name: 'OrderCard',
-  mixins: [apiMixin, labelPrintMixin, roleMixin],
+  mixins: [apiMixin, labelPrintMixin, roleMixin, reasonsMixin],
   components: { LabelsDialog, HtmlPreviewDialog, OrderStepper, OrderActionsBar, AuditTimeline, CollectSampleDialog, ReceiveSampleDialog, RejectSampleDialog, SampleEditDialog, ResultEditorDialog, VerifyResultDialog, EditOrderDialog, OrderBilling, OrderItemsPanel, EhealthSubmitPanel },
   props: { id: { type: String, required: true } },
   data () {

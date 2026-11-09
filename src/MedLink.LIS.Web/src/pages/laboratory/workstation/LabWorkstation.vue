@@ -75,7 +75,7 @@
     <verify-result-dialog v-model="verifyOpen" :row="activeRow" @verified="load" />
     <batch-dialog v-model="batchOpen" :items="selected" @created="selected = []" />
     <create-order-dialog v-model="createOpen" @created="onOrderCreated" />
-    <confirm-dialog v-model="rejectOpen" title="Відхилити результат" :message="`Результат ${activeRow.testCode} (${activeRow.barcode}) буде відхилено.`" ok-label="Відхилити" color="negative" icon="block" with-reason reason-required @confirm="doReject" />
+    <confirm-dialog v-model="rejectOpen" title="Відхилити результат" :message="`Результат ${activeRow.testCode} (${activeRow.barcode}) буде відхилено.`" ok-label="Відхилити" color="negative" icon="block" with-reason reason-required :reason-options="rejectionReasonNames" @confirm="doReject" />
     <confirm-dialog v-model="deleteOpen" title="Видалити результат" :message="`Результат ${activeRow.testCode} буде видалено, показник знову очікуватиме результат.`" ok-label="Видалити" color="negative" icon="delete" @confirm="doDelete" />
     <q-dialog v-model="historyOpen">
       <q-card style="min-width: 640px; max-width: 96vw">
@@ -98,6 +98,7 @@ import ResultEditorDialog from '../../../components/results/ResultEditorDialog.v
 import VerifyResultDialog from '../../../components/results/VerifyResultDialog.vue';
 import CreateOrderDialog from '../orders/CreateOrderDialog.vue';
 import roleMixin from '../../../mixins/roleMixin';
+import reasonsMixin from '../../../mixins/reasonsMixin';
 import { TEST_STATUS, ORDER_STATUS, FLAG, toOptions, flagMeta } from '../../../utils/statuses';
 import { formatNumber, formatDateTime } from '../../../utils/format';
 import { enterBlockReason, roleBlockReason, ENTER_ROLES, VERIFY_ROLES } from '../../../utils/resultRules';
@@ -110,7 +111,7 @@ const HISTORY_ACTIONS = {
 
 export default {
   name: 'LabWorkstation',
-  mixins: [apiMixin, roleMixin],
+  mixins: [apiMixin, roleMixin, reasonsMixin],
   components: { WorklistTable, WorklistDetail, BatchDialog, ResultEditorDialog, VerifyResultDialog, CreateOrderDialog },
   data () {
     return {

@@ -167,6 +167,7 @@ builder.Services.AddScoped<SampleProcessingService>();
 builder.Services.AddScoped<OrderMatrixService>();
 builder.Services.AddScoped<SeedService>();
 builder.Services.AddScoped<MisCatalogSeeder>();
+builder.Services.AddScoped<BiochemCatalogSeeder>();
 builder.Services.AddScoped<DemoDataSeeder>();
 builder.Services.AddScoped<PathologyDemoSeeder>();
 // Парсер повідомлень аналізаторів: локальна реалізація; замінюється на MedLink.LIS.Core.Protocols однією реєстрацією
@@ -217,6 +218,7 @@ using (var scope = app.Services.CreateScope())
     await scope.ServiceProvider.GetRequiredService<SeedService>().SeedAsync();
     await DictionaryRuntime.SeedAndApplyAsync(db);
     await scope.ServiceProvider.GetRequiredService<MisCatalogSeeder>().SeedAsync();
+    await scope.ServiceProvider.GetRequiredService<BiochemCatalogSeeder>().SeedAsync();
     await scope.ServiceProvider.GetRequiredService<MisCatalogService>().RecomputeReadinessAsync();
     if (app.Configuration.GetValue<bool?>("Lab:SeedDemoData") ?? true)
     {

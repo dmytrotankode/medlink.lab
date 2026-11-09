@@ -90,6 +90,16 @@
 `GET/POST/PUT/DELETE /report-templates`, `POST /report-templates/{id}/activate` — версії бланків результатів (зміни — LAB_ADMIN).
 `DELETE /billing/payers/{id}`, `DELETE /billing/price-lists/{id}`, пакети `/billing/price-lists/{id}/packages`, `POST /billing/price-lists/{id}/import-prices`; `POST/PUT/DELETE /clients`; `DELETE /logistics/container-types/{id}` (за наявності залежностей — архівація).
 
+**Одиниці виміру, вікові групи, причини** (той самий шаблон CRUD; код приводиться до верхнього регістру, дубль коду або назви одиниці → 409, використаний запис деактивується):
+- `units` — одиниці (`code`, `name` — запис для результатів, `fullName`, `dimension`, `systemKind` SI|TRADITIONAL|OTHER); код `NONE` — «без одиниць» (pH, питома вага, якісні). У показника та шару норми є `unitId` разом із текстом `unit`: при збереженні змінений `unitId` задає текст із довідника, змінений текст — підбирає або створює одиницю (вільний текст не губиться).
+- `unit-conversions` — правила перерахунку показника (`testCode`, `fromUnitId`, `toUnitId`, `factor`, `offset`; до = від × factor + offset; пара унікальна, factor ≠ 0).
+- `GET /dictionaries/units/convert?testCode=&value=&from=&to=` — перерахунок значення (одиниці за кодом або id; правило шукається і в зворотний бік; немає правила → 422).
+- `GET /dictionaries/units/conversions?testCode=` — правила перерахунку показника.
+- `age-groups` — вікові групи (`code`, `name`, `ageFrom`, `ageTo` включно, `ageUnit` DAYS|MONTHS|YEARS); шар норми посилається на групу через `ageGroupId` (межі віку шару зберігаються в самому шарі).
+- `rejection-reasons` — причини браку (`category` COLLECTION|SAMPLE_QUALITY|IDENTIFICATION|TRANSPORT|ANALYTIC|OTHER, `requiresRecollection`); `cancel-reasons` — причини відмови/скасування замовлення (`category` PATIENT|DOCTOR|LABORATORY|PAYMENT|ADMIN|OTHER).
+- Поле `reason` у діях відбракування проби (`POST /samples/{barcode}/reject`), відхилення результату (`POST /results/{id}/reject`), скасування/відхилення замовлення (`POST /orders/{id}/cancel|reject`) приймає **код або назву** причини з довідника (підставляється назва + зберігається код `rejectReasonCode` / `cancelReasonCode` для статистики) **або довільний текст** (зберігається як є, код порожній).
+- Шар норми має `source` — джерело/статус; усі норми стартового набору позначені «Стартовий набір — потребує затвердження лікарем-лаборантом».
+
 ### 2.3. Норми `/norms`
 | Метод | Шлях | Опис |
 |---|---|---|

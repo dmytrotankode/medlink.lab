@@ -132,7 +132,7 @@
     <verify-result-dialog v-model="verifyOpen" :row="activeRow" @verified="afterVerify" />
     <result-editor-dialog v-model="editorOpen" :row="activeRow" @saved="load" />
     <panic-call-dialog v-model="callOpen" :result="activeRow" :call="activeCall" @saved="load" />
-    <confirm-dialog v-model="rejectOpen" title="Відхилити результат" :message="`Результат ${activeRow.testCode} буде відхилено.`" ok-label="Відхилити" color="negative" icon="block" with-reason reason-required @confirm="doReject" />
+    <confirm-dialog v-model="rejectOpen" title="Відхилити результат" :message="`Результат ${activeRow.testCode} буде відхилено.`" ok-label="Відхилити" color="negative" icon="block" with-reason reason-required :reason-options="rejectionReasonNames" @confirm="doReject" />
     <confirm-dialog v-model="deleteCallOpen" title="Видалити запис про дзвінок?" message="Це запис про повідомлення лікаря про критичний результат, він має юридичне значення. Видалення незворотне, дію буде збережено в журналі аудиту." ok-label="Видалити запис" color="negative" icon="delete" @confirm="doDeleteCall" />
   </div>
 </template>
@@ -140,6 +140,7 @@
 <script>
 import apiMixin from '../../../mixins/apiMixin';
 import roleMixin from '../../../mixins/roleMixin';
+import reasonsMixin from '../../../mixins/reasonsMixin';
 import { CALL_ROLES, REJECT_ROLES, VERIFY_ROLES, roleNames } from '../../../utils/resultRules';
 import VerifyResultDialog from '../../../components/results/VerifyResultDialog.vue';
 import ResultEditorDialog from '../../../components/results/ResultEditorDialog.vue';
@@ -150,7 +151,7 @@ import { referenceDisplay, formatNumber, formatDateTime } from '../../../utils/f
 
 export default {
   name: 'ValidationPanic',
-  mixins: [apiMixin, roleMixin],
+  mixins: [apiMixin, roleMixin, reasonsMixin],
   components: { VerifyResultDialog, ResultEditorDialog, PanicCallDialog, TrendMini },
   data () {
     return {

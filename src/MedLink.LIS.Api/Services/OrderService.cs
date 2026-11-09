@@ -370,11 +370,14 @@ public sealed class OrderService
     public async Task<OrderDto> CancelAsync(string id, string reason)
     {
         if (string.IsNullOrWhiteSpace(reason)) throw ValidationException.Field("reason", "Вкажіть причину скасування");
+        var (reasonCode, reasonText) = await ReasonCatalog.ResolveCancelAsync(_db, reason);
+        reason = reasonText;
         var order = await LoadAsync(id);
         var rule = _policy.Ensure(LisEntities.Order, OrderActions.Cancel, order.Status, $"Замовлення {order.OrderNumber}");
         var before = order.Status;
         order.Status = rule.ToStatus!;
         order.CancelReason = reason;
+        order.CancelReasonCode = reasonCode;
         await _referrals.ReleaseAsync(order, reason);
         foreach (var t in order.Tests.Where(t => !OrderTestStatuses.Final.Contains(t.Status))) { t.Status = OrderTestStatuses.Rejected; t.RejectReason = "Замовлення скасовано: " + reason; }
         foreach (var s in order.Samples.Where(s => s.Status == SampleStatuses.Pending || s.Status == SampleStatuses.Collected)) { s.Status = SampleStatuses.Rejected; s.RejectReason = "Замовлення скасовано"; }
@@ -392,11 +395,14 @@ public sealed class OrderService
     public async Task<OrderDto> RejectAsync(string id, string reason)
     {
         if (string.IsNullOrWhiteSpace(reason)) throw ValidationException.Field("reason", "Вкажіть причину відхилення");
+        var (reasonCode, reasonText) = await ReasonCatalog.ResolveCancelAsync(_db, reason);
+        reason = reasonText;
         var order = await LoadAsync(id);
         var rule = _policy.Ensure(LisEntities.Order, OrderActions.Reject, order.Status, $"Замовлення {order.OrderNumber}");
         var before = order.Status;
         order.Status = rule.ToStatus!;
         order.CancelReason = reason;
+        order.CancelReasonCode = reasonCode;
         foreach (var t in order.Tests.Where(t => !OrderTestStatuses.Final.Contains(t.Status))) { t.Status = OrderTestStatuses.Rejected; t.RejectReason = reason; }
         _audit.Log("REJECT", "lab_order", order.Id, new { status = before }, new { status = order.Status, reason });
         await _db.SaveChangesAsync();

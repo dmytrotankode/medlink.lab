@@ -195,6 +195,10 @@ public sealed partial class DictionaryService
         "organisms" => await _db.Organisms.AnyAsync(x => x.Code == code && x.RecordState != RecordStates.Deleted),
         "antibiotics" => await _db.Antibiotics.AnyAsync(x => x.Code == code && x.RecordState != RecordStates.Deleted),
         "departments" => await _db.Departments.AnyAsync(x => x.Code == code && x.RecordState != RecordStates.Deleted),
+        "units" => await _db.Units.AnyAsync(x => x.Code == code && x.RecordState != RecordStates.Deleted),
+        "age-groups" => await _db.AgeGroups.AnyAsync(x => x.Code == code && x.RecordState != RecordStates.Deleted),
+        "rejection-reasons" => await _db.RejectionReasons.AnyAsync(x => x.Code == code && x.RecordState != RecordStates.Deleted),
+        "cancel-reasons" => await _db.CancelReasons.AnyAsync(x => x.Code == code && x.RecordState != RecordStates.Deleted),
         _ => false
     };
 

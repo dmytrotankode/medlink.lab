@@ -190,7 +190,7 @@ public sealed class NormsController : LisControllerBase
         if (!new[] { LayerTypes.Baseline, LayerTypes.Demographic, LayerTypes.ClinicalIcd10, LayerTypes.MenstrualPhase, LayerTypes.Pregnancy }.Contains(layer.LayerType)) throw ValidationException.Field("layerType", "BASELINE|DEMOGRAPHIC|CLINICAL_ICD10|MENSTRUAL_PHASE|PREGNANCY");
         if (layer.PriorityOrder <= 0) layer.PriorityOrder = LayerTypes.DefaultPriority(layer.LayerType);
         layer.TestId = test.Id;
-        layer.Unit ??= test.Unit;
+        await UnitCatalog.SyncLayerAsync(_db, layer, test);
         var existing = string.IsNullOrWhiteSpace(layer.Id) ? null : await _db.ReferenceLayers.FirstOrDefaultAsync(l => l.Id == layer.Id);
         if (existing == null)
         {

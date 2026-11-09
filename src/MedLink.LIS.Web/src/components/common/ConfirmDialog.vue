@@ -7,8 +7,25 @@
       </q-card-section>
       <q-card-section>
         <div class="text-body2">{{ message }}</div>
+        <q-select
+          v-if="withReason && reasonOptions.length"
+          v-model="reason"
+          outlined
+          dense
+          class="q-mt-sm"
+          :label="reasonLabel"
+          :options="reasonOptions"
+          use-input
+          hide-selected
+          fill-input
+          input-debounce="0"
+          new-value-mode="add-unique"
+          @new-value="(v, done) => done(v, 'add-unique')"
+          @input-value="v => (reason = v)"
+          data-testid="reasonSelect"
+        />
         <q-input
-          v-if="withReason"
+          v-else-if="withReason"
           v-model="reason"
           type="textarea"
           outlined
@@ -40,7 +57,9 @@ export default {
     icon: { type: String, default: 'help_outline' },
     withReason: { type: Boolean, default: false },
     reasonRequired: { type: Boolean, default: false },
-    reasonLabel: { type: String, default: 'Причина' }
+    reasonLabel: { type: String, default: 'Причина' },
+    /** Назви причин із довідника для випадного списку (порожньо — вільний текст) */
+    reasonOptions: { type: Array, default: () => [] }
   },
   data () {
     return { reason: '' };

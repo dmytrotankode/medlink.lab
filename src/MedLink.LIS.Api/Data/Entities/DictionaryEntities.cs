@@ -72,7 +72,10 @@ public class LabTestDefinition : GuidEntity
     /// <summary>Назва показника англійською для бланка en/двомовного (FR-PRN-002); порожньо — запасний варіант: основна назва.</summary>
     [MaxLength(256)] public string? NameEn { get; set; }
     [MaxLength(32)] public string? LoincCode { get; set; }
+    /// <summary>Одиниця виміру як текст (завжди збігається з назвою одиниці з довідника, якщо вона вказана).</summary>
     [MaxLength(64)] public string Unit { get; set; } = "";
+    /// <summary>Одиниця з довідника «Одиниці виміру» (lab_unit).</summary>
+    public int? UnitId { get; set; }
     public int DecimalPlaces { get; set; } = 2;
     /// <summary>NUMERIC|TEXT|DROPDOWN|CALCULATED</summary>
     [MaxLength(16)] public string ResultType { get; set; } = "NUMERIC";
@@ -184,6 +187,11 @@ public class LabReferenceLayer : GuidEntity
     public double? CritHigh { get; set; }
     public string? NormText { get; set; }
     [MaxLength(64)] public string? Unit { get; set; }
+    public int? UnitId { get; set; }
+    /// <summary>Вікова група з довідника (lab_age_group): довідково, межі віку зберігаються в AgeFrom/AgeTo.</summary>
+    public int? AgeGroupId { get; set; }
+    /// <summary>Джерело/статус норми, напр. «Стартовий набір — потребує затвердження лікарем-лаборантом».</summary>
+    [MaxLength(256)] public string? Source { get; set; }
     public double? DeltaCheckMaxPct { get; set; }
     /// <summary>norm_code — код показника на приладі</summary>
     [MaxLength(64)] public string? AnalyzerCode { get; set; }

@@ -76,6 +76,8 @@ public class LabOrder : GuidEntity
     [MaxLength(64)] public string? ReleasedById { get; set; }
     [MaxLength(128)] public string? VerifyToken { get; set; }
     [MaxLength(512)] public string? CancelReason { get; set; }
+    /// <summary>Код причини з довідника lab_cancel_reason (для статистики); текст причини — у CancelReason.</summary>
+    [MaxLength(64)] public string? CancelReasonCode { get; set; }
     [MaxLength(64)] public string? RepeatOfOrderId { get; set; }
     /// <summary>Тип направлення (FR-REF-001): EHEALTH | PAPER | INTERNAL | EXTERNAL_CLINIC | SELF.</summary>
     [MaxLength(16)] public string ReferralType { get; set; } = ReferralTypes.Self;
@@ -183,6 +185,8 @@ public class LabOrderSample : GuidEntity
     public bool IsClotted { get; set; }
     public bool IsInsufficientVolume { get; set; }
     [MaxLength(512)] public string? RejectReason { get; set; }
+    /// <summary>Код причини браку з довідника lab_rejection_reason (для статистики).</summary>
+    [MaxLength(64)] public string? RejectReasonCode { get; set; }
     public string? CollectChecklistJson { get; set; }
 
     [ForeignKey(nameof(OrderId))] public LabOrder? Order { get; set; }

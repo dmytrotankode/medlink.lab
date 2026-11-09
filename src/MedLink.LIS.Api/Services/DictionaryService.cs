@@ -13,7 +13,7 @@ namespace MedLink.LIS.Api.Services;
 
 public sealed partial class DictionaryService
 {
-    private static readonly string[] CoreNames = { "biomaterials", "tube-types", "method-types", "analyzer-types", "tests", "profiles", "reflex-rules", "organisms", "antibiotics", "eucast-breakpoints", "departments", "employees" };
+    private static readonly string[] CoreNames = { "biomaterials", "tube-types", "method-types", "analyzer-types", "tests", "profiles", "reflex-rules", "organisms", "antibiotics", "eucast-breakpoints", "departments", "employees", "units", "unit-conversions", "age-groups", "rejection-reasons", "cancel-reasons" };
     /// <summary>Усі універсальні довідники: основні + реєстр простих (патоморфологія, синоніми, календар, номенклатура реагентів).</summary>
     public static readonly string[] Names = CoreNames.Concat(DictionaryAdapters.All.Keys).ToArray();
 
@@ -33,6 +33,7 @@ public sealed partial class DictionaryService
         "biomaterials" => "lab_biomaterial_type", "tube-types" => "lab_tube_type", "method-types" => "lab_method_type", "analyzer-types" => "lab_analyzer_type",
         "tests" => "lab_test_definition", "profiles" => "lab_test_profile", "reflex-rules" => "lab_reflex_rule", "organisms" => "lab_micro_organism",
         "antibiotics" => "lab_antibiotic", "eucast-breakpoints" => "lab_eucast_breakpoint", "departments" => "org_department", "employees" => "org_employee",
+        "units" => "lab_unit", "unit-conversions" => "lab_unit_conversion", "age-groups" => "lab_age_group", "rejection-reasons" => "lab_rejection_reason", "cancel-reasons" => "lab_cancel_reason",
         _ => throw new NotFoundException($"Довідник '{name}' не існує. Доступні: {string.Join(", ", Names)}")
     };
 
@@ -65,6 +66,11 @@ public sealed partial class DictionaryService
             case "organisms": return Filter(await _db.Organisms.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.LatinName} {x.CommonName}", x => x.IsActive, s, isActive);
             case "antibiotics": return Filter(await _db.Antibiotics.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.GroupName}", x => x.IsActive, s, isActive);
             case "eucast-breakpoints": return Filter(await _db.EucastBreakpoints.AsNoTracking().Include(x => x.Organism).Include(x => x.Antibiotic).Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.OrganismId).ThenBy(x => x.AntibioticId).ToListAsync(), x => $"{x.Organism?.Code} {x.Organism?.LatinName} {x.Antibiotic?.Code} {x.Antibiotic?.Name} {x.EucastVersion}", x => x.IsActive, s, isActive);
+            case "units": return Filter(await _db.Units.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.SortOrder).ThenBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.FullName} {x.Dimension}", x => x.IsActive, s, isActive);
+            case "unit-conversions": return Filter(await _db.UnitConversions.AsNoTracking().Include(x => x.FromUnit).Include(x => x.ToUnit).Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.TestCode).ThenBy(x => x.FromUnitId).ToListAsync(), x => $"{x.TestCode} {x.FromUnit?.Name} {x.ToUnit?.Name} {x.Note}", x => x.IsActive, s, isActive);
+            case "age-groups": return Filter(await _db.AgeGroups.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.SortOrder).ThenBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name}", x => x.IsActive, s, isActive);
+            case "rejection-reasons": return Filter(await _db.RejectionReasons.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.SortOrder).ThenBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.Category}", x => x.IsActive, s, isActive);
+            case "cancel-reasons": return Filter(await _db.CancelReasons.AsNoTracking().Where(x => x.RecordState != RecordStates.Deleted).OrderBy(x => x.SortOrder).ThenBy(x => x.Id).ToListAsync(), x => $"{x.Code} {x.Name} {x.Category}", x => x.IsActive, s, isActive);
             case "departments": return Filter(await _org.DepartmentsAsync(), x => $"{x.Code} {x.Name} {x.Address}", x => x.IsActive, s, isActive);
             case "employees": return Filter(await _org.EmployeesAsync(), x => $"{x.FullName} {x.Position} {x.LabRole} {x.DepartmentName} {x.Email}", x => x.IsActive, s, isActive);
         }
@@ -97,6 +103,11 @@ public sealed partial class DictionaryService
             "organisms" => await _db.Organisms.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
             "antibiotics" => await _db.Antibiotics.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
             "eucast-breakpoints" => await _db.EucastBreakpoints.AsNoTracking().Include(x => x.Organism).Include(x => x.Antibiotic).FirstOrDefaultAsync(x => x.Id == id),
+            "units" => await _db.Units.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
+            "unit-conversions" => await _db.UnitConversions.AsNoTracking().Include(x => x.FromUnit).Include(x => x.ToUnit).FirstOrDefaultAsync(x => x.Id == id),
+            "age-groups" => await _db.AgeGroups.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
+            "rejection-reasons" => await _db.RejectionReasons.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
+            "cancel-reasons" => await _db.CancelReasons.AsNoTracking().FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
             "departments" => await _org.DepartmentAsync(id),
             "employees" => await _org.EmployeeAsync(id),
             _ => null
@@ -136,6 +147,7 @@ public sealed partial class DictionaryService
                 if (body.TryGetProperty("dropdownOptions", out var opts) && opts.ValueKind == JsonValueKind.Array) e.DropdownOptions = opts.EnumerateArray().Select(o => o.GetString() ?? "").ToList();
                 e.BiomaterialType = null; e.TubeType = null; e.Method = null;
                 await ValidateFormulaAsync(e);
+                await UnitCatalog.SyncTestAsync(_db, e, null, "");
                 _db.Tests.Add(e); entity = e; break;
             }
             case "profiles":
@@ -162,6 +174,21 @@ public sealed partial class DictionaryService
                 e.Organism = null; e.Antibiotic = null;
                 _db.EucastBreakpoints.Add(e); entity = e; break;
             }
+            case "units": { var e = Deserialize<LabUnit>(body); if (e.Id == 0) e.Id = await NextIntId(_db.Units.Select(x => x.Id)); e.Code = (e.Code ?? "").Trim().ToUpperInvariant(); await EnsureUniqueCode(_db.Units.AnyAsync(x => x.Code == e.Code), e.Code); if (await _db.Units.AnyAsync(x => x.Name == e.Name && x.RecordState != RecordStates.Deleted)) throw new ConflictException($"Одиниця «{e.Name}» вже існує"); _db.Units.Add(e); entity = e; break; }
+            case "unit-conversions":
+            {
+                var e = Deserialize<LabUnitConversion>(body);
+                if (!await _db.Tests.AnyAsync(t => t.Code == e.TestCode)) throw ValidationException.Field("testCode", "Показник не знайдено");
+                if (!await _db.Units.AnyAsync(u => u.Id == e.FromUnitId) || !await _db.Units.AnyAsync(u => u.Id == e.ToUnitId)) throw new ValidationException("Одиницю виміру (з/до) не знайдено");
+                if (e.FromUnitId == e.ToUnitId) throw new ValidationException("Одиниці «з» і «до» мають відрізнятися");
+                if (e.Factor == 0) throw ValidationException.Field("factor", "Коефіцієнт не може дорівнювати нулю");
+                if (await _db.UnitConversions.AnyAsync(c => c.TestCode == e.TestCode && c.FromUnitId == e.FromUnitId && c.ToUnitId == e.ToUnitId)) throw new ConflictException("Правило перерахунку для цієї пари одиниць вже існує");
+                e.FromUnit = null; e.ToUnit = null;
+                _db.UnitConversions.Add(e); entity = e; break;
+            }
+            case "age-groups": { var e = Deserialize<LabAgeGroup>(body); if (e.Id == 0) e.Id = await NextIntId(_db.AgeGroups.Select(x => x.Id)); e.Code = (e.Code ?? "").Trim().ToUpperInvariant(); await EnsureUniqueCode(_db.AgeGroups.AnyAsync(x => x.Code == e.Code), e.Code); if (e.AgeFrom > e.AgeTo) throw new ValidationException("Вік «від» не може перевищувати «до»"); if (!new[] { "DAYS", "MONTHS", "YEARS" }.Contains(e.AgeUnit)) throw ValidationException.Field("ageUnit", "DAYS|MONTHS|YEARS"); _db.AgeGroups.Add(e); entity = e; break; }
+            case "rejection-reasons": { var e = Deserialize<LabRejectionReason>(body); if (e.Id == 0) e.Id = await NextIntId(_db.RejectionReasons.Select(x => x.Id)); e.Code = (e.Code ?? "").Trim().ToUpperInvariant(); await EnsureUniqueCode(_db.RejectionReasons.AnyAsync(x => x.Code == e.Code), e.Code); if (string.IsNullOrWhiteSpace(e.Name)) throw ValidationException.Field("name", "Назва обов'язкова"); _db.RejectionReasons.Add(e); entity = e; break; }
+            case "cancel-reasons": { var e = Deserialize<LabCancelReason>(body); if (e.Id == 0) e.Id = await NextIntId(_db.CancelReasons.Select(x => x.Id)); e.Code = (e.Code ?? "").Trim().ToUpperInvariant(); await EnsureUniqueCode(_db.CancelReasons.AnyAsync(x => x.Code == e.Code), e.Code); if (string.IsNullOrWhiteSpace(e.Name)) throw ValidationException.Field("name", "Назва обов'язкова"); _db.CancelReasons.Add(e); entity = e; break; }
             case "departments": return await _org.SaveDepartmentAsync(null, body);
             case "employees": return await _org.SaveEmployeeAsync(null, body);
             default: throw new NotFoundException($"Довідник '{name}' не існує");
@@ -180,13 +207,14 @@ public sealed partial class DictionaryService
         var table = Table(name);
         var existing = await GetTrackedAsync(name, id);
         var before = JsonSerializer.Serialize(existing, Json);
+        var prevUnitId = (existing as LabTestDefinition)?.UnitId; var prevUnit = (existing as LabTestDefinition)?.Unit;
         // Патч: лише присутні властивості (без Id)
         var node = JsonNode.Parse(body.GetRawText())!.AsObject();
-        node.Remove("id"); node.Remove("createdOn"); node.Remove("createdBy"); node.Remove("items"); node.Remove("dropdownOptions"); node.Remove("biomaterialType"); node.Remove("tubeType"); node.Remove("method"); node.Remove("organism"); node.Remove("antibiotic"); node.Remove("department");
+        node.Remove("id"); node.Remove("createdOn"); node.Remove("createdBy"); node.Remove("items"); node.Remove("dropdownOptions"); node.Remove("biomaterialType"); node.Remove("tubeType"); node.Remove("method"); node.Remove("organism"); node.Remove("antibiotic"); node.Remove("department"); node.Remove("fromUnit"); node.Remove("toUnit");
         var current = JsonNode.Parse(JsonSerializer.Serialize(existing, Json))!.AsObject();
         foreach (var kv in node) current[kv.Key] = kv.Value?.DeepClone();
         var merged = JsonSerializer.Deserialize(current.ToJsonString(), existing.GetType(), Json)!;
-        foreach (var prop in existing.GetType().GetProperties().Where(p => p.CanWrite && p.Name is not ("Id" or "Items" or "CreatedOn" or "CreatedBy" or "BiomaterialType" or "TubeType" or "Method" or "Organism" or "Antibiotic" or "Department" or "DropdownOptions")))
+        foreach (var prop in existing.GetType().GetProperties().Where(p => p.CanWrite && p.Name is not ("Id" or "Items" or "CreatedOn" or "CreatedBy" or "BiomaterialType" or "TubeType" or "Method" or "Organism" or "Antibiotic" or "Department" or "DropdownOptions" or "FromUnit" or "ToUnit")))
             if (node.ContainsKey(char.ToLowerInvariant(prop.Name[0]) + prop.Name.Substring(1))) prop.SetValue(existing, prop.GetValue(merged));
 
         if (existing is LabReflexRule rr) await ValidateReflexAsync(rr);
@@ -194,6 +222,7 @@ public sealed partial class DictionaryService
             throw new ConflictException("Контрольне значення для цієї пари збудник–антибіотик у цій версії EUCAST вже існує");
         if (Adapter(name) is { } uad) await uad.ValidateAsync(_db, existing, false);
         if (existing is LabTestDefinition td && body.TryGetProperty("dropdownOptions", out var opts) && opts.ValueKind == JsonValueKind.Array) td.DropdownOptions = opts.EnumerateArray().Select(o => o.GetString() ?? "").ToList();
+        if (existing is LabTestDefinition tdu) await UnitCatalog.SyncTestAsync(_db, tdu, prevUnitId, prevUnit);
         if (existing is LabTestProfile profile && body.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array)
         {
             _db.ProfileItems.RemoveRange(profile.Items);
@@ -286,6 +315,11 @@ public sealed partial class DictionaryService
             "organisms" => await _db.Organisms.FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
             "antibiotics" => await _db.Antibiotics.FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
             "eucast-breakpoints" => await _db.EucastBreakpoints.FirstOrDefaultAsync(x => x.Id == id),
+            "units" => await _db.Units.FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
+            "unit-conversions" => await _db.UnitConversions.FirstOrDefaultAsync(x => x.Id == id),
+            "age-groups" => await _db.AgeGroups.FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
+            "rejection-reasons" => await _db.RejectionReasons.FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
+            "cancel-reasons" => await _db.CancelReasons.FirstOrDefaultAsync(x => x.Id.ToString() == id || x.Code == id),
             _ => null
         };
         return item ?? throw NotFoundException.For($"Запис довідника {name}", id);
@@ -302,6 +336,10 @@ public sealed partial class DictionaryService
         "organisms" => await _db.Isolates.CountAsync(i => i.OrganismId == ((LabMicroOrganism)e).Id) + await _db.EucastBreakpoints.CountAsync(b => b.OrganismId == ((LabMicroOrganism)e).Id),
         "antibiotics" => await _db.Susceptibilities.CountAsync(s => s.AntibioticId == ((LabAntibiotic)e).Id) + await _db.EucastBreakpoints.CountAsync(b => b.AntibioticId == ((LabAntibiotic)e).Id),
         "eucast-breakpoints" => await _db.Susceptibilities.CountAsync(s => s.BreakpointId == ((LabEucastBreakpoint)e).Id),
+        "units" => await _db.Tests.CountAsync(t => t.UnitId == ((LabUnit)e).Id) + await _db.ReferenceLayers.CountAsync(l => l.UnitId == ((LabUnit)e).Id) + await _db.UnitConversions.CountAsync(c => c.FromUnitId == ((LabUnit)e).Id || c.ToUnitId == ((LabUnit)e).Id),
+        "age-groups" => await _db.ReferenceLayers.CountAsync(l => l.AgeGroupId == ((LabAgeGroup)e).Id),
+        "rejection-reasons" => await _db.Samples.CountAsync(s => s.RejectReasonCode == ((LabRejectionReason)e).Code),
+        "cancel-reasons" => await _db.Orders.CountAsync(o => o.CancelReasonCode == ((LabCancelReason)e).Code),
         _ => 0
     };
 
@@ -371,4 +409,5 @@ public sealed partial class DictionaryService
             }
         }
     }
+
 }
