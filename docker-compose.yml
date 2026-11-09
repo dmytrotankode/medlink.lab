@@ -1,9 +1,33 @@
+# Medlink-LAB: API + SPA і PostgreSQL (основна СУБД). Пароль БД задайте змінною LAB_PG_PASSWORD (файл .env поруч, не комітити).
+#   LAB_PG_PASSWORD=... docker compose up -d
+# Резервне копіювання: docker compose exec -T db pg_dump -U medlink -Fc medlink_lab > medlink_lab.dump
+# Відновлення:        docker compose exec -T db pg_restore -U medlink -d medlink_lab --clean --if-exists < medlink_lab.dump
+# Локально без Docker (SQLite, лише dev): Database__Provider=Sqlite dotnet run --project src/MedLink.LIS.Api
 services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: medlink
+      POSTGRES_PASSWORD: ${LAB_PG_PASSWORD:?задайте LAB_PG_PASSWORD}
+      POSTGRES_DB: medlink_lab
+    volumes: ["pg-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medlink -d medlink_lab"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
   medlink-lab:
     build: .
     image: medlink/medlink-lab:4.0
     ports: ["5055:5055"]
-    volumes: ["lis-data:/data"]
+    environment:
+      Database__Provider: Postgres
+      Database__ConnectionString: "Host=db;Port=5432;Database=medlink_lab;Username=medlink;Password=${LAB_PG_PASSWORD}"
+      Lab__SeedDemoData: "false"
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 volumes:
-  lis-data:
+  pg-data:

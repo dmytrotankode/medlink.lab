@@ -1,4 +1,4 @@
-# MedLink LIS 4.0 — Backend (ASP.NET Core 8, EF Core 8, SQLite)
+# MedLink LIS 4.0 — Backend (ASP.NET Core 8, EF Core 8, PostgreSQL; SQLite — лише dev/тести)
 
 Лабораторна інформаційна система для МІС MedLink (evomis). Контракт: `docs/API_CONTRACT.md`.
 Без автентифікації користувачів: поточний співробітник — заголовок `X-MedLink-Employee-Id` (інакше `Lab:DefaultEmployeeId`);
@@ -7,18 +7,22 @@
 ## Запуск
 
 ```bash
-dotnet run --project src/MedLink.LIS.Api            # http://0.0.0.0:5055 (Kestrel з appsettings.json)
+dotnet run --project src/MedLink.LIS.Api            # http://0.0.0.0:5055; середовище Development (launchSettings) -> SQLite App_Data/medlink_lis.dev.db
+# production: Database__Provider=Postgres Database__ConnectionString="Host=...;Database=medlink_lab;Username=...;Password=..." (див. docs/POSTGRES_READINESS.md)
 dotnet run --project src/MedLink.LIS.Api --urls http://127.0.0.1:5055
 ```
 
 - Swagger: `/swagger`, health: `/health`, SPA: `wwwroot/index.html` (fallback для не-`/api` шляхів), QR-верифікація бланка: `/verify/{token}`.
-- При старті: `EnsureCreated()` + ідемпотентний сід довідників (`db/seed/*.json`, вбудовані ресурси) + демо-дані (`Lab:SeedDemoData`).
+- При старті: `EnsureCreated()` + `SchemaUpgrader` (додає відсутні таблиці/колонки/індекси) + на PostgreSQL версіоновані скрипти `db/postgres/upgrades` (`lab_schema_version`) + ідемпотентний сід довідників (`db/seed/*.json`, вбудовані ресурси) + демо-дані (`Lab:SeedDemoData`).
 
 ## Конфігурація (`appsettings.json`)
 
 | Ключ | Призначення |
 |---|---|
-| `Database:SqlitePath` | файл SQLite (типово `App_Data/medlink_lis.db`, відносно content root) |
+| `Database:Provider` | `Postgres` (типово в appsettings.json, production) або `Sqlite` (Development/тести) |
+| `Database:ConnectionString` | рядок Npgsql; пул/таймаути/keepalive доповнюються типовими значеннями (`Data/PgConnectionOptions.cs`) |
+| `Database:Collation` | колація сортування кирилиці на PostgreSQL (типово `uk-x-icu`; порожньо — вимкнено) |
+| `Database:SqlitePath` | лише dev: файл SQLite (`App_Data/medlink_lis.dev.db` у Development) |
 | `Lab:DefaultEmployeeId` | співробітник за замовчуванням (`emp-…0001`, LAB_ADMIN) |
 | `Lab:PublicBaseUrl` | база для QR-посилань та ZIP коннектора |
 | `Lab:VerifySecret` | HMAC-секрет токена бланка |
@@ -40,7 +44,7 @@ dotnet run --project src/MedLink.LIS.Api --urls http://127.0.0.1:5055
 
 ## Перехід в evomis / PostgreSQL
 
-1. `Microsoft.EntityFrameworkCore.Sqlite` → `Npgsql.EntityFrameworkCore.PostgreSQL`; у `Program.cs` `UseSqlite` → `UseNpgsql`. Типи колонок (TEXT/INTEGER/REAL/NUMERIC, дати UTC) сумісні; DDL — `db/postgres`.
+1. PostgreSQL вже є основним провайдером (`Database:Provider=Postgres`); SQLite лишився для dev/тестів. DDL для evomis — `db/postgres/medlink_lis_schema.sql`; повний звіт — `docs/POSTGRES_READINESS.md`.
 2. Mirror-сутності (`MisPatientCard`, `MisSpecimen`, `MisDiagnosticReport`, `OrgEmployee`, `OrgDepartment`, `EheIncomingMedicalReferral`, `DctService`) вказують на реальні таблиці evomis — лишити `[Table]`, прибрати їх із сідера (`Data/Seed/SeedService.SeedOrgAsync`).
 3. `LabTestProfile.MisServiceId` → `dct_service.id`: код/назва/ціна беруться з МІС (`GET /norms/service-card/{id}`), ЛІС зберігає лише лабораторні атрибути.
 4. `EnsureCreated()` замінити міграціями; `ICurrentEmployee` заповнювати з claims IdentityServer замість заголовка.

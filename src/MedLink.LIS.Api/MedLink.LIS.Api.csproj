@@ -30,6 +30,11 @@
     <EmbeddedResource Include="..\..\db\seed\*.json" LinkBase="Seed" LogicalName="MedLink.LIS.Api.Seed.%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- Версіоновані скрипти схеми PostgreSQL (Data/PgSchemaMigrator.cs) -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\db\postgres\upgrades\*.sql" LinkBase="PgUpgrades" LogicalName="MedLink.LIS.Api.PgUpgrades.%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup>
     <Content Update="wwwroot\**" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

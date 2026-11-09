@@ -26,6 +26,41 @@ jobs:
           name: test-results
           path: "**/TestResults/*.trx"
 
+  # Ті самі тести на PostgreSQL (LIS_TEST_PG): основна СУБД production. Мерж можливий лише коли проходять ОБИДВА провайдери
+  # (SQLite — dev/швидкий прогін, PostgreSQL — як на стенді). Тести повністю перестворюють схеми public і guide тестової БД.
+  backend-postgres:
+    name: .NET tests on PostgreSQL
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: lab_ci
+          POSTGRES_PASSWORD: lab_ci
+          POSTGRES_DB: medlink_lab_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U lab_ci -d medlink_lab_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      LIS_TEST_PG: Host=127.0.0.1;Port=5432;Database=medlink_lab_test;Username=lab_ci;Password=lab_ci;Include Error Detail=true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore
+        run: dotnet restore MedLink.LIS.sln
+      - name: Build
+        run: dotnet build MedLink.LIS.sln -c Release --no-restore
+      - name: Test (PostgreSQL)
+        run: dotnet test tests/MedLink.LIS.Tests -c Release --no-build --logger "trx;LogFileName=test-results-pg.trx"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-pg
+          path: "**/TestResults/*.trx"
+
   frontend:
     name: Quasar SPA build
     runs-on: ubuntu-latest

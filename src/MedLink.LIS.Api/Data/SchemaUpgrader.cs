@@ -1,7 +1,9 @@
 // =============================================================================
-// Дооновлення схеми SQLite без міграцій: EnsureCreated не змінює наявну БД, тому після нього
-// створюємо відсутні таблиці (з індексами) і додаємо відсутні колонки за моделлю EF.
-// Для перенесення в evomis/PostgreSQL ті самі зміни фіксуються SQL-скриптами в db/migrations.
+// Адитивне дооновлення схеми за EF-моделлю (SQLite і PostgreSQL): EnsureCreated не змінює наявну БД, тому після нього
+// створюємо відсутні таблиці (з індексами), додаємо відсутні колонки та відсутні індекси наявних таблиць.
+// Лише додавання — ніколи не видаляє/не змінює типи (безпечно для production). Усе інше (зміна типів, перейменування,
+// індекси-вирази, виправлення даних) — версіоновані скрипти PgSchemaMigrator (db/postgres/upgrades); розбіжності типів
+// між моделлю і БД лише повідомляються (DetectDriftAsync). Для evomis ті самі зміни фіксуються в db/migrations.
 // =============================================================================
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -81,8 +83,54 @@ public static class SchemaUpgrader
                 applied.Add(sql);
             }
         }
+
+        // 3) Відсутні індекси наявних таблиць (нові HasIndex у моделі EF після першого створення БД самі не з'являються)
+        var existingIndexes = (await db.Database.SqlQueryRaw<string>(pg
+                ? "SELECT indexname AS \"Value\" FROM pg_indexes WHERE schemaname = current_schema()"
+                : "SELECT name AS \"Value\" FROM sqlite_master WHERE type = 'index'").ToListAsync())
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var sql in Regex.Split(db.Database.GenerateCreateScript(), @";\s*(?:\r?\n|$)").Select(x => x.Trim()).Where(x => x.Length > 0))
+        {
+            var m = Regex.Match(sql, @"^CREATE\s+(?:UNIQUE\s+)?INDEX\s+""([^""]+)""\s+ON\s+""([^""]+)""", RegexOptions.IgnoreCase);
+            var indexName = m.Groups[1].Value;
+            if (pg && indexName.Length > 63) indexName = indexName[..63]; // PostgreSQL мовчки обрізає ідентифікатори до 63 байт
+            if (!m.Success || missing.Contains(m.Groups[2].Value) || existingIndexes.Contains(indexName)) continue;
+            try { await db.Database.ExecuteSqlRawAsync(sql); applied.Add(sql.Split('\n')[0]); }
+            catch (Exception ex) { applied.Add($"ПОМИЛКА створення індексу {m.Groups[1].Value}: {ex.Message.Split('\n')[0]}"); }
+        }
         return applied;
     }
+
+    /// <summary>
+    /// PostgreSQL: розбіжності типів колонок між EF-моделлю та БД (довжина рядка, numeric, timestamp тощо). Нічого не змінює —
+    /// зміну типу оформлюють окремим скриптом db/postgres/upgrades. Повертає рядки «таблиця.колонка: у БД X, у моделі Y».
+    /// </summary>
+    public static async Task<List<string>> DetectDriftAsync(LisDbContext db)
+    {
+        var drift = new List<string>();
+        if (!db.Database.IsNpgsql()) return drift;
+        var rows = await db.Database.SqlQueryRaw<ColumnTypeRow>(
+            @"SELECT c.relname AS ""Tbl"", a.attname AS ""Col"", format_type(a.atttypid, a.atttypmod) AS ""Typ""
+              FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE n.nspname = current_schema() AND c.relkind = 'r' AND a.attnum > 0 AND NOT a.attisdropped").ToListAsync();
+        var actual = rows.ToDictionary(r => (r.Tbl.ToLowerInvariant(), r.Col.ToLowerInvariant()), r => r.Typ);
+        foreach (var entity in db.Model.GetEntityTypes())
+        {
+            var table = entity.GetTableName();
+            if (table == null) continue;
+            var store = StoreObjectIdentifier.Table(table, entity.GetSchema());
+            foreach (var prop in entity.GetProperties())
+            {
+                var column = prop.GetColumnName(store);
+                if (column == null || !actual.TryGetValue((table.ToLowerInvariant(), column.ToLowerInvariant()), out var have)) continue;
+                var want = prop.GetColumnType();
+                if (!string.Equals(have, want, StringComparison.OrdinalIgnoreCase)) drift.Add($"{table}.{column}: у БД {have}, у моделі {want}");
+            }
+        }
+        return drift;
+    }
+
+    public sealed class ColumnTypeRow { public string Tbl { get; set; } = ""; public string Col { get; set; } = ""; public string Typ { get; set; } = ""; }
 
     private static string DefaultLiteral(IProperty prop, bool pg)
     {

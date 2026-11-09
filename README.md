@@ -2,14 +2,14 @@
 
 > ТОВ «МедЛінк» (MedLink LLC) © 2026. Модуль «Лабораторія» для веб-МІС MedLink (evomis) та автономний ЛІС-продукт.
 
-Технологічний стек повторює MedLink: **.NET 8 Web API + EF Core**, **Quasar v1.15.3 + Vue 2**, база **SQLite** (схема у стилі evomis, готова до перенесення на PostgreSQL), крос-платформний **коннектор аналізаторів** (.NET 8 Worker Service: ASTM E1394 / HL7 v2 MLLP / текстові протоколи 65 моделей приладів). Авторизація користувачів у модулі відсутня — її надає evomis.
+Технологічний стек повторює MedLink: **.NET 8 Web API + EF Core**, **Quasar v1.15.3 + Vue 2**, база **PostgreSQL** (схема у стилі evomis; SQLite — лише dev/тести, див. `docs/POSTGRES_READINESS.md`), крос-платформний **коннектор аналізаторів** (.NET 8 Worker Service: ASTM E1394 / HL7 v2 MLLP / текстові протоколи 65 моделей приладів). Авторизація користувачів у модулі відсутня — її надає evomis.
 
 ## Склад репозиторію
 
 | Шлях | Що це |
 |---|---|
 | `src/MedLink.LIS.Core` | Спільна бібліотека: клінічні правила (каскад норм Simplex, прапорці, delta-check, автоверифікація, reflex, Вестгард, EUCAST, TAT), штрихкоди (Simplex EAN-8, Code128, ZPL, QR), протоколи аналізаторів (ASTM, HL7, текстові), побудовники замовлень для приладів, каталог 64 типів аналізаторів, DTO протоколу коннектора |
-| `src/MedLink.LIS.Api` | REST API ЛІС (ASP.NET Core 8, EF Core SQLite, Swagger), віддає зібраний фронтенд із `wwwroot` |
+| `src/MedLink.LIS.Api` | REST API ЛІС (ASP.NET Core 8, EF Core PostgreSQL (SQLite — dev), Swagger), віддає зібраний фронтенд із `wwwroot` |
 | `src/MedLink.LIS.Web` | Фронтенд Quasar CLI v1 + Vue 2 у структурі `evomis/src/App.View` |
 | `src/MedLink.LabConnector` | Коннектор аналізаторів (служба Windows / systemd), CLI `setup`, локальна сторінка статусу `http://localhost:5088` |
 | `installers/labconnector` | Inno Setup, PowerShell, Linux systemd/deb, Docker, скрипти публікації |
@@ -23,7 +23,8 @@
 ## Швидкий старт
 
 ```bash
-# 1. Бекенд (створює App_Data/medlink_lis.db і сідить довідники при першому запуску)
+# 1. Бекенд. dev (середовище Development, SQLite App_Data/medlink_lis.dev.db) — створює БД і сідить довідники при першому запуску.
+#    production/стенд — PostgreSQL: Database__Provider=Postgres + Database__ConnectionString (docker compose або systemd), див. docs/POSTGRES_READINESS.md
 dotnet run --project src/MedLink.LIS.Api --urls http://0.0.0.0:5055
 #    Swagger: http://localhost:5055/swagger   Health: http://localhost:5055/health
 
@@ -31,7 +32,7 @@ dotnet run --project src/MedLink.LIS.Api --urls http://0.0.0.0:5055
 cd src/MedLink.LIS.Web && npm install && npm run dev
 #    або зібрати в wwwroot API: ./build.sh (Windows: .\build.ps1)
 
-# 3. Тести
+# 3. Тести (SQLite) і на PostgreSQL стенда: bash tools/deploy/pg-test-on-server.sh --both
 dotnet test MedLink.LIS.sln
 
 # 4. Коннектор аналізаторів (на ПК біля приладу)

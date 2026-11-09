@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Оновлення стенда /lab (наша лінія; БД PostgreSQL medlink_lab, SQLite-файл лишається резервом) з ПК розробника: збірка → архів → завантаження → встановлення.
+# Оновлення стенда /lab (наша лінія; БД PostgreSQL medlink_lab; старий SQLite-файл не використовується і лишається лише як архів) з ПК розробника: збірка → архів → завантаження → встановлення.
 # Запуск з кореня репозиторію у Git Bash:   bash tools/deploy/deploy-lab-from-pc.sh
 # /lab-v2 (лінія tenancy Артема) цим скриптом НЕ чіпається.
 # Перед запуском: дерево git чисте за потрібним комітом (збірка бере те, що лежить у папці).
@@ -20,7 +20,7 @@ tar -czf "$OUT/lab-app.tgz" -C "$OUT/app" .
 ls -lh "$OUT/lab-app.tgz"
 scp -i "$KEY" "$OUT/lab-app.tgz" "$HOST:/tmp/lab-app.tgz"
 
-echo "==> 4/4 встановлення (зупинка служби -> розпаковка -> перезапуск; файл SQLite у /srv/medlink-lab/data не чіпається)"
+echo "==> 4/4 встановлення (зупинка служби -> розпаковка -> перезапуск; старий файл SQLite у /srv/medlink-lab/data не чіпається)"
 PGPW=""; [ -f ~/.medlink/lab_pg_pw.txt ] && PGPW="$(cat ~/.medlink/lab_pg_pw.txt)"
 ssh -i "$KEY" "$HOST" "PGPW='$PGPW' bash -s" < tools/deploy/medlink-lab-install.sh
 

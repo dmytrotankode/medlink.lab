@@ -90,7 +90,7 @@
 | Тема | v2 (замовник) | v3 (аналіз) | v4 (реалізація) |
 |---|---|---|---|
 | Автентифікація користувачів | Модуль 1 «Автентифікація та керування обліковими записами» (Must) | Mock-контекст лікаря в прототипі, згадка OIDC для production | **Вилучено з модуля** за прямою вказівкою власника: авторизацію надає evomis. Перемикач «Працюю як…» для розробки/демо; у бойовому середовищі — claims IdentityServer |
-| База даних | Cloud/SaaS, централізована | PostgreSQL 14+ (evomis) | **SQLite** на етапі v4 зі схемою, 1:1 переносимою у PostgreSQL (snake_case, uuid-рядки, службові колонки evomis) |
+| База даних | Cloud/SaaS, централізована | PostgreSQL 14+ (evomis) | **PostgreSQL** (основна СУБД ЛІС v4, стенд і production; схеми `public` + `guide`); SQLite — лише dev/тестовий провайдер. Схема: snake_case, uuid-рядки, службові колонки evomis |
 | Протоколи аналізаторів | ASTM у MVP, HL7 у R2 | ASTM E1381/E1394 + HL7 v2 MLLP | ASTM + HL7 + усі текстові протоколи Simplex (65 профілів `ac_analyzer_type`), порт `parse_lab_message`/`gen_lab_order` |
 | Коннектор | «моніторинг з'єднання, авто-відновлення» | Worker Service, інсталятори | Повний життєвий цикл: створення інсталяції в UI → install key → ZIP/інсталятор → `setup` → конфіг із сервера → heartbeat/команди → офлайн-буфер → сторінка статусу |
 | Норми | «методика → норма» з фільтрами стать/вік/вагітність | Матриця Delphi, резолвер 3 рівні | Каскад 5 шарів із пріоритетами 100/80/60/40/10, вік у днях, audit trace, картка послуги з 4 вкладками, ETL з MySQL Simplex |
@@ -210,7 +210,7 @@ mis_patient_card, org_employee, org_department, ehe_incoming_medical_referral, m
 | AR-02 | Фронтенд Quasar CLI v1 (`@quasar/app` 1.x, webpack) + Quasar 1.15.3 + Vue 2.6 + Vue Router 3 + Vuex 3 + axios | Структура каталогів, токени стилю та компоненти як у `evomis/src/App.View` (розд. 9) |
 | AR-03 | Без авторизації користувачів | Жодних `[Authorize]`, JWT, логінів. Заголовок `X-MedLink-Employee-Id` (необов'язковий; типово `Lab:DefaultEmployeeId`). Ролі — довідкові (`org_employee.lab_role`) для UI та аудиту |
 | AR-04 | Ідентифікація коннектора | Технічний ключ інсталяції `X-MedLink-ApiKey` (не користувацька авторизація) |
-| AR-05 | SQLite у v4, PostgreSQL у бойовому середовищі | `App_Data/medlink_lis.db`, `EnsureCreated()` + сідери `db/seed/*.json`; типи колонок TEXT/INTEGER/REAL/NUMERIC, дати ISO-8601; DDL PostgreSQL у `db/postgres` |
+| AR-05 | PostgreSQL — основна СУБД (production і стенд); SQLite — лише dev/тести | `Database:Provider=Postgres` (типово), `EnsureCreated()` + `SchemaUpgrader` (адитивно) + версіоновані скрипти `db/postgres/upgrades` (журнал `lab_schema_version`) + сідери `db/seed/*.json`; DDL для evomis у `db/postgres`; звіт — `docs/POSTGRES_READINESS.md` |
 | AR-06 | Іменування як в evomis | Таблиці/колонки `snake_case`, ключі `uuid` (рядок GUID), службові колонки `created_on, created_by, modified_on, modified_by, is_deleted` |
 | AR-07 | Сутності evomis як копії структури | У SQLite створюються підмножини колонок таблиць МІС; ЛІС-таблиці мають FK на них; у складі evomis DbSet указують на реальні таблиці |
 | AR-08 | Єдине джерело правди для API | `docs/API_CONTRACT.md`; базовий URL `/api/v1/lab`; RFC 7807 для помилок; пагінація `{items,total,page,pageSize}` |
@@ -1470,12 +1470,12 @@ MedLink.LabConnector (Worker Service, .NET 8)
 
 ### 7.6. Перенесення у PostgreSQL / evomis (кроки)
 
-1. Замінити провайдер `UseSqlite` → `UseNpgsql`; конвенції типів: `TEXT` дат → `timestamp without time zone` (через `ValueConverter` або `HasColumnType`), `INTEGER` bool → `boolean`, JSON `TEXT` → `jsonb`.
+1. PostgreSQL вже є основним провайдером (`UseNpgsql`, legacy-режим дат Npgsql: `timestamp without time zone`, значення UTC); пошук `ILIKE`, українське сортування `uk-x-icu` — `Data/PgQueryInterceptor.cs`.
 2. Згенерувати міграцію EF Core для PostgreSQL і звірити з `db/postgres/*.sql` (DDL оновлюється під модель v4, розд. 7.4).
 3. Видалити копії сутностей evomis з DbContext ЛІС; DbSet вказати на реальні сутності `App.Domain` (або лишити read-only `Keyless` проєкції).
 4. Додати умовні FK (`db/postgres/03_*.sql`) на `mis_patient_card`, `org_employee`, `org_department`, `ehe_incoming_medical_referral`, `mis_diagnostic_report`.
 5. Перенести сіди (довідники) через `POST /dictionaries/import`; транзакційні дані v4 (демо) не переносяться.
-6. Запустити інтеграційні тести API на PostgreSQL (той самий набір, що й на SQLite).
+6. Запустити інтеграційні тести API на PostgreSQL (той самий набір, що й на SQLite): `bash tools/deploy/pg-test-on-server.sh --both`.
 
 ---
 
@@ -1770,12 +1770,12 @@ CSV/XLSX/XML (розд. 4.16); кодування автовизначаєтьс
 | NFR-07 | Аудит | Кожна мутація — запис у `lab_audit_log` з before/after; результати — повна історія версій | перевірка кількості записів у тестах |
 | NFR-08 | Безпека | HTTPS/TLS на рівні хостингу (reverse proxy); `X-MedLink-ApiKey` лише по HTTPS; ключі — хеш; жодних паролів у модулі; CORS — лише домен evomis | конфігурація, ревʼю |
 | NFR-09 | Безпека | Публічний `GET /verify/{token}` не повертає ПІБ; rate limit 60 запитів/хв з IP | тест |
-| NFR-10 | Резервування | SQLite: щоденний бекап файлу `App_Data/medlink_lis.db` (копія з `VACUUM INTO`) + журнал WAL; PostgreSQL — засобами evomis | скрипт/крон |
+| NFR-10 | Резервування | PostgreSQL: щоденний `pg_dump -Fc` (systemd timer `medlink-lab-backup.timer`, `tools/deploy/pg-backup.sh`), ротація 14 щоденних + 8 тижневих, перевірка відновлення `pg-restore.sh --verify`; SQLite (dev): копія файлу з `VACUUM INTO` | таймер + журнал |
 | NFR-11 | Браузери | Chrome ≥ 110, Edge ≥ 110, Firefox ≥ 115, Safari ≥ 16 | smoke у Playwright (Chromium, Firefox, WebKit) |
 | NFR-12 | Локалізація | Українська мова UI та помилок; `dd.MM.yyyy`; десяткова кома; мова бланка окремо | ревʼю, тести форматування |
 | NFR-13 | Доступність | WCAG 2.1 AA (цільовий), критичні — `role="alert"` | axe-core у Playwright |
 | NFR-14 | Масштабованість | Без лімітів користувачів у модулі; індекси розд. 7.3; пагінація всюди | план навантаження 50 000 тестів/добу (OQ-08) |
-| NFR-15 | Переносимість | Один і той самий код працює на SQLite та PostgreSQL (інтеграційні тести на обох) | CI матриця |
+| NFR-15 | Переносимість | Один і той самий код працює на PostgreSQL (основний) та SQLite (dev); інтеграційні тести проходять на обох: `tools/deploy/pg-test-on-server.sh --both`, CI job `backend-postgres` | CI |
 | NFR-16 | Спостережуваність | Структуровані логи (Serilog) у API та коннекторі; `GET /health`; метрики кількості результатів/помилок парсингу | перевірка логів |
 | NFR-17 | Коннектор | Споживання пам'яті ≤ 150 МБ при 10 аналізаторах; старт ≤ 5 с; працює на Windows 10/11/Server 2016+, Ubuntu 20.04+/Debian 11+, Rocky 8+, ARM64 (Raspberry Pi 4) | перевірка на стендах |
 | NFR-18 | Дані | Усі часові мітки UTC; клієнт конвертує; десяткові значення без втрати точності (`decimal`) | юніт-тести |
@@ -3884,7 +3884,7 @@ POST /mis/referrals
 | Аспект | Режим A — автономна ЛІС (standalone) | Режим B — модуль MedLink (embedded) |
 |---|---|---|
 | Процес | `MedLink.LIS.Api` як окремий сервіс (Kestrel/Docker), SPA з `wwwroot` | Контролери й сервіси ЛІС реєструються в `App.Api` evomis; сторінки Quasar — у `App.View` |
-| База даних | SQLite (пілот) або власний PostgreSQL; дзеркальні таблиці `mis_*`, `org_*`, `dct_service`, `ehe_*` належать ЛІС і заповнюються сідом/імпортом | PostgreSQL evomis; дзеркальні DbSet вказують на реальні таблиці МІС (ті самі імена колонок), ЛІС-таблиці `lab_*` створюються міграцією в тій самій базі |
+| База даних | PostgreSQL (основна; SQLite — лише dev/тести); дзеркальні таблиці `mis_*`, `org_*`, `dct_service`, `ehe_*` належать ЛІС і заповнюються сідом/імпортом | PostgreSQL evomis; дзеркальні DbSet вказують на реальні таблиці МІС (ті самі імена колонок), ЛІС-таблиці `lab_*` створюються міграцією в тій самій базі |
 | Користувачі | Заголовок `X-MedLink-Employee-Id` + перемикач «Працюю як…» (без автентифікації) | IdentityServer evomis: `ICurrentEmployee` читає claims (`employee_id`, `organization_id`, `department_id`, ролі) |
 | Пацієнти, лікарі, відділення, послуги | Локальні CRUD у ЛІС | Тільки читання з МІС; створення пацієнта — через сервіс МІС |
 | eHealth, каса, нотифікації | Mock/автономні реалізації (`IEhealthGateway`, `IPaymentGateway`, `INotificationSender`) | Реальні сервіси evomis через ті самі інтерфейси |

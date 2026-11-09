@@ -1,5 +1,6 @@
 // =============================================================================
-// MedLink LIS 4.0 — ASP.NET Core 8 Web API (SQLite, EF Core 8, без автентифікації користувачів)
+// MedLink LIS 4.0 — ASP.NET Core 8 Web API (PostgreSQL — основна СУБД; SQLite — лише dev/тестовий провайдер; EF Core 8,
+// без автентифікації користувачів)
 // =============================================================================
 using System.Text.Json.Serialization;
 using MedLink.Guide;
@@ -24,26 +25,46 @@ static string ResolveSqlitePath(IConfiguration cfg, IHostEnvironment env)
     Directory.CreateDirectory(Path.GetDirectoryName(path)!);
     return path;
 }
-// Database:Provider = Sqlite (типово) | Postgres (Database:ConnectionString). Дати зберігаються як є (без часових поясів).
-var usePostgres = string.Equals(builder.Configuration["Database:Provider"], "Postgres", StringComparison.OrdinalIgnoreCase);
-if (usePostgres) AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+// Database:Provider = Postgres (production, типово в appsettings.json; Database:ConnectionString) | Sqlite (dev/тести; appsettings.Development.json).
+// Дати зберігаються як є (timestamp without time zone, значення — UTC; legacy-режим Npgsql).
+// УВАГА: провайдер визначається ЛІНИВО (у момент створення контексту) з остаточної конфігурації: перевизначення з тестової фабрики
+// (WebApplicationFactory.ConfigureAppConfiguration) застосовуються лише під час Build() і недоступні в коді верхнього рівня.
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true); // до першого використання Npgsql; для SQLite нешкідливо
+IConfiguration? finalConfig = null; // = app.Configuration після Build()
+IConfiguration Cfg() => finalConfig ?? builder.Configuration;
+bool UsePostgres()
+{
+    var name = Cfg()["Database:Provider"];
+    if (string.IsNullOrWhiteSpace(name) || name.Equals("Sqlite", StringComparison.OrdinalIgnoreCase)) return false;
+    if (name.Equals("Postgres", StringComparison.OrdinalIgnoreCase)) return true;
+    throw new InvalidOperationException($"Database:Provider = «{name}» не підтримується (Postgres | Sqlite)");
+}
+// Налаштування текстових запитів PostgreSQL (ILIKE, українська колація): уточнюються при старті після перевірки кластера
+var pgQuery = new PgQuerySettings { Collation = builder.Configuration["Database:Collation"] ?? "uk-x-icu" };
+if (string.IsNullOrWhiteSpace(pgQuery.Collation)) pgQuery.Collation = null;
+string PgConnectionString(IConfiguration cfg) => PgConnectionOptions.Normalize(
+    cfg["Database:ConnectionString"] is { Length: > 0 } cs ? cs : args.Contains("--export-pg-ddl") ? "Host=localhost" : throw new InvalidOperationException("Database:ConnectionString не задано (Database:Provider = Postgres). Для локальної розробки задайте Database:Provider = Sqlite."));
 builder.Services.AddDbContext<LisDbContext>((sp, o) =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
-    if (usePostgres) o.UseNpgsql(cfg["Database:ConnectionString"] ?? throw new InvalidOperationException("Database:ConnectionString не задано"));
+    finalConfig ??= cfg;
+    if (UsePostgres()) o.UseNpgsql(PgConnectionString(cfg), npg => npg.EnableRetryOnFailure(3, TimeSpan.FromSeconds(5), null)) // повтор при тимчасових збоях з'єднання (explicit-транзакцій у коді немає)
+         .AddInterceptors(new PgQueryInterceptor(pgQuery));
     else o.UseSqlite($"Data Source={ResolveSqlitePath(cfg, sp.GetRequiredService<IHostEnvironment>())}");
 });
 
 // --- MedLink Guide: інтерактивні покрокові інструкції (окрема бібліотека/схема guide, API /api/v1/guide) ---
 // На SQLite — окремий файл App_Data/medlink_guide.db; на PostgreSQL — та сама БД, схема "guide" (db/postgres/guide).
 var guideDbPath = Path.Combine(builder.Environment.ContentRootPath, builder.Configuration["Database:GuideSqlitePath"] ?? "App_Data/medlink_guide.db");
-if (!usePostgres) Directory.CreateDirectory(Path.GetDirectoryName(guideDbPath)!);
 builder.Services.AddGuide(builder.Configuration, o =>
 {
-    o.ConfigureDb = db => { if (usePostgres) db.UseNpgsql(builder.Configuration["Database:ConnectionString"]); else db.UseSqlite($"Data Source={guideDbPath}"); };
+    o.ConfigureDb = db =>
+    {
+        if (UsePostgres()) db.UseNpgsql(PgConnectionString(Cfg())).AddInterceptors(new PgQueryInterceptor(pgQuery));
+        else { Directory.CreateDirectory(Path.GetDirectoryName(guideDbPath)!); db.UseSqlite($"Data Source={guideDbPath}"); }
+    };
     o.AllowAnonymousEditing = true; // у ЛІС немає автентифікації (її надає evomis); розмежування — через Guide:EditorRoles у evomis
 });
-
 // --- MVC / JSON / ProblemDetails ---
 static string LocalizeModelKey(string key)
 {
@@ -151,6 +172,7 @@ builder.Services.AddSingleton<RetentionCleanupService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<RetentionCleanupService>());
 
 var app = builder.Build();
+finalConfig = app.Configuration;
 
 // --- Експорт DDL PostgreSQL для перенесення в MedLink: --export-pg-ddl <файл> (без запуску сервера) ---
 var ddlArg = Array.IndexOf(args, "--export-pg-ddl");
@@ -172,6 +194,21 @@ using (var scope = app.Services.CreateScope())
     if (legacyBackup != null) app.Logger.LogWarning("БД попередньої структури (до вирівнювання з MedLink) збережено як {Backup}; створюється нова БД", legacyBackup);
     await db.Database.EnsureCreatedAsync();
     foreach (var change in await SchemaUpgrader.UpgradeAsync(db)) app.Logger.LogWarning("Оновлення схеми БД: {Sql}", change);
+    if (db.Database.IsNpgsql())
+    {
+        // Версіоновані скрипти PostgreSQL (db/postgres/upgrades): індекси-вирази, trigram-пошук тощо; один екземпляр за раз (advisory lock)
+        var pgWarnings = new List<string>();
+        foreach (var script in await PgSchemaMigrator.ApplyAsync(db, pgWarnings)) app.Logger.LogWarning("Застосовано скрипт схеми PostgreSQL: {Script}", script);
+        foreach (var w in pgWarnings) app.Logger.LogWarning("Схема PostgreSQL: {Warning}", w);
+        var drift = await SchemaUpgrader.DetectDriftAsync(db);
+        if (drift.Count > 0) app.Logger.LogWarning("Розбіжності типів колонок БД і моделі ({Count}): {Drift}", drift.Count, string.Join("; ", drift.Take(10)));
+        // Українська колація сортування: лише якщо вона є в кластері (ICU); інакше сортування за колацією БД
+        if (pgQuery.Collation != null)
+        {
+            var have = await db.Database.SqlQueryRaw<int>("SELECT count(*)::int AS \"Value\" FROM pg_collation WHERE collname = {0}", pgQuery.Collation).ToListAsync();
+            if (have.FirstOrDefault() == 0) { app.Logger.LogWarning("Колація {Collation} відсутня в кластері PostgreSQL — сортування за колацією БД", pgQuery.Collation); pgQuery.Collation = null; }
+        }
+    }
     if (db.Database.IsSqlite()) await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
     await scope.ServiceProvider.GetRequiredService<SeedService>().SeedAsync();
     await scope.ServiceProvider.GetRequiredService<MisCatalogSeeder>().SeedAsync();
@@ -236,7 +273,7 @@ app.MapFallback(async ctx =>
     else { ctx.Response.StatusCode = 404; await ctx.Response.WriteAsync("Фронтенд не зібрано (wwwroot/index.html відсутній)"); }
 });
 
-app.Logger.LogInformation("MedLink LIS 4.0 API запущено. Swagger: /swagger · БД: {Db}", ResolveSqlitePath(app.Configuration, app.Environment));
+app.Logger.LogInformation("MedLink LIS 4.0 API запущено. Swagger: /swagger · БД: {Db}", UsePostgres() ? "PostgreSQL" : "SQLite (dev) " + ResolveSqlitePath(app.Configuration, app.Environment));
 app.Run();
 
 /// <summary>Точка входу (для WebApplicationFactory в інтеграційних тестах).</summary>

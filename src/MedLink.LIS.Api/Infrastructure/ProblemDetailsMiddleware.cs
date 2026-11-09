@@ -30,7 +30,17 @@ public sealed class ProblemDetailsMiddleware
         catch (DbUpdateException ex)
         {
             _logger.LogWarning(ex, "Помилка збереження у БД");
-            await WriteAsync(context, 409, "Помилка збереження", "Порушення цілісності даних: " + (ex.InnerException?.Message ?? ex.Message), null);
+            // PostgreSQL суворіше за SQLite (довжина varchar, NOT NULL, FK): повідомлення українською без технічних подробиць СУБД
+            var (status, title, detail) = (ex.InnerException as Npgsql.PostgresException) switch
+            {
+                { SqlState: "23505" } => (409, "Дублікат", "Запис із таким значенням уже існує"),
+                { SqlState: "23503" } => (409, "Порушення зв'язку", "Запис пов'язаний з іншими даними або посилається на неіснуючий запис"),
+                { SqlState: "23502" } pg => (400, "Не заповнено поле", $"Обов'язкове поле «{pg.ColumnName}» не заповнено"),
+                { SqlState: "22001" } => (400, "Занадто довге значення", "Одне зі значень перевищує допустиму довжину поля"),
+                { SqlState: "40001" or "40P01" } => (409, "Конфлікт одночасного запису", "Дані одночасно змінено іншим користувачем — повторіть дію"),
+                _ => (409, "Помилка збереження", "Порушення цілісності даних: " + (ex.InnerException?.Message ?? ex.Message))
+            };
+            await WriteAsync(context, status, title, detail, null);
         }
         catch (Exception ex)
         {

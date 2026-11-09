@@ -1,6 +1,6 @@
 # Medlink-LAB (MedLink LIS 4.0) — інструкції для Claude Code
 
-Лабораторна інформаційна система MedLink (модуль evomis). Стек: .NET 8 Web API + EF Core SQLite (`src/MedLink.LIS.Api`), спільна бібліотека (`src/MedLink.LIS.Core`), коннектор аналізаторів (`src/MedLink.LabConnector`), фронтенд Quasar v1.15.3 + Vue 2 (`src/MedLink.LIS.Web`). Без автентифікації користувачів (її надає evomis).
+Лабораторна інформаційна система MedLink (модуль evomis). Стек: .NET 8 Web API + EF Core на PostgreSQL (основна СУБД; SQLite — лише dev/тести) (`src/MedLink.LIS.Api`), спільна бібліотека (`src/MedLink.LIS.Core`), коннектор аналізаторів (`src/MedLink.LabConnector`), фронтенд Quasar v1.15.3 + Vue 2 (`src/MedLink.LIS.Web`). Без автентифікації користувачів (її надає evomis).
 
 ## Джерела істини
 - `docs/API_CONTRACT.md` — контракт API, доменна модель, протокол коннектора. Зміни контракту — тільки тут.
@@ -8,7 +8,7 @@
 - `docs/РЕЄСТР_ЗАДАЧ.md` — задачі власника продукту та статуси.
 
 ## Команди
-- Збірка: `dotnet build MedLink.LIS.sln`; тести: `dotnet test MedLink.LIS.sln` (мають проходити всі).
+- Збірка: `dotnet build MedLink.LIS.sln`; тести: `dotnet test MedLink.LIS.sln` (SQLite) **і** на PostgreSQL: `bash tools/deploy/pg-test-on-server.sh --both` (мають проходити всі на обох провайдерах; CI: job `backend-postgres`). Звіт про готовність БД: `docs/POSTGRES_READINESS.md`.
 - Фронтенд: `cd src/MedLink.LIS.Web && npm ci && npm run build`; у wwwroot API: `./build.sh` (Windows `.\build.ps1`).
 - Запуск: `./run.sh` або `.\run.cmd` → http://localhost:5055 (SPA), `/swagger`, `/health`.
 - Коннектор: `dotnet run --project src/MedLink.LabConnector -- list-profiles | test | preview-order | setup`.

@@ -3,13 +3,16 @@
 # Запуск з ПК розробника (архів збірки вже завантажено в /tmp/lab-app.tgz):
 #   ssh -i ~/.ssh/medone_ed25519 root@94.130.180.117 'bash -s' < tools/deploy/medlink-lab-install.sh
 # Що робить: окремий системний користувач medlinklab, каталог /srv/medlink-lab, служба medlink-lab
-# на 127.0.0.1:5190 (PathBase=/lab, SQLite у /srv/medlink-lab/data), сніпет nginx /lab/.
+# на 127.0.0.1:5190 (PathBase=/lab, БД — PostgreSQL medlink_lab; SQLite більше не використовується), сніпет nginx /lab/.
 # Наявні служби (med-one, /fin/, PostgreSQL 17, контейнери medlink-*) не змінюються.
+# PostgreSQL обов'язковий: передайте пароль ролі lab_stand змінною PGPW (перший запуск) або залиште наявний drop-in postgres.conf.
+# Резервні копії БД: bash tools/deploy/pg-backup-install.sh (таймер medlink-lab-backup.timer).
 set -euo pipefail
 
 APP=/srv/medlink-lab
 PORT=5190
 
+[ -n "${PGPW:-}" ] || [ -f /etc/systemd/system/medlink-lab.service.d/postgres.conf ] || { echo "ПОМИЛКА: PostgreSQL — основна СУБД ЛІС. Задайте PGPW (пароль ролі lab_stand) або створіть drop-in postgres.conf" >&2; exit 1; }
 id medlinklab >/dev/null 2>&1 || useradd --system --home "$APP" --shell /usr/sbin/nologin medlinklab
 mkdir -p "$APP/app" "$APP/data"
 if [ -f /tmp/lab-app.tgz ]; then
@@ -34,8 +37,6 @@ Environment=DOTNET_ROLL_FORWARD=Major
 Environment=Urls=http://127.0.0.1:$PORT
 Environment=Kestrel__Endpoints__Http__Url=http://127.0.0.1:$PORT
 Environment=PathBase=/lab
-Environment=Database__SqlitePath=$APP/data/medlink_lis.db
-Environment=Database__GuideSqlitePath=$APP/data/medlink_guide.db
 Restart=on-failure
 RestartSec=5
 MemoryMax=1G
