@@ -10,7 +10,8 @@
   Разделы:
     evomis   — тестовая база evomis-test (PostgreSQL): сервер, порт, база, пользователь, пароль
     medlink  — тестовый пользователь MedLink (Test_owner1): пароль
-    ehealth  — подключение к eHealth (SimplexSMD@ukr.net), вход по КЭП: путь к файлу ключа и пароль ключа
+    ehealth  — подключение к eHealth (SimplexSMD@ukr.net): пароль входа, а также КЭП — путь к файлу ключа
+               (по умолчанию C:\kital\pb_2995619516.jks) и пароль ключа
     hoco     — Харьковский Онко (ТОЛЬКО ЧТЕНИЕ): берётся автоматически из хранилища проекта Аккураси,
                вводить ничего не нужно
 
@@ -110,13 +111,15 @@ if ($sections -contains 'medlink') {
 }
 
 if ($sections -contains 'ehealth') {
-  Write-Host "`n=== Подключение к eHealth: вход по КЭП ===" -ForegroundColor Cyan
+  Write-Host "`n=== Подключение к eHealth: пароль входа + КЭП ===" -ForegroundColor Cyan
   Write-Host 'Сам файл ключа никуда не копируется — сохраняется только путь к нему и пароль ключа.' -ForegroundColor DarkGray
   $old = if ($data.Contains('ehealth')) { $data['ehealth'] } else { @{} }
   $h = [ordered]@{}
   $h.login  = Ask 'Пользователь' $(if ($old.login) { $old.login } else { 'SimplexSMD@ukr.net' })
   $h.method = 'KEP'
-  $path = Ask 'Путь к файлу ключа КЭП (.dat / .pfx / .jks / .pk8)' $(if ($old.key_path) { $old.key_path } else { '' })
+  $pwl = Ask-Secret 'Пароль входа в eHealth для этого пользователя (ввод скрыт; Enter — оставить прежний)'
+  $h.password = if ($pwl) { $pwl } elseif ($old.password) { $old.password } else { '' }
+  $path = Ask 'Путь к файлу ключа КЭП (.dat / .pfx / .jks / .pk8)' $(if ($old.key_path) { $old.key_path } else { 'C:\kital\pb_2995619516.jks' })
   if ($path -and -not (Test-Path $path)) { Write-Host "Внимание: файл не найден: $path" -ForegroundColor Yellow }
   $h.key_path = $path
   $h.ca = Ask 'Центр сертификации (необязательно, Enter — определить автоматически)' $(if ($old.ca) { $old.ca } else { '' })
