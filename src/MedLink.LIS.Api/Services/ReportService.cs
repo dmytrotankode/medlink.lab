@@ -101,6 +101,18 @@ public sealed class ReportService
         return m.Variant == "preliminary" ? tests.Where(t => t.ReleasedAt != null) : tests;
     }
 
+    /// <summary>Позначки на бланку: розрахунок за формулою, розведення, повторний аналіз.</summary>
+    internal static string ResultMarks(LabOrderTest t)
+    {
+        var r = t.Result;
+        if (r == null) return "";
+        var marks = new List<string>();
+        if (r.IsCalculated) marks.Add("розрахунок");
+        if (r.DilutionFactor is > 1) marks.Add($"розведення 1:{r.DilutionFactor.Value.ToString("0.##", CultureInfo.InvariantCulture)}");
+        if (t.RerunCount > 0 && !r.IsCalculated) marks.Add("повторний аналіз");
+        return string.Join(", ", marks);
+    }
+
     private static string FlagLabel(string flag) => flag switch
     {
         ResultFlags.Low => "↓", ResultFlags.High => "↑", ResultFlags.CritLow => "↓↓ КРИТ", ResultFlags.CritHigh => "↑↑ КРИТ", ResultFlags.Abnormal => "!", _ => ""
@@ -143,7 +155,7 @@ public sealed class ReportService
                 var cls = r?.Flag ?? "";
                 var prev = r?.PreviousValue != null ? $"{r.PreviousValue.Value.ToString("0.##", CultureInfo.InvariantCulture)} ({r.PreviousAt?.ToLocalTime():dd.MM.yy}) {(r.DeltaPercent.HasValue ? $"Δ{r.DeltaPercent:+0.0;-0.0}%" : "")}" : "";
                 var unverified = r != null && !OrderTestStatuses.VerifiedAny.Contains(t.Status) ? " <span class=\"small\">(не верифіковано)</span>" : "";
-                sb.Append($"<tr><td>{H(t.TestName)}{ExternalMark(t)}{(t.IsReflex ? " <span class=\"small\">(reflex)</span>" : "")}</td><td class=\"{cls}\">{H(val)}{unverified}</td><td>{H(r?.Unit ?? t.Test?.Unit)}</td><td>{H(r?.ReferenceDisplay)}</td><td class=\"{cls}\">{FlagLabel(r?.Flag ?? "")}</td><td class=\"small\">{H(prev)}</td></tr>");
+                sb.Append($"<tr><td>{H(t.TestName)}{ExternalMark(t)}{(t.IsReflex ? " <span class=\"small\">(reflex)</span>" : "")}</td><td class=\"{cls}\">{H(val)}{unverified}{(ResultMarks(t) is { Length: > 0 } mk ? $" <span class=\"small\">({H(mk)})</span>" : "")}</td><td>{H(r?.Unit ?? t.Test?.Unit)}</td><td>{H(r?.ReferenceDisplay)}</td><td class=\"{cls}\">{FlagLabel(r?.Flag ?? "")}</td><td class=\"small\">{H(prev)}</td></tr>");
             }
         }
         sb.Append("</table>");
@@ -257,7 +269,8 @@ public sealed class ReportService
                         var prev = r?.PreviousValue != null ? $"{r.PreviousValue.Value.ToString("0.##", CultureInfo.InvariantCulture)} ({r.PreviousAt?.ToLocalTime():dd.MM.yy}){(r.DeltaPercent.HasValue ? $" Δ{r.DeltaPercent:+0.0;-0.0}%" : "")}" : "";
                         IContainer Cell() => table.Cell().Border(0.5f).BorderColor("#bbb").Padding(3).Background(isCrit ? "#fee2e2" : "#ffffff");
                         Cell().Text(t.TestName + ExternalMark(t) + (t.IsReflex ? " (reflex)" : ""));
-                        Cell().Text(val).FontColor(color).Bold();
+                        var marks = ResultMarks(t);
+                        Cell().Text(txt => { txt.Span(val).FontColor(color).Bold(); if (marks.Length > 0) txt.Span(" (" + marks + ")").FontSize(7).FontColor("#555"); });
                         Cell().Text(r?.Unit ?? t.Test?.Unit ?? "");
                         Cell().Text(r?.ReferenceDisplay ?? "");
                         Cell().Text(FlagLabel(r?.Flag ?? "")).FontColor(color).Bold();

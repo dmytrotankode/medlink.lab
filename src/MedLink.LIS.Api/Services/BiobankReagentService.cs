@@ -44,6 +44,8 @@ public sealed class ReagentLotRequest
     public DateTime? OpenedAt { get; set; }
     public int? OnboardStabilityDays { get; set; }
     public bool IsActive { get; set; } = true;
+    /// <summary>Норма витрати на одне вимірювання (за замовчуванням 1).</summary>
+    public int UnitsPerTest { get; set; } = 1;
 }
 
 public sealed class BiobankService
@@ -245,7 +247,8 @@ public sealed class ReagentService
         var lot = new LabReagentLot
         {
             AnalyzerId = req.AnalyzerId, TestCode = req.TestCode, ReagentName = req.ReagentName, LotNumber = req.LotNumber, Manufacturer = req.Manufacturer, TestsInitial = req.TestsInitial,
-            TestsRemaining = req.TestsRemaining ?? req.TestsInitial, MinimumTests = req.MinimumTests, ExpiryDate = req.ExpiryDate, OpenedAt = req.OpenedAt, OnboardStabilityDays = req.OnboardStabilityDays, IsActive = req.IsActive
+            TestsRemaining = req.TestsRemaining ?? req.TestsInitial, MinimumTests = req.MinimumTests, ExpiryDate = req.ExpiryDate, OpenedAt = req.OpenedAt, OnboardStabilityDays = req.OnboardStabilityDays, IsActive = req.IsActive,
+            UnitsPerTest = Math.Max(1, req.UnitsPerTest)
         };
         _db.ReagentLots.Add(lot);
         _audit.Log("CREATE", "lab_reagent_lot", lot.Id, null, req);
@@ -266,6 +269,7 @@ public sealed class ReagentService
         lot.MinimumTests = req.MinimumTests;
         if (req.ExpiryDate != default) lot.ExpiryDate = req.ExpiryDate;
         lot.OpenedAt = req.OpenedAt ?? lot.OpenedAt; lot.OnboardStabilityDays = req.OnboardStabilityDays ?? lot.OnboardStabilityDays; lot.IsActive = req.IsActive;
+        if (req.UnitsPerTest > 0) lot.UnitsPerTest = req.UnitsPerTest;
         _audit.Log("UPDATE", "lab_reagent_lot", lot.Id, before, req);
         await _db.SaveChangesAsync();
         return lot;
@@ -280,18 +284,65 @@ public sealed class ReagentService
         await _db.SaveChangesAsync();
     }
 
-    public async Task<LabReagentLot> ConsumeAsync(string id, int tests)
+    /// <summary>
+    /// Ручне списання. За ТЗ (FR-REA-002) нестача НЕ блокує роботу: списується те, що є, у відповідь іде попередження.
+    /// </summary>
+    public async Task<(LabReagentLot Lot, string? Warning, int Shortfall)> ConsumeAsync(string id, int tests)
     {
         _policy.Require("Списання реагенту", Roles);
         if (tests <= 0) throw ValidationException.Field("tests", "Кількість має бути > 0");
         var lot = await _db.ReagentLots.FirstOrDefaultAsync(l => l.Id == id && l.RecordState != RecordStates.Deleted) ?? throw NotFoundException.For("Лот реагенту", id);
         if (!lot.IsActive) throw new ConflictException("Лот вимкнено — списання неможливе");
-        if (lot.TestsRemaining < tests) throw new ConflictException($"Недостатньо реагенту: залишок {lot.TestsRemaining} тестів, потрібно {tests}");
-        lot.TestsRemaining -= tests;
+        var take = Math.Min(tests, Math.Max(0, lot.TestsRemaining));
+        var shortfall = tests - take;
+        lot.TestsRemaining -= take;
         lot.OpenedAt ??= DateTime.UtcNow;
-        _audit.Log("CONSUME", "lab_reagent_lot", lot.Id, null, new { tests, lot.TestsRemaining });
+        var warnings = new List<string>();
+        if (shortfall > 0) warnings.Add($"Реагенту не вистачає: у лоті {lot.LotNumber} було {take}, потрібно {tests}; списано залишок, нестача {shortfall}");
+        else if (lot.TestsRemaining <= 0) warnings.Add($"Реагент «{lot.ReagentName}» (лот {lot.LotNumber}) вичерпано");
+        else if (lot.TestsRemaining <= lot.MinimumTests) warnings.Add($"Залишок реагенту «{lot.ReagentName}» (лот {lot.LotNumber}) — {lot.TestsRemaining}, мінімум {lot.MinimumTests}");
+        var warning = warnings.Count == 0 ? null : string.Join("; ", warnings);
+        _db.ReagentConsumptions.Add(new LabReagentConsumption { LotId = lot.Id, AnalyzerId = lot.AnalyzerId, TestCode = lot.TestCode, Units = take, Shortfall = shortfall, Kind = "MANUAL", Warning = warning });
+        _audit.Log("CONSUME", "lab_reagent_lot", lot.Id, null, new { tests, consumed = take, shortfall, lot.TestsRemaining });
         await _db.SaveChangesAsync();
-        return lot;
+        return (lot, warning, shortfall);
+    }
+
+    /// <summary>Звіт про витрату реагентів за період: підсумок по лотах і журнал списань (з посиланням на результат).</summary>
+    public async Task<object> ConsumptionReportAsync(DateTime? from, DateTime? to, string? lotId, string? analyzerId, string? testCode)
+    {
+        var f = from ?? DateTime.UtcNow.AddDays(-30);
+        var t = to.HasValue ? (to.Value.TimeOfDay == TimeSpan.Zero ? to.Value.Date.AddDays(1) : to.Value) : DateTime.UtcNow.AddMinutes(1); // дата без часу — включно з цим днем
+        var q = _db.ReagentConsumptions.AsNoTracking().Include(c => c.Lot).ThenInclude(l => l!.Analyzer).Where(c => c.At >= f && c.At < t);
+        if (!string.IsNullOrWhiteSpace(lotId)) q = q.Where(c => c.LotId == lotId);
+        if (!string.IsNullOrWhiteSpace(analyzerId)) q = q.Where(c => c.AnalyzerId == analyzerId);
+        if (!string.IsNullOrWhiteSpace(testCode)) q = q.Where(c => c.TestCode == testCode);
+        var rows = await q.OrderByDescending(c => c.At).ToListAsync();
+        var byLot = rows.GroupBy(c => c.LotId).Select(g =>
+        {
+            var lot = g.First().Lot;
+            return new
+            {
+                lotId = g.Key, reagentName = lot?.ReagentName, lotNumber = lot?.LotNumber, analyzer = lot?.Analyzer?.Name, testCode = lot?.TestCode,
+                units = g.Sum(x => x.Units), shortfall = g.Sum(x => x.Shortfall), runs = g.Count(), auto = g.Count(x => x.Kind != "MANUAL"), manual = g.Count(x => x.Kind == "MANUAL"),
+                remaining = lot?.TestsRemaining, minimum = lot?.MinimumTests, belowMinimum = lot != null && lot.TestsRemaining <= lot.MinimumTests,
+                firstAt = g.Min(x => x.At), lastAt = g.Max(x => x.At)
+            };
+        }).OrderByDescending(x => x.units).ToList();
+        return new
+        {
+            from = f, to = t,
+            totals = new { units = rows.Sum(r => r.Units), shortfall = rows.Sum(r => r.Shortfall), records = rows.Count, lots = byLot.Count },
+            byLot,
+            items = rows.Take(500).Select(c => new { c.Id, c.LotId, lotNumber = c.Lot?.LotNumber, reagentName = c.Lot?.ReagentName, c.OrderTestId, c.ResultId, c.TestCode, c.AnalyzerId, c.Units, c.Shortfall, c.Kind, c.At, c.Warning }).ToList()
+        };
+    }
+
+    /// <summary>Який лот реагенту використано для результату (усі вимірювання тесту, включно з повторами).</summary>
+    public async Task<List<object>> ByResultAsync(string orderTestId)
+    {
+        var rows = await _db.ReagentConsumptions.AsNoTracking().Include(c => c.Lot).Where(c => c.OrderTestId == orderTestId).OrderBy(c => c.At).ToListAsync();
+        return rows.Select(c => (object)new { c.Id, c.LotId, lotNumber = c.Lot?.LotNumber, reagentName = c.Lot?.ReagentName, expiryDate = c.Lot?.ExpiryDate, c.Units, c.Shortfall, c.Kind, c.At, c.Warning }).ToList();
     }
 
     public async Task<List<object>> AlertsAsync()

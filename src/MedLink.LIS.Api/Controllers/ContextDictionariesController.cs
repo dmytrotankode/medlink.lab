@@ -85,6 +85,10 @@ public sealed class DictionariesController : LisControllerBase
     [HttpGet("dictionaries/tests/{code}/profiles")]
     public async Task<IActionResult> TestProfiles(string code) => Ok(await _dict.TestProfilesAsync(code));
 
+    /// <summary>Перевірка формули розрахункового показника (синтаксис, відомі коди, цикли) без збереження.</summary>
+    [HttpPost("dictionaries/tests/validate-formula")]
+    public async Task<IActionResult> ValidateFormula([FromBody] FormulaCheckRequest req) => Ok(await _dict.CheckFormulaAsync(req.Code, req.Formula));
+
     [HttpGet("dictionaries/{name}")]
     public async Task<IActionResult> List(string name, [FromQuery] string? search, [FromQuery] bool? isActive, [FromQuery] PagingQuery paging) => Ok(await _dict.ListAsync(name, search, isActive, paging));
 

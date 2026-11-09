@@ -6,6 +6,7 @@ using MedLink.LIS.Api.Data;
 using MedLink.LIS.Api.Data.Entities;
 using MedLink.LIS.Api.Domain;
 using MedLink.LIS.Api.Infrastructure;
+using MedLink.LIS.Core.Clinical;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedLink.LIS.Api.Services;
@@ -105,6 +106,7 @@ public sealed class DictionaryService
                 if (!await _db.BiomaterialTypes.AnyAsync(b => b.Id == e.BiomaterialTypeId)) throw ValidationException.Field("biomaterialTypeId", "Біоматеріал не знайдено");
                 if (body.TryGetProperty("dropdownOptions", out var opts) && opts.ValueKind == JsonValueKind.Array) e.DropdownOptions = opts.EnumerateArray().Select(o => o.GetString() ?? "").ToList();
                 e.BiomaterialType = null; e.TubeType = null; e.Method = null;
+                await ValidateFormulaAsync(e);
                 _db.Tests.Add(e); entity = e; break;
             }
             case "profiles":
@@ -164,6 +166,13 @@ public sealed class DictionaryService
             _db.ProfileItems.RemoveRange(profile.Items);
             profile.Items = await BuildProfileItems(profile.Id, body);
         }
+        if (existing is LabTestDefinition tdv)
+        {
+            await ValidateFormulaAsync(tdv);
+            var oldFormula = JsonNode.Parse(before)?["formula"]?.GetValue<string>();
+            if (!string.Equals(oldFormula ?? "", tdv.Formula ?? "", StringComparison.Ordinal))
+                _audit.Log("FORMULA_CHANGED", table, id, new { formula = oldFormula }, new { formula = tdv.Formula, tdv.ResultType }, $"Змінено формулу показника {tdv.Code}");
+        }
         _audit.Log("UPDATE", table, id, before, existing);
         await _db.SaveChangesAsync();
         return await GetAsync(name, IdOf(existing));
@@ -191,6 +200,38 @@ public sealed class DictionaryService
         _audit.Log("DELETE", table, realId, existing, null);
         await _db.SaveChangesAsync();
         return new { id = realId, deleted = true };
+    }
+
+    /// <summary>Перевірка формули розрахункового показника: синтаксис, відомі коди, відсутність самопосилання й циклів.</summary>
+    public async Task<object> CheckFormulaAsync(string? code, string? formula)
+    {
+        var parsed = FormulaEngine.Parse(formula);
+        if (!parsed.IsValid) return new { valid = false, error = parsed.Error, inputs = Array.Empty<string>(), unknownCodes = Array.Empty<string>(), cycle = (string[]?)null };
+        var codes = (await _db.Tests.AsNoTracking().Select(t => t.Code).ToListAsync()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var unknown = parsed.Inputs.Where(i => !codes.Contains(i) && !string.Equals(i, code, StringComparison.OrdinalIgnoreCase)).ToList();
+        var self = code != null && parsed.Inputs.Contains(code, StringComparer.OrdinalIgnoreCase);
+        var cycle = self ? new List<string> { code!.ToUpperInvariant(), code.ToUpperInvariant() } : await FindFormulaCycleAsync(code, parsed);
+        string? error = unknown.Count > 0 ? $"Невідомі показники у формулі: {string.Join(", ", unknown)}"
+            : cycle != null ? $"Циклічне посилання: {string.Join(" → ", cycle)}" : null;
+        return new { valid = error == null, error, inputs = parsed.Inputs, context = parsed.ContextVariables, unknownCodes = unknown, cycle };
+    }
+
+    private async Task<List<string>?> FindFormulaCycleAsync(string? code, ParsedFormula parsed)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return null;
+        var others = await _db.Tests.AsNoTracking().Where(t => t.Formula != null && t.Formula != "" && t.Code != code).Select(t => new { t.Code, t.Formula }).ToListAsync();
+        var map = others.ToDictionary(t => t.Code.ToUpperInvariant(), t => FormulaEngine.Parse(t.Formula).Inputs.ToList());
+        return FormulaEngine.FindCycle(code, parsed.Inputs, c => map.TryGetValue(c, out var l) ? l : Array.Empty<string>());
+    }
+
+    private async Task ValidateFormulaAsync(LabTestDefinition e)
+    {
+        if (e.ResultType != "CALCULATED") return;
+        if (string.IsNullOrWhiteSpace(e.Formula)) throw ValidationException.Field("formula", "Для розрахункового показника вкажіть формулу");
+        var check = await CheckFormulaAsync(e.Code, e.Formula);
+        var json = JsonSerializer.SerializeToNode(check)!.AsObject();
+        if (json["valid"]?.GetValue<bool>() != true) throw ValidationException.Field("formula", json["error"]?.GetValue<string>() ?? "Формула некоректна");
+        if (FormulaEngine.Parse(e.Formula).Inputs.Count == 0) throw ValidationException.Field("formula", "У формулі має бути хоча б один код показника");
     }
 
     private async Task<object> GetTrackedAsync(string name, string id)

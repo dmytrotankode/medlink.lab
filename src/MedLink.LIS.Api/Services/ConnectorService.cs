@@ -390,7 +390,8 @@ $@"MedLink LabConnector — інструкція з встановлення (і
                 var row = await _pipeline.ApplyAsync(new ResultEntry
                 {
                     OrderTestId = test.Id, NumericValue = numeric, StringValue = text, Unit = mapRow?.UnitOverride ?? (numeric.HasValue ? null : item.Unit), AnalyzerId = analyzer.Id,
-                    AnalyzerFlags = item.Flags, RawMessageId = batch.RawMessageId, MeasuredAt = item.MeasuredAt, IsSystem = true
+                    AnalyzerFlags = item.Flags, RawMessageId = batch.RawMessageId, MeasuredAt = item.MeasuredAt, IsSystem = true,
+                    ValueIsFinal = true, AboveRange = numeric.HasValue && (item.Value ?? "").TrimStart().StartsWith('>')
                 });
                 response.Matched++; response.Created.Add(row.OrderTestId);
             }

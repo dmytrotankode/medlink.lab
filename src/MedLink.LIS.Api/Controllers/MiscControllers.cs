@@ -44,7 +44,20 @@ public sealed class ReagentsController : LisControllerBase
     [HttpPut("reagents/lots/{id}")] public async Task<IActionResult> Update(string id, [FromBody] ReagentLotRequest req) => Ok(await _reagents.UpdateAsync(id, req));
     [HttpDelete("reagents/lots/{id}")] public async Task<IActionResult> Delete(string id) { await _reagents.DeleteAsync(id); return NoContent(); }
     /// <summary>Списання тест-доз.</summary>
-    [HttpPost("reagents/lots/{id}/consume")] public async Task<IActionResult> Consume(string id, [FromBody] ConsumeRequest req) => Ok(await _reagents.ConsumeAsync(id, req.Tests));
+    [HttpPost("reagents/lots/{id}/consume")]
+    public async Task<IActionResult> Consume(string id, [FromBody] ConsumeRequest req)
+    {
+        var (lot, warning, shortfall) = await _reagents.ConsumeAsync(id, req.Tests);
+        var node = System.Text.Json.JsonSerializer.SerializeToNode(lot, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web) { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles })!.AsObject();
+        node["warning"] = warning; node["shortfall"] = shortfall;
+        return Ok(node);
+    }
+    /// <summary>Звіт витрат реагентів за лотом/періодом.</summary>
+    [HttpGet("reagents/consumption")]
+    public async Task<IActionResult> Consumption([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? lotId, [FromQuery] string? analyzerId, [FromQuery] string? testCode)
+        => Ok(await _reagents.ConsumptionReportAsync(from, to, lotId, analyzerId, testCode));
+    /// <summary>Лот(и) реагенту, використані для результату тесту.</summary>
+    [HttpGet("reagents/by-result/{orderTestId}")] public async Task<IActionResult> ByResult(string orderTestId) => Ok(await _reagents.ByResultAsync(orderTestId));
     /// <summary>Попередження: мінімум/термін/on-board стабільність.</summary>
     [HttpGet("reagents/alerts")] public async Task<IActionResult> Alerts() => Ok(await _reagents.AlertsAsync());
 }
