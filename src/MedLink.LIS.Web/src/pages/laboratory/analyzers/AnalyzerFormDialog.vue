@@ -64,7 +64,7 @@
           <tbody>
             <tr v-for="(p, i) in form.parameterMap" :key="i">
               <td><q-input v-model="p.analyzerCode" dense borderless placeholder="WBC" /></td>
-              <td style="min-width: 220px"><q-select v-model="p.testCode" dense borderless :options="testCodeOptions" emit-value map-options use-input input-debounce="0" @filter="filterTests" /></td>
+              <td style="min-width: 220px"><q-select v-model="p.testCode" dense borderless :display-value="testLabel(p.testCode)" :options="testCodeOptions" emit-value map-options use-input input-debounce="0" @filter="filterTests" /></td>
               <td><q-input v-model.number="p.factor" dense borderless type="number" step="0.001" input-class="text-right" /></td>
               <td><q-input v-model.number="p.offset" dense borderless type="number" step="0.001" input-class="text-right" /></td>
               <td><q-input v-model="p.unitOverride" dense borderless /></td>
@@ -103,13 +103,29 @@ export default {
       if (v) {
         this.error = '';
         const a = this.analyzer;
-        this.form = a ? { ...this.empty(), ...JSON.parse(JSON.stringify(a)), parameterMap: (a.parameterMap || []).map(p => ({ ...p })) } : this.empty();
+        this.form = a ? { ...this.empty(), ...JSON.parse(JSON.stringify(a)), parameterMap: this.dedupeMap((a.parameterMap || []).map(p => ({ ...p }))) } : this.empty();
         this.$store.dispatch('dictionaries/loadMany', ['analyzer-types', 'departments', 'tests']);
       }
     }
   },
   methods: {
     empty () { return { id: null, code: '', name: '', analyzerTypeId: null, connectorId: null, departmentId: null, connectionMode: 'TCP', tcpHost: '', tcpPort: 5100, isTcpServer: true, comPort: 'COM1', baudRate: 9600, parity: 'None', dataBits: 8, stopBits: 'One', flowControl: 'None', filePath: '', filePollSec: 10, autoQueryOrders: true, isActive: true, bopBase64: '', eopBase64: '', sleepMs: null, maxFrameLen: null, checksum: true, ackAfterRecord: true, orderTemplate: '', parameterMap: [] }; },
+    /** Назва показника за кодом (запасний варіант — сам код); порожній вибір лишається порожнім */
+    testLabel (code) {
+      if (!code) return '';
+      const t = this.$store.getters['dictionaries/items']('tests').find(x => x.code === code);
+      return t && t.name ? `${t.code} — ${t.name}` : code;
+    },
+    /** Однакові рядки карти (той самий код приладу без урахування регістру й той самий показник) показуємо один раз */
+    dedupeMap (rows) {
+      const seen = new Set();
+      return rows.filter(r => {
+        const k = `${String(r.analyzerCode || '').trim().toLowerCase()}|${r.testCode || ''}`;
+        if (!r.analyzerCode && !r.testCode) return true;
+        if (seen.has(k)) return false;
+        seen.add(k); return true;
+      });
+    },
     // Протокол без внутрішніх суфіксів: ASTM_ASK → ASTM
     protocolName (p) { return p ? String(p).split('_')[0] : '—'; },
     typeDefault (k) { return this.selectedType ? (this.selectedType[k] || '') : ''; },
@@ -117,7 +133,7 @@ export default {
     filterTests (val, update) { update(() => { this.testFilter = val || ''; }); },
     async save () {
       this.saving = true; this.error = '';
-      const body = { ...this.form, protocol: this.protocol !== '—' ? this.protocol : null, parameterMap: this.form.parameterMap.filter(p => p.analyzerCode && p.testCode).map(p => ({ ...p, unitOverride: p.unitOverride || null })) };
+      const body = { ...this.form, protocol: this.protocol !== '—' ? this.protocol : null, parameterMap: this.dedupeMap(this.form.parameterMap.filter(p => p.analyzerCode && p.testCode)).map(p => ({ ...p, unitOverride: p.unitOverride || null })) };
       ['bopBase64', 'eopBase64', 'orderTemplate', 'tcpHost', 'comPort', 'filePath'].forEach(k => { if (body[k] === '') body[k] = null; });
       const id = body.id; delete body.id; delete body.isOnline; delete body.lastMessageAt; delete body.lastError;
       try {

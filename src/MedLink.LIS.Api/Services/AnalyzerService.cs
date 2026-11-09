@@ -160,7 +160,7 @@ public sealed class AnalyzerService
         if (req.ParameterMap != null)
         {
             _db.AnalyzerParameters.RemoveRange(a.ParameterMap);
-            a.ParameterMap = req.ParameterMap.Select(m => new LabAnalyzerParameterMap { AnalyzerId = a.Id, AnalyzerCode = m.AnalyzerCode.Trim(), TestCode = m.TestCode.Trim(), Factor = m.Factor, Offset = m.Offset, UnitOverride = m.UnitOverride, LinearityLow = m.LinearityLow, LinearityHigh = m.LinearityHigh, AutoDilutionFactor = m.AutoDilutionFactor }).ToList();
+            a.ParameterMap = req.ParameterMap.GroupBy(m => (m.AnalyzerCode.Trim().ToUpperInvariant(), m.TestCode.Trim())).Select(g => g.First()).Select(m => new LabAnalyzerParameterMap { AnalyzerId = a.Id, AnalyzerCode = m.AnalyzerCode.Trim(), TestCode = m.TestCode.Trim(), Factor = m.Factor, Offset = m.Offset, UnitOverride = m.UnitOverride, LinearityLow = m.LinearityLow, LinearityHigh = m.LinearityHigh, AutoDilutionFactor = m.AutoDilutionFactor }).ToList();
         }
     }
 

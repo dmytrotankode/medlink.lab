@@ -64,7 +64,7 @@
       "services": [ { "profileCode": "PROF_BIOCHEM_BASE", "priority": 1 } ],
       "tests": [ "PROT_TOT", "ALB", "BIL_TOT", "BIL_DIR", "UREA", "CREAT", "ALT", "AST", "GLU", "AMYL", "CRP" ] },
     { "id": "0a2a0000-0000-0000-0000-000000000006", "code": "RESPONS940", "name": "Respons 940", "analyzerTypeCode": "BA200", "location": "КДЛ · біохімія", "category": "Біохімія", "avgTatMinutes": 45, "online": false, "offlineMinutes": 46,
-      "lastError": "Немає зв'язку з коннектором 46 хв",
+      "lastError": "Немає зв'язку з коннектором",
       "services": [ { "profileCode": "PROF_BIOCHEM_BASE", "priority": 2 } ],
       "tests": [ "PROT_TOT", "ALB", "BIL_TOT", "BIL_DIR", "UREA", "CREAT", "ALT", "AST", "GLU", "AMYL" ] },
     { "id": "0a2a0000-0000-0000-0000-000000000007", "code": "MINDRAY_CL900I", "name": "Mindray CL-900i", "analyzerTypeCode": "MINDRAY", "location": "КДЛ · імунохімія", "category": "Імунохімія", "avgTatMinutes": 60, "online": true,

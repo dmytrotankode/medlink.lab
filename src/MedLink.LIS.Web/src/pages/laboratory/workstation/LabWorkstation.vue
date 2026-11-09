@@ -72,6 +72,7 @@
     />
 
     <result-editor-dialog v-model="editorOpen" :row="activeRow" @saved="onSaved" />
+    <rerun-dialog v-model="rerunOpen" :row="activeRow" @done="afterRerun" @failed="notifyError" />
     <verify-result-dialog v-model="verifyOpen" :row="activeRow" @verified="load" />
     <batch-dialog v-model="batchOpen" :items="selected" @created="selected = []" />
     <create-order-dialog v-model="createOpen" @created="onOrderCreated" />
@@ -125,7 +126,7 @@ export default {
       sections: [],
       statusOptions: toOptions(TEST_STATUS),
       flagOptions: toOptions(FLAG),
-      editorOpen: false, verifyOpen: false, batchOpen: false, createOpen: false, rejectOpen: false, deleteOpen: false, historyOpen: false,
+      editorOpen: false, verifyOpen: false, rerunOpen: false, batchOpen: false, createOpen: false, rejectOpen: false, deleteOpen: false, historyOpen: false,
       history: [],
       ENTER_ROLES,
       VERIFY_ROLES
@@ -227,19 +228,11 @@ export default {
       this.activeRow = row; this.verifyOpen = true;
     },
     rerun (row) {
-      // Повтор можна відправити з розведенням: лаборант вказує коефіцієнт (порожньо — без розведення)
-      this.$q.dialog({
-        title: `Повтор: ${row.testCode}`, message: 'Розведення зразка 1:N (необов’язково). Попереднє значення збережеться в історії.',
-        prompt: { model: '', type: 'number', outlined: true, dense: true, isValid: v => v === '' || Number(v) >= 1, label: 'Коефіцієнт розведення (N)' },
-        cancel: { label: 'Скасувати', flat: true }, ok: { label: 'Повторити', color: 'primary' }, persistent: true
-      }).onOk(async v => {
-        const factor = v === '' || v === null ? null : Number(v);
-        try {
-          await this.$api.rerunResult(row.orderTestId, { dilutionFactor: factor && factor > 1 ? factor : null });
-          this.notifyOk(`Показник ${row.testCode} відправлено на повтор${factor && factor > 1 ? ' з розведенням 1:' + factor : ''}`); this.load();
-        } catch (e) { this.notifyError(e); }
-      });
+      // Повтор — діалог із причиною й розведенням (так само, як у лікаря на екрані валідації)
+      if (this.rerunOpen) return;
+      this.activeRow = row; this.rerunOpen = true;
     },
+    afterRerun ({ row, factor }) { this.notifyOk(`Показник ${row.testCode} відправлено на повтор${factor ? ' з розведенням 1:' + factor : ''}`); this.load(); },
     askReject (row) { this.activeRow = row; this.rejectOpen = true; },
     async doReject (reason) {
       try { await this.$api.rejectResult(this.activeRow.orderTestId, reason); this.notifyOk('Результат відхилено'); this.load(); } catch (e) { this.notifyError(e); }

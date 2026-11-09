@@ -97,7 +97,7 @@ public sealed class ReportService
         public LabReportTemplate? Tpl { get; set; }
         public string Title => string.IsNullOrWhiteSpace(Tpl?.Title) ? "РЕЗУЛЬТАТИ ЛАБОРАТОРНИХ ДОСЛІДЖЕНЬ" : Tpl!.Title!;
         public string? TitleEn => string.IsNullOrWhiteSpace(Tpl?.Title) && (Tpl?.Languages ?? "uk").Split(',').Contains("en") ? "LABORATORY TEST RESULTS" : null;
-        public string? FooterText => string.IsNullOrWhiteSpace(Tpl?.FooterText) ? Lab.ReportFooter : Tpl!.FooterText;
+        public string? FooterText { get { var f = string.IsNullOrWhiteSpace(Tpl?.FooterText) ? Lab.ReportFooter : Tpl!.FooterText; return Lang == "en" && HasCyrillic(f) ? null : f; } }
     }
 
     public static string NormalizeVariant(string? variant) => (variant ?? "final").Trim().ToLowerInvariant() switch
@@ -212,6 +212,18 @@ public sealed class ReportService
         return lang switch { "en" => p.NameEn, "both" => $"{p.Name} / {p.NameEn}", _ => p.Name };
     }
 
+    private static bool HasCyrillic(string? s) => s != null && s.Any(ch => ch is >= 'Ѐ' and <= 'ӿ');
+
+    /// <summary>Коментар до результату для бланка: службовий коментар імпорту не друкується; вільний український текст не потрапляє в англійський бланк (перекладу немає).</summary>
+    private static string? PrintableComment(LabOrderTest t, string lang)
+    {
+        var c = t.Result?.VerificationComment ?? t.Result?.OperatorComment;
+        if (string.IsNullOrWhiteSpace(c)) return null;
+        if (c.StartsWith(ImportService.ImportCommentPrefix, StringComparison.Ordinal)) return null;
+        if (lang == "en" && HasCyrillic(c)) return null;
+        return c;
+    }
+
     private static string MarkText(ReportModel m) => m.Mark == "AMENDED" ? Tx(m.Lang, "amended") : m.Mark == "DUPLICATE" ? Tx(m.Lang, "duplicate") : "";
 
     public async Task<string> HtmlAsync(string orderId, string? host, string? variant = null, string? lang = null)
@@ -262,11 +274,11 @@ public sealed class ReportService
         }
         sb.Append("</table>");
         foreach (var note in ExternalNotes(o, L)) sb.Append($"<p class=\"small\"><b>{H(note.Mark)}</b> {H(note.Text)}</p>");
-        var comments = o.Tests.Where(t => !string.IsNullOrWhiteSpace(t.Result?.VerificationComment) || !string.IsNullOrWhiteSpace(t.Result?.OperatorComment)).ToList();
+        var comments = o.Tests.Where(t => PrintableComment(t, L) != null).ToList();
         if (comments.Count > 0)
         {
             sb.Append($"<p class=\"small\"><b>{H(Tx(L, "comments"))}:</b><br>");
-            foreach (var t in comments) sb.Append($"{H(t.TestCode)}: {H(t.Result?.VerificationComment ?? t.Result?.OperatorComment)}<br>");
+            foreach (var t in comments) sb.Append($"{H(t.TestCode)}: {H(PrintableComment(t, L))}<br>");
             sb.Append("</p>");
         }
         var doctors = o.Tests.Select(t => t.Result?.VerifiedById).Where(v => v != null).Distinct().Select(v => m.Employees.TryGetValue(v!, out var n) ? n : v!).ToList();
