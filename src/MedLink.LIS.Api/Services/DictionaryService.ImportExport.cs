@@ -214,7 +214,10 @@ public sealed partial class DictionaryService
     /// Імпорт довідника. dryRun=true — те саме виконується в транзакції, що відкочується: звіт показує, скільки створиться,
     /// оновиться, буде пропущено (з причинами) і які рядки відхилено перевірками. Ліміт — 5000 рядків.
     /// </summary>
-    public async Task<object> ImportAsync(string name, string content, bool dryRun)
+    public Task<object> ImportAsync(string name, string content, bool dryRun) =>
+        _db.Database.CreateExecutionStrategy().ExecuteAsync(() => ImportCoreAsync(name, content, dryRun));
+
+    private async Task<object> ImportCoreAsync(string name, string content, bool dryRun)
     {
         _policy.Require($"Імпорт довідника {name}", LabRoles.Admin);
         Table(name);

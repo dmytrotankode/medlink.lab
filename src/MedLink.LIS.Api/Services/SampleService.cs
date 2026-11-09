@@ -84,6 +84,10 @@ public sealed class SampleService
         var rule = _policy.Ensure(LisEntities.Sample, SampleActions.Collect, sample.Status, $"Пробірка {barcode}");
         if (req.Checklist != null && !req.Checklist.IdVerified) throw new ValidationException("Чек-лист забору: особу пацієнта не підтверджено");
         var before = sample.Status;
+        // атомарне захоплення: паралельний подвійний забір — лише один успіх
+        var claimedStatus = rule.ToStatus!;
+        var claimed = await _db.Samples.Where(x => x.Id == sample.Id && x.Status == before).ExecuteUpdateAsync(u => u.SetProperty(x => x.Status, claimedStatus));
+        if (claimed == 0) throw new ConflictException($"Пробірку {barcode} уже забрано або її стан щойно змінився");
         sample.Status = rule.ToStatus!;
         sample.CollectedAt = req.CollectedAt ?? DateTime.UtcNow;
         sample.CollectedById = _current.EmployeeId;

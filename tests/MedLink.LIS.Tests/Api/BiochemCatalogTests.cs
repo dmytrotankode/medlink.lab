@@ -39,7 +39,7 @@ public class BiochemCatalogTests
     }
 
     /// <summary>Показники каталогу без тимчасових, створених іншими тестами (код починається з ZZ).</summary>
-    private async Task<List<JsonNode>> CatalogTestsAsync() => (await ListAsync("tests")).Where(t => !t["code"]!.GetValue<string>().StartsWith("ZZ")).ToList();
+    private async Task<List<JsonNode>> CatalogTestsAsync() => (await ListAsync("tests")).Where(t => { var c = t["code"]!.GetValue<string>(); return !c.StartsWith("ZZ") && !System.Text.RegularExpressions.Regex.IsMatch(c, "^AV[0-9A-F]{6}$"); }).ToList();
 
     // ------------------------------------------------------------------ цілісність каталогу
     /// <summary>Показники, для яких немає надійно визначеного коду LOINC (залишені порожніми свідомо).</summary>
@@ -87,7 +87,8 @@ public class BiochemCatalogTests
             Assert.Contains(code, tests);
 
         var layers = (await Json(await _f.As(DemoDataSeeder.Admin).GetAsync($"{Base}/norms/combinations"))).AsArray();
-        var unmarked = layers.Where(l => !(l!["source"]?.GetValue<string>() ?? "").Contains("потребує затвердження")).Select(l => l!["id"]!.GetValue<string>()).ToList();
+        var catalogCodes = (await CatalogTestsAsync()).Select(t => t["code"]!.GetValue<string>()).ToHashSet();
+        var unmarked = layers.Where(l => catalogCodes.Contains(l!["testCode"]!.GetValue<string>()) && !(l!["source"]?.GetValue<string>() ?? "").Contains("потребує затвердження")).Select(l => l!["id"]!.GetValue<string>()).ToList();
         Assert.True(unmarked.Count == 0, $"норми без позначки «потребує затвердження»: {unmarked.Count}");
         // кожна норма має коректні межі
         foreach (var l in layers)
