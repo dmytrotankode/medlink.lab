@@ -23,6 +23,16 @@ public static class NotifyQueue
     {
         var t = now ?? DateTime.UtcNow;
         if (db.Notifications.Local.Any(n => n.IdempotencyKey == idempotencyKey) || await db.Notifications.AsNoTracking().AnyAsync(n => n.IdempotencyKey == idempotencyKey)) return null;
+        // Не плодимо однакові повідомлення: для замовлення й каналу вже є невідправлене — нове не потрібне;
+        // підсумкове «результат готовий» замінює невідправлені часткові.
+        if (orderId != null)
+        {
+            var pendingStates = new[] { NotifyStatuses.Queued, NotifyStatuses.NotConfigured };
+            var pending = await db.Notifications.Where(n => n.OrderId == orderId && n.Channel == channel && pendingStates.Contains(n.Status)).ToListAsync();
+            if (pending.Any(n => n.TemplateCode == templateCode || (templateCode == NotifyTemplates.ResultPartial && n.TemplateCode == NotifyTemplates.ResultReady))) return null;
+            foreach (var n in pending.Where(n => templateCode == NotifyTemplates.ResultReady && n.TemplateCode == NotifyTemplates.ResultPartial))
+            { n.Status = NotifyStatuses.Skipped; n.ReasonCode = NotifyReasons.Superseded; n.UpdatedAt = t; }
+        }
         var row = new LabPatientNotification
         {
             PatientId = patientId, OrderId = orderId, Channel = channel, Payload = link, TemplateCode = templateCode, IdempotencyKey = idempotencyKey,

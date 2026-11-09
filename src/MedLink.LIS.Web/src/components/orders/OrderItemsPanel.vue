@@ -7,7 +7,7 @@
     <div class="medlink-card__title">
       <span><q-icon name="assignment" class="q-mr-xs" />Призначення МІС<span v-if="order.misReferralNumber"> · {{ order.misReferralNumber }}</span></span>
       <span>
-        <q-badge v-if="order.packageCode" color="purple-5" class="q-mr-xs" :label="`Пакет: ${order.packageName || order.packageCode}${order.packageChangedByDoctor ? ' (змінено лікарем)' : ''}`" />
+        <q-badge v-if="order.packageCode" color="purple-5" class="q-mr-sm" :label="`Пакет: ${packageTitle}${order.packageChangedByDoctor ? ' (змінено лікарем)' : ''}`" />
         <q-badge :color="distColor" :label="distLabel" />
       </span>
     </div>
@@ -21,9 +21,9 @@
         <tbody>
           <tr v-for="(i, n) in order.items" :key="i.id">
             <td>{{ i.packageItemNo || n + 1 }}</td>
-            <td><b>{{ i.interventionName }}</b><div class="text-caption text-grey-7">{{ i.interventionCode }}</div></td>
-            <td>{{ (i.selected || []).join(', ') || '—' }}<div v-if="i.autoAdded && i.autoAdded.length" class="text-caption text-orange-9">автододано: {{ i.autoAdded.join(', ') }}</div></td>
-            <td class="text-grey-6">{{ (i.notOrdered || []).join(', ') }}</td>
+            <td><b>{{ i.interventionName || '—' }}</b></td>
+            <td>{{ names(i.selected) || '—' }}<div v-if="i.autoAdded && i.autoAdded.length" class="text-caption text-orange-9">автододано: {{ names(i.autoAdded) }}</div></td>
+            <td class="text-grey-6">{{ names(i.notOrdered) }}</td>
             <td class="text-caption">{{ sourceLabel(i.selectionSource) }}</td>
             <td><q-badge :color="itemColor(i.status)" :label="itemLabel(i.status)" /></td>
           </tr>
@@ -43,12 +43,23 @@ const DIST = { PROPOSED: ['Розподіл: пропозиція', 'orange-7'],
 export default {
   name: 'OrderItemsPanel',
   props: { order: { type: Object, required: true } },
+  created () {
+    this.$store.dispatch('dictionaries/load', { name: 'tests', params: { pageSize: 500 } }).catch(() => {});
+  },
   computed: {
+    packageTitle () { return String(this.order.packageName || this.order.packageCode || '').replace(/CITO/g, 'терміново'); },
+    testNames () {
+      const m = {};
+      for (const t of this.$store.getters['dictionaries/items']('tests')) m[t.code] = t.shortName || t.name;
+      return m;
+    },
     bed () { return [this.order.ward && `пал. ${this.order.ward}`, this.order.room && `к. ${this.order.room}`, this.order.bed && `ліжко ${this.order.bed}`].filter(Boolean).join(', '); },
     distLabel () { return (DIST[this.order.distributionStatus] || [this.order.distributionStatus])[0]; },
     distColor () { return (DIST[this.order.distributionStatus] || [null, 'grey-6'])[1]; }
   },
   methods: {
+    /** Коди показників → назви (код показуємо лише якщо назви немає в довіднику) */
+    names (codes) { return (codes || []).map(c => this.testNames[c] || c).join(', '); },
     itemLabel (s) { return (ITEM[s] || [s])[0]; },
     itemColor (s) { return (ITEM[s] || [s, 'grey-6'])[1]; },
     sourceLabel (s) { return { FIXED: 'фіксований склад', REFERRING_DOCTOR: 'лікар, що направив', REGISTRAR: 'реєстратор', LAB_DOCTOR: 'лікар-лаборант', PACKAGE: 'пакет' }[s] || s || '—'; }

@@ -49,6 +49,7 @@ public sealed class DemoDataSeeder
         {
             // Наявна БД: дооновлення демо-сценарію розд. 23 (направлення МІС), якщо його ще немає
             await SeedMisDemoAsync();
+            await SeedSendOutDemoAsync();
             return;
         }
         var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -149,7 +150,16 @@ public sealed class DemoDataSeeder
         await _reagents.CreateAsync(new ReagentLotRequest { AnalyzerId = Sysmex, TestCode = null, ReagentName = "SULFOLYSER", LotNumber = "SL-24110", Manufacturer = "Sysmex", TestsInitial = 1500, TestsRemaining = 1500, MinimumTests = 200, ExpiryDate = DateTime.UtcNow.AddMonths(14) });
 
         await SeedMisDemoAsync();
+        await SeedSendOutDemoAsync();
         _logger.LogInformation("Демо-дані створено за {Ms} мс", sw.ElapsedMilliseconds);
+    }
+
+    /// <summary>Демо відправки у зовнішню лабораторію: замовлення з показниками, що за прайсом виконавця йдуть у зовнішню лабораторію; проба в лабораторії → черга «До відправки».</summary>
+    private async Task SeedSendOutDemoAsync()
+    {
+        if (await _db.OrderTests.AnyAsync(t => t.PerformerId != null)) return;
+        var o = await _orders.CreateAsync(new CreateOrderRequest { PatientId = Pat(3), DoctorId = Doctor, DepartmentId = Dept, ClinicalNotes = "Гормональний скринінг, дослідження виконує зовнішня лабораторія", TestIds = { "VITD", "AMH" } });
+        await CollectReceive(o);
     }
 
     /// <summary>Демо розд. 21–23: вхідні направлення МІС (пакети, е-направлення, «потрібен вибір»), робота за направленнями, кумулятивний звіт.</summary>

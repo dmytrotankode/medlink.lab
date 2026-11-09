@@ -36,7 +36,10 @@
             <template v-else-if="props.col.name === 'exchType'"><q-badge color="teal-7" :label="props.value" /></template>
             <template v-else-if="props.col.name === 'labRole'">{{ roleLabel(props.value) }}</template>
             <template v-else-if="props.col.name === 'category' && name === 'analyzer-types'">{{ categoryLabel(props.value) }}</template>
+            <template v-else-if="props.col.name === 'category' && name === 'tests'">{{ testCategoryLabel(props.value) }}</template>
             <template v-else-if="typeof props.value === 'boolean'"><q-icon :name="props.value ? 'check_circle' : 'radio_button_unchecked'" :color="props.value ? 'positive' : 'grey-5'" /></template>
+            <template v-else-if="props.col.name === 'testCode' && name === 'unit-conversions'">{{ testWithName(props.value) }}</template>
+            <template v-else-if="name === 'unit-conversions' && (props.col.name === 'factor' || props.col.name === 'offset')">{{ props.value === null || props.value === undefined ? '—' : String(props.value).replace('.', ',') }}</template>
             <template v-else-if="props.col.name.endsWith('Id')">{{ refLabel(props.col.name, props.value) }}</template>
             <template v-else-if="props.col.name === 'itemsCount'">{{ (props.row.items || []).length }}</template>
             <template v-else-if="props.col.name === 'day'">{{ dayLabel(props.value) }}</template>
@@ -109,7 +112,7 @@
       </q-card>
     </q-dialog>
 
-    <confirm-dialog v-model="deleteOpen" title="Зробити запис неактивним?" :message="`Зробити запис «${active && (active.name || active.fullName || active.code)}» неактивним? Він зникне зі списків вибору, історія збережеться.`" ok-label="Зробити неактивним" color="negative" icon="visibility_off" @confirm="doDelete" />
+    <confirm-dialog v-model="deleteOpen" title="Видалити запис?" :message="`Видалити запис «${active && (active.name || active.fullName || active.code)}»? Якщо він уже використовується, його буде переведено в архів (зникне зі списків вибору, історія збережеться), інакше — видалено остаточно.`" ok-label="Видалити" color="negative" icon="visibility_off" @confirm="doDelete" />
   </div>
 </template>
 
@@ -118,6 +121,7 @@ import apiMixin from '../../mixins/apiMixin';
 import roleMixin from '../../mixins/roleMixin';
 import DictionaryFormDialog from './DictionaryFormDialog.vue';
 import { DICTIONARIES, columnLabel } from './dictionarySchemas';
+import { tubeTitle } from '../../utils/format';
 import { ROLE, ANALYZER_CATEGORIES } from '../../utils/statuses';
 
 export default {
@@ -148,13 +152,25 @@ export default {
   created () { this.load(); },
   methods: {
     roleLabel (r) { return ROLE[r] || r || '—'; },
+    /** Категорія показника: службові коди з каталогу → українські назви; невідому показуємо як є (вільний текст) */
+    testCategoryLabel (c) {
+      if (c === null || c === undefined || c === '') return '—';
+      return { BIOCHEM: 'Біохімія', URINE: 'Сеча', HEMATOLOGY: 'Гематологія', COAG: 'Коагулологія', HORMONES: 'Гормони', IMMUNO: 'Імунологія', MICRO: 'Мікробіологія', GENERAL: 'Загальноклінічні', PCR: 'ПЛР' }[c] || c;
+    },
+    /** Показник у таблицях з кодом-ключем: «Альбумін (ALB)»; якщо назви немає в довіднику — лише код */
+    testWithName (code) {
+      if (!code) return '—';
+      const t = this.$store.getters['dictionaries/items']('tests').find(x => x.code === code);
+      return t ? `${t.name} (${code})` : code;
+    },
     categoryLabel (c) { const x = ANALYZER_CATEGORIES.find(a => a.value === c); return x ? x.label : c; },
     refLabel (col, id) {
       if (id === null || id === undefined) return '—';
-      const map = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', antibioticId: 'antibiotics', organismId: 'organisms', testId: 'tests', analyzerTypeId: 'analyzer-types', fromUnitId: 'units', toUnitId: 'units' };
+      const map = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', tubeTypeId: 'tube-types', antibioticId: 'antibiotics', organismId: 'organisms', testId: 'tests', analyzerTypeId: 'analyzer-types', fromUnitId: 'units', toUnitId: 'units' };
       const d = map[col]; if (!d) return id;
       const it = this.$store.getters['dictionaries/byId'](d, id);
-      return it ? (it.name || it.fullName || it.latinName || it.code) : id;
+      const label = it ? (it.name || it.fullName || it.latinName || it.code) : id;
+      return d === 'tube-types' && it ? tubeTitle(label) : label;
     },
     selectField (col) { return (this.schema.fields || []).find(f => f.name === col && f.type === 'select' && Array.isArray(f.options) && typeof f.options[0] === 'object'); },
     displayValue (f, v) {
@@ -169,10 +185,10 @@ export default {
     async load () {
       const res = await this.callApi(() => this.$api.dictList(this.name));
       if (res !== undefined) { this.items = this.asList(res); this.$emit('loaded', this.items); }
-      const refs = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', antibioticId: 'antibiotics', organismId: 'organisms', testId: 'tests', fromUnitId: 'units', toUnitId: 'units' };
+      const refs = { biomaterialTypeId: 'biomaterials', departmentId: 'departments', methodId: 'method-types', tubeTypeId: 'tube-types', antibioticId: 'antibiotics', organismId: 'organisms', testId: 'tests', fromUnitId: 'units', toUnitId: 'units' };
       const needed = new Set();
       this.schema.columns.forEach(c => { if (refs[c]) needed.add(refs[c]); });
-      if (this.name === 'profiles') needed.add('tests');
+      if (this.name === 'profiles' || this.name === 'unit-conversions') needed.add('tests');
       if (needed.size) this.$store.dispatch('dictionaries/loadMany', [...needed]);
     },
     openForm (item) { this.active = item; this.formOpen = true; },

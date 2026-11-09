@@ -33,7 +33,7 @@
                   <b>{{ r.referralNumber }}</b> <q-badge v-if="r.isCito" color="deep-orange-6" label="CITO" />
                   <q-badge v-if="r.packageCode" color="purple-5" class="q-ml-xs" :label="r.packageName || r.packageCode" />
                 </q-item-label>
-                <q-item-label caption>{{ r.patientName }} · {{ r.sourceLabel }}<span v-if="r.department && r.department !== r.sourceLabel"> · {{ r.department }}</span><span v-if="r.bed"> · {{ r.bed }}</span></q-item-label>
+                <q-item-label caption>{{ r.patientName }} · {{ r.sourceLabel }}<span v-if="deptShort(r)"> · {{ deptShort(r) }}</span><span v-if="r.bed"> · {{ r.bed }}</span></q-item-label>
                 <q-item-label caption>{{ r.services.join(', ') }} · <span v-if="r.indicators">показників {{ r.indicators }}</span><span v-else class="text-negative">показники не обрані</span></q-item-label>
               </q-item-section>
               <q-item-section side>
@@ -53,7 +53,7 @@
             <div class="col">
               <div class="text-subtitle1 text-weight-bold">{{ current.referralNumber || current.orderNumber }} · {{ current.patientName }}</div>
               <div class="text-caption text-grey-7">
-                {{ current.department || '—' }}<span v-if="current.bed"> · {{ current.bed }}</span>
+                {{ deptShort(current) || current.sourceLabel || '—' }}<span v-if="current.bed"> · {{ current.bed }}</span>
                 <span v-if="current.packageCode"> · пакет {{ current.packageName || current.packageCode }}</span> · направлення в лабораторії
                 <router-link :to="{ name: 'lab-order-card', params: { id: current.orderId } }" class="text-primary">{{ current.orderNumber }}</router-link>
               </div>
@@ -269,6 +269,10 @@ export default {
     if (this.$route.query.order) this.open(this.$route.query.order);
   },
   methods: {
+    /** Відділення без повтору назви джерела: «Поліклініка · онкоуролог» поруч із «Поліклініка» → «онкоуролог» */
+    deptShort (r) {
+      return String((r && r.department) || '').split('·').map(x => x.trim()).filter((x, i, a) => x && x !== (r && r.sourceLabel) && a.indexOf(x) === i).join(' · ');
+    },
     /** Назва показника за кодом (код — після назви); якщо довідник ще не завантажено — сам код */
     testName (code) {
       const t = this.tests.find(x => x.code === code);

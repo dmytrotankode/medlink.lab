@@ -149,6 +149,7 @@ public static class DictionaryAdapters
             new SimpleDict<LabWorkCalendarDay>("work-calendar", "lab_work_calendar", db => db.WorkCalendar, x => D(x.Day), x => $"{D(x.Day)} {x.Name} {CalendarDayKinds.Label(x.Kind)}", keyLabel: "Дата",
                 validate: (db, x, isNew) =>
                 {
+                    if (x.Day == default) throw ValidationException.Field("day", "Вкажіть дату");
                     x.Day = DateTime.SpecifyKind(x.Day.Date, DateTimeKind.Utc);
                     if (!CalendarDayKinds.All.Contains(x.Kind)) throw ValidationException.Field("kind", "Вид дня: вихідний або робочий (перенесення)");
                     var weekend = x.Day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;

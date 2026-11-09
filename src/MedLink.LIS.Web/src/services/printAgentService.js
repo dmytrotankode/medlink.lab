@@ -7,7 +7,7 @@
 import axios from 'axios';
 
 export const PRINT_AGENT_URL = process.env.PRINT_AGENT_URL || 'http://localhost:5088';
-export const AGENT_UNREACHABLE_MESSAGE = 'Агент друку не запущено на цьому ПК — встановіть MedLink LabConnector або надрукуйте SVG';
+export const AGENT_UNREACHABLE_MESSAGE = 'Програму друку етикеток не запущено на цьому комп’ютері. Запустіть її або надрукуйте етикетку через браузер.';
 
 const agent = axios.create({ baseURL: PRINT_AGENT_URL, timeout: 4000, headers: { 'Content-Type': 'application/json' } });
 
@@ -23,7 +23,7 @@ export async function printZpl (zpl, printer = null) {
     const res = await agent.post('/print/zpl', { zpl, printer: printer || null });
     return res.data || { ok: true };
   } catch (e) {
-    const err = new Error(e.response ? (e.response.data && (e.response.data.detail || e.response.data.title)) || `Агент друку: HTTP ${e.response.status}` : AGENT_UNREACHABLE_MESSAGE);
+    const err = new Error(e.response ? (e.response.data && (e.response.data.detail || e.response.data.title)) || `Принтер етикеток повернув помилку (код ${e.response.status})` : AGENT_UNREACHABLE_MESSAGE);
     err.agentUnreachable = !e.response;
     throw err;
   }
@@ -34,7 +34,7 @@ export async function printTest (printer = null) {
     const res = await agent.post('/print/test', { printer: printer || null });
     return res.data || { ok: true };
   } catch (e) {
-    const err = new Error(e.response ? `Агент друку: HTTP ${e.response.status}` : AGENT_UNREACHABLE_MESSAGE);
+    const err = new Error(e.response ? `Принтер етикеток повернув помилку (код ${e.response.status})` : AGENT_UNREACHABLE_MESSAGE);
     err.agentUnreachable = !e.response;
     throw err;
   }
