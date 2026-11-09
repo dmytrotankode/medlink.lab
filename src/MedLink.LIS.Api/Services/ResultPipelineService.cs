@@ -329,6 +329,7 @@ public sealed class ResultPipelineService
     public async Task<WorklistRowDto> RejectAsync(string orderTestId, string reason)
     {
         if (string.IsNullOrWhiteSpace(reason)) throw ValidationException.Field("reason", "Вкажіть причину відхилення");
+        reason = (await ReasonCatalog.ResolveRejectionAsync(_db, reason)).Text;
         var test = await LoadAsync(orderTestId);
         var rule = _policy.Ensure(LisEntities.OrderTest, TestActions.Reject, test.Status, $"Тест {test.TestCode}");
         var before = test.Status;

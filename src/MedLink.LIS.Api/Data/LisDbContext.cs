@@ -43,6 +43,12 @@ public class LisDbContext : DbContext
     public DbSet<LabTestProfileItem> ProfileItems => Set<LabTestProfileItem>();
     public DbSet<LabReferenceLayer> ReferenceLayers => Set<LabReferenceLayer>();
     public DbSet<LabReflexRule> ReflexRules => Set<LabReflexRule>();
+    public DbSet<LabUnit> Units => Set<LabUnit>();
+    public DbSet<LabUnitConversion> UnitConversions => Set<LabUnitConversion>();
+    public DbSet<LabAgeGroup> AgeGroups => Set<LabAgeGroup>();
+    public DbSet<LabRejectionReason> RejectionReasons => Set<LabRejectionReason>();
+    public DbSet<LabCancelReason> CancelReasons => Set<LabCancelReason>();
+    public DbSet<LabSeedMarker> SeedMarkers => Set<LabSeedMarker>();
     public DbSet<LabMicroOrganism> Organisms => Set<LabMicroOrganism>();
     public DbSet<LabAntibiotic> Antibiotics => Set<LabAntibiotic>();
     public DbSet<LabEucastBreakpoint> EucastBreakpoints => Set<LabEucastBreakpoint>();
@@ -174,6 +180,13 @@ public class LisDbContext : DbContext
         mb.Entity<LabTestResult>().HasIndex(r => r.Flag);
         mb.Entity<LabTestResult>().HasIndex(r => r.EnteredAt);
         mb.Entity<LabTestDefinition>().HasIndex(t => t.Code).IsUnique();
+        mb.Entity<LabUnit>().HasIndex(u => u.Code).IsUnique();
+        mb.Entity<LabAgeGroup>().HasIndex(g => g.Code).IsUnique();
+        mb.Entity<LabRejectionReason>().HasIndex(r => r.Code).IsUnique();
+        mb.Entity<LabCancelReason>().HasIndex(r => r.Code).IsUnique();
+        mb.Entity<LabUnitConversion>().HasIndex(c => new { c.TestCode, c.FromUnitId, c.ToUnitId }).IsUnique();
+        mb.Entity<LabUnitConversion>().HasOne(c => c.FromUnit).WithMany().HasForeignKey(c => c.FromUnitId).OnDelete(DeleteBehavior.Restrict);
+        mb.Entity<LabUnitConversion>().HasOne(c => c.ToUnit).WithMany().HasForeignKey(c => c.ToUnitId).OnDelete(DeleteBehavior.Restrict);
         mb.Entity<LabTestProfile>().HasIndex(p => p.Code).IsUnique();
         mb.Entity<LabReferenceLayer>().HasIndex(l => new { l.TestCode, l.MethodCode, l.PriorityOrder });
         mb.Entity<LabQcResult>().HasIndex(q => new { q.QcMaterialId, q.TestCode, q.RunAt });

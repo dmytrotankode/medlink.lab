@@ -141,11 +141,14 @@ public sealed class SampleService
     public async Task<object> RejectAsync(string barcode, RejectSampleRequest req)
     {
         if (string.IsNullOrWhiteSpace(req.Reason)) throw ValidationException.Field("reason", "Вкажіть причину відбраковки");
+        var (reasonCode, reasonText) = await ReasonCatalog.ResolveRejectionAsync(_db, req.Reason);
+        req.Reason = reasonText;
         var sample = await LoadByBarcodeAsync(barcode);
         var rule = _policy.Ensure(LisEntities.Sample, SampleActions.Reject, sample.Status, $"Пробірка {barcode}");
         var before = sample.Status;
         sample.Status = rule.ToStatus!;
         sample.RejectReason = req.Reason;
+        sample.RejectReasonCode = reasonCode;
         var order = sample.Order!;
         var affected = order.Tests.Where(t => t.SampleId == sample.Id && !OrderTestStatuses.Final.Contains(t.Status)).ToList();
         foreach (var t in affected) { t.Status = OrderTestStatuses.Rejected; t.RejectReason = "Пробірку відбраковано: " + req.Reason; }
