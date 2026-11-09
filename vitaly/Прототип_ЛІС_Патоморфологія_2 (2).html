@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Прототип ЛІС MedLink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Tinos:wght@400;700&family=Caveat:wght@500&display=swap">
+<style>
+/* MedLink LIS 4.0 shell: white header, dark process sidebar, light grey canvas, white cards with coloured top rule. Single light theme: reproduces the product UI. */
+:root{color-scheme:light;
+ --page:#F2F2F2;--surface:#fff;--ink:#222;--ink2:#666;--muted:#999;--line:#E3E3E3;--input:#C4C4C4;
+ --side:#2B2B2B;--side2:#222;--side-on:#3A3A3A;--side-ink:#E9E9E9;--side-sec:#9A9A9A;
+ --blue:#3D6EA8;--blue-d:#335E91;--link:#2F6AA3;--green:#2E9E5B;--teal:#1F9D8B;--amber:#E0A21B;--red:#D9443A;--purple:#8E3BC7;
+ --b-blue:#DCE8F6;--b-green:#D7F0E1;--b-amber:#FDF0CF;--b-red:#FBDDDA;--b-grey:#ECECEC;--b-purple:#EEDDF8;--sel:#E3ECF7;
+ --proto:#1E2833;--proto-ink:#D7DEE6;--proto-acc:#7FB2E5;
+ --f:"Source Sans 3","Segoe UI",Roboto,Arial,sans-serif}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 var(--f)}
+button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.proto{background:var(--proto);color:var(--proto-ink);display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:7px 16px;font-size:12px}
+.proto b{color:#fff}.proto .tag{color:var(--proto-acc)}.proto .sp{flex:1}
+.proto select,.proto button{background:#2C3A49;border:1px solid #3D4F62;color:#fff;border-radius:3px;padding:3px 8px;font-size:12px}
+header.top{background:#fff;border-bottom:1px solid var(--line);height:64px;display:flex;align-items:center;gap:14px;padding:0 16px}
+.logo{display:flex;align-items:center;gap:10px;min-width:0}.logo .sq{width:40px;height:40px;border-radius:4px;background:var(--blue);display:grid;place-items:center;color:#fff;flex:none}
+.logo b{font-size:19px}.logo b em{font-style:normal;color:var(--blue)}.logo small{display:block;font-size:12px;color:var(--ink2);white-space:nowrap}
+.burger{display:none;background:none;border:0;padding:4px}
+.search{flex:0 1 340px;display:flex;align-items:center;gap:8px;border:1px solid var(--input);border-radius:4px;padding:8px 10px;color:var(--ink2);min-width:0}
+.search input{border:0;outline:0;flex:1;min-width:0;background:none}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:16px;padding:4px 12px;font-size:13px;font-weight:600;white-space:nowrap}
+.pill.r{color:var(--red);border-color:#F2B3AE;background:#FFF5F4}.pill.a{color:#8A5A00;border-color:#EBCB7A;background:#FFF8E1}.pill.g{color:#1D7A44;border-color:#A7D9BB;background:#F1FAF4}
+.user{margin-left:auto;display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:4px;padding:5px 12px;min-width:0}
+.user .av{width:30px;height:30px;border-radius:50%;background:var(--blue);display:grid;place-items:center;color:#fff;flex:none}
+.user b{display:block;font-size:14px;white-space:nowrap}.user small{color:var(--ink2);font-size:12px}
+.app{display:grid;grid-template-columns:270px minmax(0,1fr);min-height:calc(100vh - 100px)}
+nav.side{background:var(--side);color:var(--side-ink);padding-bottom:30px}
+.side .mod{background:var(--side2);padding:14px 14px;display:flex;gap:10px;align-items:center}.side .mod b{display:block}.side .mod small{font-size:10.5px;letter-spacing:.08em;color:#bbb;font-weight:700}
+.side .sec{padding:16px 14px 6px;font-size:11.5px;font-weight:700;letter-spacing:.1em;color:var(--side-sec);text-transform:uppercase}
+.side a{display:flex;align-items:center;gap:14px;padding:9px 14px;color:var(--side-ink);text-decoration:none;cursor:pointer;font-size:15px}
+.side a:hover{background:#333}.side a.on{background:var(--side-on);font-weight:700;color:#fff}.side a.dim{color:#cfcfcf}
+.side a .cnt{margin-left:auto;background:var(--teal);color:#fff;border-radius:4px;padding:0 7px;font-size:12px;font-weight:700}
+.side a .cnt.red{background:var(--red)}.side a .nw{margin-left:auto;background:var(--green);color:#fff;border-radius:8px;font-size:10px;padding:0 6px}
+.main{min-width:0;padding:16px 20px 160px}
+.crumbs{font-size:13px;color:var(--ink2);display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}.crumbs a{color:var(--link);cursor:pointer}
+.ptitle{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.ptitle h1{font-size:24px;margin:0}.ptitle .sp{flex:1}
+.psub{color:var(--ink2);margin:4px 0 14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:3px;min-width:0}
+.card.tb{border-top:3px solid var(--blue)}.card.tg{border-top-color:var(--green)}.card.ta{border-top-color:var(--amber)}.card.tr{border-top-color:var(--red)}.card.tt{border-top-color:var(--teal)}.card.tp{border-top-color:var(--purple)}
+.ch{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}.ch h2{font-size:17px;margin:0}.ch .sp{flex:1}
+.pad{padding:14px 16px}.stack{display:flex;flex-direction:column;gap:12px}.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.row.end{align-items:flex-end}.sp{flex:1}.grow{flex:1;min-width:0}
+.muted{color:var(--ink2)}.small{font-size:12.5px}.b7{font-weight:700}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.tile{background:#fff;border:1px solid var(--line);border-top:3px solid var(--blue);border-radius:3px;padding:12px 14px;cursor:pointer;text-align:left}
+.tile:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}.tile.on{outline:2px solid var(--blue)}
+.tile small{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}.tile b{display:block;font-size:26px;line-height:1.3}.tile span{font-size:12px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--blue);background:#fff;color:var(--link);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.03em;padding:8px 14px;border-radius:3px;white-space:nowrap}
+.btn:hover{background:#F0F5FB}.btn.pri{background:var(--blue);color:#fff}.btn.pri:hover{background:var(--blue-d)}
+.btn.ok{background:var(--green);border-color:var(--green);color:#fff}.btn.dan{border-color:var(--red);color:var(--red)}.btn.dan.fill{background:var(--red);color:#fff}
+.btn.txt{border-color:transparent;background:none}.btn.sm{padding:4px 10px;font-size:12px}.btn:disabled{opacity:.4;cursor:not-allowed}
+.link{background:none;border:0;padding:0;color:var(--link);cursor:pointer}.link:hover{text-decoration:underline}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:3px;padding:1px 8px;font-size:12.5px;font-weight:600;white-space:nowrap;background:var(--b-grey);color:#444}
+.chip.blue{background:var(--blue);color:#fff}.chip.green{background:var(--green);color:#fff}.chip.red{background:var(--red);color:#fff}.chip.purple{background:var(--purple);color:#fff}
+.chip.lb{background:var(--b-blue);color:#244F80}.chip.lg{background:var(--b-green);color:#1D6B3E}.chip.la{background:var(--b-amber);color:#7A5300}.chip.lr{background:var(--b-red);color:#A1261D}.chip.lp{background:var(--b-purple);color:#6A2597}
+.tw{overflow-x:auto}table.t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.t th{text-align:left;font-weight:700;padding:9px 10px;border-bottom:2px solid var(--line);white-space:nowrap;font-size:13.5px}
+.t td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.t td:first-child{white-space:nowrap}.t tr.click{cursor:pointer}.t tr.click:hover td{background:#F7F9FC}.t tr.on td{background:var(--sel)}.t tr.cito td:first-child{box-shadow:inset 4px 0 0 var(--red)}
+.empty{padding:26px;text-align:center;color:var(--ink2)}
+.f{display:flex;flex-direction:column;gap:3px;min-width:0}.f label,.f .lbl{font-size:12px;color:var(--ink2)}
+.f input,.f select{border:1px solid var(--input);border-radius:3px;padding:7px 9px;background:#fff;min-width:0}
+.f .ro{border-bottom:1px dashed var(--line);padding:5px 0;min-height:30px}
+textarea{width:100%;border:1px solid var(--input);border-radius:3px;padding:8px 10px;line-height:1.45;resize:vertical;min-height:60px}
+textarea[readonly],input[readonly]{background:#FAFAFA}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px}.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 16px}
+.al{display:flex;gap:8px;align-items:flex-start;padding:9px 12px;border:1px solid;border-radius:3px;font-size:13.5px}.al svg{flex:none;margin-top:2px}
+.al.info{background:#EEF4FC;border-color:#C5D5EA}.al.warn{background:#FFF7DD;border-color:#E8C964}.al.ok{background:#EEF8F1;border-color:#A7D9BB}.al.bad{background:#FDEEEE;border-color:#EBA6A6}
+.tabs{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line)}.tab{background:none;border:0;padding:11px 14px;color:var(--link);font-weight:600}.tab.on{background:var(--blue);color:#fff}.tab .chip{margin-left:4px}
+.stages{display:flex;gap:0;overflow-x:auto;padding:12px 16px;border-bottom:1px solid var(--line)}
+.stg{flex:1;min-width:92px;text-align:center;font-size:12px;position:relative;color:var(--muted)}
+.stg::before{content:"";position:absolute;top:11px;left:-50%;width:100%;height:3px;background:var(--line);z-index:0}.stg:first-child::before{display:none}
+.stg i{position:relative;z-index:1;display:grid;place-items:center;width:24px;height:24px;margin:0 auto 4px;border-radius:50%;background:#fff;border:2px solid var(--line);font-style:normal;font-weight:700;font-size:11px}
+.stg.dn{color:var(--ink)}.stg.dn i{background:var(--green);border-color:var(--green);color:#fff}.stg.dn::before{background:var(--green)}
+.stg.cur{color:var(--blue);font-weight:700}.stg.cur i{border-color:var(--blue);color:var(--blue);box-shadow:0 0 0 4px var(--b-blue)}.stg.cur::before{background:var(--green)}
+.mini{display:flex;gap:2px}.mini i{width:10px;height:6px;border-radius:2px;background:var(--line)}.mini i.d{background:var(--green)}.mini i.c{background:var(--blue)}
+.tree{border:1px solid var(--line);border-radius:3px}.tree .obj{border-bottom:1px solid var(--line)}.tree .obj:last-child{border-bottom:0}
+.tree .oh{display:flex;gap:10px;align-items:center;padding:8px 12px;background:#FAFBFC;flex-wrap:wrap}
+.tree .blk{display:flex;gap:10px;align-items:center;padding:7px 12px 7px 34px;border-top:1px dashed var(--line);flex-wrap:wrap}
+.tree .sl{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:3px;padding:2px 8px;font-size:12.5px;background:#fff}
+.bc{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;background:#F3F5F8;border-radius:3px;padding:1px 5px}
+.timer{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.36);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px}
+.modal{background:#fff;border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,.3);width:min(640px,100%);padding:20px;display:flex;flex-direction:column;gap:12px}
+.modal h3{margin:0;font-size:16px}.modal.wide{width:min(1120px,100%);background:#5B5B5B;padding:14px}
+.toasts{position:fixed;left:50%;transform:translateX(-50%);top:72px;z-index:60;display:flex;flex-direction:column;gap:8px;width:min(560px,calc(100% - 32px))}
+.toast{background:#222;color:#fff;padding:10px 14px;border-radius:4px;box-shadow:0 6px 18px rgba(0,0,0,.3);font-size:13px;display:flex;gap:8px}.toast.ok{background:#22663F}
+.guide{position:fixed;right:16px;bottom:16px;width:min(340px,calc(100% - 32px));background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.28);border-radius:6px;z-index:40;overflow:hidden}
+.guide header{background:var(--proto);color:#fff;padding:10px 12px;display:flex;gap:8px;align-items:center;cursor:pointer}.guide header b{flex:1}
+.guide ol{list-style:none;margin:0;padding:6px 0;max-height:55vh;overflow:auto}.guide li{display:flex;gap:10px;padding:7px 12px;align-items:flex-start}
+.guide li .n{flex:none;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--input);display:grid;place-items:center;font-size:11px;font-weight:700}
+.guide li.dn .n{background:var(--green);border-color:var(--green);color:#fff}.guide li.cur{background:#F3F7FB}.guide li .tx{flex:1;font-size:13px}.guide li small{display:block;color:var(--ink2)}
+.audit{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:#fff;z-index:55;box-shadow:-6px 0 24px rgba(0,0,0,.25);display:flex;flex-direction:column}
+.audit header{display:flex;gap:8px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}.audit ul{list-style:none;margin:0;padding:0;overflow:auto}.audit li{padding:9px 16px;border-bottom:1px solid var(--line);font-size:13px}.audit li small{display:block;color:var(--ink2)}
+.ver{border-left:3px solid var(--purple);background:#FBF6FE;padding:8px 12px;border-radius:0 3px 3px 0}
+.kv{display:grid;grid-template-columns:200px minmax(0,1fr);gap:6px 14px;font-size:13.5px}.kv div:nth-child(odd){color:var(--ink2)}
+
+.f14{background:#fff;width:min(1060px,100%);margin:0 auto;padding:28px 30px;font-family:"Tinos","Times New Roman",serif;color:#111;font-size:14px;line-height:1.25;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.f14 .frame{border:2.5px solid #111}
+.f14 .hdr{display:grid;grid-template-columns:1.6fr .5fr 1.05fr;border-bottom:2.5px solid #111}
+.f14 .hdr>div{padding:6px 10px}.f14 .hdr>div+div{border-left:1.5px solid #111}
+.f14 .md{text-align:center}.f14 .md .t1{font-weight:700;letter-spacing:.12em;border-bottom:1px solid #111;margin:-6px -10px 6px;padding:4px}
+.f14 .boxes{display:inline-flex;border:1px solid #111;border-right:0;vertical-align:middle}.f14 .boxes i{font-style:normal;width:22px;height:20px;border-right:1px solid #111;display:inline-grid;place-items:center;font-size:12px}
+.f14 .ln{border-bottom:1px solid #111;min-height:19px;padding:0 4px}
+.f14 .row{display:flex;gap:8px;align-items:flex-end;padding:3px 10px;border-bottom:1px solid #111;min-height:26px;flex-wrap:wrap}
+.f14 .row .fill{flex:1;border-bottom:1px solid #111;min-height:19px;min-width:120px}
+.f14 .v{color:#1A3A8A;font-family:"Caveat","Segoe Print","Tinos",serif;font-size:16px;padding:0 4px}
+.f14 .vt{color:#1A3A8A}
+.f14 .ttl{text-align:center;padding:26px 10px 4px}.f14 .ttl b{letter-spacing:.3em;font-size:16px}
+.f14 .sub{font-size:11px;text-align:center}
+.f14 .u{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;color:#1A3A8A;font-weight:700}
+.f14 .blank{display:block;border-bottom:1px solid #111;min-height:22px;padding:2px 10px}
+.f14 .hint{padding:4px 10px;font-size:13px;text-align:justify;border-bottom:1px solid #111}
+.f14 .sig{display:flex;justify-content:flex-end;gap:10px;padding:6px 10px;align-items:flex-end}
+.f14 .sig .fill{width:320px;border-bottom:1px solid #111;min-height:19px}
+.f14 .src{outline:1.5px dashed transparent;outline-offset:1px;border-radius:2px}
+.f14.showsrc .src{outline-color:#E08A00;background:#FFF6D6}
+.f14 .pgno{font-family:"Source Sans 3",Arial,sans-serif;font-size:10px;color:#888;text-align:right;margin-top:6px}
+@media (max-width:760px){.f14{padding:12px;font-size:12px}.f14 .hdr{grid-template-columns:1fr}.f14 .hdr>div+div{border-left:0;border-top:1.5px solid #111}}
+
+.sel{border:1px solid var(--input);border-radius:3px;padding:4px 6px;background:#fff}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:14px;align-items:start}
+.bar{display:inline-block;vertical-align:middle;width:110px;height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-right:6px}.bar i,.hbar i{display:block;height:100%;background:var(--green)}
+.hbar{display:inline-block;vertical-align:middle;width:70%;height:10px;background:#EEF1F5;border-radius:2px;overflow:hidden}.hbar i{background:var(--blue)}
+.rep{border:1px solid var(--line);padding:16px;background:#fff}.rep-h{display:flex;justify-content:space-between;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:8px;flex-wrap:wrap}
+.rep-g{margin:16px 0 4px;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:3px}.rep-t td,.rep-t th{padding:5px 8px}
+.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.fl-h{color:var(--red);font-weight:700}.fl-l{color:#1F5FA8;font-weight:700}.t td.fl-cl{color:#fff;background:var(--red);font-weight:700}
+@media (max-width:860px){.split{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:860px){.app{grid-template-columns:minmax(0,1fr)}nav.side{display:none;position:fixed;z-index:45;top:0;left:0;bottom:0;width:270px;overflow:auto}nav.side.open{display:block}
+ .burger{display:inline-flex}.search,.pill,.logo small,header.top .user{display:none}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.g2,.g3,.g4{grid-template-columns:minmax(0,1fr)}.kv{grid-template-columns:minmax(0,1fr)}.main{padding:12px 16px 160px}}
+</style></head><body><div id="root"></div>
+<script>
+/* ---------- Форма 014/о (наказ МОЗ України 29.05.2013 № 435): друкований вигляд ---------- */
+const F014_CSS=`
+.f14{background:#fff;width:min(1060px,100%);margin:0 auto;padding:28px 30px;font-family:"Tinos","Times New Roman",serif;color:#111;font-size:14px;line-height:1.25;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.f14 .frame{border:2.5px solid #111}
+.f14 .hdr{display:grid;grid-template-columns:1.6fr .5fr 1.05fr;border-bottom:2.5px solid #111}
+.f14 .hdr>div{padding:6px 10px}.f14 .hdr>div+div{border-left:1.5px solid #111}
+.f14 .md{text-align:center}.f14 .md .t1{font-weight:700;letter-spacing:.12em;border-bottom:1px solid #111;margin:-6px -10px 6px;padding:4px}
+.f14 .boxes{display:inline-flex;border:1px solid #111;border-right:0;vertical-align:middle}.f14 .boxes i{font-style:normal;width:22px;height:20px;border-right:1px solid #111;display:inline-grid;place-items:center;font-size:12px}
+.f14 .ln{border-bottom:1px solid #111;min-height:19px;padding:0 4px}
+.f14 .row{display:flex;gap:8px;align-items:flex-end;padding:3px 10px;border-bottom:1px solid #111;min-height:26px;flex-wrap:wrap}
+.f14 .row .fill{flex:1;border-bottom:1px solid #111;min-height:19px;min-width:120px}
+.f14 .v{color:#1A3A8A;font-family:"Caveat","Segoe Print","Tinos",serif;font-size:16px;padding:0 4px}
+.f14 .vt{color:#1A3A8A}
+.f14 .ttl{text-align:center;padding:26px 10px 4px}.f14 .ttl b{letter-spacing:.3em;font-size:16px}
+.f14 .sub{font-size:11px;text-align:center}
+.f14 .u{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;color:#1A3A8A;font-weight:700}
+.f14 .blank{display:block;border-bottom:1px solid #111;min-height:22px;padding:2px 10px}
+.f14 .hint{padding:4px 10px;font-size:13px;text-align:justify;border-bottom:1px solid #111}
+.f14 .sig{display:flex;justify-content:flex-end;gap:10px;padding:6px 10px;align-items:flex-end}
+.f14 .sig .fill{width:320px;border-bottom:1px solid #111;min-height:19px}
+.f14 .src{outline:1.5px dashed transparent;outline-offset:1px;border-radius:2px}
+.f14.showsrc .src{outline-color:#E08A00;background:#FFF6D6}
+.f14 .pgno{font-family:"Source Sans 3",Arial,sans-serif;font-size:10px;color:#888;text-align:right;margin-top:6px}
+@media (max-width:760px){.f14{padding:12px;font-size:12px}.f14 .hdr{grid-template-columns:1fr}.f14 .hdr>div+div{border-left:0;border-top:1.5px solid #111}}
+`;
+function f014esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function f014Front(d){
+ const v=(x,src)=>x?`<span class="v src" title="${f014esc(src||'')}">${f014esc(x)}</span>`:'';
+ const ed=String(d.edrpou||'').padEnd(8,' ').slice(0,8).split('');
+ const [dd,mm,yy]=(d.date||'..').split('.');
+ return `<div class="frame">
+ <div class="hdr"><div><div style="font-size:13px">Найменування міністерства, іншого органу виконавчої влади, підприємства, установи, організації, до сфери управління якого належить заклад охорони здоров’я</div><div class="ln" style="margin:6px 0">${v(d.parent,'Налаштування закладу')}</div>
+  <div style="font-size:13px;margin-top:8px">Найменування та місцезнаходження (повна поштова адреса) закладу охорони здоров’я, де заповнюється форма</div><div class="ln">${v(d.facility,'Налаштування закладу')}</div>
+  <div style="margin-top:8px">Код за ЄДРПОУ &nbsp; <span class="boxes">${ed.map(c=>`<i class="vt">${c.trim()}</i>`).join('')}</span></div></div>
+  <div></div>
+  <div class="md"><div class="t1">МЕДИЧНА ДОКУМЕНТАЦІЯ</div><div>Форма первинної облікової документації</div><div style="font-weight:700;margin:6px 0">№ 014/о</div><div style="letter-spacing:.12em">ЗАТВЕРДЖЕНО</div><div style="margin-top:6px">Наказ МОЗ України</div><div style="margin-top:4px;font-size:12px"><span class="boxes"><i>2</i><i>9</i><i>0</i><i>5</i><i>2</i><i>0</i><i>1</i><i>3</i></span> № <span class="boxes"><i>4</i><i>3</i><i>5</i></span></div></div></div>
+ <div class="ttl"><b>НАПРАВЛЕННЯ</b><div style="font-weight:700">на патологогістологічне дослідження</div>
+  <div style="margin-top:18px">«<span class="v src" title="Дата створення направлення">${f014esc(dd||'')}</span>» <span class="v src" title="Дата створення направлення">${f014esc(mm?['','січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'][+mm]:'')}</span> 20<span class="v src">${f014esc((yy||'').slice(2))}</span> року <span class="v src" title="Час створення направлення">${f014esc(d.time||'')}</span> годин</div><div class="sub">(дата і час направлення матеріалу)</div></div>
+ <div class="row" style="border-top:1.5px solid #111">Відділення <span class="fill">${v(d.dept,'Госпіталізація → Відділення / Прийом → Підрозділ')}</span> &nbsp; Медична карта стаціонарного (амбулаторного) хворого № <span class="fill" style="max-width:240px">${v(d.mcard,'Госпіталізація → № стаціонарної історії / Картка пацієнта → № картки')}</span></div>
+ <div class="row">1. Прізвище, ім’я, по батькові хворого <span class="fill">${v(d.name,'Картка пацієнта → ПІБ (локальні дані закладу)')}</span></div>
+ <div class="row">2. Стать: <span class="${d.sex==='Ч'?'u':''}">чоловіча</span>, <span class="${d.sex==='Ж'?'u':''}">жіноча</span> (підкреслити). 3. Вік <span class="fill" style="max-width:120px;text-align:center">${v(d.age,'Картка пацієнта → дата народження (повних років на дату направлення)')}</span> років. 4. Біопсія: <span class="${d.biopsy==='первинна'?'u':''}">первинна</span>, <span class="${d.biopsy==='вторинна'?'u':''}">вторинна</span> (підкреслити).</div>
+ <div class="row">5. При повторній біопсії вказати номер і дату первинної <span class="fill">${v(d.prev,'Вкладка «Морфологія» → попереднє дослідження пацієнта')}</span></div>
+ <div class="row">6. Дата і вид операції <span class="fill">${v(d.op,'Розділ «Операції» → дата + назва операції')}</span></div>
+ <div class="row">7. Маркування матеріалу, кількість об’єктів <span class="fill">${v(d.marking,'Протокол операції → блок «Матеріал на ПГД»')}</span></div>
+ <div class="row">8. Клінічні дані <span class="fill">${v(d.clinical,'Анамнез / опис операції / умовні поля')}</span></div>
+ ${(d.clinical2||[]).map(x=>`<span class="blank">${v(x)}</span>`).join('')}<span class="blank"></span>
+ <div class="hint">(тривалість захворювання, проведене лікування, при пухлинах зазначити точну локалізацію, темпи росту, розміри, консистенцію, відношення до оточуючих тканин, метастази, наявність інших пухлинних вузлів, спеціальне лікування; при дослідженні: лімфовузлів вказати аналіз крові; зскрібків ендометрію, молочних залоз – початок і кінець останньої нормальної менструації, характер порушення менструальної функції, дату початку кровотечі).</div>
+ <div class="row">9. Клінічний діагноз <span class="fill">${v(d.diag,'Діагноз після операції / заключний клінічний (МКХ-10)')}</span></div>
+ <div class="row" style="justify-content:space-between"><span class="fill" style="max-width:55%">${v(d.diag2)}</span><span>Лікуючий лікар <span class="fill" style="display:inline-block;width:260px">${v(d.doctor,'Автор направлення / хірург із протоколу')}</span></span></div>
+ <div style="text-align:right;font-size:11px;padding:0 60px 8px">(прізвище, підпис)</div>
+ </div>`;
+}
+function f014Back(b){
+ const v=(x,src)=>x?`<span class="v src" title="${f014esc(src||'Модуль «Патоморфологія» ЛІС')}">${f014esc(x)}</span>`:'';
+ b=b||{};const lines=(t,n)=>{const a=String(t||'').match(/.{1,120}(\s|$)/g)||[];const out=a.map(x=>`<span class="blank">${v(x.trim())}</span>`);while(out.length<n)out.push('<span class="blank"></span>');return out.join('');};
+ return `<div class="frame">
+ <div class="row">10. Патологогістологічне дослідження № <span class="fill">${v(b.no)}</span> 11. Дата і час надходження <span class="fill">${v(b.recv)}</span></div>
+ <div class="row">12. Біопсія діагностична <span class="fill">${v(b.diagBiopsy)}</span> 13. Біопсія термінова <span class="fill">${v(b.cito)}</span> 14. Операційний матеріал <span class="fill">${v(b.oper)}</span></div>
+ <div class="row">15. Кількість шматочків <span class="fill" style="max-width:80px">${v(b.pieces)}</span>, блоків <span class="fill" style="max-width:80px">${v(b.blocks)}</span> 16. Методика забарвлення <span class="fill">${v(b.stain)}</span></div>
+ <div class="row">17. Макро- і мікроскопічний описи:</div>
+ ${lines(b.desc,10)}
+ <div class="row">18. Патологогістологічний висновок (діагноз):</div>
+ ${lines(b.concl,6)}
+ <div style="padding:26px 10px 8px">Дата дослідження <span class="ln" style="display:inline-block;min-width:200px">${v(b.date)}</span></div>
+ <div class="sig">Лікар-патологоанатом <span class="fill">${v(b.pathologist)}</span></div><div style="text-align:right;font-size:11px;padding:0 120px 6px">(прізвище, підпис)</div>
+ <div class="sig">Лаборант <span class="fill">${v(b.labtech)}</span></div><div style="text-align:right;font-size:11px;padding:0 120px 12px">(прізвище, підпис)</div>
+ </div>`;
+}
+
+(function(){"use strict";
+const IC={flask:'<path d="M9 3h6M10 3v6L4 20h16L14 9V3"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+ dash:'<path d="M3 13a9 9 0 0118 0M12 13l4-4"/>',doc:'<path d="M6 2h8l5 5v15H6z"/><path d="M14 2v5h5M9 13h6M9 17h6"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+ micro:'<path d="M6 21h12M9 21v-3a5 5 0 015-5M10 4l4 4-4 4-4-4zM14 8l3 3"/>',inbox:'<path d="M3 13h5l1 3h6l1-3h5M5 5h14l2 8v6H3v-6z"/>',box:'<path d="M3 7l9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10"/>',
+ bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',book:'<path d="M4 4h7a3 3 0 013 3v13a2 2 0 00-2-2H4zM20 4h-6M20 4v14h-6"/>',cog:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>',
+ check:'<path d="M5 12l5 5 9-10"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',warn:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+ print:'<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/>',scan:'<path d="M3 7V3h4M17 3h4v4M21 17v4h-4M7 21H3v-4M7 8v8M10 8v8M13 8v8M17 8v8"/>',plus:'<path d="M12 5v14M5 12h14"/>',
+ pen:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',send:'<path d="M3 11l18-8-8 18-2-8z"/>',phone:'<path d="M5 4h4l2 5-3 2a11 11 0 005 5l2-3 5 2v4a2 2 0 01-2 2A17 17 0 013 6a2 2 0 012-2z"/>',
+ refresh:'<path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/>',menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',play:'<path d="M7 4l13 8-13 8z" fill="currentColor"/>',chev:'<path d="M6 9l6 6 6-6"/>',chevR:'<path d="M9 6l6 6-6 6"/>',
+ grid:'<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>',truck:'<path d="M3 6h11v10H3zM14 10h4l3 3v3h-7M7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z"/>',
+ drop:'<path d="M12 3s6 7 6 11a6 6 0 01-12 0c0-4 6-11 6-11z"/>',shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',history:'<path d="M3 12a9 9 0 103-6.7M3 4v5h5M12 8v5l3 2"/>'};
+const ic=(k,s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]||''}</svg>`;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=d=>{if(!d)return '—';const [y,m,dd]=d.slice(0,10).split('-');return `${dd}.${m}.${y}`+(d.length>10?' '+d.slice(11,16):'');};
+const TODAY='2026-10-30';
+const now=()=>{const n=new Date();return TODAY+' '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');};
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+/* ---------- довідники ---------- */
+const ROLES={reg:'Реєстратор прийому',tech:'Лаборант-гістолог',path:'Лікар-патологоанатом',head:'Завідувач відділення'};
+const ME={reg:'Ковальчук Ірина Петрівна',tech:'Савченко Олена Миколаївна',path:'Коваленко Олег Васильович',head:'Гордієнко Андрій Ігорович'};
+const PERM={accept:['reg','tech','head'],gross:['path','head'],stage:['tech','head'],concl:['path','head'],sign:['path','head'],addendum:['path','head'],issue:['reg','tech','head'],dict:['head']};
+const STAGES=[['RCV','Прийнято'],['GROSS','Вирізка'],['PROC','Проводка'],['EMB','Заливка'],['SECT','Мікротомія'],['STAIN','Фарбування'],['MICRO','Мікроскопія й опис'],['SIGNED','Підписано']];
+const STI=k=>STAGES.findIndex(s=>s[0]===k);
+const KIND={OPER:['Операційний матеріал','lb'],BIOPSY:['Біопсія діагностична','lg'],CITO:['Біопсія термінова (інтраопераційна)','lr'],CONSULT:['Консультація готових препаратів','lp']};
+const SRC={INPATIENT:['Внутрішнє · стаціонар','blue'],AMBULATORY:['Внутрішнє · поліклініка','blue'],EHEALTH:['Е-направлення','green'],PARTNER:['Клініка-партнер','purple']};
+const SLA={OPER:7,BIOPSY:5,CITO:0,CONSULT:5};
+const PRICE={first:420,block:140,ihc:650,consultSlide:210,cito:900};
+const TPL={
+ 'Молочна залоза · секторальна резекція':{macro:'Сектор молочної залози розмірами {a}×{b}×{c} см, маркований ниткою (верхній край). На розрізі — вузол сірувато-білого кольору щільної консистенції, з нечіткими контурами, розмірами 2,1×1,8 см; відстань до найближчого (латерального) краю резекції 0,6 см. Решта тканини — жирова з тяжами фіброзної тканини.',micro:'Інвазивна карцинома неспецифічного типу (протокова), ступінь злоякісності за Ноттінгемською системою: тубулярні структури {t}, ядерний поліморфізм {p}, мітози {m} — сума {s}. Лімфоваскулярна інвазія: {lvi}. Компонент протокової карциноми in situ: {dcis}. Краї резекції: {r}.'},
+ 'Лімфатичний вузол · сторожовий':{macro:'Лімфатичний вузол розмірами 1,2×0,8×0,6 см, на розрізі сірувато-рожевий, однорідний. Вузол розрізано повністю вздовж довгої осі.',micro:'У лімфатичному вузлі {ln}.'},
+ 'Сечовий міхур · ТУР-біопсія':{macro:'Фрагменти тканини сечового міхура загальним об’ємом 1,5 см³, сірувато-рожевого кольору, м’якої консистенції. Весь матеріал взято на дослідження.',micro:'Папілярна уротеліальна карцинома, {g}. Інвазія: {inv}. М’язова оболонка в матеріалі: {mp}.'},
+ 'Шлунок · резекція':{macro:'Препарат дистальної резекції шлунка довжиною по малій кривизні {a} см, по великій {b} см. На слизовій — виразкоподібна пухлина розмірами {c} см.',micro:'Аденокарцинома шлунка, кишкового типу за Lauren, {g}. Глибина інвазії: {inv}.'},
+ 'Шкіра · ексцизійна біопсія':{macro:'Шкірно-жировий клапоть веретеноподібної форми розмірами {a}×{b}×{c} см; на поверхні — утворення {d} см. Маркування країв тушшю.',micro:'{x}. Краї резекції: {r}.'},
+ 'Ендометрій · зскрібок':{macro:'Зскрібок ендометрію загальним об’ємом {a} см³, червоно-бурого кольору, з домішками згустків крові. Весь матеріал взято на дослідження.',micro:'{x}'}
+};
+const ICDO=[['8500/3','Інвазивна протокова карцинома (неспецифічного типу)'],['8520/3','Інвазивна часточкова карцинома'],['8130/3','Папілярна уротеліальна карцинома'],['8140/3','Аденокарцинома'],['8070/3','Плоскоклітинна карцинома'],['8720/3','Меланома'],['8000/1','Пухлина, неясного злоякісного потенціалу'],['8500/2','Протокова карцинома in situ']];
+const TOPO=[['C50.4','Верхньо-зовнішній квадрант молочної залози'],['C67.9','Сечовий міхур, неуточнений'],['C16.3','Антральний відділ шлунка'],['C44.5','Шкіра тулуба'],['C54.1','Ендометрій'],['C18.7','Сигмоподібна кишка'],['C77.3','Лімфовузли пахвової ділянки']];
+const STAINS=['Гематоксилін-еозин (Г-Е)','Ван Гізон','ШИК-реакція','Альціановий синій','Конго червоний','Гімза'];
+const IHC=[['ER','Естрогенові рецептори'],['PR','Прогестеронові рецептори'],['HER2','HER2/neu'],['Ki-67','Індекс проліферації'],['CK7','Цитокератин 7'],['CK20','Цитокератин 20'],['GATA3','GATA3'],['p53','p53'],['MLH1','MLH1'],['PMS2','PMS2'],['MSH2','MSH2'],['MSH6','MSH6']];
+const REFLEX=[{when:'C50 + 8500/3 або 8520/3',panel:['ER','PR','HER2','Ki-67'],why:'Рак молочної залози: обов’язковий прогностичний ІГХ-профіль'},{when:'C18–C20 + 8140/3',panel:['MLH1','PMS2','MSH2','MSH6'],why:'Колоректальний рак: скринінг MMR/MSI'},{when:'C67 + 8130/3, сумнівна інвазія',panel:['GATA3','p53'],why:'Уротеліальна карцинома: уточнення гістогенезу'}];
+const REJECT=['Відсутнє або нечитабельне маркування контейнера','Невідповідність ПІБ / дати народження на контейнері й у направленні','Матеріал не зафіксовано або неправильний фіксатор','Кількість контейнерів не відповідає направленню','Пошкоджена тара, витік фіксатора','Направлення без клінічного діагнозу (п. 9)'];
+
+/* ---------- демо-дані ---------- */
+const PAT={
+ kov:{n:'Коваленко Олена Сергіївна',s:'Ж',dob:'1971-04-12',card:'312004'},tes:{n:'Тестенко Тарас Тарасович',s:'Ч',dob:'1989-01-14',card:'348849'},
+ mel:{n:'Мельник Юрій Володимирович',s:'Ч',dob:'1963-02-08',card:'287551'},dd:{n:'Пацієнт Дарина Дмитрівна',s:'Ж',dob:'1975-11-21',card:'205511'},
+ she:{n:'Шевчук Марія Олександрівна',s:'Ж',dob:'1984-07-30',card:'330912'},bon:{n:'Бондаренко Ігор Васильович',s:'Ч',dob:'1958-12-03',card:'190233'},
+ gry:{n:'Гриценко Петро Іванович',s:'Ч',dob:'1956-05-17',card:'301876'},bir:{n:'Бірков Максим Андрійович',s:'Ч',dob:'1992-09-09',card:'352110'},kog:{n:'Коваль Ганна Василівна',s:'Ж',dob:'1968-03-25',card:'298744'}};
+const age=(dob,at)=>{const a=new Date(dob),b=new Date((at||TODAY).slice(0,10));let y=b.getFullYear()-a.getFullYear();if(b<new Date(b.getFullYear(),a.getMonth(),a.getDate()))y--;return y;};
+function refBase(o){return Object.assign({parent:'Департамент охорони здоров’я обласної державної адміністрації',facility:'КНП «Обласний онкологічний центр», м. Харків, вул. Прикладна, 1',edrpou:'01234567',biopsy:'первинна',prev:''},o);}
+function initState(){
+ const S={role:'path',view:'journal',stageF:'all',srcF:'all',q:'',case:null,ctab:'ref',inc:null,modal:null,menu:false,guideOpen:false,auditOpen:false,dictTab:'tpl',showSrc:false,
+  done:{accept:false,gross:false,stage:false,ihc:false,sign:false,add:false,cito:false,print:false,issue:false},
+  audit:[{t:'2026-10-30 08:02',u:'Система',a:'Отримано 3 направлення з МІС (подія REFERRAL_CREATED) і 1 е-направлення ЕСОЗ'}],seq:422,
+  incoming:[
+   {id:'in1',pid:'gry',src:'INPATIENT',kind:'OPER',created:'2026-10-30 09:15',dept:'Онкохірургія (абдомінальна)',ward:'Палата 4, ліжко 2',mcard:'ст-2026-1187',doctor:'Осокін А. Е.',
+    ref:refBase({date:'30.10.2026',time:'09:15',op:'30.10.2026, дистальна субтотальна резекція шлунка з D2-лімфодисекцією (протокол операції №61)',marking:'2 контейнери: №1 — препарат шлунка; №2 — лімфатичні вузли (D2), 14 шт.',clinical:'Скарги 6 міс., схуднення на 8 кг. ФГДС 12.10.2026: виразкоподібна пухлина антрального відділу 4 см; біопсія — аденокарцинома (ПГД-26-0377). Неоад’ювантна ХТ не проводилась.',clinical2:['Аналіз крові 29.10.2026: Hb 108 г/л, лейк. 6,4×10⁹/л, ШОЕ 24 мм/год.'],diag:'C16.3 Злоякісне новоутворення антрального відділу шлунка, cT3N1M0',biopsy:'вторинна',prev:'ПГД-26-0377 від 14.10.2026',doctor:'Осокін А. Е.'}),
+    containers:[{mark:'1',what:'Препарат шлунка',fix:'10% нейтральний формалін',fixStart:'2026-10-30 08:50',scan:false,ok:true},{mark:'2',what:'Лімфатичні вузли D2 (14 шт.)',fix:'10% нейтральний формалін',fixStart:'2026-10-30 08:55',scan:false,ok:true}],tpl:'Шлунок · резекція',topo:'C16.3'},
+   {id:'in2',pid:'bir',src:'AMBULATORY',kind:'BIOPSY',created:'2026-10-30 10:05',dept:'Поліклініка · онкодерматолог',ward:'—',mcard:'амб-352110',doctor:'Литвин О. С.',group:'21729 · Гістологія; шкіра',
+    ref:refBase({date:'30.10.2026',time:'10:05',op:'30.10.2026, ексцизійна біопсія новоутворення шкіри спини (амбулаторно)',marking:'1 контейнер: №1 — шкірно-жировий клапоть, маркування шовком (12 год.)',clinical:'Пігментне новоутворення шкіри спини, зростання за 6 міс., дерматоскопічно ABCD 5,8.',diag:'D48.5 Новоутворення шкіри невизначеного характеру',doctor:'Литвин О. С.'}),
+    containers:[{mark:'1',what:'Шкірно-жировий клапоть',fix:'10% нейтральний формалін',fixStart:'2026-10-30 09:40',scan:false,ok:true}],tpl:'Шкіра · ексцизійна біопсія',topo:'C44.5'},
+   {id:'in3',pid:'kog',src:'EHEALTH',kind:'BIOPSY',created:'2026-10-30 07:40',dept:'Жіноча консультація (інший заклад)',ward:'—',mcard:'амб-298744',doctor:'Іваненко Л. П.',eref:'0002-2026-H7K2',group:'21730 · Гістологія; інше',
+    ref:refBase({date:'29.10.2026',time:'16:20',op:'29.10.2026, роздільне діагностичне вишкрібання',marking:'Контейнери без маркування',clinical:'Кровотеча в постменопаузі. Остання менструація — 2019 р. Початок кровотечі — 21.10.2026.',diag:'N95.0 Постменопаузальна кровотеча',doctor:'Іваненко Л. П.'}),
+    containers:[{mark:'?',what:'Зскрібок ендометрію',fix:'10% нейтральний формалін',fixStart:'2026-10-29 16:40',scan:false,ok:false,problem:'Маркування на контейнері відсутнє'},{mark:'?',what:'Зскрібок цервікального каналу',fix:'10% нейтральний формалін',fixStart:'2026-10-29 16:40',scan:false,ok:false,problem:'Маркування на контейнері відсутнє'}],tpl:'Ендометрій · зскрібок',topo:'C54.1'}
+  ],
+  cases:[]};
+ const mk=(o)=>Object.assign({cito:false,macro:'',micro:'',concl:{icd10:'',topo:'',morph:'',g:'',pt:'',pn:'',r:'',lnTot:'',lnPos:'',lvi:'',pni:'',ihc:[],text:'',prelim:''},versions:[],objects:[],ihcOrdered:[],issued:[],events:[]},o);
+ S.cases=[
+  mk({id:'c418',no:'ПГД-26-0418',pid:'kov',src:'INPATIENT',kind:'OPER',dept:'Онкохірургія (мамологія)',mcard:'ст-2026-1172',doctor:'Ткаченко В. Ю.',received:'2026-10-27 13:05',stage:'MICRO',tpl:'Молочна залоза · секторальна резекція',
+   ref:refBase({date:'27.10.2026',time:'12:20',op:'27.10.2026, секторальна резекція лівої молочної залози з біопсією сторожового лімфовузла (протокол операції №58)',marking:'2 контейнери: №1 — сектор лівої молочної залози (нитка — верхній край); №2 — сторожовий лімфовузол',clinical:'Пухлина лівої молочної залози 2 см, виявлена при скринінгу 09.2026. Core-біопсія 02.10.2026: інвазивна карцинома (ПГД-26-0351).',clinical2:['Остання менструація — 2021 р. (постменопауза). Аналіз крові 26.10.2026: без відхилень.'],diag:'C50.4 Злоякісне новоутворення верхньо-зовнішнього квадранта лівої молочної залози, cT1cN0M0',biopsy:'вторинна',prev:'ПГД-26-0351 від 03.10.2026',doctor:'Ткаченко В. Ю.'}),
+   macro:'Сектор молочної залози розмірами 7,5×5,0×3,2 см, маркований ниткою (верхній край). На розрізі — вузол сірувато-білого кольору щільної консистенції, з нечіткими контурами, розмірами 2,1×1,8 см; відстань до найближчого (латерального) краю резекції 0,6 см. Решта тканини — жирова з тяжами фіброзної тканини.\nЛімфатичний вузол розмірами 1,2×0,8×0,6 см, на розрізі сірувато-рожевий, однорідний. Вузол розрізано повністю.',
+   objects:[{mark:'1',what:'Сектор лівої молочної залози',blocks:[{id:'A1',pieces:2,slides:[{id:'A1-1',stain:'Г-Е',st:'Готово'}]},{id:'A2',pieces:2,slides:[{id:'A2-1',stain:'Г-Е',st:'Готово'}]},{id:'A3',pieces:1,slides:[{id:'A3-1',stain:'Г-Е',st:'Готово'}]},{id:'A4',pieces:2,slides:[{id:'A4-1',stain:'Г-Е',st:'Готово'}]}]},{mark:'2',what:'Сторожовий лімфовузол',blocks:[{id:'B1',pieces:2,slides:[{id:'B1-1',stain:'Г-Е',st:'Готово'},{id:'B1-2',stain:'Г-Е (рівень 2)',st:'Готово'}]}]}],
+   concl:{icd10:'C50.4',topo:'C50.4',morph:'8500/3',g:'G2',pt:'pT1c',pn:'pN0(sn)',r:'R0, 6 мм',lnTot:'1',lnPos:'0',lvi:'не виявлено',pni:'не виявлено',ihc:[],text:'',prelim:''}}),
+  mk({id:'c412',no:'ПГД-26-0412',pid:'tes',src:'INPATIENT',kind:'BIOPSY',dept:'Онкоурологія',mcard:'ст-2026-1160',doctor:'Кушнаренко М. В.',received:'2026-10-28 15:30',stage:'STAIN',tpl:'Сечовий міхур · ТУР-біопсія',
+   ref:refBase({date:'28.10.2026',time:'14:50',op:'28.10.2026, повторна трансуретральна резекція сечового міхура (протокол операції №57)',marking:'3 контейнери: №1 — ложе пухлини; №2 — дно пухлини (м’язовий шар); №3 — біопсія з лівої бічної стінки',clinical:'Стан після ТУР 19.05.2026 (ПГД-26-0242: папілярна уротеліальна карцинома G3) та 6 курсів внутрішньоміхурової ХТ.',diag:'C67.9 Злоякісне новоутворення сечового міхура',biopsy:'вторинна',prev:'ПГД-26-0242 від 22.05.2026',doctor:'Кушнаренко М. В.'}),
+   macro:'Фрагменти тканини сечового міхура загальним об’ємом 1,5 см³, сірувато-рожевого кольору, м’якої консистенції. Весь матеріал взято на дослідження.',
+   objects:[{mark:'1',what:'Ложе пухлини',blocks:[{id:'A1',pieces:4,slides:[{id:'A1-1',stain:'Г-Е',st:'Фарбування'}]}]},{mark:'2',what:'Дно пухлини',blocks:[{id:'B1',pieces:3,slides:[{id:'B1-1',stain:'Г-Е',st:'Фарбування'}]}]},{mark:'3',what:'Ліва бічна стінка',blocks:[{id:'C1',pieces:2,slides:[{id:'C1-1',stain:'Г-Е',st:'Фарбування'}]}]}]}),
+  mk({id:'c420',no:'ПГД-26-0420',pid:'mel',src:'INPATIENT',kind:'CITO',cito:true,dept:'Операційна №2 · Онкохірургія',mcard:'ст-2026-1190',doctor:'Ельшаавер А. А.',received:'',stage:'RCV',tpl:'Лімфатичний вузол · сторожовий',citoStart:null,
+   ref:refBase({date:'30.10.2026',time:'10:35',op:'30.10.2026, лапароскопічна ревізія; термінове дослідження лімфовузла (протокол операції №62, триває)',marking:'1 контейнер без фіксатора: №1 — лімфовузол біля чревного стовбура',clinical:'Рак підшлункової залози, cT2. Інтраопераційно — збільшений щільний лімфовузол 1,5 см. Питання: метастаз?',diag:'C25.0 Злоякісне новоутворення головки підшлункової залози',doctor:'Ельшаавер А. А.',time:'10:35'}),
+   objects:[{mark:'1',what:'Лімфовузол (нативний, без фіксатора)',blocks:[]}]}),
+  mk({id:'c405',no:'ПГД-26-0405',pid:'dd',src:'INPATIENT',kind:'OPER',dept:'Онкохірургія (колопроктологія)',mcard:'ст-2026-1121',doctor:'Постолов О. М.',received:'2026-10-14 12:00',stage:'SIGNED',signedAt:'2026-10-20 15:10',signedBy:'Коваленко Олег Васильович',tpl:'Шлунок · резекція',
+   ref:refBase({date:'14.10.2026',time:'11:30',op:'14.10.2026, резекція сигмоподібної кишки (протокол операції №49)',marking:'2 контейнери: №1 — сегмент сигмоподібної кишки; №2 — лімфовузли брижі',clinical:'Пухлина сигмоподібної кишки, колоноскопія 09.2026.',diag:'C18.7 Злоякісне новоутворення сигмоподібної кишки',doctor:'Постолов О. М.'}),
+   macro:'Сегмент сигмоподібної кишки довжиною 18 см з циркулярною пухлиною 4,5 см. У брижі виділено 16 лімфатичних вузлів.',micro:'Аденокарцинома, помірно диференційована (G2), інвазія в субсерозну основу. Метастази в 2 з 16 лімфатичних вузлів. Краї резекції без пухлини.',
+   objects:[{mark:'1',what:'Сегмент сигмоподібної кишки',blocks:[{id:'A1',pieces:2,slides:[{id:'A1-1',stain:'Г-Е',st:'Готово'}]},{id:'A2',pieces:2,slides:[{id:'A2-1',stain:'Г-Е',st:'Готово'}]},{id:'A3',pieces:2,slides:[{id:'A3-1',stain:'Г-Е',st:'Готово'}]}]},{mark:'2',what:'Лімфовузли брижі',blocks:[{id:'B1',pieces:6,slides:[{id:'B1-1',stain:'Г-Е',st:'Готово'}]},{id:'B2',pieces:10,slides:[{id:'B2-1',stain:'Г-Е',st:'Готово'}]}]}],
+   concl:{icd10:'C18.7',topo:'C18.7',morph:'8140/3',g:'G2',pt:'pT3',pn:'pN1b (2/16)',r:'R0',lnTot:'16',lnPos:'2',lvi:'виявлено (L1)',pni:'не виявлено',ihc:[],text:'Аденокарцинома сигмоподібної кишки, помірно диференційована (G2), pT3 pN1b (2/16) L1 V0 Pn0 R0. МКХ-О: C18.7, 8140/3.',prelim:''},
+   versions:[{v:1,at:'2026-10-20 15:10',by:'Коваленко Олег Васильович',kind:'Основний висновок',text:'Аденокарцинома сигмоподібної кишки, помірно диференційована (G2), pT3 pN1b (2/16) L1 V0 Pn0 R0.'}],archive:'Шафа 2 · полиця 4 · комірка 405'}),
+  mk({id:'c398',no:'ПГД-26-0398',pid:'she',src:'EHEALTH',kind:'BIOPSY',dept:'Поліклініка (інший заклад)',mcard:'амб-330912',doctor:'Ніколенко Т. В.',eref:'0002-2026-B8M4',received:'2026-10-11 09:20',stage:'SIGNED',signedAt:'2026-10-16 12:40',signedBy:'Коваленко Олег Васильович',tpl:'Ендометрій · зскрібок',
+   ref:refBase({date:'10.10.2026',time:'16:00',op:'10.10.2026, прицільна біопсія шийки матки',marking:'1 контейнер: №1 — біоптат шийки матки (6 год.)',clinical:'Цитологія: HSIL. Кольпоскопія: ацетобіле поле на 6 год.',diag:'N87.2 Виражена дисплазія шийки матки',doctor:'Ніколенко Т. В.'}),
+   macro:'2 фрагменти тканини 0,4 і 0,3 см.',micro:'Плоскоклітинне інтраепітеліальне ураження високого ступеня (HSIL/CIN 3). Ознак інвазії не виявлено.',
+   objects:[{mark:'1',what:'Біоптат шийки матки',blocks:[{id:'A1',pieces:2,slides:[{id:'A1-1',stain:'Г-Е',st:'Готово'},{id:'A1-2',stain:'Г-Е (рівень 2)',st:'Готово'}]}]}],
+   concl:{icd10:'N87.2',topo:'C53.9',morph:'8077/2',g:'',pt:'',pn:'',r:'',lnTot:'',lnPos:'',lvi:'',pni:'',ihc:[],text:'Плоскоклітинне інтраепітеліальне ураження високого ступеня (HSIL/CIN 3) шийки матки. Ознак інвазії не виявлено.',prelim:''},
+   versions:[{v:1,at:'2026-10-16 12:40',by:'Коваленко Олег Васильович',kind:'Основний висновок',text:'HSIL/CIN 3 шийки матки. Ознак інвазії не виявлено.'}],esoz:'COMPLETED',archive:'Шафа 2 · полиця 3 · комірка 398'}),
+  mk({id:'c421',no:'ПГД-26-0421',pid:'bon',src:'PARTNER',kind:'CONSULT',dept:'КНП «Міська лікарня №7» (договір)',mcard:'амб-190233',doctor:'Онколог Сидоренко П. П.',received:'2026-10-29 11:00',stage:'MICRO',tpl:'Шкіра · ексцизійна біопсія',
+   ref:refBase({date:'29.10.2026',time:'10:30',op:'—  (консультація готових препаратів: скельця 6 шт., блоки 2 шт., дослідження №1187/26 від 15.10.2026, КНП «Міська лікарня №7»)',marking:'Скельця 1187-1…6, блоки 1187-А, 1187-Б',clinical:'Висновок закладу-відправника: «Меланома шкіри? Невус з атипією?» Потрібна консультація.',diag:'D48.5 Новоутворення шкіри невизначеного характеру',doctor:'Сидоренко П. П.'}),
+   objects:[{mark:'К',what:'Зовнішні препарати №1187/26',blocks:[{id:'1187-А',pieces:0,ext:true,slides:[{id:'1187-1',stain:'Г-Е',st:'Готово'},{id:'1187-2',stain:'Г-Е',st:'Готово'},{id:'1187-3',stain:'Г-Е',st:'Готово'}]},{id:'1187-Б',pieces:0,ext:true,slides:[{id:'1187-4',stain:'Г-Е',st:'Готово'},{id:'1187-5',stain:'Г-Е',st:'Готово'},{id:'1187-6',stain:'Г-Е',st:'Готово'}]}]}]})
+ ];
+ S.cases.find(c=>c.id==='c420').citoStart=Date.now()-7*60000;S.cases.find(c=>c.id==='c420').received=now();
+ return S;}
+/* ===================== ред. 4.3 · ТЗ розд. 23 =====================
+   Направлення з МІС (послуги ЕСОЗ + обрані лікарем показники, пакети),
+   довідник «Послуга ЕСОЗ × аналізатори», розподіл лаборантом,
+   робота за направленнями (аналізатор / пацієнт / дослідження), звіти. */
+Object.assign(ROLES,{lt:'Лаборант КДЛ',ld:'Лікар-лаборант'});
+Object.assign(ME,{lt:'Мороз Наталія Іванівна',ld:'Мельник Віктор Сергійович'});
+Object.assign(PERM,{dist:['lt','ld','head'],svcEdit:['ld','head']});
+Object.assign(PAT,{ros:{n:'Росоха Віра Миколаївна',s:'Ж',dob:'1966-08-19',card:'334561'},lev:{n:'Левченко Артем Олегович',s:'Ч',dob:'1979-02-02',card:'327740'},kra:{n:'Кравець Надія Іванівна',s:'Ж',dob:'1951-12-30',card:'210448'}});
+const AN={
+ bc780:{n:'Mindray BC-780',cat:'Гематологія',dep:'КДЛ · гематологія',st:'online',tat:25},
+ bc20s:{n:'Mindray BC-20S',cat:'Гематологія (експрес)',dep:'Експрес-лабораторія ВРІТ',st:'online',tat:10},
+ ms380:{n:'MedicalSystem MS-380P',cat:'Біохімія',dep:'КДЛ · біохімія',st:'online',tat:40},
+ r940:{n:'Respons 940',cat:'Біохімія',dep:'КДЛ · біохімія',st:'offline',tat:45,note:'Немає зв’язку з коннектором 46 хв'},
+ cl900:{n:'Mindray CL-900i',cat:'Імунохімія',dep:'КДЛ · імунохімія',st:'online',tat:60},
+ zonci:{n:'Zonci XL1000e',cat:'Коагуляція',dep:'КДЛ · коагулологія',st:'online',tat:30},
+ cx6010:{n:'Mindray CX6010',cat:'Коагуляція',dep:'КДЛ · коагулологія',st:'online',tat:30,lock:['FIB'],note:'Lockout ВКЯ: FIB (правило 1_3s)'},
+ easy:{n:'MEDICA EasyStat',cat:'Гази крові / електроліти',dep:'Експрес-лабораторія ВРІТ',st:'online',tat:5},
+ ise:{n:'Convergys ISE comfort',cat:'Електроліти',dep:'КДЛ · біохімія',st:'online',tat:15},
+ eu56:{n:'EU-5600Pro',cat:'Сеча',dep:'КДЛ · загальноклінічні',st:'online',tat:35},
+ man:{n:'Ручна постановка',cat:'Ручні методи',dep:'КДЛ',st:'online',tat:60}
+};
+/* показник: [код, назва, од., обов'язковий, типовий, аналізатори що виконують] */
+const SV={
+ CBC:{code:'DEMO-LAB-CBC',ehe:'Загальний аналіз крові (розгорнутий)',lis:'ЗАК розгорнутий',mode:'SELECTABLE',an:['bc780','bc20s'],tube:'К3 ЕДТА',ind:[
+  ['WBC','Лейкоцити','10⁹/л',1,1,'bc780 bc20s'],['NEU','Нейтрофіли (абс.)','10⁹/л',0,1,'bc780 bc20s'],['LYM','Лімфоцити (абс.)','10⁹/л',0,1,'bc780 bc20s'],['MON','Моноцити (абс.)','10⁹/л',0,1,'bc780 bc20s'],['EOS','Еозинофіли (абс.)','10⁹/л',0,0,'bc780'],['BAS','Базофіли (абс.)','10⁹/л',0,0,'bc780'],['RBC','Еритроцити','10¹²/л',1,1,'bc780 bc20s'],['HGB','Гемоглобін','г/л',1,1,'bc780 bc20s'],['HCT','Гематокрит','%',1,1,'bc780 bc20s'],['MCV','Середній об’єм еритроцита','фл',0,1,'bc780 bc20s'],['PLT','Тромбоцити','10⁹/л',1,1,'bc780 bc20s'],['RET','Ретикулоцити','%',0,0,'bc780'],['ESR','ШОЕ','мм/год',0,0,'bc780 man']]},
+ BIO:{code:'DEMO-LAB-BIO',ehe:'Біохімічний аналіз крові',lis:'Біохімія крові',mode:'SELECTABLE_ANY',an:['ms380','r940'],tube:'Сироватка',ind:[
+  ['TP','Загальний білок','г/л',0,1,'ms380 r940'],['ALB','Альбумін','г/л',0,1,'ms380 r940'],['TBIL','Білірубін загальний','мкмоль/л',0,1,'ms380 r940'],['DBIL','Білірубін прямий','мкмоль/л',0,0,'ms380 r940'],['UREA','Сечовина','ммоль/л',0,1,'ms380 r940'],['CREA','Креатинін','мкмоль/л',0,1,'ms380 r940'],['ALT','АЛТ','Од/л',0,1,'ms380 r940'],['AST','АСТ','Од/л',0,1,'ms380 r940'],['GLU','Глюкоза','ммоль/л',0,1,'ms380 r940 easy'],['AMY','Альфа-амілаза','Од/л',0,0,'ms380 r940'],['CRP','С-реактивний білок','мг/л',0,0,'ms380']]},
+ COAG:{code:'DEMO-LAB-COAG',ehe:'Коагулограма',lis:'Коагулограма',mode:'SELECTABLE',an:['zonci','cx6010'],tube:'Цитрат 3,2 %',ind:[
+  ['PT','Протромбіновий час','с',1,1,'zonci cx6010'],['PTI','ПТІ','%',0,1,'zonci cx6010'],['INR','МНВ','',1,1,'zonci cx6010'],['APTT','АЧТЧ','с',1,1,'zonci cx6010'],['TT','Тромбіновий час','с',0,0,'zonci cx6010'],['FIB','Фібриноген','г/л',0,1,'zonci cx6010']]},
+ ELEC:{code:'DEMO-LAB-ELEC',ehe:'Електроліти крові',lis:'Електроліти',mode:'SELECTABLE_ANY',an:['ise','easy'],tube:'Сироватка / Li-гепарин',ind:[
+  ['K','Калій','ммоль/л',0,1,'ise easy'],['NA','Натрій','ммоль/л',0,1,'ise easy'],['CL','Хлориди','ммоль/л',0,1,'ise'],['ICA','Кальцій іонізований','ммоль/л',0,0,'ise easy']]},
+ ABG:{code:'DEMO-LAB-ABG',ehe:'Кислотно-лужний стан і гази крові',lis:'КЛС + гази крові',mode:'SELECTABLE',an:['easy'],tube:'Гепаринізований шприц',ind:[
+  ['PH','pH','',1,1,'easy'],['PCO2','pCO₂','мм рт. ст.',1,1,'easy'],['PO2','pO₂','мм рт. ст.',1,1,'easy'],['HCO3','Бікарбонат','ммоль/л',0,1,'easy'],['BE','Надлишок основ','ммоль/л',0,1,'easy'],['SO2','Сатурація','%',0,1,'easy'],['LAC','Лактат','ммоль/л',0,0,'easy']]},
+ URINE:{code:'DEMO-LAB-URINE',ehe:'Загальний аналіз сечі',lis:'ЗАС',mode:'FIXED',an:['eu56','man'],tube:'Контейнер для сечі',ind:[
+  ['U-SG','Питома вага','',1,1,'eu56 man'],['U-PH','pH сечі','',1,1,'eu56 man'],['U-PRO','Білок','г/л',1,1,'eu56 man'],['U-GLU','Глюкоза','ммоль/л',1,1,'eu56 man'],['U-LEU','Лейкоцити','/мкл',1,1,'eu56 man'],['U-ERY','Еритроцити','/мкл',1,1,'eu56 man'],['U-SED','Мікроскопія осаду','',1,1,'eu56 man']]},
+ PCT:{code:'DEMO-LAB-PCT',ehe:'Прокальцитонін',lis:'Прокальцитонін',mode:'FIXED',an:['cl900'],tube:'Сироватка',ind:[['PCT','Прокальцитонін','нг/мл',1,1,'cl900']]},
+ ANEM:{code:'DEMO-LAB-ANEM',ehe:'Обмін заліза та вітаміни',lis:'Феритин, B12, фолати',mode:'SELECTABLE_ANY',an:['cl900'],tube:'Сироватка',ind:[['FER','Феритин','нг/мл',0,1,'cl900'],['B12','Вітамін B12','пг/мл',0,1,'cl900'],['FOL','Фолієва кислота','нг/мл',0,1,'cl900']]},
+ ONCO:{code:'DEMO-LAB-TM',ehe:'Онкомаркери',lis:'Онкомаркери',mode:'SELECTABLE_ANY',an:[],tube:'Сироватка',ind:[['CEA','РЕА','нг/мл',0,0,''],['CA199','CA 19-9','Од/мл',0,0,''],['CA125','CA 125','Од/мл',0,0,'']]}
+};
+const SV0=clone(SV);
+const PK={
+ POSTOP:{n:'Післяопераційний (стандартний)',code:'PKG-POSTOP-1',for:'Стаціонар, 1-ша доба після операції',items:{CBC:['WBC','NEU','LYM','RBC','HGB','HCT','PLT'],BIO:['TP','ALB','UREA','CREA','GLU','TBIL','CRP'],COAG:['PT','INR','APTT','FIB'],ELEC:['K','NA','CL']}},
+ ICU:{n:'Післяопераційний ВРІТ (CITO)',code:'PKG-POSTOP-ICU',cito:1,for:'ВРІТ, кожні 12 год',items:{CBC:['WBC','RBC','HGB','HCT','PLT'],ABG:['PH','PCO2','PO2','HCO3','BE','SO2','LAC'],ELEC:['K','NA','ICA'],COAG:['PT','INR','APTT'],PCT:['PCT'],BIO:['GLU','CREA','UREA']}},
+ PREOP:{n:'Передопераційний',code:'PKG-PREOP',for:'Поліклініка / приймальне відділення',items:{CBC:['WBC','RBC','HGB','HCT','PLT','ESR'],BIO:['TP','TBIL','UREA','CREA','ALT','AST','GLU'],COAG:['PT','INR','APTT','FIB'],URINE:['U-SG','U-PH','U-PRO','U-GLU','U-LEU','U-ERY','U-SED']}}
+};
+const CTXM={INPATIENT:['Стаціонар · призначення','Онкохірургія (абдомінальна)','Палата 4, ліжко 1','Осокін А. Е.'],AMBULATORY:['Поліклініка · внутрішнє направлення','Поліклініка · онкохірург','—','Литвин О. С.'],EHEALTH:['Е-направлення ЕСОЗ (амбулаторія)','Поліклініка · сімейний лікар','—','Петренко І. В.']};
+const MODE={FIXED:'Фіксований склад',SELECTABLE:'Лікар обирає (є обов’язкові)',SELECTABLE_ANY:'Лікар обирає довільно'};
+const STT={queue:['В черзі','la'],run:['В аналізі','lb'],res:['Результат · очікує верифікації','lp'],ver:['Верифіковано','lg'],none:['Без обладнання','lr']};
+const IND=(s,c)=>SV[s].ind.find(x=>x[0]===c);
+const capOf=(s,c)=>{const x=IND(s,c);return x?x[5].split(' ').filter(Boolean):[];};
+const anShort=a=>a&&AN[a]?AN[a].n.replace(/^(Mindray|MedicalSystem|MEDICA|Convergys) /,''):'—';
+const avail=(a,c)=>!!a&&AN[a].st!=='offline'&&!(AN[a].lock||[]).includes(c);
+const anFlag=(a,c)=>AN[a].st==='offline'?' · немає зв’язку':(c&&(AN[a].lock||[]).includes(c))?' · lockout ВКЯ':'';
+const defSel=s=>SV[s].mode==='FIXED'?SV[s].ind.map(x=>x[0]):SV[s].ind.filter(x=>x[3]||x[4]).map(x=>x[0]);
+const nf=v=>v==null?'':String(v).replace('.',',');
+function anOrder(s,cito){const base=[...SV[s].an];SV[s].ind.forEach(x=>capOf(s,x[0]).forEach(a=>{if(!base.includes(a))base.push(a);}));return cito?[...base].sort((a,b)=>AN[a].tat-AN[b].tat):base;}
+function autoAssign(s,sel,cito){const out={};const ord=anOrder(s,cito);
+ const whole=ord.find(a=>sel.every(c=>capOf(s,c).includes(a)&&avail(a,c)));
+ sel.forEach(c=>{out[c]=whole||ord.find(a=>capOf(s,c).includes(a)&&avail(a,c))||'';});return out;}
+function qLen(a){return S.lab.orders.reduce((n,o)=>n+o.tests.filter(t=>t.a===a&&['queue','run'].includes(t.st)).length,0);}
+const curRef=()=>S.lab.refs.find(x=>x.id===S.lab.sel);
+function ensureAs(r){r.items.forEach(i=>{if(!i.as)i.as=autoAssign(i.s,i.sel,r.cito);});}
+const groupSvc=ts=>{const g={};ts.forEach(t=>(g[t.s]=g[t.s]||[]).push(t));return Object.entries(g);};
+const worstSt=arr=>['none','queue','run','res','ver'].find(k=>arr.some(t=>t.st===k));
+const bcOf=(o,s)=>'26'+o.no.slice(-4)+String(Object.keys(SV).indexOf(s)+10);
+
+function labInit(){
+ const R=o=>Object.assign({cito:false,pkg:null,eref:'',done:false,needSel:false,ward:'—'},o);
+ const it=(s,sel,by='Лікар (МІС)')=>({s,sel:[...sel],by,as:null});
+ const pkgItems=k=>Object.entries(PK[k].items).map(([s,sel])=>it(s,sel));
+ const refs=[
+  R({id:'НП-2611-0107',src:'INPATIENT',pid:'gry',dept:'ВРІТ',ward:'Палата 1, ліжко 3',doctor:'Шевченко О. А. (анестезіолог)',created:'2026-11-01 06:10',cito:true,pkg:'ICU',items:pkgItems('ICU')}),
+  R({id:'НП-2611-0108',src:'INPATIENT',pid:'kov',dept:'Онкохірургія (мамологія)',ward:'Палата 6, ліжко 1',doctor:'Ткаченко В. Ю.',created:'2026-11-01 07:05',pkg:'POSTOP',items:pkgItems('POSTOP')}),
+  R({id:'ЕН 0002-2026-K4P9',src:'EHEALTH',pid:'ros',dept:'Поліклініка · онкогінеколог',doctor:'Іваненко Л. П.',created:'2026-11-01 08:20',eref:'0002-2026-K4P9',items:[it('CBC',['WBC','RBC','HGB','HCT','PLT','ESR']),it('BIO',['GLU','CREA','ALT','AST']),it('ONCO',['CA125'])]}),
+  R({id:'НП-2611-0111',src:'AMBULATORY',pid:'lev',dept:'Поліклініка · онкоуролог',doctor:'Кушнаренко М. В.',created:'2026-11-01 08:45',items:[it('URINE',SV.URINE.ind.map(x=>x[0])),it('BIO',['CREA','UREA'])]}),
+  R({id:'ЕН 0003-2026-D2X7',src:'EHEALTH',pid:'kra',dept:'АЗПСМ (інший заклад)',doctor:'Мартинюк С. Р.',created:'2026-11-01 09:02',eref:'0003-2026-D2X7',needSel:true,items:[it('CBC',[],null),it('COAG',[],null)]})
+ ];
+ const orders=[];let ono=740;
+ const mk=(pid,src,dept,ward,cito,created,spec,st,pkg)=>{const tests=[];Object.entries(spec).forEach(([s,sel])=>{const as=autoAssign(s,sel,cito);sel.forEach((c,i)=>{const a=as[c];tests.push({s,c,a,st:!a?'none':Array.isArray(st)?st[i%st.length]:st,by:'auto'});});});orders.push({no:'2611-000'+(++ono),pid,src,dept,ward,cito,created,pkg:pkg||null,tests});};
+ mk('bon','INPATIENT','Онкохірургія (абдомінальна)','Палата 4, ліжко 1',false,'2026-11-01 05:45',{CBC:['WBC','NEU','RBC','HGB','HCT','PLT','ESR'],BIO:['TP','ALB','CREA','UREA','GLU','CRP','TBIL'],COAG:['PT','INR','APTT']},['ver','ver','res'],'POSTOP');
+ mk('mel','INPATIENT','ВРІТ','Палата 1, ліжко 1',true,'2026-11-01 06:00',{CBC:['WBC','RBC','HGB','HCT','PLT'],ABG:['PH','PCO2','PO2','HCO3','BE','SO2','LAC'],ELEC:['K','NA','ICA']},['run','res'],'ICU');
+ mk('dd','INPATIENT','Онкохірургія (колопроктологія)','Палата 2, ліжко 4',false,'2026-11-01 06:30',{BIO:['TP','ALB','CREA','UREA','GLU','CRP'],COAG:['PT','INR','APTT','FIB']},'queue');
+ mk('she','EHEALTH','Поліклініка (інший заклад)','—',false,'2026-11-01 07:15',{CBC:['WBC','RBC','HGB','HCT','PLT'],ANEM:['FER','B12']},['queue','run']);
+ mk('tes','AMBULATORY','Поліклініка · онкоуролог','—',false,'2026-11-01 07:40',{URINE:SV.URINE.ind.map(x=>x[0]),BIO:['CREA','UREA','GLU']},'queue');
+ mk('bir','AMBULATORY','Поліклініка · онкодерматолог','—',false,'2026-11-01 07:55',{CBC:['WBC','RBC','HGB','HCT','PLT','ESR'],BIO:['ALT','AST','TBIL','GLU']},['queue','queue','run']);
+ mk('kog','EHEALTH','Жіноча консультація (інший заклад)','—',false,'2026-11-01 08:05',{CBC:['WBC','RBC','HGB','HCT','PLT'],COAG:['PT','INR','APTT','FIB']},'queue');
+ mk('gry','INPATIENT','Онкохірургія (абдомінальна)','Палата 4, ліжко 2',false,'2026-10-31 18:20',{CBC:['WBC','RBC','HGB','HCT','PLT'],BIO:['CREA','UREA','GLU','CRP']},'ver','POSTOP');
+ return {lab:{refs,orders,ono,sel:refs[0].id,mode:'an',selAn:'bc780',selPat:null,selSvc:'CBC',srcF:'all',q:'',stF:'active',svcTab:'svc',svcSel:'CBC',rep:'cum',repPat:'bon',repGroup:'svc',repSvc:'CBC',repFrom:'2026-10-26',repTo:'2026-11-01',showNo:false,mis:null,rr:null},
+  done2:{mis:false,dist:false,reroute:false,pat:false,study:false,svc:false,cum:false,load:false},scn:'lab'};
+}
+function initAll(){Object.keys(SV0).forEach(k=>{SV[k]=clone(SV0[k]);});const s=initState();Object.assign(s,labInit(),{role:'lt',view:'refs'});return s;}
+
+const crumbsL=a=>`<div class="crumbs"><span>⌂</span>/ <span>Лабораторія</span>${a.map(x=>' / <span>'+x[0]+'</span>').join('')}</div>`;
+
+/* ---------- Вхідні направлення + розподіл ---------- */
+function refState(x){if(x.items.some(i=>!i.sel.length))return '<span class="chip la">Потрібен вибір показників</span>';ensureAs(x);
+ if(x.items.some(i=>i.sel.some(c=>!i.as[c])))return '<span class="chip lr">Є показники без обладнання</span>';
+ const n=new Set(x.items.flatMap(i=>i.sel.map(c=>i.as[c]))).size;return `<span class="chip lg">Запропоновано: ${n} аналізатор(ів)</span>`;}
+function vRefs(){const L=S.lab;const open=L.refs.filter(r=>!r.done);const r=open.find(x=>x.id===L.sel)||open[0];if(r)L.sel=r.id;
+ return crumbsL([['Вхідні направлення']])+title('inbox','Вхідні направлення з МІС','Внутрішні (стаціонар, поліклініка) і зовнішні (е-направлення ЕСОЗ) направлення: окремі послуги ЕСОЗ і пакети. Лаборант бачить показники, обрані лікарем у МІС, і розподіляє їх по аналізаторах; система пропонує розподіл автоматично.',`<button class="btn" data-a="misOpen">${ic('plus')} Емулятор МІС: нове направлення</button>`)+
+ (open.length?`<section class="card"><div class="tw"><table class="t"><thead><tr><th>Надійшло</th><th>Направлення</th><th>Пацієнт</th><th>Джерело</th><th>Відділення / ліжко</th><th>Послуги ЕСОЗ</th><th>Показників</th><th>Розподіл</th></tr></thead><tbody>${open.map(x=>{const n=x.items.reduce((k,i)=>k+i.sel.length,0);return `<tr class="click${x.id===L.sel?' on':''}${x.cito?' cito':''}" data-a="refSel" data-id="${esc(x.id)}"><td>${fmt(x.created)}</td><td><b>${esc(x.id)}</b>${x.cito?' <span class="chip red">CITO</span>':''}</td><td>${P(x.pid).n}<div class="small muted">${age(P(x.pid).dob)} р.</div></td><td><span class="chip ${SRC[x.src][1]}">${SRC[x.src][0]}</span>${x.pkg?`<div style="margin-top:3px"><span class="chip lp">Пакет: ${esc(PK[x.pkg].n)}</span></div>`:''}</td><td>${esc(x.dept)}${x.ward!=='—'?`<div class="small muted">${esc(x.ward)}</div>`:''}</td><td class="small" style="min-width:180px">${x.items.map(i=>esc(SV[i.s].lis)).join(', ')}</td><td>${x.items.some(i=>!i.sel.length)?'<span class="chip la">не передано</span>':n}</td><td>${refState(x)}</td></tr>`;}).join('')}</tbody></table></div></section>${r?vDist(r):''}`:`<section class="card empty">${ic('check',20)}<br>Усі направлення розподілено. Створіть нове в емуляторі МІС.</section>`);}
+function vDist(r){ensureAs(r);const p=P(r.pid);const ok=can('dist');const cnt={};
+ r.items.forEach(i=>i.sel.forEach(c=>{const a=i.as[c]||'';cnt[a]=(cnt[a]||0)+1;}));
+ const blocked=r.items.some(i=>!i.sel.length);
+ return `<section class="card tb" style="margin-top:14px"><div class="ch"><h2>Розподіл: ${esc(r.id)}</h2><span class="muted">${p.n} · ${fmt(p.dob)} · ${age(p.dob)} р. · ${p.s==='Ж'?'жін.':'чол.'} · картка ${p.card}</span><span class="sp"></span>
+ <button class="btn" data-a="distAuto" ${ok?'':'disabled'}>${ic('refresh')} Авторозподіл</button>
+ <button class="btn ok" data-a="distConfirm" ${ok&&!blocked?'':'disabled'} title="${!ok?deny():blocked?'Оберіть показники для всіх послуг':''}">${ic('check')} Підтвердити й поставити в черги</button></div>
+ <div class="pad stack">
+ <div class="row small">${Object.entries(cnt).map(([a,n])=>a?`<span class="chip lb">${esc(anShort(a))}: ${n}</span>`:`<span class="chip lr">Без обладнання: ${n}</span>`).join(' ')}<span class="sp"></span><span class="muted">${r.pkg?'Пакет «'+esc(PK[r.pkg].n)+'» ('+PK[r.pkg].code+') · ':''}${r.cito?'CITO: перевага приладам з меншим TAT':'Правило: пріоритет приладу → доступність → навантаження'}</span></div>
+ ${!ok?`<div class="al warn">${ic('lock')}<span>Розподіл доступний ролям «Лаборант КДЛ», «Лікар-лаборант», «Завідувач відділення». Перемкніть роль на панелі прототипу.</span></div>`:''}
+ ${r.items.map((it,ii)=>vDistItem(r,it,ii,ok)).join('')}</div></section>`;}
+function vDistItem(r,it,ii,ok){const sv=SV[it.s];
+ if(!it.sel.length)return `<div class="card ta"><div class="ch"><b>${esc(sv.ehe)}</b><span class="small muted">${sv.code}</span><span class="sp"></span><span class="chip la">Показники не передано з МІС</span></div><div class="pad row"><span class="small grow">Е-направлення іншого закладу містить лише код послуги ЕСОЗ. Оберіть показники — джерелом вибору буде записано лаборанта.</span><button class="btn sm" data-a="distDefault" data-i="${ii}" ${ok?'':'disabled'}>Типовий набір</button><button class="btn sm" data-a="distAll" data-i="${ii}" ${ok?'':'disabled'}>Усі показники</button></div></div>`;
+ const notSel=sv.ind.filter(x=>!it.sel.includes(x[0]));
+ const cands=[...new Set(it.sel.flatMap(c=>capOf(it.s,c)))];
+ const whole=cands.filter(a=>it.sel.every(c=>capOf(it.s,c).includes(a)));
+ const split=new Set(it.sel.map(c=>it.as[c]).filter(Boolean)).size>1;
+ return `<div class="card"><div class="ch"><b>${esc(sv.ehe)}</b><span class="small muted">${sv.code} → ${esc(sv.lis)} · ${esc(sv.tube)}</span><span class="chip">${it.sel.length} з ${sv.ind.length} показн.</span><span class="small muted">обрав: ${esc(it.by||'—')}</span><span class="sp"></span>
+ ${whole.length?`<label class="small muted" for="w${ii}">Усю послугу на:</label><select id="w${ii}" data-lch="whole" data-i="${ii}" ${ok?'':'disabled'} class="sel"><option value="">—</option>${whole.map(a=>`<option value="${a}"${AN[a].st==='offline'?' disabled':''}>${esc(AN[a].n)}${anFlag(a)}</option>`).join('')}</select>`:''}</div>
+ <div class="tw"><table class="t"><thead><tr><th>Показник</th><th>Од.</th><th>Аналізатор</th><th>Черга приладу</th><th>Можуть виконати</th></tr></thead><tbody>
+ ${it.sel.map(c=>{const x=IND(it.s,c);const caps=capOf(it.s,c);const a=it.as[c]||'';return `<tr><td><b>${c}</b> ${esc(x[1])}${x[3]?' <span title="обов’язковий">'+ic('lock',12)+'</span>':''}</td><td class="small">${esc(x[2])}</td><td>${caps.length?`<select data-lch="as" data-i="${ii}" data-c="${c}" ${ok?'':'disabled'} class="sel" style="min-width:210px">${a?'':'<option value="">— не призначено —</option>'}${caps.map(k=>`<option value="${k}"${k===a?' selected':''}${avail(k,c)?'':' disabled'}>${esc(AN[k].n)}${anFlag(k,c)}</option>`).join('')}</select>${it.man&&it.man[c]?' <span class="chip lb">вручну</span>':''}`:`<span class="chip lr">Немає обладнання → send-out / ручне</span>`}</td><td class="small">${a?qLen(a)+' тест. · ~'+AN[a].tat+' хв':'—'}</td><td class="small">${caps.map(k=>`<span class="chip ${avail(k,c)?'':'lr'}" title="${esc(AN[k].note||'доступний')}">${esc(anShort(k))}</span>`).join(' ')||'—'}</td></tr>`;}).join('')}
+ </tbody></table></div>
+ ${split?`<div class="pad small"><div class="al warn">${ic('warn')}<span>Показники послуги розподілено між кількома приладами — потрібна аліквота або окрема пробірка (план пробірок перераховується).</span></div></div>`:''}
+ ${notSel.length?`<div class="pad small muted">Не замовлено лікарем (${notSel.length}): ${notSel.map(x=>x[0]).join(', ')} — не ставляться в чергу й не тарифікуються.</div>`:''}</div>`;}
+
+/* ---------- Робота за направленнями ---------- */
+function fOrders(){const L=S.lab,q=L.q.trim().toLowerCase();return L.orders.filter(o=>(L.srcF==='all'||(L.srcF==='PKG'?!!o.pkg:o.src===L.srcF))&&(!q||P(o.pid).n.toLowerCase().includes(q)||o.no.includes(q)||o.tests.some(t=>t.c.toLowerCase()===q)));}
+const actT=t=>S.lab.stF==='all'||t.st!=='ver';
+function vWork(){const L=S.lab;if(L.mode==='pat')S.done2.pat=true;if(L.mode==='svc')S.done2.study=true;
+ const modes=[['an','За аналізатором'],['pat','За пацієнтом'],['svc','За дослідженням']];
+ return crumbsL([['Робота за направленнями']])+title('grid','Робота за направленнями','Ті самі тести в трьох розрізах: черга кожного аналізатора, усе по пацієнту, усе по дослідженню (послузі ЕСОЗ). Звідси — перенаправлення й контроль статусів.')+
+ `<section class="card" style="margin-bottom:14px"><div class="pad row end"><div class="row">${modes.map(([k,t])=>`<button class="btn${L.mode===k?' pri':''}" data-a="wMode" data-k="${k}">${t}</button>`).join('')}</div><span class="sp"></span>
+ <div class="f" style="width:220px"><label for="wsrc">Джерело</label><select id="wsrc" data-lch="lab.srcF"><option value="all">Усі</option>${['INPATIENT','AMBULATORY','EHEALTH'].map(k=>`<option value="${k}"${L.srcF===k?' selected':''}>${SRC[k][0]}</option>`).join('')}<option value="PKG"${L.srcF==='PKG'?' selected':''}>Лише пакети</option></select></div>
+ <div class="f" style="width:170px"><label for="wst">Статус</label><select id="wst" data-lch="lab.stF"><option value="active"${L.stF==='active'?' selected':''}>В роботі</option><option value="all"${L.stF==='all'?' selected':''}>Усі за добу</option></select></div>
+ <div class="f" style="width:250px"><label for="wq">Пошук</label><input id="wq" data-lin="q" value="${esc(L.q)}" placeholder="ПІБ, № замовлення, код показника"></div></div></section>`+
+ (L.mode==='an'?wByAn():L.mode==='pat'?wByPat():wBySvc());}
+function wByAn(){const L=S.lab;const os=fOrders();
+ const cards=Object.keys(AN).map(a=>{const ts=os.flatMap(o=>o.tests.filter(t=>t.a===a&&actT(t)));const q=ts.filter(t=>t.st==='queue').length,run=ts.filter(t=>t.st==='run').length,cito=os.filter(o=>o.cito&&o.tests.some(t=>t.a===a&&['queue','run'].includes(t.st))).length;
+  return `<button class="tile card ${AN[a].st==='offline'?'tr':AN[a].lock?'ta':'tt'}${L.selAn===a?' on':''}" data-a="wAn" data-k="${a}"><small>${esc(AN[a].cat)}</small><b style="font-size:16px">${esc(AN[a].n)}</b><span>${q} у черзі · ${run} в аналізі${cito?` · <strong style="color:var(--red)">CITO ${cito}</strong>`:''}</span>${AN[a].note?`<div class="small" style="color:var(--red)">${esc(AN[a].note)}</div>`:''}</button>`;}).join('');
+ const a=L.selAn;const rows=[];os.forEach(o=>{const ts=o.tests.filter(t=>t.a===a&&actT(t));groupSvc(ts).forEach(([s,arr])=>rows.push({o,s,arr}));});
+ rows.sort((x,y)=>(y.o.cito-x.o.cito)||(x.o.created<y.o.created?-1:1));
+ return `<div class="tiles">${cards}</div><section class="card tb"><div class="ch"><h2>Черга: ${esc(AN[a].n)}</h2><span class="muted small">${esc(AN[a].dep)} · середній TAT ~${AN[a].tat} хв</span><span class="sp"></span><button class="btn" data-a="toast" data-m="Робочий лист аналізатора надруковано (A4).">${ic('print')} Робочий лист</button><button class="btn" data-a="toast" data-m="Замовлення передано коннектору: прилад отримає їх на запит за штрихкодом.">${ic('send')} Передати на прилад</button></div>
+ <div class="tw"><table class="t"><thead><tr><th>#</th><th>Штрихкод / замовлення</th><th>Пацієнт</th><th>Джерело</th><th>Відділення / ліжко</th><th>Дослідження</th><th>Показники</th><th>Статус</th><th></th></tr></thead><tbody>
+ ${rows.length?rows.map((r,i)=>{const o=r.o;const st=worstSt(r.arr);return `<tr class="${o.cito?'cito':''}"><td>${i+1}</td><td><span class="bc">${bcOf(o,r.s)}</span><div class="small muted">${o.no}</div></td><td>${P(o.pid).n}</td><td><span class="chip ${SRC[o.src][1]}">${SRC[o.src][0]}</span>${o.pkg?' <span class="chip lp">пакет</span>':''}${o.cito?' <span class="chip red">CITO</span>':''}</td><td>${esc(o.dept)}<div class="small muted">${esc(o.ward)}</div></td><td class="small">${esc(SV[r.s].ehe)}</td><td style="min-width:230px">${r.arr.map(t=>`<span class="chip${t.by==='manual'?' lb':''}" title="${t.by==='manual'?'перенаправлено вручну':'розподілено автоматично'}">${t.c}</span>`).join(' ')}</td><td><span class="chip ${STT[st][1]}">${STT[st][0]}</span></td><td>${st==='queue'?`<button class="btn sm" data-a="rrOpen" data-no="${o.no}" data-s="${r.s}">Перенаправити</button>`:''}</td></tr>`;}).join(''):`<tr><td colspan="9" class="empty">Черга порожня</td></tr>`}
+ </tbody></table></div></section>`;}
+function wByPat(){const L=S.lab;const os=fOrders().filter(o=>o.tests.some(actT));const pids=[...new Set(os.map(o=>o.pid))];if(!pids.includes(L.selPat))L.selPat=pids[0]||null;
+ const left=pids.map(pid=>{const mine=os.filter(o=>o.pid===pid);const ts=mine.flatMap(o=>o.tests.filter(actT));const done=ts.filter(t=>['res','ver'].includes(t.st)).length;return `<tr class="click${pid===L.selPat?' on':''}" data-a="wPat" data-k="${pid}"><td><b>${P(pid).n}</b><div class="small muted">${age(P(pid).dob)} р. · ${[...new Set(mine.map(o=>SRC[o.src][0]))].join(', ')}</div></td><td>${done}/${ts.length}</td></tr>`;}).join('');
+ const pid=L.selPat;const mine=os.filter(o=>o.pid===pid);
+ const right=pid?`<section class="card tb"><div class="ch"><h2>${P(pid).n}</h2><span class="muted small">${fmt(P(pid).dob)} · картка ${P(pid).card}</span><span class="sp"></span><button class="btn" data-a="repOfPat" data-k="${pid}">${ic('doc')} Кумулятивний звіт</button></div>${mine.map(o=>`<div class="pad" style="border-bottom:1px solid var(--line)"><div class="row"><b>${o.no}</b><span class="chip ${SRC[o.src][1]}">${SRC[o.src][0]}</span>${o.pkg?`<span class="chip lp">Пакет: ${esc(PK[o.pkg].n)}</span>`:''}${o.cito?'<span class="chip red">CITO</span>':''}<span class="small muted">${fmt(o.created)} · ${esc(o.dept)}${o.ward!=='—'?' · '+esc(o.ward):''}</span></div>
+ <div class="tw"><table class="t" style="margin-top:6px"><thead><tr><th>Дослідження (послуга ЕСОЗ)</th><th>Показник</th><th>Аналізатор</th><th>Статус</th></tr></thead><tbody>${groupSvc(o.tests.filter(actT)).map(([s,arr])=>arr.map((t,i)=>`<tr>${i?'':`<td rowspan="${arr.length}" class="small" style="vertical-align:top"><b>${esc(SV[s].ehe)}</b><div class="muted">${SV[s].code} · ${arr.length} з ${SV[s].ind.length}</div></td>`}<td><b>${t.c}</b> <span class="small muted">${esc(IND(s,t.c)[1])}</span></td><td>${t.a?esc(anShort(t.a)):'<span class="chip lr">—</span>'}${t.by==='manual'?' <span class="chip lb">вручну</span>':''}</td><td><span class="chip ${STT[t.st][1]}">${STT[t.st][0]}</span></td></tr>`).join('')).join('')}</tbody></table></div></div>`).join('')}</section>`:'<section class="card empty">Немає пацієнтів за фільтром</section>';
+ return `<div class="split"><section class="card"><div class="tw"><table class="t"><thead><tr><th>Пацієнт</th><th>Готово</th></tr></thead><tbody>${left||'<tr><td colspan="2" class="empty">Немає</td></tr>'}</tbody></table></div></section>${right}</div>`;}
+function wBySvc(){const L=S.lab;const os=fOrders();const svcs=Object.keys(SV).map(s=>({s,items:os.map(o=>({o,ts:o.tests.filter(t=>t.s===s&&actT(t))})).filter(x=>x.ts.length)})).filter(x=>x.items.length);
+ if(!svcs.some(x=>x.s===L.selSvc)&&svcs[0])L.selSvc=svcs[0].s;
+ return `<section class="card"><div class="tw"><table class="t"><thead><tr><th>Послуга ЕСОЗ</th><th>Направлень</th><th>Показників</th><th>Розподіл по аналізаторах</th><th>Виконання</th></tr></thead><tbody>${svcs.map(({s,items})=>{const ts=items.flatMap(x=>x.ts);const byA={};ts.forEach(t=>{byA[t.a||'']=(byA[t.a||'']||0)+1;});const done=ts.filter(t=>['res','ver'].includes(t.st)).length;return `<tr class="click${L.selSvc===s?' on':''}" data-a="wSvc" data-k="${s}"><td><b>${esc(SV[s].ehe)}</b><div class="small muted">${SV[s].code}</div></td><td>${items.length}</td><td>${ts.length}</td><td>${Object.entries(byA).map(([a,n])=>`<span class="chip ${a?'lb':'lr'}">${a?esc(anShort(a)):'без обладнання'}: ${n}</span>`).join(' ')}</td><td><span class="bar"><i style="width:${Math.round(done/ts.length*100)}%"></i></span><span class="small muted">${done}/${ts.length}</span></td></tr>`;}).join('')||'<tr><td colspan="5" class="empty">Немає даних за фільтром</td></tr>'}</tbody></table></div></section>${L.selSvc&&svcs.length?svcDetail(L.selSvc,os):''}`;}
+function svcDetail(s,os){const sv=SV[s];const items=os.map(o=>({o,ts:o.tests.filter(t=>t.s===s&&actT(t))})).filter(x=>x.ts.length);
+ return `<section class="card tb" style="margin-top:14px"><div class="ch"><h2>${esc(sv.ehe)}</h2><span class="small muted">${sv.code} · ${esc(sv.lis)}</span></div><div class="tw"><table class="t"><thead><tr><th>Замовлення</th><th>Пацієнт</th><th>Джерело</th>${sv.ind.map(x=>`<th title="${esc(x[1])}" style="font-size:12px">${x[0]}</th>`).join('')}</tr></thead><tbody>${items.map(({o,ts})=>`<tr><td>${o.no}${o.cito?' <span class="chip red">CITO</span>':''}</td><td>${P(o.pid).n}</td><td><span class="chip ${SRC[o.src][1]}">${SRC[o.src][0]}</span></td>${sv.ind.map(x=>{const t=ts.find(y=>y.c===x[0]);return `<td class="small">${t?`<span class="chip ${STT[t.st][1]}" title="${STT[t.st][0]}">${esc(t.a?anShort(t.a):'—')}</span>`:'<span class="muted">·</span>'}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div><div class="pad small muted">«·» — показник не обраний лікарем у цьому направленні. Напис — аналізатор, колір — статус тесту.</div></section>`;}
+function mRR(){const L=S.lab,rr=L.rr;const o=L.orders.find(x=>x.no===rr.no);const ts=o.tests.filter(t=>t.s===rr.s&&t.a===rr.from&&t.st==='queue');
+ const cands=Object.keys(AN).filter(a=>a!==rr.from&&ts.every(t=>capOf(t.s,t.c).includes(a)&&avail(a,t.c)));if(!cands.includes(rr.to))rr.to=cands[0]||'';
+ return `<div class="modal" role="dialog" aria-modal="true" aria-label="Перенаправлення"><h3>Перенаправити на інший аналізатор</h3><div class="small muted">${o.no} · ${P(o.pid).n} · ${esc(SV[rr.s].ehe)} · ${ts.map(t=>t.c).join(', ')} · зараз: ${esc(AN[rr.from].n)}</div>
+ <div class="f"><label for="rrto">Новий аналізатор (лише ті, що виконують усі ці показники й доступні)</label><select id="rrto" data-lch="rr.to">${cands.length?cands.map(a=>`<option value="${a}"${a===rr.to?' selected':''}>${esc(AN[a].n)} · ${qLen(a)} у черзі</option>`).join(''):'<option value="">Немає доступних приладів</option>'}</select></div>
+ <div class="f"><label for="rrw">Причина *</label><select id="rrw" data-lch="rr.why">${['Технічне обслуговування приладу','Перевантаження черги','Lockout ВКЯ','Немає реагенту','Рішення лікаря-лаборанта'].map(x=>`<option${x===rr.why?' selected':''}>${x}</option>`).join('')}</select></div>
+ <div class="al info">${ic('info')}<span>Перенаправлення фіксується в журналі маршрутизації та аудиті; тест отримує позначку «вручну».</span></div>
+ <div class="row"><span class="sp"></span><button class="btn" data-a="close">Скасувати</button><button class="btn pri" data-a="rrDo" ${cands.length?'':'disabled'}>Перенаправити</button></div></div>`;}
+
+/* ---------- Довідник «Послуга ЕСОЗ × аналізатори» ---------- */
+function cellSA(s,a){const sv=SV[s];const pr=sv.an.indexOf(a);const n=sv.ind.filter(x=>capOf(s,x[0]).includes(a)).length;if(!n)return '<span class="muted">—</span>';const part=n<sv.ind.length;
+ return `<span class="chip ${pr===0?'blue':pr>0?'lb':''}" title="${n} з ${sv.ind.length} показників${pr>=0?', пріоритет '+(pr+1):''}">${pr>=0?pr+1:''}${part?'½':''}</span>`;}
+function ready(s){const sv=SV[s];const none=sv.ind.filter(x=>!capOf(s,x[0]).length).length;const down=sv.ind.filter(x=>capOf(s,x[0]).length&&!capOf(s,x[0]).some(a=>avail(a,x[0]))).length;
+ if(none===sv.ind.length)return '<span class="chip lr">Немає обладнання</span>';if(none)return '<span class="chip la">Частково</span>';if(down)return '<span class="chip la">Прилади недоступні</span>';return '<span class="chip lg">Готово</span>';}
+function vSvcMap(){const L=S.lab;const ans=Object.keys(AN);
+ const tabs=`<div class="tabs">${[['svc','Послуги ЕСОЗ × аналізатори'],['pkg','Пакети послуг (з МІС)']].map(([k,t])=>`<button class="tab${L.svcTab===k?' on':''}" data-a="svcTab" data-k="${k}">${t}</button>`).join('')}</div>`;
+ const body=L.svcTab==='pkg'?pkgList():`<div class="tw"><table class="t"><thead><tr><th>Послуга ЕСОЗ (інтервенція)</th><th>Послуга ЛІС</th><th>Показн.</th><th>Вибір лікарем</th>${ans.map(a=>`<th style="font-size:11.5px" title="${esc(AN[a].n)}">${esc(anShort(a))}</th>`).join('')}<th>Готовність</th></tr></thead><tbody>${Object.entries(SV).map(([s,sv])=>`<tr class="click${L.svcSel===s?' on':''}" data-a="svcSel" data-k="${s}"><td><b>${esc(sv.ehe)}</b><div class="small muted">${sv.code}</div></td><td class="small">${esc(sv.lis)}</td><td>${sv.ind.length}</td><td class="small">${MODE[sv.mode]}</td>${ans.map(a=>`<td>${cellSA(s,a)}</td>`).join('')}<td>${ready(s)}</td></tr>`).join('')}</tbody></table></div>
+ <div class="pad small muted row">${ic('info',14)}<span><b>1</b>, <b>2</b> — пріоритет приладу для послуги (основний, резервний); <b>½</b> — прилад виконує лише частину показників послуги. Клік по рядку — склад послуги й прилади на рівні кожного показника.</span></div>${svcCard(L.svcSel)}`;
+ return crumbsL([['Послуги ЕСОЗ × аналізатори']])+title('cog','Послуги ЕСОЗ × аналізатори','Відповідність послуг (інтервенцій) словника ЕСОЗ, їх показників і аналізаторів, що можуть їх виконати. Одна послуга — кілька приладів із пріоритетом; на рівні показника — точний перелік приладів. Склад послуги (обов’язкові й типові показники) публікується в МІС для вибору лікарем.')+`<section class="card">${tabs}${body}</section>`;}
+function svcCard(s){const sv=SV[s];const ok=can('svcEdit');const ans=[...new Set([...sv.an,...sv.ind.flatMap(x=>capOf(s,x[0]))])];
+ return `<div class="pad" style="border-top:2px solid var(--line)"><div class="row"><h3 style="margin:0;font-size:16px">${esc(sv.ehe)}</h3><span class="chip">${sv.code}</span><span class="small muted">→ ${esc(sv.lis)} · ${esc(sv.tube)} · ${MODE[sv.mode]}</span><span class="sp"></span>${ok?'':`<span class="small muted">${ic('lock',12)} Редагування — Лікар-лаборант / Завідувач</span>`}</div>
+ ${ans.length?'':`<div class="al warn" style="margin-top:8px">${ic('warn')}<span>Жоден прилад не виконує цю послугу — направлення потрапляють у «Без обладнання» (send-out або ручне виконання). Додайте прилад нижче.</span></div>`}
+ <div class="tw" style="margin-top:8px"><table class="t"><thead><tr><th>Показник</th><th>Од.</th><th title="Обов’язковий: лікар у МІС не може зняти">Обов.</th><th title="Типовий набір у МІС">Тип.</th>${ans.map(a=>`<th><div>${esc(AN[a].n)}</div><div class="small muted" style="font-weight:400">${sv.an.includes(a)?'пріоритет '+(sv.an.indexOf(a)+1):'окремі показники'}${ok&&sv.an.indexOf(a)!==0&&sv.an.includes(a)?` · <button class="link small" data-a="svcPrio" data-s="${s}" data-k="${a}">зробити основним</button>`:''}</div></th>`).join('')}</tr></thead><tbody>
+ ${sv.ind.map(x=>`<tr><td><b>${x[0]}</b> ${esc(x[1])}</td><td class="small">${esc(x[2])}</td><td><input type="checkbox" ${x[3]?'checked':''} ${ok?'':'disabled'} data-a="svcFlag" data-s="${s}" data-c="${x[0]}" data-f="3" aria-label="Обов’язковий ${x[0]}"></td><td><input type="checkbox" ${x[4]?'checked':''} ${ok?'':'disabled'} data-a="svcFlag" data-s="${s}" data-c="${x[0]}" data-f="4" aria-label="Типовий ${x[0]}"></td>${ans.map(a=>{const on=capOf(s,x[0]).includes(a);return `<td><button class="chip ${on?(avail(a,x[0])?'green':'red'):''}" style="border:0;min-width:34px" data-a="svcCap" data-s="${s}" data-c="${x[0]}" data-k="${a}" ${ok?'':'disabled'} title="${on?(avail(a,x[0])?'виконує':'виконує, зараз недоступний: '+esc(AN[a].note||'')):'не виконує'}">${on?'✓':'—'}</button></td>`;}).join('')}</tr>`).join('')}
+ </tbody></table></div>
+ <div class="row small" style="margin-top:8px"><label class="muted" for="addan">Додати прилад до послуги:</label><select id="addan" class="sel" data-lch="addAn" data-s="${s}" ${ok?'':'disabled'}><option value="">—</option>${Object.keys(AN).filter(a=>!ans.includes(a)).map(a=>`<option value="${a}">${esc(AN[a].n)}</option>`).join('')}</select><span class="sp"></span><span class="muted">Зміни діють для нових розподілів; тести в черзі вимкненого приладу перерозподіляються з підтвердженням.</span></div></div>`;}
+function pkgList(){return `<div class="pad stack">${Object.values(PK).map(p=>`<div class="card tp"><div class="ch"><b>${esc(p.n)}</b><span class="chip">${p.code}</span>${p.cito?'<span class="chip red">CITO</span>':''}<span class="small muted">${esc(p.for)}</span></div><div class="pad">${Object.entries(p.items).map(([s,sel])=>`<div class="row small" style="margin-bottom:6px;align-items:flex-start"><b style="width:280px">${esc(SV[s].ehe)}<div class="muted" style="font-weight:400">${SV[s].code}</div></b><span class="grow">${SV[s].ind.map(x=>`<span class="chip ${sel.includes(x[0])?'lb':''}" style="margin:0 3px 3px 0;${sel.includes(x[0])?'':'opacity:.45'}">${x[0]}</span>`).join('')}</span></div>`).join('')}</div></div>`).join('')}<div class="small muted">Пакет — іменований набір послуг ЕСОЗ із типовими показниками; ведеться в МІС. Лікар може змінити показники в межах пакета. У ЛІС пакет надходить одним направленням з кількома послугами й зберігає код пакета для звітності.</div></div>`;}
+
+/* ---------- Звіти лабораторії ---------- */
+const CUM={bon:[
+ {s:'CBC',rows:['WBC','NEU','RBC','HGB','HCT','PLT','ESR'],pts:[['2026-10-26 08:46','bc780',[16.8,14.9,3.38,94,28.7,490,null]],['2026-10-27 06:20','bc780',[8.9,7.6,2.89,82,24.8,340,null]],['2026-10-28 05:40','bc20s',[12.1,9.8,2.11,62,18.4,242,7]],['2026-10-29 06:37','bc780',[31.5,29.2,3.45,103,29.8,149,11]],['2026-10-30 05:56','bc780',[25.0,23.0,3.26,99,29.0,127,13]],['2026-10-31 06:02','bc780',[23.4,22.1,3.09,94,27.9,168,40]],['2026-11-01 05:45','bc780',[20.1,18.4,3.23,97,29.3,302,46]]]},
+ {s:'BIO',rows:['TP','ALB','TBIL','UREA','CREA','GLU','CRP'],pts:[['2026-10-28 06:34','ms380',[45.1,27.4,10.4,5.58,66.4,5.87,61.2]],['2026-10-29 06:50','ms380',[50.5,29.9,22.7,5.9,72.4,6.7,113.4]],['2026-10-30 07:19','r940',[52.0,28.1,26.0,5.89,78.4,4.24,321]],['2026-10-31 06:09','ms380',[50.4,28.3,8.5,6.16,90.5,6.22,374.9]],['2026-11-01 06:56','ms380',[51.1,25.4,6.7,6.53,72.4,4.7,282.7]]]},
+ {s:'ELEC',rows:['K','NA','CL'],pts:[['2026-10-27 18:48','easy',[2.28,141.3,null]],['2026-10-30 18:00','easy',[3.24,141.4,null]],['2026-10-31 06:00','ise',[3.54,143.1,104.2]]]},
+ {s:'COAG',rows:['PT','INR','APTT','FIB'],pts:[['2026-10-29 06:28','zonci',[11.2,1.11,24.7,null]],['2026-10-30 05:49','zonci',[12.8,1.26,30.5,null]],['2026-10-31 06:02','cx6010',[13.2,1.30,35.2,5.1]],['2026-11-01 05:51','zonci',[15.4,1.51,29.1,null]]]},
+ {s:'PCT',rows:['PCT'],pts:[['2026-10-30 10:21','cl900',[0.95]]]}
+]};
+const REF={WBC:[4,10],NEU:[2,7],RBC:[4,5.5],HGB:[130,170,70],HCT:[40,50],PLT:[150,400,50],ESR:[0,15],TP:[64,83],ALB:[35,52],TBIL:[1.7,21],UREA:[2.8,7.2],CREA:[62,106],GLU:[3.9,6.4],CRP:[0,5],K:[3.5,5.1,2.8],NA:[135,145],CL:[96,110],PT:[9.9,11.8],INR:[0.8,1.25],APTT:[22.1,28.1],FIB:[2,4],PCT:[0,0.05]};
+function flag(c,v){const r=REF[c];if(v==null||!r)return '';if(r[2]!=null&&v<r[2])return 'cl';if(v<r[0])return 'l';if(v>r[1])return 'h';return '';}
+function rCum(){const L=S.lab;const pid=L.repPat;const data=(CUM[pid]||[]).map(g=>Object.assign({},g,{pts:g.pts.filter(p=>p[0].slice(0,10)>=L.repFrom&&p[0].slice(0,10)<=L.repTo)})).filter(g=>g.pts.length);
+ const f=`<div class="f" style="width:280px"><label for="rp">Пацієнт</label><select id="rp" data-lch="lab.repPat">${Object.keys(CUM).map(k=>`<option value="${k}"${k===pid?' selected':''}>${P(k).n}</option>`).join('')}</select></div><div class="f" style="width:250px"><label for="rg">Групування</label><select id="rg" data-lch="lab.repGroup"><option value="svc"${L.repGroup==='svc'?' selected':''}>За дослідженням</option><option value="an"${L.repGroup==='an'?' selected':''}>За дослідженням і аналізатором</option></select></div><label class="row small" style="gap:6px"><input type="checkbox" data-a="repNo" ${L.showNo?'checked':''}> Лише показники з відхиленнями</label>`;
+ const p=P(pid);const groups=[];
+ data.forEach(g=>{if(L.repGroup==='an'){const by={};g.pts.forEach(pt=>{(by[pt[1]]=by[pt[1]]||[]).push(pt);});Object.entries(by).forEach(([a,pts])=>groups.push(Object.assign({},g,{pts,an:a})));}else groups.push(g);});
+ const body=`<div class="pad"><div class="rep"><div class="rep-h"><div><b>КНП «Обласний онкологічний центр» · Клініко-діагностична лабораторія</b><div class="small">Кумулятивний звіт результатів за ${fmt(L.repFrom)} – ${fmt(L.repTo)} · лише верифіковані результати</div></div><div style="text-align:right"><b>${p.n}</b><div class="small">${fmt(p.dob)} (${age(p.dob)} р.) · медична карта № ${p.card}</div></div></div>
+ ${groups.length?groups.map(g=>{const rows=g.rows.filter(c=>!L.showNo||g.pts.some(pt=>flag(c,pt[2][g.rows.indexOf(c)])));if(!rows.length)return '';return `<h4 class="rep-g">${esc(SV[g.s].ehe)}${g.an?' · '+esc(AN[g.an].n):''}</h4><div class="tw"><table class="t rep-t"><thead><tr><th>Показник</th><th>Од.</th><th>Реф. інтервал</th>${g.pts.map(pt=>`<th class="num">${fmt(pt[0]).slice(0,5)}<div class="small muted" style="font-weight:400">${pt[0].slice(11)}${g.an?'':' · '+esc(anShort(pt[1]))}</div></th>`).join('')}</tr></thead><tbody>${rows.map(c=>{const i=g.rows.indexOf(c);const x=IND(g.s,c);const r=REF[c];return `<tr><td>${esc(x[1])}</td><td class="small" style="white-space:nowrap">${esc(x[2])}</td><td class="small" style="white-space:nowrap">${nf(r[0])} – ${nf(r[1])}</td>${g.pts.map(pt=>{const v=pt[2][i];const fl=flag(c,v);return `<td class="num${fl?' fl-'+fl:''}">${v==null?'<span class="muted">·</span>':nf(v)+(fl==='h'?' ↑':fl==='l'?' ↓':fl==='cl'?' ↓↓':'')}</td>`;}).join('')}</tr>`;}).join('')}</tbody></table></div>`;}).join(''):'<div class="empty">За період результатів немає</div>'}
+ <div class="small muted" style="margin-top:10px">↑ / ↓ — вище / нижче референтного інтервалу; ↓↓ на червоному — критичне значення. Показник, виміряний різними аналізаторами з тією самою одиницею й узгодженим інтервалом, іде одним рядком, аналізатор — під датою. Десятковий роздільник — кома; «·» — показник не замовлявся.</div></div></div>`;
+ return [f,body];}
+const LOAD={bc780:[1840,210,1230,610,22,26],bc20s:[412,298,388,24,6,11],ms380:[3120,180,2010,1110,41,38],r940:[1460,40,880,580,18,47],cl900:[690,25,410,280,9,58],zonci:[980,96,760,220,14,31],cx6010:[610,60,470,140,12,29],easy:[530,402,530,0,7,6],ise:[820,55,600,220,5,14],eu56:[740,0,180,560,16,33],man:[130,0,60,70,0,64]};
+function rLoad(){const max=Math.max(...Object.values(LOAD).map(x=>x[0]));return ['',`<div class="tw"><table class="t"><thead><tr><th>Аналізатор</th><th class="num">Тестів</th><th style="width:22%">Навантаження</th><th class="num">CITO</th><th class="num">Стаціонар</th><th class="num">Поліклініка / ЕСОЗ</th><th class="num">Повтори</th><th class="num">TAT, медіана хв</th><th class="num">Зараз у черзі</th><th>Стан</th></tr></thead><tbody>${Object.entries(LOAD).map(([a,x])=>`<tr><td><b>${esc(AN[a].n)}</b><div class="small muted">${esc(AN[a].cat)}</div></td><td class="num">${x[0].toLocaleString('uk-UA')}</td><td><span class="hbar"><i style="width:${Math.round(x[0]/max*100)}%"></i></span></td><td class="num">${x[1]}</td><td class="num">${x[2]}</td><td class="num">${x[3]}</td><td class="num">${x[4]} <span class="small muted">(${nf((x[4]/x[0]*100).toFixed(1))} %)</span></td><td class="num">${x[5]}</td><td class="num">${qLen(a)}</td><td>${AN[a].st==='offline'?'<span class="chip lr">немає зв’язку</span>':AN[a].lock?'<span class="chip la">lockout '+AN[a].lock.join(', ')+'</span>':'<span class="chip lg">онлайн</span>'}</td></tr>`).join('')}</tbody></table></div><div class="pad small muted">Тести рахуються за приладом, який фактично виконав вимірювання (з урахуванням перенаправлень). «Зараз у черзі» — живі дані; решта — демо за період.</div>`];}
+function rRefs(){const R=[['Стаціонар · призначення (внутрішні)',612,1840,14520,13980,'38 %',7.9],['  у т.ч. пакети послуг (післяопераційні)',214,980,8320,8160,'21 %',8.5],['Поліклініка · внутрішні',488,930,6410,6350,'52 %',6.9],['Е-направлення ЕСОЗ (зовнішні)',356,702,4380,4290,'61 %',6.2],['  у т.ч. без переданих показників',41,77,610,610,'—',7.9],['Клініки-партнери',97,180,1240,1220,'44 %',6.9]];
+ return ['',`<div class="tw"><table class="t"><thead><tr><th>Джерело направлень</th><th class="num">Направлень</th><th class="num">Послуг ЕСОЗ</th><th class="num">Показників замовлено</th><th class="num">Виконано</th><th class="num">Частковий вибір</th><th class="num">Показників на послугу</th></tr></thead><tbody>${R.map(r=>`<tr><td>${r[0].startsWith('  ')?'<span class="muted" style="padding-left:16px">'+esc(r[0].trim())+'</span>':'<b>'+esc(r[0])+'</b>'}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3].toLocaleString('uk-UA')}</td><td class="num">${r[4].toLocaleString('uk-UA')} <span class="small muted">(${nf((r[4]/r[3]*100).toFixed(1))} %)</span></td><td class="num">${r[5]}</td><td class="num">${nf(r[6])}</td></tr>`).join('')}</tbody></table></div><div class="pad small muted">«Частковий вибір» — частка послуг, у яких лікар обрав не всі показники. Невиконані — скасовано, брак проби, без обладнання. Розрізи: відділення-замовник, лікар, пакет, платник. Демо-дані за період.</div>`];}
+const USE={CBC:[412,[412,388,350,350,140,138,412,412,412,301,412,9,188]],BIO:[530,[402,415,388,160,470,498,322,320,455,96,214]],COAG:[260,[260,240,260,260,31,198]],ELEC:[305,[305,301,190,140]],ABG:[118,[118,118,118,112,112,108,74]],URINE:[210,[210,210,210,210,210,210,210]],PCT:[64,[64]],ANEM:[48,[40,31,29]],ONCO:[37,[9,22,26]]};
+function rInd(){const L=S.lab;const s=L.repSvc;const u=USE[s];const sv=SV[s];
+ const f=`<div class="f" style="width:320px"><label for="rs">Послуга ЕСОЗ</label><select id="rs" data-lch="lab.repSvc">${Object.keys(SV).map(k=>`<option value="${k}"${k===s?' selected':''}>${esc(SV[k].ehe)}</option>`).join('')}</select></div>`;
+ return [f,`<div class="pad small">Послугу замовлено <b>${u[0]}</b> разів за період · режим вибору: ${MODE[sv.mode]}</div><div class="tw"><table class="t"><thead><tr><th>Показник</th><th>Обов.</th><th>Тип.</th><th class="num">Замовлено</th><th style="width:32%">Частка</th><th>Аналізатори</th></tr></thead><tbody>${sv.ind.map((x,i)=>{const n=u[1][i]||0;const pc=Math.round(n/u[0]*100);return `<tr><td><b>${x[0]}</b> ${esc(x[1])}</td><td>${x[3]?ic('lock',12):''}</td><td>${x[4]?'✓':''}</td><td class="num">${n}</td><td><span class="hbar"><i style="width:${pc}%"></i></span> <span class="small">${pc} %</span></td><td class="small">${capOf(s,x[0]).map(anShort).join(', ')||'<span class="chip lr">немає</span>'}</td></tr>`;}).join('')}</tbody></table></div><div class="pad small muted">Звіт допомагає налаштувати типовий набір у МІС і планувати реагенти: показники, які лікарі майже не обирають, варто прибрати з типового набору.</div>`];}
+function rTat(){const T=[['CBC',38,27,9,'92 %'],['BIO',96,64,41,'85 %'],['COAG',61,44,28,'88 %'],['ELEC',34,22,12,'95 %'],['ABG',9,6,4,'99 %'],['URINE',74,51,'—','90 %'],['PCT',118,92,55,'81 %'],['ANEM',210,180,'—','93 %']];
+ return ['',`<div class="tw"><table class="t"><thead><tr><th>Дослідження (послуга ЕСОЗ)</th><th>Основний прилад</th><th class="num">P90 планові, хв</th><th class="num">Медіана планові, хв</th><th class="num">Медіана CITO, хв</th><th class="num">У нормативі</th></tr></thead><tbody>${T.map(r=>`<tr><td><b>${esc(SV[r[0]].ehe)}</b><div class="small muted">${SV[r[0]].code}</div></td><td class="small">${esc(AN[SV[r[0]].an[0]].n)}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">${r[4]}</td></tr>`).join('')}</tbody></table></div><div class="pad small muted">TAT від приймання проби до верифікації. Розріз за аналізатором і за джерелом направлення — фільтри у робочій версії. Демо-дані.</div>`];}
+function vReports(){const L=S.lab;if(L.rep==='cum')S.done2.cum=true;if(L.rep==='load')S.done2.load=true;
+ const T=[['cum','Кумулятивний звіт пацієнта'],['load','Навантаження аналізаторів'],['refs','Направлення за джерелами'],['ind','Використання показників'],['tat','TAT за дослідженнями']];
+ const b=L.rep==='cum'?rCum():L.rep==='load'?rLoad():L.rep==='refs'?rRefs():L.rep==='ind'?rInd():rTat();
+ return crumbsL([['Звіти лабораторії']])+title('doc','Звіти лабораторії','Аналітичні звіти поза журналами: по пацієнту, аналізаторах, направленнях, показниках і строках. Період, фільтри, друк і експорт XLSX.',`<button class="btn" data-a="toast" data-m="Експорт XLSX сформовано (у робочій системі — /api/v1/lab/reports/{type}?format=xlsx).">${ic('doc')} Експорт XLSX</button><button class="btn pri" data-a="toast" data-m="Відкривається діалог друку A4 / PDF.">${ic('print')} Друк</button>`)+
+ `<section class="card"><div class="tabs">${T.map(([k,t])=>`<button class="tab${L.rep===k?' on':''}" data-a="repTab" data-k="${k}">${t}</button>`).join('')}</div><div class="pad row end"><div class="f"><label for="rf">Період з</label><input id="rf" type="date" value="${L.repFrom}" data-lch="lab.repFrom"></div><div class="f"><label for="rt">по</label><input id="rt" type="date" value="${L.repTo}" data-lch="lab.repTo"></div>${b[0]}</div>${b[1]}</section>`;}
+
+/* ---------- Емулятор МІС ---------- */
+function misPkg(m){m.items=m.mode==='pkg'?Object.entries(PK[m.pkg].items).map(([s,sel])=>({s,sel:[...sel]})):[];m.cito=m.mode==='pkg'&&!!PK[m.pkg].cito;}
+function misReset(){const m={ctx:'INPATIENT',pid:'bon',mode:'pkg',pkg:'POSTOP',cito:false,items:[]};misPkg(m);return m;}
+function mMis(){const m=S.lab.mis;
+ return `<div class="modal" style="width:min(920px,100%)" role="dialog" aria-modal="true" aria-label="Емулятор МІС"><div class="row"><h3 class="grow">Емулятор МІС · лікар створює направлення в лабораторію</h3><span class="chip lp">МІС MedLink</span></div>
+ <div class="g3"><div class="f"><label for="mc">Контур</label><select id="mc" data-lch="mis.ctx">${Object.entries(CTXM).map(([k,v])=>`<option value="${k}"${m.ctx===k?' selected':''}>${v[0]}</option>`).join('')}</select></div>
+ <div class="f"><label for="mp">Пацієнт</label><select id="mp" data-lch="mis.pid">${Object.keys(PAT).map(k=>`<option value="${k}"${m.pid===k?' selected':''}>${PAT[k].n}</option>`).join('')}</select></div>
+ <div class="f"><label for="mm">Що призначити</label><select id="mm" data-lch="mis.mode"><option value="pkg"${m.mode==='pkg'?' selected':''}>Пакет послуг</option><option value="svc"${m.mode==='svc'?' selected':''}>Окремі послуги ЕСОЗ</option></select></div></div>
+ <div class="row end">${m.mode==='pkg'?`<div class="f" style="width:320px"><label for="mk">Пакет</label><select id="mk" data-lch="mis.pkg">${Object.entries(PK).map(([k,p])=>`<option value="${k}"${m.pkg===k?' selected':''}>${esc(p.n)}</option>`).join('')}</select></div>`:''}<div class="f" style="width:340px"><label for="ma">Додати послугу ЕСОЗ</label><select id="ma" data-lch="misAdd"><option value="">— оберіть —</option>${Object.entries(SV).filter(([s])=>!m.items.some(i=>i.s===s)).map(([s,v])=>`<option value="${s}">${v.code} · ${esc(v.ehe)}</option>`).join('')}</select></div><label class="row small" style="gap:6px"><input type="checkbox" data-a="misCito" ${m.cito?'checked':''}> CITO</label></div>
+ <div class="stack" style="max-height:46vh;overflow:auto">${m.items.length?m.items.map((it,ii)=>{const sv=SV[it.s];return `<div class="card"><div class="ch"><b>${esc(sv.ehe)}</b><span class="small muted">${sv.code} · ${MODE[sv.mode]}</span><span class="sp"></span><span class="small">${it.sel.length} з ${sv.ind.length}</span>${sv.mode==='FIXED'?'':`<button class="link small" data-a="misAllInd" data-i="${ii}">усі</button><button class="link small" data-a="misDefInd" data-i="${ii}">типові</button>`}<button class="link small" style="color:var(--red)" data-a="misRm" data-i="${ii}">прибрати</button></div><div class="pad row" style="gap:6px 16px">${sv.ind.map(x=>{const lock=x[3]||sv.mode==='FIXED';return `<label class="row small" style="gap:5px;${lock?'color:var(--ink2)':''}"><input type="checkbox" data-a="misInd" data-i="${ii}" data-c="${x[0]}" ${it.sel.includes(x[0])?'checked':''} ${lock?'disabled':''}>${x[0]} · ${esc(x[1])}${x[3]?' '+ic('lock',11):''}</label>`;}).join('')}</div></div>`;}).join(''):'<div class="empty">Додайте послугу або оберіть пакет</div>'}</div>
+ <div class="al info">${ic('info')}<span>Обов’язкові показники (${ic('lock',11)}) лікар зняти не може; для послуги з фіксованим складом вибір недоступний. ${m.ctx==='EHEALTH'?'В ЕСОЗ іде лише код послуги (інтервенції); перелік показників передається в ЛІС з МІС.':m.ctx==='INPATIENT'?'Внутрішнє призначення стаціонару — без ЕСОЗ, з відділенням і ліжком.':'Внутрішнє направлення поліклініки — без ЕСОЗ.'}</span></div>
+ <div class="row"><span class="sp"></span><button class="btn" data-a="close">Скасувати</button><button class="btn pri" data-a="misSend" ${m.items.length&&m.items.every(i=>i.sel.length)?'':'disabled'}>${ic('send')} Підписати й надіслати в лабораторію</button></div></div>`;}
+
+/* ---------- Гід (два сценарії) ---------- */
+const STEPS2=[['mis','МІС: лікар призначає післяопераційний пакет','Вхідні направлення → «Емулятор МІС» → пакет, зняти / додати показники','g2Mis'],['dist','Розподілити направлення по аналізаторах','Вхідні направлення → обрати → змінити прилад для показника → «Підтвердити»','g2Dist'],['reroute','Перенаправити тест у черзі аналізатора','Робота за направленнями → «За аналізатором» → «Перенаправити»','g2An'],['pat','Направлення на рівні пацієнта','Робота за направленнями → «За пацієнтом»','g2Pat'],['study','Направлення на рівні дослідження','Робота за направленнями → «За дослідженням»','g2Svc'],['svc','Налаштувати: послуга ЕСОЗ × аналізатори','Послуги ЕСОЗ × аналізатори → ЗАК → змінити прилад для показника','g2Map'],['cum','Кумулятивний звіт пацієнта','Звіти лабораторії → «Кумулятивний звіт пацієнта»','g2Cum'],['load','Звіт навантаження аналізаторів','Звіти лабораторії → «Навантаження аналізаторів»','g2Load']];
+function vGuide(){const sw=`<div class="row small" style="padding:6px 12px;border-bottom:1px solid var(--line);gap:6px"><span class="muted">Сценарій:</span><button class="chip ${S.scn==='lab'?'blue':''}" style="border:0" data-a="scn" data-k="lab">Направлення й аналізатори</button><button class="chip ${S.scn==='pat'?'blue':''}" style="border:0" data-a="scn" data-k="pat">Патоморфологія</button></div>`;
+ if(S.scn==='pat')return vGuidePat().replace('</header>','</header>'+sw);
+ const cur=STEPS2.findIndex(s=>!S.done2[s[0]]);const n=STEPS2.filter(s=>S.done2[s[0]]).length;
+ return `<aside class="guide" aria-label="Сценарій показу"><header data-a="guide">${ic('play',11)}<b>Сценарій показу · ${n}/${STEPS2.length}</b>${ic(S.guideOpen?'chev':'chevR',14)}</header>${sw}<ol>${STEPS2.map((s,i)=>(S.guideOpen||i===cur)?`<li class="${S.done2[s[0]]?'dn':''}${i===cur?' cur':''}"><span class="n">${S.done2[s[0]]?'✓':i+1}</span><span class="tx">${s[1]}<small>${s[2]}</small></span><button class="link small" data-a="${s[3]}">Перейти</button></li>`:'').join('')}${cur<0?'<li class="dn"><span class="n">✓</span><span class="tx">Сценарій пройдено<small>«Скинути демо» вгорі</small></span></li>':''}</ol></aside>`;}
+
+const LABV={refs:vRefs,work:vWork,svcmap:vSvcMap,reports:vReports};
+const LABM={mis:mMis,rr:mRR};
+function LABCH(el){const k=el.dataset.lch,v=el.value,L=S.lab;
+ if(k==='whole'){if(!v)return;const it=curRef().items[+el.dataset.i];const bad=it.sel.filter(c=>!capOf(it.s,c).includes(v)||!avail(v,c));it.man=it.man||{};it.sel.forEach(c=>{if(!bad.includes(c)){it.as[c]=v;it.man[c]=1;}});render();if(bad.length)toast('Не призначено на '+AN[v].n+': '+bad.join(', ')+' (прилад недоступний для цих показників).');return;}
+ if(k==='as'){const it=curRef().items[+el.dataset.i];it.as[el.dataset.c]=v;(it.man=it.man||{})[el.dataset.c]=1;render();return;}
+ if(k==='misAdd'){if(v)L.mis.items.push({s:v,sel:defSel(v)});render();return;}
+ if(k==='addAn'){if(v){const s=el.dataset.s,sv=SV[s];if(!sv.an.includes(v))sv.an.push(v);sv.ind.forEach(x=>{if(!capOf(s,x[0]).includes(v))x[5]=(x[5]+' '+v).trim();});S.done2.svc=true;log(`Довідник: ${AN[v].n} додано до послуги ${sv.code} (усі показники, перевірте)`);}render();return;}
+ const [o,key]=k.split('.');const tgt=o==='lab'?L:o==='mis'?L.mis:L.rr;tgt[key]=v;
+ if(k==='mis.mode'||k==='mis.pkg')misPkg(L.mis);
+ render();}
+function LABIN(el){S.lab.q=el.value;render();}
+const LABA={
+ refSel:d=>{S.lab.sel=d.id;render();},
+ distAuto:()=>{const r=curRef();r.items.forEach(i=>{i.as=autoAssign(i.s,i.sel,r.cito);i.man={};});render();toast('Розподіл перераховано: пріоритет приладу → доступність (зв’язок, lockout ВКЯ) → навантаження'+(r.cito?'; CITO — прилади з меншим TAT':'')+'.');},
+ distDefault:d=>{const it=curRef().items[+d.i];it.sel=defSel(it.s);it.by='Лаборант ('+ME[S.role]+')';it.as=null;render();},
+ distAll:d=>{const it=curRef().items[+d.i];it.sel=SV[it.s].ind.map(x=>x[0]);it.by='Лаборант ('+ME[S.role]+')';it.as=null;render();},
+ distConfirm:()=>{const L=S.lab,r=curRef();const no='2611-000'+(++L.ono);const tests=[];r.items.forEach(it=>it.sel.forEach(c=>{const a=it.as[c]||'';tests.push({s:it.s,c,a,st:a?'queue':'none',by:it.man&&it.man[c]?'manual':'auto'});}));
+  L.orders.push({no,pid:r.pid,src:r.src,dept:r.dept,ward:r.ward,cito:r.cito,created:now(),pkg:r.pkg,tests});r.done=true;S.done2.dist=true;
+  const ans=[...new Set(tests.map(t=>t.a).filter(Boolean))];log(`Направлення ${r.id} розподілено: замовлення ${no}, ${tests.length} показників на ${ans.length} аналізатор(и) (${ans.map(anShort).join(', ')}); у МІС — подія RECEIVED`);
+  if(ans[0])L.selAn=ans[0];L.sel=(L.refs.find(x=>!x.done)||{}).id;render();toast(`Замовлення ${no}: тести поставлено в черги ${ans.map(anShort).join(', ')}${tests.some(t=>!t.a)?'; є показники без обладнання':''}.`,true);},
+ wMode:d=>{S.lab.mode=d.k;render();},
+ wAn:d=>{S.lab.selAn=d.k;render();},wPat:d=>{S.lab.selPat=d.k;render();},wSvc:d=>{S.lab.selSvc=d.k;render();},
+ rrOpen:d=>{S.lab.rr={no:d.no,s:d.s,from:S.lab.selAn,to:'',why:'Технічне обслуговування приладу'};S.modal='rr';render();},
+ rrDo:()=>{const L=S.lab,rr=L.rr;const o=L.orders.find(x=>x.no===rr.no);if(!rr.to)return;o.tests.filter(t=>t.s===rr.s&&t.a===rr.from&&t.st==='queue').forEach(t=>{t.a=rr.to;t.by='manual';});S.done2.reroute=true;log(`Перенаправлено ${o.no} (${SV[rr.s].code}): ${AN[rr.from].n} → ${AN[rr.to].n}; причина: ${rr.why}`);S.modal=null;render();toast(`Перенаправлено на ${AN[rr.to].n}.`,true);},
+ svcTab:d=>{S.lab.svcTab=d.k;render();},svcSel:d=>{S.lab.svcSel=d.k;render();},
+ svcCap:d=>{const s=d.s,c=d.c,a=d.k;const x=IND(s,c);let caps=capOf(s,c);const add=!caps.includes(a);caps=add?[...caps,a]:caps.filter(k=>k!==a);x[5]=caps.join(' ');const sv=SV[s];if(!sv.ind.some(y=>capOf(s,y[0]).includes(a)))sv.an=sv.an.filter(k=>k!==a);S.done2.svc=true;log(`Довідник: ${c} (${sv.code}) — ${add?'додано':'прибрано'} ${AN[a].n}`);render();},
+ svcFlag:(d,el)=>{IND(d.s,d.c)[+d.f]=el.checked?1:0;render();},
+ svcPrio:d=>{const sv=SV[d.s];sv.an=[d.k,...sv.an.filter(k=>k!==d.k)];log(`Довідник: ${AN[d.k].n} — основний прилад для ${sv.code}`);render();},
+ repTab:d=>{S.lab.rep=d.k;render();},repNo:(d,el)=>{S.lab.showNo=el.checked;render();},
+ repOfPat:d=>{if(!CUM[d.k])toast('У демо історія результатів є лише для пацієнта '+P('bon').n+'.');S.lab.repPat=CUM[d.k]?d.k:'bon';S.lab.rep='cum';go('reports');},
+ misOpen:()=>{S.lab.mis=misReset();S.modal='mis';render();},
+ misInd:(d,el)=>{const it=S.lab.mis.items[+d.i];it.sel=el.checked?[...new Set([...it.sel,d.c])]:it.sel.filter(c=>c!==d.c);render();},
+ misAllInd:d=>{const it=S.lab.mis.items[+d.i];it.sel=SV[it.s].ind.map(x=>x[0]);render();},
+ misDefInd:d=>{const it=S.lab.mis.items[+d.i];it.sel=defSel(it.s);render();},
+ misRm:d=>{S.lab.mis.items.splice(+d.i,1);render();},
+ misCito:(d,el)=>{S.lab.mis.cito=el.checked;render();},
+ misSend:()=>{const L=S.lab,m=L.mis;const c=CTXM[m.ctx];const id=m.ctx==='EHEALTH'?'ЕН 0002-2026-N'+(10+L.refs.length):'НП-2611-0'+(130+L.refs.length);
+  const r={id,src:m.ctx,pid:m.pid,dept:c[1],ward:c[2],doctor:c[3],created:now(),cito:m.cito,pkg:m.mode==='pkg'?m.pkg:null,eref:m.ctx==='EHEALTH'?id.slice(3):'',done:false,needSel:false,items:m.items.map(i=>({s:i.s,sel:[...i.sel],by:'Лікар (МІС)',as:null}))};
+  L.refs.unshift(r);L.sel=id;S.done2.mis=true;log(`МІС → ЛІС: ${id} (${r.pkg?'пакет «'+PK[r.pkg].n+'»':'окремі послуги'}): ${r.items.length} послуг, ${r.items.reduce((k,i)=>k+i.sel.length,0)} показників`);
+  S.modal=null;go('refs');toast('Направлення надійшло в ЛІС; система запропонувала розподіл по аналізаторах.',true);},
+ scn:d=>{S.scn=d.k;render();},
+ g2Mis:()=>{S.role='lt';go('refs');S.lab.mis=misReset();S.modal='mis';render();},
+ g2Dist:()=>{S.role='lt';go('refs');},
+ g2An:()=>{S.lab.mode='an';S.lab.selAn='bc780';S.lab.stF='active';go('work');},
+ g2Pat:()=>{S.lab.mode='pat';go('work');},
+ g2Svc:()=>{S.lab.mode='svc';go('work');},
+ g2Map:()=>{S.role='ld';S.lab.svcTab='svc';S.lab.svcSel='CBC';go('svcmap');toast('Роль: Лікар-лаборант (може редагувати довідник).');},
+ g2Cum:()=>{S.lab.rep='cum';go('reports');},
+ g2Load:()=>{S.lab.rep='load';go('reports');}
+};
+let S=initAll();
+
+
+/* ---------- домен ---------- */
+const can=a=>PERM[a].includes(S.role);
+const deny=a=>`Недоступно для ролі «${ROLES[S.role]}»`;
+const C=id=>S.cases.find(c=>c.id===id);
+const P=pid=>PAT[pid];
+function log(a,c){const e={t:now(),u:`${ME[S.role]} (${ROLES[S.role]})`,a};S.audit.unshift(e);if(c)c.events.unshift(e);}
+function toast(m,ok){const b=document.getElementById('toasts');if(!b)return;const el=document.createElement('div');el.className='toast'+(ok?' ok':'');el.innerHTML=ic(ok?'check':'info',15)+'<span>'+m+'</span>';b.appendChild(el);setTimeout(()=>el.remove(),4800);}
+const blocksOf=c=>c.objects.flatMap(o=>o.blocks);
+const slidesOf=c=>blocksOf(c).flatMap(b=>b.slides);
+const piecesOf=c=>blocksOf(c).reduce((n,b)=>n+(+b.pieces||0),0);
+function addDays(d,n){const x=new Date(d.slice(0,10)+'T00:00:00');let k=0;while(k<n){x.setDate(x.getDate()+1);if(x.getDay()%6)k++;}return x.toISOString().slice(0,10);}
+const due=c=>c.kind==='CITO'?'20 хв':fmt(addDays(c.received||TODAY,SLA[c.kind]+(c.ihcOrdered.length?3:0)));
+const overdue=c=>c.kind!=='CITO'&&c.stage!=='SIGNED'&&addDays(c.received||TODAY,SLA[c.kind]+(c.ihcOrdered.length?3:0))<TODAY;
+function price(c){if(c.kind==='CONSULT')return slidesOf(c).length*PRICE.consultSlide+c.ihcOrdered.length*PRICE.ihc;if(c.kind==='CITO')return PRICE.cito;const nb=blocksOf(c).length;return (nb?PRICE.first+(nb-1)*PRICE.block:PRICE.first)+c.ihcOrdered.length*PRICE.ihc;}
+const stageChip=c=>c.stage==='SIGNED'?(c.versions.length>1?`<span class="chip purple">Доповнено</span>`:`<span class="chip green">Підписано</span>`):c.stage==='REJ'?`<span class="chip red">Відмова</span>`:`<span class="chip lb">${STAGES[STI(c.stage)][1]}</span>`;
+const mini=c=>`<span class="mini" title="${STAGES[Math.max(0,STI(c.stage))][1]}">${STAGES.map((s,i)=>`<i class="${i<STI(c.stage)||c.stage==='SIGNED'?'d':i===STI(c.stage)?'c':''}"></i>`).join('')}</span>`;
+function morphName(code){return (ICDO.find(x=>x[0]===code)||['',''])[1];}
+function buildConclusion(c){const k=c.concl;const parts=[];
+ if(k.morph)parts.push(`${morphName(k.morph)||'Новоутворення'}${k.g?', '+({G1:'високодиференційована (G1)',G2:'помірно диференційована (G2)',G3:'низькодиференційована (G3)'}[k.g]||k.g):''}`);
+ const tnm=[k.pt,k.pn].filter(Boolean).join(' ');if(tnm)parts.push(tnm);
+ if(k.lnTot)parts.push(`лімфовузли: уражено ${k.lnPos||0} з ${k.lnTot}`);
+ if(k.lvi)parts.push(`лімфоваскулярна інвазія — ${k.lvi}`);if(k.r)parts.push(`край резекції ${k.r}`);
+ const ihc=k.ihc.filter(x=>x.res).map(x=>`${x.m}: ${x.res}`).join('; ');if(ihc)parts.push('ІГХ: '+ihc);
+ return parts.join('; ')+(k.topo||k.morph?`. МКХ-О: ${[k.topo,k.morph].filter(Boolean).join(', ')}.`:'');}
+function reflexFor(c){const k=c.concl;const out=[];if(/^C50/.test(k.topo)&&/^85[02]0\/3/.test(k.morph))out.push(REFLEX[0]);if(/^C1[89]|^C20/.test(k.topo)&&k.morph==='8140/3')out.push(REFLEX[1]);if(/^C67/.test(k.topo)&&k.morph==='8130/3')out.push(REFLEX[2]);return out.filter(r=>!r.panel.every(m=>c.ihcOrdered.includes(m)));}
+function backFor(c){const k=c.concl;const v=c.versions[c.versions.length-1];const signed=c.stage==='SIGNED';
+ return {no:c.no,recv:c.received?fmt(c.received):'',diagBiopsy:c.kind==='BIOPSY'?'так':'',cito:c.kind==='CITO'?'так':'',oper:c.kind==='OPER'?'так':c.kind==='CONSULT'?'консультація препаратів':'',
+  pieces:piecesOf(c)||'',blocks:blocksOf(c).length||'',stain:[...new Set(slidesOf(c).map(s=>s.stain.replace(/ \(.*\)/,'')))].join(', '),
+  desc:[c.macro,c.micro].filter(Boolean).join(' '),concl:signed?(v?v.text:k.text)+(c.versions.length>1?' ДОПОВНЕННЯ: '+c.versions.slice(1).map(x=>x.text).join(' '):''):'',date:signed?fmt(c.signedAt).slice(0,10):'',pathologist:signed?c.signedBy:'',labtech:blocksOf(c).length?ME.tech:''};}
+function frontFor(c){const p=P(c.pid);return Object.assign({},c.ref,{dept:c.dept,mcard:c.mcard,name:p.n,sex:p.s,age:String(age(p.dob))});}
+
+/* ---------- каркас ---------- */
+const NAV=[['§Процеси'],['Дашборд','dash','x'],['Реєстрація направлень','doc','x'],['Журнал направлень','list','x'],['Пункт забору','drop','x'],['Логістика','truck','x'],['Робочий стіл лаборанта','micro','x',28],['Валідація та паніка','shield','x'],
+ ['§Направлення та аналізатори'],['Вхідні направлення','inbox','refs'],['Робота за направленнями','grid','work'],['Послуги ЕСОЗ × аналізатори','cog','svcmap'],['Звіти лабораторії','doc','reports'],['§Патоморфологія'],['Журнал справ','list','journal'],['Прийом матеріалу','inbox','incoming'],['Інтраопераційні (CITO)','bolt','cito'],['Архів блоків і скелець','box','archive'],
+ ['§Довідники'],['Довідники патоморфології','book','dict'],['Послуги та норми','cog','x']];
+function vSide(){const cnt={journal:S.cases.filter(c=>c.stage!=='SIGNED'&&c.stage!=='REJ').length,incoming:S.incoming.length,cito:S.cases.filter(c=>c.kind==='CITO'&&c.stage!=='SIGNED').length,refs:S.lab.refs.filter(r=>!r.done).length};
+ return `<nav class="side${S.menu?' open':''}" aria-label="Модулі лабораторії"><div class="mod">${ic('flask',22)}<div><b>Модулі лабораторії</b><small>НАВІГАЦІЯ ПРОЦЕСІВ ЛІС</small></div></div>${NAV.map(([t,i,v,n])=>t.startsWith('§')?`<div class="sec">${t.slice(1)}</div>`:`<a data-a="nav" data-v="${v}" class="${S.view===v||(S.view==='case'&&v==='journal')?'on':''}${v==='x'?' dim':''}">${ic(i,18)}<span>${t}</span>${n?`<span class="cnt">${n}</span>`:''}${cnt[v]?`<span class="cnt${v==='cito'?' red':''}">${cnt[v]}</span>`:''}${['journal','incoming','cito','archive','dict','refs','work','svcmap','reports'].includes(v)&&!cnt[v]?'<span class="nw">нове</span>':''}</a>`).join('')}</nav>`;}
+function crumbs(a){return `<div class="crumbs"><span>⌂</span>/ <a data-a="nav" data-v="journal">Патоморфологія</a>${a.map(x=>' / '+(x[1]?`<a data-a="${x[1]}" ${x[2]||''}>${x[0]}</a>`:`<span>${x[0]}</span>`)).join('')}</div>`;}
+function title(icn,t,sub,right=''){return `<div class="ptitle">${ic(icn,26)}<h1>${t}</h1><span class="sp"></span>${right}</div><div class="psub">${sub}</div>`;}
+
+/* ---------- журнал справ ---------- */
+function vJournal(){
+ const act=S.cases.filter(c=>c.stage!=='REJ');
+ const T=[['all','Усі в роботі',act.filter(c=>c.stage!=='SIGNED').length,'справ','tb'],['RCV','Очікують вирізки',act.filter(c=>c.stage==='RCV'||c.stage==='GROSS').length,'прийнято','tt'],['LAB','Лаб. обробка',act.filter(c=>['PROC','EMB','SECT','STAIN'].includes(c.stage)).length,'проводка → фарбування','tt'],['MICRO','Очікує опису',act.filter(c=>c.stage==='MICRO').length,'мікроскопія','ta'],['IHC','ІГХ в роботі',act.filter(c=>c.ihcOrdered.length&&c.stage!=='SIGNED').length,'дозамовлено','tp'],['CITO','CITO',act.filter(c=>c.kind==='CITO'&&c.stage!=='SIGNED').length,'інтраопераційні','tr'],['SIGNED','Підписано',act.filter(c=>c.stage==='SIGNED').length,'за 30 днів','tg']];
+ const f=c=>{if(S.stageF==='all'&&c.stage==='SIGNED')return false;if(S.stageF==='RCV'&&!(c.stage==='RCV'||c.stage==='GROSS'))return false;if(S.stageF==='LAB'&&!['PROC','EMB','SECT','STAIN'].includes(c.stage))return false;if(S.stageF==='MICRO'&&c.stage!=='MICRO')return false;if(S.stageF==='IHC'&&!(c.ihcOrdered.length&&c.stage!=='SIGNED'))return false;if(S.stageF==='CITO'&&!(c.kind==='CITO'&&c.stage!=='SIGNED'))return false;if(S.stageF==='SIGNED'&&c.stage!=='SIGNED')return false;if(S.srcF!=='all'&&c.src!==S.srcF)return false;if(S.q){const q=S.q.toLowerCase();if(!(c.no.toLowerCase().includes(q)||P(c.pid).n.toLowerCase().includes(q)||blocksOf(c).some(b=>b.id.toLowerCase().includes(q))))return false;}return true;};
+ const list=act.filter(f).sort((a,b)=>(b.cito-a.cito)||((a.received||'')<(b.received||'')?1:-1));
+ return crumbs([['Журнал справ']])+title('micro','Журнал справ патоморфології','Черга досліджень за етапами: прийом → вирізка → лабораторна обробка → опис → підпис. CITO та прострочені — вгорі.',`<button class="btn txt" data-a="toastR">${ic('refresh')} Оновити</button><button class="btn pri" data-a="nav" data-v="incoming">${ic('inbox')} Прийом матеріалу${S.incoming.length?' ('+S.incoming.length+')':''}</button>`)+
+ `<div class="tiles">${T.map(([k,t,n,s,cl])=>`<button class="tile card ${cl}${S.stageF===k?' on':''}" data-a="stageF" data-k="${k}"><small>${t}</small><b>${n}</b><span>${s}</span></button>`).join('')}</div>
+ <section class="card"><div class="pad row end">
+  <div class="f grow" style="max-width:420px"><label for="q">Пошук</label><input id="q" data-in="q" placeholder="№ справи, ПІБ, штрихкод блока/скельця" value="${esc(S.q)}"></div>
+  <div class="f" style="width:240px"><label for="srcF">Джерело направлення</label><select id="srcF" data-ch="srcF"><option value="all">Усі</option>${Object.entries(SRC).map(([k,v])=>`<option value="${k}"${S.srcF===k?' selected':''}>${v[0]}</option>`).join('')}</select></div>
+  <button class="btn" data-a="scanDemo">${ic('scan')} Сканувати касету</button></div>
+ <div class="tw"><table class="t"><thead><tr><th>№ справи</th><th>Надійшло</th><th>Пацієнт</th><th>Тип матеріалу</th><th>Джерело</th><th>Відділення / направник</th><th>Блоки / скельця</th><th>Етап</th><th>Термін</th></tr></thead><tbody>
+ ${list.length?list.map(c=>`<tr class="click${c.cito?' cito':''}" data-a="openCase" data-id="${c.id}"><td><b class="link">${c.no}</b>${c.versions.length>1?' <span class="chip lp">v'+c.versions.length+'</span>':''}</td><td>${fmt(c.received)}</td><td>${P(c.pid).n}<div class="small muted">${age(P(c.pid).dob)} р. · ${P(c.pid).s==='Ж'?'жін.':'чол.'}</div></td><td><span class="chip ${KIND[c.kind][1]}">${KIND[c.kind][0]}</span>${c.ihcOrdered.length?' <span class="chip lp">ІГХ '+c.ihcOrdered.length+'</span>':''}</td><td><span class="chip ${SRC[c.src][1]}">${SRC[c.src][0]}</span></td><td>${esc(c.dept)}<div class="small muted">${esc(c.doctor)}</div></td><td>${blocksOf(c).length} / ${slidesOf(c).length}</td><td>${stageChip(c)}<div style="margin-top:4px">${mini(c)}</div></td><td>${c.kind==='CITO'&&c.stage!=='SIGNED'?'<span class="chip red">20 хв</span>':c.stage==='SIGNED'?fmt(c.signedAt).slice(0,10):overdue(c)?`<span class="chip lr">${due(c)}</span>`:due(c)}</td></tr>`).join(''):`<tr><td colspan="9" class="empty">За фільтрами справ немає</td></tr>`}
+ </tbody></table></div>
+ <div class="pad small muted row">${ic('info',14)}<span>Строки: біопсія — ${SLA.BIOPSY} роб. днів, операційний матеріал — ${SLA.OPER}, консультація — ${SLA.CONSULT}; ІГХ додає 3 дні; CITO — 20 хв від надходження. Колір рядка CITO — червона смуга.</span></div></section>`;}
+
+/* ---------- прийом матеріалу ---------- */
+function vIncoming(){
+ const sel=S.incoming.find(x=>x.id===S.inc)||S.incoming[0];if(sel)S.inc=sel.id;
+ return crumbs([['Прийом матеріалу']])+title('inbox','Прийом матеріалу','Направлення 014/о з МІС (стаціонар, поліклініка), е-направлення ЕСОЗ і матеріал клінік-партнерів. Сканування кожного контейнера, перевірка маркування та фіксації, присвоєння № справи.')+
+ (S.incoming.length?`<section class="card"><div class="tw"><table class="t"><thead><tr><th>Створено в МІС</th><th>Пацієнт</th><th>Джерело</th><th>Матеріал</th><th>Відділення / направник</th><th>Контейнерів</th><th>Група послуг</th></tr></thead><tbody>
+ ${S.incoming.map(x=>`<tr class="click${x.id===S.inc?' on':''}" data-a="selInc" data-id="${x.id}"><td>${fmt(x.created)}</td><td><b>${P(x.pid).n}</b></td><td><span class="chip ${SRC[x.src][1]}">${SRC[x.src][0]}</span>${x.eref?`<div class="small muted">${x.eref}</div>`:''}</td><td><span class="chip ${KIND[x.kind][1]}">${KIND[x.kind][0]}</span></td><td>${esc(x.dept)}<div class="small muted">${esc(x.doctor)}</div></td><td>${x.containers.length}</td><td class="small">${x.group||'Патоморфологія; операційний матеріал'}</td></tr>`).join('')}</tbody></table></div></section>
+ ${sel?vIncPanel(sel):''}`:`<section class="card empty">${ic('check',20)}<br>Усі направлення прийнято. Нові з’являться після події REFERRAL_CREATED з МІС.</section>`);}
+function vIncPanel(x){
+ const p=P(x.pid);const allScan=x.containers.every(k=>k.scan);const bad=x.containers.some(k=>!k.ok);
+ const fixH=k=>{const h=Math.round((new Date(TODAY+'T'+now().slice(11)+':00')-new Date(k.fixStart.replace(' ','T')+':00'))/36e5);return h;};
+ return `<section class="card tb" style="margin-top:14px"><div class="ch"><h2>${p.n}</h2><span class="muted">${fmt(p.dob)} · ${age(p.dob)} р. · картка ${p.card}</span><span class="sp"></span>
+ <button class="btn" data-a="printFront" data-inc="${x.id}">${ic('print')} 014/о (лицьова)</button>
+ <button class="btn dan" data-a="openReject" ${can('accept')?'':'disabled title="'+deny()+'"'}>${ic('x')} Відмовити в прийомі</button>
+ <button class="btn ok" data-a="accept" ${can('accept')&&allScan&&!bad?'':'disabled'} title="${!can('accept')?deny():!allScan?'Відскануйте всі контейнери':bad?'Є контейнери з порушеннями':''}">${ic('check')} Прийняти й присвоїти №</button></div>
+ <div class="pad g2">
+  <div class="stack"><h3 style="margin:0;font-size:15px">Дані направлення (з МІС, лише перегляд)</h3><div class="kv">
+   <div>Дата і час направлення</div><div>${x.ref.date} ${x.ref.time}</div><div>Відділення / № картки</div><div>${esc(x.dept)} · ${esc(x.mcard)}${x.ward!=='—'?' · '+esc(x.ward):''}</div>
+   <div>Біопсія</div><div>${x.ref.biopsy}${x.ref.prev?' · первинна: '+esc(x.ref.prev):''}</div><div>Дата і вид операції</div><div>${esc(x.ref.op)}</div>
+   <div>Маркування, к-ть об’єктів</div><div>${esc(x.ref.marking)}</div><div>Клінічні дані</div><div>${esc(x.ref.clinical)}${(x.ref.clinical2||[]).map(t=>'<br>'+esc(t)).join('')}</div>
+   <div>Клінічний діагноз</div><div>${esc(x.ref.diag)}</div><div>Лікуючий лікар</div><div>${esc(x.ref.doctor)}</div></div></div>
+  <div class="stack"><h3 style="margin:0;font-size:15px">Контейнери · ${x.containers.filter(k=>k.scan).length}/${x.containers.length} відскановано</h3>
+   ${x.containers.map((k,i)=>{const h=fixH(k);return `<div class="al ${!k.ok?'bad':k.scan?'ok':'info'}">${ic(!k.ok?'warn':k.scan?'check':'scan')}<div class="grow"><b>№${esc(k.mark)} · ${esc(k.what)}</b><div class="small">${esc(k.fix)} · фіксація з ${fmt(k.fixStart)} (${h} год)${h>48?' — <b>понад 48 год: ризик для ІГХ</b>':''}</div>${k.problem?`<div class="small"><b>${esc(k.problem)}</b></div>`:''}</div>${k.scan?'<span class="chip lg">відскановано</span>':`<button class="btn sm" data-a="scanCont" data-i="${i}">${ic('scan',14)} Сканувати</button>`}</div>`;}).join('')}
+   ${bad?`<div class="al warn">${ic('warn')}<span>Контейнер без маркування не можна прийняти (вимога ідентифікації пацієнта). Оформіть відмову: МІС отримає подію <code>REJECTED</code> з причиною, направник — сповіщення.</span></div>`:''}
+   <div class="note small muted">${ic('info',14)} Після прийому: № справи, етикетки на контейнери, вартість за прайсом (перераховується після вирізки), подія <code>RECEIVED</code> у МІС — статус у вкладці «Морфологія» та в протоколі операції.</div></div>
+ </div></section>`;}
+
+/* ---------- картка справи ---------- */
+const CTABS=[['ref','Направлення'],['gross','Вирізка'],['blocks','Блоки і скельця'],['concl','Опис і висновок'],['print','Друк 014/о'],['hist','Події']];
+function vCase(){
+ const c=C(S.case);const p=P(c.pid);const si=STI(c.stage);
+ let body='';if(S.ctab==='ref')body=tRef(c);else if(S.ctab==='gross')body=tGross(c);else if(S.ctab==='blocks')body=tBlocks(c);else if(S.ctab==='concl')body=tConcl(c);else if(S.ctab==='print')body=tPrint(c);else body=tHist(c);
+ const nextBtn=['PROC','EMB','SECT','STAIN'].includes(c.stage)?`<button class="btn ok" data-a="nextStage" ${can('stage')?'':'disabled title="'+deny()+'"'}>${ic('scan')} Завершити «${STAGES[si][1]}»</button>`:'';
+ return crumbs([['Журнал справ','nav','data-v="journal"'],[c.no]])+`
+ <section class="card tb${c.cito?' tr':''}"><div class="ch"><h2>${c.no}</h2>${stageChip(c)}<span class="chip ${KIND[c.kind][1]}">${KIND[c.kind][0]}</span><span class="chip ${SRC[c.src][1]}">${SRC[c.src][0]}</span>${c.eref?`<span class="chip lg">ЕСОЗ ${c.eref}${c.esoz?' · '+c.esoz:''}</span>`:''}<span class="sp"></span>${nextBtn}</div>
+ <div class="pad row" style="gap:28px">${[['Пацієнт',`<b>${p.n}</b>`],['Дата народження',`${fmt(p.dob)} (${age(p.dob)} р.)`],['Стать',p.s==='Ж'?'жіноча':'чоловіча'],['Картка / історія',c.mcard],['Відділення',esc(c.dept)],['Направник',esc(c.doctor)],['Надійшло',fmt(c.received)],['Термін',c.stage==='SIGNED'?'виконано '+fmt(c.signedAt):due(c)],['Вартість',price(c).toLocaleString('uk-UA')+' грн']].map(([a,b])=>`<div><div class="small muted">${a}</div><div>${b}</div></div>`).join('')}</div>
+ <div class="stages">${STAGES.map((s,i)=>`<div class="stg ${i<si||c.stage==='SIGNED'?'dn':i===si?'cur':''}"><i>${i<si||c.stage==='SIGNED'?'✓':i+1}</i>${s[1]}</div>`).join('')}</div>
+ ${c.kind==='CITO'&&c.stage!=='SIGNED'&&!c.citoAck?vCitoBar(c):''}
+ <div class="tabs">${CTABS.map(([k,t])=>`<button class="tab${S.ctab===k?' on':''}" data-a="ctab" data-t="${k}">${t}${k==='concl'&&c.versions.length>1?' <span class="chip lp">v'+c.versions.length+'</span>':''}</button>`).join('')}</div>${body}</section>`;}
+function vCitoBar(c){const m=Math.floor((Date.now()-c.citoStart)/60000),s=Math.floor((Date.now()-c.citoStart)/1000)%60;
+ return `<div class="pad" style="background:#FFF4F3;border-bottom:1px solid #F2C2BE"><div class="row"><div><div class="small muted">Від надходження в лабораторію</div><div class="timer" id="citoT" style="color:${m>=20?'var(--red)':'var(--ink)'}">${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</div></div><div class="grow small">Інтраопераційне дослідження: кріостатні зрізи, експрес-забарвлення. Результат повідомляється в операційну телефоном/повідомленням з <b>обов’язковим підтвердженням отримання</b>; потім — плановий висновок на парафінових блоках з того ж матеріалу.</div>
+ <button class="btn dan fill" data-a="openCito" ${can('concl')?'':'disabled title="'+deny()+'"'}>${ic('phone')} Повідомити результат в операційну</button></div></div>`;}
+function tRef(c){const r=c.ref;
+ return `<div class="pad stack"><div class="al info">${ic('info')}<span>Лицьова сторона форми 014/о заповнена в МІС автоматично (п. 1–9) і в ЛІС редагуванню не підлягає. Уточнення — через коментар направнику (подія <code>QUERY</code> у МІС).</span></div>
+ <div class="kv"><div>Дата і час направлення</div><div>${r.date} ${r.time}</div><div>Відділення / № медкарти</div><div>${esc(c.dept)} · ${esc(c.mcard)}</div><div>Біопсія (п. 4–5)</div><div>${r.biopsy}${r.prev?` · первинна: <button class="link" data-a="toast" data-m="Відкривається справа ${esc(r.prev)} пацієнта (історія морфології)">${esc(r.prev)}</button>`:''}</div>
+ <div>Дата і вид операції (п. 6)</div><div>${esc(r.op)}</div><div>Маркування, кількість об’єктів (п. 7)</div><div>${esc(r.marking)}</div><div>Клінічні дані (п. 8)</div><div>${esc(r.clinical)}${(r.clinical2||[]).map(t=>'<br>'+esc(t)).join('')}</div><div>Клінічний діагноз (п. 9)</div><div>${esc(r.diag)}</div><div>Лікуючий лікар</div><div>${esc(r.doctor)}</div></div>
+ <div class="row"><button class="btn" data-a="toast" data-m="Направнику (${esc(c.doctor)}) надіслано запит на уточнення; відповідь з’явиться в подіях справи.">${ic('send')} Запит направнику</button><button class="btn" data-a="ctab" data-t="print">${ic('print')} Друк 014/о</button></div></div>`;}
+function tGross(c){const ed=c.stage==='RCV'||c.stage==='GROSS';
+ return `<div class="pad stack">${!ed?`<div class="al ok">${ic('check')}<span>Вирізку завершено. Макроопис і кількість блоків зафіксовано; зміни — лише через доповнення.</span></div>`:''}
+ <div class="row end"><div class="f" style="width:340px"><label for="tpl">Шаблон макроопису (за органом)</label><select id="tpl" data-ch="case.tpl" ${ed?'':'disabled'}>${Object.keys(TPL).map(k=>`<option${k===c.tpl?' selected':''}>${k}</option>`).join('')}</select></div><button class="btn" data-a="insTpl" ${ed&&can('gross')?'':'disabled'}>Вставити шаблон</button><button class="btn" data-a="toast" data-m="Фото макропрепарату додано (у робочій системі — з камери станції вирізки)." ${ed?'':'disabled'}>Фото макропрепарату</button></div>
+ <div class="f"><label for="macro">Макроскопічний опис ${ed?'':'· лише перегляд'}</label><textarea id="macro" data-in="case.macro" rows="5" ${ed&&can('gross')?'':'readonly'}>${esc(c.macro)}</textarea></div>
+ <h3 style="margin:4px 0 0;font-size:15px">Об’єкти → блоки (касети)</h3>
+ <div class="tree">${c.objects.map((o,oi)=>`<div class="obj"><div class="oh"><b>Об’єкт №${esc(o.mark)}</b><span>${esc(o.what)}</span><span class="sp"></span><span class="small muted">блоків ${o.blocks.length}</span>${ed&&can('gross')?`<button class="btn sm" data-a="addBlock" data-o="${oi}">${ic('plus',13)} Блок</button>`:''}</div>
+  ${o.blocks.map((b,bi)=>`<div class="blk"><span class="bc">${esc(b.id)}</span><span>шматочків:</span>${ed&&can('gross')?`<input type="number" min="1" max="9" value="${b.pieces}" data-pc="${oi}.${bi}" style="width:56px;border:1px solid var(--input);border-radius:3px;padding:3px 6px">`:`<b>${b.pieces}</b>`}<span class="sp"></span>${ed&&can('gross')?`<button class="link small" data-a="rmBlock" data-o="${oi}" data-b="${bi}" style="color:var(--red)">прибрати</button>`:''}</div>`).join('')||'<div class="blk muted small">Блоків ще немає</div>'}</div>`).join('')}</div>
+ <div class="row small"><span>Разом: <b>${piecesOf(c)}</b> шматочків, <b>${blocksOf(c).length}</b> блоків → п. 15 форми 014/о</span><span class="sp"></span><span>Вартість: <b>${price(c).toLocaleString('uk-UA')} грн</b> (перший блок ${PRICE.first} + кожен наступний ${PRICE.block})</span></div>
+ ${ed?`<div class="row"><span class="sp"></span><button class="btn" data-a="toast" data-m="Надруковано ${blocksOf(c).length} етикеток касет (штрихкод = № справи + блок).">${ic('print')} Етикетки касет</button><button class="btn ok" data-a="finishGross" ${can('gross')&&blocksOf(c).length&&c.macro.trim()?'':'disabled'}>${ic('check')} Завершити вирізку → проводка</button></div>`:''}</div>`;}
+function tBlocks(c){
+ return `<div class="pad stack"><div class="row"><span class="small muted">Кожна касета і скельце має штрихкод. Етап лабораторної обробки фіксується скануванням; поточний етап справи: <b>${STAGES[STI(c.stage)]?.[1]||'—'}</b>.</span><span class="sp"></span><button class="btn" data-a="openStain" ${blocksOf(c).length&&STI(c.stage)>=STI('SECT')?'':'disabled'}>${ic('plus')} Додаткове забарвлення / ІГХ</button></div>
+ <div class="tree">${c.objects.map(o=>`<div class="obj"><div class="oh"><b>Об’єкт №${esc(o.mark)}</b><span>${esc(o.what)}</span></div>${o.blocks.map(b=>`<div class="blk"><span class="bc">${esc(b.id)}</span>${b.ext?'<span class="chip lp">зовнішній</span>':''}<span class="small muted">${b.pieces?b.pieces+' шм.':''}</span>${b.slides.map(s=>`<span class="sl">${ic('grid',12)}<span class="bc" style="background:none;padding:0">${esc(s.id)}</span>${esc(s.stain)}<span class="chip ${s.st==='Готово'?'lg':s.st==='ІГХ в роботі'?'lp':'la'}">${esc(s.st)}</span></span>`).join('')}</div>`).join('')||'<div class="blk muted small">Немає блоків</div>'}</div>`).join('')}</div>
+ ${c.ihcOrdered.length?`<div class="al info">${ic('info')}<span>Дозамовлено ІГХ: <b>${c.ihcOrdered.join(', ')}</b> на наявних блоках (без нового забору). Строк подовжено на 3 дні; вартість перераховано; МІС отримує подію <code>ADDITIONAL_STUDY_ORDERED</code>.</span></div>`:''}
+ <div class="small muted">Видача скелець/блоків пацієнту на консультацію — розділ «Архів блоків і скелець».</div></div>`;}
+function tConcl(c){
+ const k=c.concl;const ed=c.stage==='MICRO'&&can('concl');const signed=c.stage==='SIGNED';const rf=reflexFor(c);
+ if(STI(c.stage)<STI('MICRO')&&c.kind!=='CITO')return `<div class="pad"><div class="al info">${ic('info')}<span>Опис і висновок стають доступними після етапу «Фарбування». Поточний етап: <b>${STAGES[STI(c.stage)][1]}</b>.</span></div></div>`;
+ const sel=(id,arr,val,label)=>`<div class="f"><label for="${id}">${label}</label><select id="${id}" data-ch="concl.${id.slice(2)}" ${ed?'':'disabled'}><option value="">—</option>${arr.map(([a,b])=>`<option value="${a}"${a===val?' selected':''}>${a} · ${b}</option>`).join('')}</select></div>`;
+ const inp=(id,val,label,ph='')=>`<div class="f"><label for="${id}">${label}</label><input id="${id}" data-in="concl.${id.slice(2)}" value="${esc(val)}" placeholder="${ph}" ${ed?'':'readonly'}></div>`;
+ return `<div class="pad stack">
+ ${signed?`<div class="al ok">${ic('lock')}<span>Висновок підписано ${fmt(c.signedAt)} (${esc(c.signedBy)}, КЕП). Результат передано в МІС: картка пацієнта → «Морфологія», витяг-епікриз, МДК. Зміни можливі лише як <b>доповнення</b> з новою версією.</span><span class="sp"></span><button class="btn" data-a="openAdd" ${can('addendum')?'':'disabled title="'+deny()+'"'}>${ic('plus')} Доповнення</button></div>`:''}
+ <div class="f"><label>Макроскопічний опис (з вирізки)</label><textarea rows="3" readonly>${esc(c.macro)}</textarea></div>
+ <div class="row end"><div class="f grow"><label for="micro">Мікроскопічний опис</label></div>${ed?`<button class="btn sm" data-a="insMicro">Шаблон «${esc(c.tpl.split(' · ')[0])}»</button>`:''}</div>
+ <textarea id="micro" data-in="case.micro" rows="4" ${ed?'':'readonly'} style="margin-top:-8px">${esc(c.micro)}</textarea>
+ <h3 style="margin:6px 0 0;font-size:15px">Структурований висновок <span class="small muted" style="font-weight:400">— поля передаються в МІС/МДК окремими атрибутами</span></h3>
+ <div class="g4">${sel('k-topo',TOPO,k.topo,'МКХ-О: топографія')}${sel('k-morph',ICDO,k.morph,'МКХ-О: морфологія (гістотип /поведінка)')}${inp('k-icd10',k.icd10,'МКХ-10 (діагноз)','C50.4')}
+  <div class="f"><label for="k-g">Ступінь (G)</label><select id="k-g" data-ch="concl.g" ${ed?'':'disabled'}>${['','G1','G2','G3','GX'].map(x=>`<option${x===k.g?' selected':''}>${x}</option>`).join('')}</select></div>
+  ${inp('k-pt',k.pt,'pT','pT1c')}${inp('k-pn',k.pn,'pN','pN0')}${inp('k-lnTot',k.lnTot,'Лімфовузлів досліджено')}${inp('k-lnPos',k.lnPos,'з них уражено')}${inp('k-r',k.r,'Край резекції (R, мм)','R0, 6 мм')}${inp('k-lvi',k.lvi,'Лімфоваскулярна інвазія')}${inp('k-pni',k.pni,'Периневральна інвазія')}</div>
+ ${rf.length&&!signed?rf.map(r=>`<div class="al warn">${ic('bolt')}<div class="grow"><b>Reflex-правило:</b> ${esc(r.why)} (${esc(r.when)}). Пропонується панель: <b>${r.panel.join(', ')}</b> на блоці ${esc(blocksOf(c)[0]?.id||'')}.</div><button class="btn sm" data-a="orderIhc" data-p="${r.panel.join(',')}" ${can('concl')?'':'disabled'}>Дозамовити ІГХ</button></div>`).join(''):''}
+ ${k.ihc.length?`<div class="tw"><table class="t"><thead><tr><th>ІГХ-маркер</th><th>Блок</th><th>Результат</th><th>Статус</th></tr></thead><tbody>${k.ihc.map((x,i)=>`<tr><td><b>${x.m}</b> <span class="small muted">${esc((IHC.find(y=>y[0]===x.m)||['',''])[1])}</span></td><td>${esc(x.block)}</td><td>${(ed||(!signed&&can('concl')))?`<input data-ihc="${i}" value="${esc(x.res)}" placeholder="${x.m==='Ki-67'?'напр. 18%':x.m==='HER2'?'0 / 1+ / 2+ / 3+':'напр. 90%, Allred 8'}" style="width:100%;border:1px solid var(--input);border-radius:3px;padding:5px 8px">`:esc(x.res||'—')}</td><td>${x.res?'<span class="chip lg">готово</span>':'<span class="chip lp">ІГХ в роботі</span>'}</td></tr>`).join('')}</tbody></table></div>`:''}
+ <div class="f"><label for="k-text">Патологогістологічний висновок (діагноз) · п. 18</label><textarea id="k-text" data-in="concl.text" rows="3" ${ed?'':'readonly'}>${esc(k.text)}</textarea></div>
+ ${ed?`<div class="row"><button class="btn" data-a="assemble">${ic('refresh')} Зібрати текст зі структурованих полів</button><span class="sp"></span><button class="btn" data-a="prelim">Попередній висновок</button><button class="btn ok" data-a="openSign" ${can('sign')?'':'disabled title="'+deny()+'"'}>${ic('pen')} Підписати КЕП і видати</button></div>`:!signed&&!can('concl')?`<div class="al warn">${ic('lock')}<span>Опис і підпис доступні лікарю-патологоанатому. Перемкніть роль на панелі прототипу вгорі.</span></div>`:''}
+ ${k.prelim&&!signed?`<div class="al warn">${ic('info')}<span><b>Попередній висновок</b> передано в МІС з позначкою «Попередній» (не використовується як морфологічна верифікація в МДК): ${esc(k.prelim)}</span></div>`:''}
+ ${c.versions.length?`<h3 style="margin:6px 0 0;font-size:15px">Версії висновку</h3>${c.versions.map(v=>`<div class="ver"><div class="row small"><b>v${v.v} · ${esc(v.kind)}</b><span class="muted">${fmt(v.at)} · ${esc(v.by)}</span></div><div>${esc(v.text)}</div></div>`).join('')}`:''}
+ </div>`;}
+function tPrint(c){return `<div class="pad stack"><div class="row"><label class="row small" style="gap:6px"><input type="checkbox" data-a="srcToggle" ${S.showSrc?'checked':''}> Підсвітити поля, заповнені автоматично (наведіть — джерело)</label><span class="sp"></span><button class="btn pri" data-a="printDo">${ic('print')} Друк / PDF (обидві сторони)</button></div>
+ <div style="background:#6B6B6B;padding:16px;border-radius:3px;display:flex;flex-direction:column;gap:16px;overflow-x:auto"><div class="f14${S.showSrc?' showsrc':''}">${f014Front(frontFor(c))}<div class="pgno">Сторона 1 · заповнено в МІС (направник)</div></div><div class="f14${S.showSrc?' showsrc':''}">${f014Back(backFor(c))}<div class="pgno">Сторона 2 · заповнено в ЛІС (модуль «Патоморфологія»)${c.stage==='SIGNED'?'':' · висновок з’явиться після підпису'}</div></div></div></div>`;}
+function tHist(c){return `<div class="pad"><ul style="list-style:none;margin:0;padding:0">${c.events.length?c.events.map(e=>`<li style="padding:8px 0;border-bottom:1px solid var(--line)">${esc(e.a)}<div class="small muted">${fmt(e.t)} · ${esc(e.u)}</div></li>`).join(''):'<li class="muted">Подій у межах демо ще немає. Події в МІС: RECEIVED → STAGE_CHANGED → RESULT_PRELIMINARY → RESULT_FINAL → ADDENDUM.</li>'}</ul></div>`;}
+
+/* ---------- CITO ---------- */
+function vCito(){const list=S.cases.filter(c=>c.kind==='CITO');
+ return crumbs([['Інтраопераційні (CITO)']])+title('bolt','Інтраопераційні дослідження (CITO)','Термінова біопсія під час операції: таймер від надходження, кріостат, повідомлення результату в операційну з підтвердженням отримання.')+
+ `<section class="card tr"><div class="tw"><table class="t"><thead><tr><th>№ справи</th><th>Пацієнт</th><th>Операційна / хірург</th><th>Питання хірурга</th><th>Час</th><th>Статус</th></tr></thead><tbody>${list.map(c=>`<tr class="click cito" data-a="openCase" data-id="${c.id}"><td><b class="link">${c.no}</b></td><td>${P(c.pid).n}</td><td>${esc(c.dept)}<div class="small muted">${esc(c.doctor)}</div></td><td class="small">${esc(c.ref.clinical)}</td><td>${c.stage==='SIGNED'?'—':'<b id="citoT2">'+Math.floor((Date.now()-c.citoStart)/60000)+' хв</b>'}</td><td>${c.citoAck?`<span class="chip green">Повідомлено · ${esc(c.citoAck.by)}</span>`:stageChip(c)}</td></tr>`).join('')}</tbody></table></div></section>`;}
+
+/* ---------- архів ---------- */
+function vArchive(){const rows=S.cases.filter(c=>c.stage==='SIGNED').flatMap(c=>blocksOf(c).map(b=>({c,b})));
+ return crumbs([['Архів блоків і скелець']])+title('box','Архів блоків і скелець','Місце зберігання парафінових блоків і скелець (на базі модуля «Біобанк»), видача пацієнту або в інший заклад на консультацію та повернення.')+
+ `<section class="card"><div class="tw"><table class="t"><thead><tr><th>Блок</th><th>Справа</th><th>Пацієнт</th><th>Скельця</th><th>Місце зберігання</th><th>Стан</th><th></th></tr></thead><tbody>${rows.map(({c,b})=>{const is=c.issued.find(x=>x.block===b.id);return `<tr><td><span class="bc">${esc(b.id)}</span></td><td>${c.no}</td><td>${P(c.pid).n}</td><td>${b.slides.map(s=>s.id).join(', ')}</td><td>${esc(c.archive||'—')}</td><td>${is?`<span class="chip la">Видано ${fmt(is.at).slice(0,10)}</span><div class="small muted">${esc(is.to)} · повернути до ${fmt(is.ret)}</div>`:'<span class="chip lg">В архіві</span>'}</td><td>${is?`<button class="btn sm" data-a="returnBlk" data-id="${c.id}" data-b="${esc(b.id)}">Повернення</button>`:`<button class="btn sm" data-a="openIssue" data-id="${c.id}" data-b="${esc(b.id)}" ${can('issue')?'':'disabled'}>Видати</button>`}</td></tr>`;}).join('')}</tbody></table></div>
+ <div class="pad small muted">Видача фіксує отримувача, документ, мету (консультація / друга думка / молекулярне дослідження) і плановий строк повернення; прострочення — у задачах завідувача.</div></section>`;}
+
+/* ---------- довідники ---------- */
+function vDict(){const T=[['tpl','Шаблони описів'],['icdo','МКХ-О'],['stain','Забарвлення та ІГХ'],['refl','Reflex-правила ІГХ'],['kind','Типи матеріалу та строки'],['rej','Причини відмови']];
+ let b='';
+ if(S.dictTab==='tpl')b=`<table class="t"><thead><tr><th>Орган · вид матеріалу</th><th>Макроопис (шаблон)</th><th>Мікроопис (шаблон)</th></tr></thead><tbody>${Object.entries(TPL).map(([k,v])=>`<tr><td><b>${k}</b></td><td class="small">${esc(v.macro)}</td><td class="small">${esc(v.micro)}</td></tr>`).join('')}</tbody></table>`;
+ else if(S.dictTab==='icdo')b=`<table class="t"><thead><tr><th>Код</th><th>Назва</th><th>Вісь</th></tr></thead><tbody>${ICDO.map(x=>`<tr><td><b>${x[0]}</b></td><td>${x[1]}</td><td>Морфологія</td></tr>`).join('')}${TOPO.map(x=>`<tr><td><b>${x[0]}</b></td><td>${x[1]}</td><td>Топографія</td></tr>`).join('')}</tbody></table>`;
+ else if(S.dictTab==='stain')b=`<table class="t"><thead><tr><th>Методика</th><th>Тип</th><th>Ціна, грн</th></tr></thead><tbody>${STAINS.map(x=>`<tr><td>${x}</td><td>Гістохімічне</td><td>${x.startsWith('Гема')?'включено':'180'}</td></tr>`).join('')}${IHC.map(x=>`<tr><td><b>${x[0]}</b> · ${x[1]}</td><td>ІГХ (антитіло, лот на складі реагентів)</td><td>${PRICE.ihc}</td></tr>`).join('')}</tbody></table>`;
+ else if(S.dictTab==='refl')b=`<table class="t"><thead><tr><th>Умова</th><th>Панель</th><th>Обґрунтування</th></tr></thead><tbody>${REFLEX.map(r=>`<tr><td>${r.when}</td><td>${r.panel.join(', ')}</td><td>${r.why}</td></tr>`).join('')}</tbody></table>`;
+ else if(S.dictTab==='kind')b=`<table class="t"><thead><tr><th>Тип (п. 12–14 форми)</th><th>Строк</th><th>Послуга / група</th></tr></thead><tbody>${Object.entries(KIND).map(([k,v])=>`<tr><td><span class="chip ${v[1]}">${v[0]}</span></td><td>${k==='CITO'?'20 хв (попередній) + плановий на парафіні':SLA[k]+' роб. днів (+3 при ІГХ)'}</td><td class="small">${k==='BIOPSY'?'21729 Гістологія; шкіра · 21730 Гістологія; інше':k==='CONSULT'?'Консультація готових препаратів (за скельце)':'Патогістологічне дослідження операційного матеріалу'}</td></tr>`).join('')}</tbody></table>`;
+ else b=`<table class="t"><tbody>${REJECT.map((x,i)=>`<tr><td>${i+1}</td><td>${x}</td></tr>`).join('')}</tbody></table>`;
+ return crumbs([['Довідники патоморфології']])+title('book','Довідники патоморфології','Шаблони, класифікатори та правила модуля. Редагування — завідувач відділення.')+`<section class="card"><div class="tabs">${T.map(([k,t])=>`<button class="tab${S.dictTab===k?' on':''}" data-a="dictTab" data-t="${k}">${t}</button>`).join('')}</div><div class="tw">${b}</div></section>`;}
+
+/* ---------- модальні ---------- */
+function mReject(){const x=S.incoming.find(i=>i.id===S.inc);const f=S.rj;
+ return `<div class="modal" role="dialog" aria-modal="true" aria-label="Відмова в прийомі"><h3>Відмова в прийомі матеріалу</h3><div class="small muted">${P(x.pid).n} · ${SRC[x.src][0]} · ${esc(x.doctor)}</div>
+ <div class="f"><label for="rj">Причина *</label><select id="rj" data-ch="rj.reason">${REJECT.map(r=>`<option${r===f.reason?' selected':''}>${r}</option>`).join('')}</select></div>
+ <div class="f"><label for="rjc">Коментар для направника</label><textarea id="rjc" data-in="rj.comment" rows="2">${esc(f.comment)}</textarea></div>
+ <div class="al info">${ic('info')}<span>МІС отримає подію <code>REJECTED</code>: направлення в картці пацієнта отримає статус «Відмова лабораторії» з причиною; для е-направлення ЕСОЗ — без погашення. Матеріал зберігається до повторного оформлення.</span></div>
+ <div class="row"><span class="sp"></span><button class="btn" data-a="close">Скасувати</button><button class="btn dan fill" data-a="doReject">Відмовити</button></div></div>`;}
+function mSign(){const c=C(S.case);return `<div class="modal" role="dialog" aria-modal="true" aria-label="Підпис висновку"><h3>Підпис висновку КЕП</h3>
+ <div class="kv"><div>Справа</div><div>${c.no} · ${P(c.pid).n}</div><div>Висновок</div><div>${esc(c.concl.text)}</div><div>МКХ-О</div><div>${esc(c.concl.topo)} · ${esc(c.concl.morph)}</div>${c.concl.ihc.some(x=>!x.res)?`<div>ІГХ</div><div><b style="color:var(--red)">Є маркери без результату</b> — підписати як основний висновок, ІГХ додати доповненням?</div>`:''}</div>
+ <div class="g2"><div class="f"><label for="key">Особистий ключ</label><select id="key"><option>Key-6.dat · ${ME[S.role]} · дійсний до 12.2027</option></select></div><div class="f"><label for="kp">Пароль ключа</label><input id="kp" type="password" value="••••••••"></div></div>
+ <div class="al info">${ic('send')}<span>Після підпису: статус RELEASED; події в МІС <code>RESULT_FINAL</code> (картка → «Морфологія», протокол операції, витяг-епікриз, МДК); для е-направлення — DiagnosticReport в ЕСОЗ (розд. 21.13).</span></div>
+ <div class="row"><span class="sp"></span><button class="btn" data-a="close">Скасувати</button><button class="btn ok" data-a="doSign">${ic('pen')} Підписати й видати</button></div></div>`;}
+function mAdd(){const c=C(S.case);const f=S.ad;return `<div class="modal" role="dialog" aria-modal="true" aria-label="Доповнення до висновку"><h3>Доповнення до висновку ${c.no}</h3>
+ <div class="f"><label for="adk">Тип</label><select id="adk" data-ch="ad.kind">${['Результати ІГХ / молекулярних досліджень','Перегляд після консультації','Виправлення помилки (з обґрунтуванням)'].map(o=>`<option${o===f.kind?' selected':''}>${o}</option>`).join('')}</select></div>
+ <div class="f"><label for="adt">Текст доповнення *</label><textarea id="adt" data-in="ad.text" rows="4">${esc(f.text)}</textarea></div>
+ <label class="row small" style="gap:6px"><input type="checkbox" checked disabled> Змінює діагноз / стадію → позначити для перегляду в МДК</label>
+ <div class="al warn">${ic('warn')}<span>Основний висновок не перезаписується. Створюється версія v${c.versions.length+1}; МІС отримує подію <code>ADDENDUM</code>, лікар-направник і МДК (якщо висновок використано в рішенні) — сповіщення.</span></div>
+ <div class="row"><span class="sp"></span><button class="btn" data-a="close">Скасувати</button><button class="btn ok" data-a="doAdd" ${f.text.trim().length>10?'':'disabled'}>${ic('pen')} Підписати доповнення</button></div></div>`;}
+function mCito(){const c=C(S.case);const f=S.ct;return `<div class="modal" role="dialog" aria-modal="true" aria-label="Повідомлення в операційну"><h3>Результат термінового дослідження → операційна</h3>
+ <div class="small muted">${c.no} · ${P(c.pid).n} · ${esc(c.dept)} · хірург ${esc(c.doctor)}</div>
+ <div class="f"><label for="ctr">Попередній висновок (кріостат) *</label><textarea id="ctr" data-in="ct.text" rows="3">${esc(f.text)}</textarea></div>
+ <div class="g2"><div class="f"><label for="ctw">Кому повідомлено (ПІБ) *</label><input id="ctw" data-in="ct.by" value="${esc(f.by)}"></div><div class="f"><label for="ctm">Спосіб</label><select id="ctm" data-ch="ct.how"><option>Телефон операційної + повідомлення в МІС</option><option>Повідомлення в МІС (підтвердження в протоколі операції)</option></select></div></div>
+ <label class="row small" style="gap:6px"><input type="checkbox" id="ctok" data-a="ctAck" ${f.ack?'checked':''}> Отримувач повторив результат (read-back)</label>
+ <div class="row"><span class="sp"></span><button class="btn" data-a="close">Скасувати</button><button class="btn dan fill" data-a="doCito" ${f.text.trim()&&f.by.trim()&&f.ack?'':'disabled'}>${ic('phone')} Зафіксувати повідомлення</button></div></div>`;}
+function mStain(){const c=C(S.case);const f=S.st;return `<div class="modal" role="dialog" aria-modal="true" aria-label="Додаткове дослідження"><h3>Додаткове забарвлення / ІГХ на наявних блоках</h3>
+ <div class="f"><label for="stb">Блок</label><select id="stb" data-ch="st.block">${blocksOf(c).map(b=>`<option${b.id===f.block?' selected':''}>${b.id}</option>`).join('')}</select></div>
+ <div class="f"><span class="lbl">Методики</span><div class="row" style="gap:6px">${[...STAINS.slice(1),...IHC.map(x=>x[0])].map(m=>`<button class="chip ${f.sel.includes(m)?'blue':''}" data-a="stPick" data-m="${m}" style="border:0">${m}</button>`).join('')}</div></div>
+ <div class="row"><span class="sp"></span><button class="btn" data-a="close">Скасувати</button><button class="btn pri" data-a="doStain" ${f.sel.length?'':'disabled'}>Замовити (${f.sel.length})</button></div></div>`;}
+function mIssue(){const f=S.is;return `<div class="modal" role="dialog" aria-modal="true" aria-label="Видача препаратів"><h3>Видача блока ${esc(f.b)} та скелець</h3>
+ <div class="g2"><div class="f"><label for="ist">Отримувач (ПІБ / заклад) *</label><input id="ist" data-in="is.to" value="${esc(f.to)}"></div><div class="f"><label for="isd">Документ</label><input id="isd" data-in="is.doc" value="${esc(f.doc)}"></div>
+ <div class="f"><label for="ism">Мета</label><select id="ism"><option>Консультація в референс-центрі</option><option>Друга думка за бажанням пацієнта</option><option>Молекулярне дослідження</option></select></div><div class="f"><label for="isr">Плановий строк повернення</label><input id="isr" type="date" data-ch="is.ret" value="${f.ret}"></div></div>
+ <div class="row"><span class="sp"></span><button class="btn" data-a="close">Скасувати</button><button class="btn pri" data-a="doIssue" ${f.to.trim()?'':'disabled'}>Видати та надрукувати акт</button></div></div>`;}
+function mFront(){const x=S.incoming.find(i=>i.id===S.frontInc);const c={ref:x.ref,dept:x.dept,mcard:x.mcard,pid:x.pid};
+ return `<div class="modal wide" role="dialog" aria-modal="true" aria-label="Форма 014/о"><div class="row" style="color:#fff"><span class="grow">014/о · лицьова сторона · ${P(x.pid).n}</span><button class="btn" data-a="close">Закрити</button></div><div class="f14 showsrc" style="margin-top:10px">${f014Front(frontFor(c))}</div></div>`;}
+
+/* ---------- гід ---------- */
+const STEPS=[['accept','Прийняти матеріал зі стаціонару','Прийом матеріалу → Гриценко П. І. → сканувати 2 контейнери','goAccept'],['gross','Вирізка: макроопис і блоки','Нова справа → вкладка «Вирізка» · роль «Лікар-патологоанатом»','goGross'],['stage','Лабораторна обробка сканом','Кнопка «Завершити етап» · роль «Лаборант-гістолог»','goStage'],
+ ['ihc','Висновок + reflex ІГХ','ПГД-26-0418 → «Опис і висновок» → «Дозамовити ІГХ»','goIhc'],['sign','Підписати КЕП → результат у МІС і МДК','ПГД-26-0418 → «Підписати КЕП і видати»','goIhc'],['cito','CITO: повідомити в операційну','Інтраопераційні → ПГД-26-0420','goCito'],
+ ['add','Доповнення до підписаного висновку','ПГД-26-0405 → «Доповнення» (MMR-статус)','goAdd'],['print','Друк 014/о (обидві сторони)','Справа → «Друк 014/о»','goPrint'],['issue','Видати блок на консультацію','Архів блоків і скелець → «Видати»','goArchive']];
+function vGuidePat(){const cur=STEPS.findIndex(s=>!S.done[s[0]]);const n=STEPS.filter(s=>S.done[s[0]]).length;
+ return `<aside class="guide" aria-label="Сценарій показу"><header data-a="guide">${ic('play',11)}<b>Сценарій показу · ${n}/${STEPS.length}</b>${ic(S.guideOpen?'chev':'chevR',14)}</header><ol>${STEPS.map((s,i)=>(S.guideOpen||i===cur)?`<li class="${S.done[s[0]]?'dn':''}${i===cur?' cur':''}"><span class="n">${S.done[s[0]]?'✓':i+1}</span><span class="tx">${s[1]}<small>${s[2]}</small></span><button class="link small" data-a="${s[3]}">Перейти</button></li>`:'').join('')}${cur<0?'<li class="dn"><span class="n">✓</span><span class="tx">Сценарій пройдено<small>«Скинути демо» вгорі</small></span></li>':''}</ol></aside>`;}
+
+/* ---------- render ---------- */
+function render(){
+ const fe=document.activeElement?.id;const ss=document.activeElement?.selectionStart;
+ let v='';if(S.view==='journal')v=vJournal();else if(S.view==='incoming')v=vIncoming();else if(S.view==='case')v=vCase();else if(S.view==='cito')v=vCito();else if(S.view==='archive')v=vArchive();else if(S.view==='dict')v=vDict();else if(LABV[S.view])v=LABV[S.view]();
+ const M={reject:mReject,sign:mSign,add:mAdd,cito:mCito,stain:mStain,issue:mIssue,front:mFront,...LABM}[S.modal];
+ const nC=S.cases.filter(c=>c.kind==='CITO'&&c.stage!=='SIGNED'&&!c.citoAck).length;
+ document.getElementById('root').innerHTML=`<div class="proto"><b>Прототип MedLink LIS 4.0 · направлення й аналізатори, звіти, патоморфологія</b><span class="tag">ТЗ ЛІС ред. 4.3, розд. 22–23 · дані вигадані</span><span class="sp"></span><label for="role">Роль:</label><select id="role" data-ch="role">${Object.entries(ROLES).map(([k,t])=>`<option value="${k}"${S.role===k?' selected':''}>${t}</option>`).join('')}</select><button data-a="openAudit">Аудит (${S.audit.length})</button><button data-a="reset">Скинути демо</button></div>
+ <header class="top"><button class="burger" data-a="menu" aria-label="Меню">${ic('menu',22)}</button><div class="logo"><span class="sq">${ic('flask',22)}</span><div><b>MedLink LIS <em>4.0</em></b><small>Клініко-діагностична лабораторія та патоморфологія</small></div></div>
+ <label class="search">${ic('scan',18)}<input placeholder="Штрихкод касети / № справи" data-in="q" id="topq"></label><span class="pill r">${ic('bolt',14)} CITO: ${nC}</span><span class="pill a">ІГХ в роботі: ${S.cases.filter(c=>c.ihcOrdered.length&&c.stage!=='SIGNED').length}</span>
+ <div class="user"><span class="av">${ic('user',16)}</span><div><b>${ME[S.role]}</b><small>${ROLES[S.role]}</small></div></div></header>
+ <div class="app">${vSide()}<main class="main">${v}</main></div>
+ ${M?`<div class="ov" data-a="ovClick">${M()}</div>`:''}
+ ${S.auditOpen?`<div class="ov" data-a="auditClose" style="z-index:54;background:rgba(0,0,0,.2)"></div><aside class="audit"><header><b style="flex:1">Журнал аудиту та обміну з МІС</b><button class="link" data-a="auditClose">${ic('x')}</button></header><ul>${S.audit.map(e=>`<li>${esc(e.a)}<small>${fmt(e.t)} · ${esc(e.u)}</small></li>`).join('')}</ul></aside>`:''}
+ ${vGuide()}<div class="toasts" id="toasts"></div>`;
+ if(fe){const el=document.getElementById(fe);if(el){el.focus();try{if(ss!=null&&el.setSelectionRange&&!['date','number','checkbox'].includes(el.type))el.setSelectionRange(ss,ss);}catch(e){}}}}
+function go(view,x={}){Object.assign(S,{view,menu:false,modal:null,guideOpen:false},x);render();window.scrollTo(0,0);}
+
+/* ---------- дії ---------- */
+const A={
+ nav:d=>{if(d.v==='x'){toast('Наявний модуль ЛІС (див. ТЗ v4.1) — у цьому прототипі не відтворюється.');return;}go(d.v);},
+ menu:()=>{S.menu=!S.menu;render();},toastR:()=>toast('Журнал оновлено'),toast:d=>toast(d.m),
+ stageF:d=>{S.stageF=d.k;render();},
+ scanDemo:()=>{S.q='A2';render();toast('Скановано касету «ПГД-26-0418 / A2» → справа ПГД-26-0418.');},
+ openCase:d=>{const c=C(d.id);go('case',{case:d.id,ctab:c.stage==='MICRO'?'concl':c.stage==='RCV'||c.stage==='GROSS'?(c.kind==='CITO'?'concl':'gross'):c.stage==='SIGNED'?'concl':'blocks'});},
+ ctab:d=>{S.ctab=d.t;if(d.t==='print')S.done.print=true;render();},
+ selInc:d=>{S.inc=d.id;render();},
+ scanCont:d=>{const x=S.incoming.find(i=>i.id===S.inc);const k=x.containers[+d.i];k.scan=true;log(`Скановано контейнер №${k.mark} (${k.what}) пацієнта ${P(x.pid).n}`);render();if(!k.ok)toast('Контейнер відскановано, але маркування відсутнє — прийом неможливий.');},
+ accept:()=>{const x=S.incoming.find(i=>i.id===S.inc);const id='c'+(++S.seq);const no='ПГД-26-0'+S.seq;
+  const c={id,no,pid:x.pid,src:x.src,kind:x.kind,dept:x.dept,mcard:x.mcard,doctor:x.doctor,received:now(),stage:'GROSS',tpl:x.tpl,ref:x.ref,eref:x.eref,cito:false,macro:'',micro:'',concl:{icd10:'',topo:x.topo||'',morph:'',g:'',pt:'',pn:'',r:'',lnTot:'',lnPos:'',lvi:'',pni:'',ihc:[],text:'',prelim:''},versions:[],ihcOrdered:[],issued:[],events:[],
+   objects:x.containers.map((k,i)=>({mark:k.mark,what:k.what,blocks:[]}))};
+  S.cases.push(c);S.incoming=S.incoming.filter(i=>i.id!==x.id);S.inc=null;S.done.accept=true;log(`Прийнято матеріал ${P(x.pid).n}: присвоєно ${no}; у МІС надіслано подію RECEIVED`,c);
+  go('case',{case:id,ctab:'gross'});toast(`Справу ${no} створено, надруковано етикетки. МІС: статус «Прийнято лабораторією».`,true);},
+ openReject:()=>{S.rj={reason:REJECT[0],comment:''};S.modal='reject';render();},
+ doReject:()=>{const x=S.incoming.find(i=>i.id===S.inc);S.incoming=S.incoming.filter(i=>i.id!==x.id);log(`Відмова в прийомі ${P(x.pid).n}: ${S.rj.reason}; подія REJECTED у МІС`);S.modal=null;S.inc=null;render();toast(`Відмову оформлено. Направник (${x.doctor}) отримав сповіщення в МІС.`,true);},
+ printFront:d=>{S.frontInc=d.inc;S.modal='front';render();},
+ insTpl:()=>{const c=C(S.case);c.macro=TPL[c.tpl].macro.replace(/\{[a-z]\}/g,'…');render();toast('Шаблон вставлено. Замініть «…» фактичними значеннями.');},
+ addBlock:d=>{const c=C(S.case);const o=c.objects[+d.o];const L=String.fromCharCode(65+(+d.o));o.blocks.push({id:L+(o.blocks.length+1),pieces:1,slides:[]});render();},
+ rmBlock:d=>{const c=C(S.case);c.objects[+d.o].blocks.splice(+d.b,1);render();},
+ finishGross:()=>{const c=C(S.case);c.stage='PROC';blocksOf(c).forEach(b=>{if(!b.slides.length)b.slides=[{id:b.id+'-1',stain:'Г-Е',st:'Проводка'}];});S.done.gross=true;log(`Вирізку завершено: ${blocksOf(c).length} блоків, ${piecesOf(c)} шматочків; вартість перераховано (${price(c)} грн)`,c);S.ctab='blocks';render();toast(`Вирізку завершено. Вартість перераховано: ${price(c).toLocaleString('uk-UA')} грн. Касети передано на проводку.`,true);},
+ nextStage:()=>{const c=C(S.case);const i=STI(c.stage);const nx=STAGES[i+1][0];const lbl={EMB:'Заливка',SECT:'Мікротомія',STAIN:'Фарбування',MICRO:'Готово'}[nx];blocksOf(c).forEach(b=>b.slides.forEach(s=>{if(s.st!=='ІГХ в роботі')s.st=lbl;}));
+  c.stage=nx;S.done.stage=S.done.stage||nx==='MICRO'||i>=1;log(`Етап «${STAGES[i][1]}» завершено скануванням ${blocksOf(c).length} касет; подія STAGE_CHANGED у МІС`,c);if(nx==='MICRO')S.ctab='concl';render();toast(nx==='MICRO'?'Скельця готові — справа в черзі лікаря на опис.':`Етап «${STAGES[i][1]}» завершено.`,true);},
+ insMicro:()=>{const c=C(S.case);if(c.id==='c418'){c.micro='Інвазивна карцинома неспецифічного типу (протокова), ступінь злоякісності за Ноттінгемською системою: тубулярні структури 3, ядерний поліморфізм 2, мітози 1 — сума 6 (G2). Лімфоваскулярна інвазія: не виявлено. Компонент протокової карциноми in situ: до 10%. Краї резекції: без пухлини, найближчий (латеральний) — 6 мм. У сторожовому лімфовузлі метастазів не виявлено (0/1).';}else c.micro=TPL[c.tpl].micro.replace(/\{[a-z]+\}/g,'…');render();},
+ assemble:()=>{const c=C(S.case);c.concl.text=buildConclusion(c);render();},
+ orderIhc:d=>{const c=C(S.case);const pan=d.p.split(',');const blk=blocksOf(c)[0];pan.forEach(m=>{if(!c.ihcOrdered.includes(m)){c.ihcOrdered.push(m);c.concl.ihc.push({m,block:blk.id,res:''});blk.slides.push({id:blk.id+'-'+m,stain:'ІГХ '+m,st:'ІГХ в роботі'});}});S.done.ihc=true;log(`Дозамовлено ІГХ ${pan.join(', ')} на блоці ${blk.id} (reflex); строк +3 дні; подія ADDITIONAL_STUDY_ORDERED у МІС`,c);render();
+  if(c.id==='c418')setTimeout(()=>{const R={ER:'позитивний, 95%, Allred 8',PR:'позитивний, 60%, Allred 6',HER2:'1+ (негативний)','Ki-67':'18%'};c.concl.ihc.forEach(x=>{if(!x.res&&R[x.m])x.res=R[x.m];});blk.slides.forEach(s=>{if(s.st==='ІГХ в роботі')s.st='Готово';});log('Результати ІГХ внесено лаборантом (демо: прискорено)',c);if(S.view==='case')render();toast('ІГХ готове (у демо прискорено). Натисніть «Зібрати текст» і підпишіть.');},2500);
+  toast(`ІГХ ${pan.join(', ')} дозамовлено на наявному блоці ${blk.id}. Вартість: ${price(c).toLocaleString('uk-UA')} грн.`,true);},
+ prelim:()=>{const c=C(S.case);c.concl.prelim=c.concl.text||buildConclusion(c);log('Передано попередній висновок у МІС (RESULT_PRELIMINARY)',c);render();toast('Попередній висновок надіслано в МІС з позначкою «Попередній».',true);},
+ openSign:()=>{const c=C(S.case);if(!c.concl.text.trim()){c.concl.text=buildConclusion(c);}if(!c.concl.morph||!c.concl.topo){toast('Заповніть МКХ-О: топографію та морфологію — вони передаються в МДК і канцер-реєстр.');return;}S.modal='sign';render();},
+ doSign:()=>{const c=C(S.case);c.stage='SIGNED';c.signedAt=now();c.signedBy=ME[S.role];c.archive=c.archive||'Шафа 3 · полиця 1 · комірка '+c.no.slice(-3);c.versions.push({v:1,at:c.signedAt,by:c.signedBy,kind:'Основний висновок',text:c.concl.text});S.done.sign=true;S.modal=null;
+  log(`Висновок підписано КЕП (RELEASED). МІС: RESULT_FINAL → «Морфологія», протокол операції, витяг-епікриз; МДК: показник «Морфологічні висновки»`,c);render();toast('Висновок підписано й видано. У МІС статус «Готово», у МДК — «морфологічно верифіковано».',true);},
+ openAdd:()=>{const c=C(S.case);S.ad={kind:'Результати ІГХ / молекулярних досліджень',text:c.id==='c405'?'ІГХ MMR (блок A2): MLH1 — втрата експресії, PMS2 — втрата експресії, MSH2 і MSH6 — експресія збережена. Висновок: dMMR (високий рівень мікросателітної нестабільності, ймовірно MSI-H).':''};S.modal='add';render();},
+ doAdd:()=>{const c=C(S.case);c.versions.push({v:c.versions.length+1,at:now(),by:ME[S.role],kind:'Доповнення · '+S.ad.kind,text:S.ad.text});S.done.add=true;S.modal=null;log(`Доповнення v${c.versions.length} підписано; подія ADDENDUM у МІС і МДК`,c);render();toast(`Доповнення v${c.versions.length} видано. МДК отримала сповіщення: висновок використано в рішенні від 22.10.2026.`,true);},
+ openCito:()=>{S.ct={text:'Метастаз аденокарциноми в лімфатичному вузлі.',by:'',how:'Телефон операційної + повідомлення в МІС',ack:false};S.modal='cito';render();},
+ ctAck:(d,el)=>{S.ct.ack=el.checked;render();},
+ doCito:()=>{const c=C(S.case);const m=Math.floor((Date.now()-c.citoStart)/60000);c.citoAck={by:S.ct.by,at:now(),min:m};c.concl.prelim=S.ct.text;c.stage='GROSS';S.done.cito=true;S.modal=null;log(`CITO: результат повідомлено в операційну (${S.ct.by}, read-back), ${m} хв від надходження; подія CRITICAL_RESULT у МІС (протокол операції №62)`,c);render();toast(`Результат повідомлено за ${m} хв. Плановий висновок — на парафінових блоках з цього матеріалу.`,true);},
+ openStain:()=>{const c=C(S.case);S.st={block:blocksOf(c)[0].id,sel:[]};S.modal='stain';render();},
+ stPick:d=>{const a=S.st.sel;const i=a.indexOf(d.m);i<0?a.push(d.m):a.splice(i,1);render();},
+ doStain:()=>{const c=C(S.case);const b=blocksOf(c).find(x=>x.id===S.st.block);S.st.sel.forEach(m=>{const isI=IHC.some(x=>x[0]===m);b.slides.push({id:b.id+'-'+m.replace(/\s/g,''),stain:(isI?'ІГХ ':'')+m,st:isI?'ІГХ в роботі':'Фарбування'});if(isI&&!c.ihcOrdered.includes(m)){c.ihcOrdered.push(m);c.concl.ihc.push({m,block:b.id,res:''});}});log(`Дозамовлено на блоці ${b.id}: ${S.st.sel.join(', ')}`,c);S.modal=null;render();toast('Замовлення додано; вартість і строк перераховано.',true);},
+ openIssue:d=>{S.is={id:d.id,b:d.b,to:'',doc:'',ret:'2026-11-30'};S.modal='issue';render();},
+ doIssue:()=>{const c=C(S.is.id);c.issued.push({block:S.is.b,to:S.is.to,at:now(),ret:S.is.ret});S.done.issue=true;log(`Видано блок ${S.is.b} (${c.no}) — ${S.is.to}; повернути до ${fmt(S.is.ret)}`,c);S.modal=null;render();toast('Видачу зафіксовано, акт надруковано.',true);},
+ returnBlk:d=>{const c=C(d.id);c.issued=c.issued.filter(x=>x.block!==d.b);log(`Блок ${d.b} повернуто в архів`,c);render();},
+ dictTab:d=>{S.dictTab=d.t;render();},
+ srcToggle:(d,el)=>{S.showSrc=el.checked;render();},
+ printDo:()=>{S.done.print=true;toast('У робочій системі відкривається діалог друку / PDF: дві сторони A4 альбомної орієнтації.');},
+ guide:()=>{S.guideOpen=!S.guideOpen;render();},
+ goAccept:()=>{if(!S.incoming.find(x=>x.id==='in1')){toast('Направлення Гриценко П. І. вже прийнято.');return;}if(!can('accept')){S.role='reg';toast('Роль: Реєстратор прийому.');}go('incoming',{inc:'in1'});},
+ goGross:()=>{const c=S.cases.find(x=>x.pid==='gry');if(!c){toast('Спершу прийміть матеріал Гриценко П. І.');return;}if(!can('gross'))S.role='path';go('case',{case:c.id,ctab:'gross'});},
+ goStage:()=>{const c=S.cases.find(x=>x.pid==='gry'&&['PROC','EMB','SECT','STAIN'].includes(x.stage))||C('c412');S.role='tech';go('case',{case:c.id,ctab:'blocks'});toast('Роль: Лаборант-гістолог.');},
+ goIhc:()=>{S.role='path';go('case',{case:'c418',ctab:'concl'});},
+ goCito:()=>{S.role='path';go('case',{case:'c420',ctab:'concl'});},
+ goAdd:()=>{S.role='path';go('case',{case:'c405',ctab:'concl'});},
+ goPrint:()=>{go('case',{case:S.cases.find(c=>c.id==='c418').stage==='SIGNED'?'c418':'c405',ctab:'print'});S.done.print=true;},
+ goArchive:()=>{S.role='tech';go('archive');},
+ openAudit:()=>{S.auditOpen=true;render();},auditClose:()=>{S.auditOpen=false;render();},
+ close:()=>{S.modal=null;render();},ovClick:(d,el,e)=>{if(e.target===el){S.modal=null;render();}},
+ reset:()=>{S=initAll();render();toast('Демо скинуто.');}
+};
+Object.assign(A,LABA);
+document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a;if(!A[a])return;if(el.tagName==='INPUT'&&el.type==='checkbox'){A[a](el.dataset,el,e);return;}if(['SELECT','TEXTAREA','INPUT'].includes(el.tagName))return;A[a](el.dataset,el,e);});
+document.addEventListener('change',e=>{const el=e.target;if(el.dataset.lch){LABCH(el);return;}const ch=el.dataset.ch;
+ if(el.dataset.pc){const [o,b]=el.dataset.pc.split('.');C(S.case).objects[+o].blocks[+b].pieces=+el.value||1;render();return;}
+ if(!ch)return;const v=el.value;
+ if(ch==='role'){S.role=v;render();toast('Роль: '+ROLES[v]);return;}
+ if(ch==='srcF'){S.srcF=v;render();return;}
+ if(ch.startsWith('case.')){C(S.case)[ch.slice(5)]=v;render();return;}
+ if(ch.startsWith('concl.')){C(S.case).concl[ch.slice(6)]=v;render();return;}
+ const [a,b]=ch.split('.');S[a][b]=v;render();});
+document.addEventListener('input',e=>{const el=e.target;if(el.dataset.lin!=null){LABIN(el);return;}
+ if(el.dataset.ihc!=null){C(S.case).concl.ihc[+el.dataset.ihc].res=el.value;return;}
+ const p=el.dataset.in;if(!p)return;const v=el.value;
+ if(p==='q'){S.q=v;if(S.view!=='journal'){S.view='journal';}render();return;}
+ if(p.startsWith('case.')){C(S.case)[p.slice(5)]=v;if(p==='case.macro'){const btn=document.querySelector('[data-a="finishGross"]');if(btn)btn.disabled=!(can('gross')&&blocksOf(C(S.case)).length&&v.trim());}return;}
+ if(p.startsWith('concl.')){C(S.case).concl[p.slice(6)]=v;return;}
+ const [a,b]=p.split('.');S[a][b]=v;
+ if(S.modal&&(p.startsWith('ad.')||p.startsWith('ct.')||p.startsWith('is.'))){const btn=document.querySelector('.modal .btn.ok, .modal .btn.dan.fill, .modal .btn.pri');if(btn){if(p.startsWith('ad.'))btn.disabled=S.ad.text.trim().length<=10;if(p.startsWith('ct.'))btn.disabled=!(S.ct.text.trim()&&S.ct.by.trim()&&S.ct.ack);if(p.startsWith('is.'))btn.disabled=!S.is.to.trim();}}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(S.modal){S.modal=null;render();}else if(S.auditOpen){S.auditOpen=false;render();}}});
+setInterval(()=>{const c=C('c420');if(!c||c.citoAck)return;const t=document.getElementById('citoT');if(t){const ms=Date.now()-c.citoStart;const m=Math.floor(ms/60000),s=Math.floor(ms/1000)%60;t.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');t.style.color=m>=20?'var(--red)':'var(--ink)';}},1000);
+const h=(location.hash||'').slice(1);if(['journal','incoming','cito','archive','dict','refs','work','svcmap','reports'].includes(h))S.view=h;
+render();
+})();
+</script></body></html>

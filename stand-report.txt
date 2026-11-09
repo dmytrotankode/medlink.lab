@@ -1,0 +1,64 @@
+
+===== Служби =====
+medlink-lab: active
+medlink-lab-v2: active
+nginx: active
+
+===== Порти (5190 /lab, 5191 /lab-v2) =====
+LISTEN 127.0.0.1:5191 users:(("dotnet",pid=29465,fd=320))
+LISTEN 127.0.0.1:5190 users:(("dotnet",pid=47127,fd=279))
+LISTEN 127.0.0.1:5444 users:(("docker-proxy",pid=28915,fd=7))
+LISTEN 127.0.0.1:6391 users:(("docker-proxy",pid=59686,fd=7))
+
+===== Контейнери lab-v2 =====
+medlink-lab-v2-pg  Up 4 hours
+medlink-lab-v2-redis  Up 27 hours
+
+===== Health =====
+/lab    200
+/lab-v2 200
+
+===== Журнал medlink-lab-v2 (останні 40 рядків, помилки/попередження) =====
+Nov 08 16:51:20 avo-db-prod dotnet[29465]: warn: Microsoft.EntityFrameworkCore.Query[20504]
+Nov 08 16:51:20 avo-db-prod dotnet[29465]:       Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Fram
+
+===== Журнал medlink-lab (останні 25 рядків, помилки) =====
+Nov 07 13:50:41 avo-db-prod dotnet[45933]: warn: Microsoft.EntityFrameworkCore.Query[10103]
+Nov 07 13:50:41 avo-db-prod dotnet[45933]: warn: Microsoft.EntityFrameworkCore.Query[10103]
+Nov 07 13:50:42 avo-db-prod dotnet[45933]: warn: Microsoft.EntityFrameworkCore.Query[20504]
+Nov 07 13:50:42 avo-db-prod dotnet[45933]:       Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Fram
+Nov 07 13:50:42 avo-db-prod dotnet[45933]: warn: Microsoft.EntityFrameworkCore.Query[20504]
+Nov 07 13:50:42 avo-db-prod dotnet[45933]:       Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Fram
+Nov 07 13:50:42 avo-db-prod dotnet[45933]: warn: Microsoft.EntityFrameworkCore.Query[20504]
+Nov 07 13:50:42 avo-db-prod dotnet[45933]:       Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Fram
+Nov 07 13:50:43 avo-db-prod dotnet[45933]: warn: Microsoft.EntityFrameworkCore.Query[20504]
+Nov 07 13:50:43 avo-db-prod dotnet[45933]:       Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Fram
+Nov 07 13:50:47 avo-db-prod dotnet[45933]: warn: Microsoft.EntityFrameworkCore.Query[20504]
+Nov 07 13:50:47 avo-db-prod dotnet[45933]:       Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Fram
+Nov 07 13:50:56 avo-db-prod dotnet[45933]: warn: Microsoft.EntityFrameworkCore.Query[20504]
+Nov 07 13:50:56 avo-db-prod dotnet[45933]:       Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Fram
+Nov 07 13:50:57 avo-db-prod dotnet[45933]: warn: Microsoft.AspNetCore.Server.Kestrel[0]
+Nov 07 13:52:05 avo-db-prod dotnet[47127]: warn: Microsoft.EntityFrameworkCore.Query[10103]
+Nov 07 13:52:06 avo-db-prod dotnet[47127]: warn: Microsoft.AspNetCore.Server.Kestrel[0]
+Nov 07 13:53:40 avo-db-prod dotnet[47127]: warn: Microsoft.EntityFrameworkCore.Query[20504]
+Nov 07 13:53:40 avo-db-prod dotnet[47127]:       Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Fram
+Nov 07 13:53:40 avo-db-prod dotnet[47127]: warn: Microsoft.EntityFrameworkCore.Query[20504]
+Nov 07 13:53:40 avo-db-prod dotnet[47127]:       Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Fram
+Nov 07 13:54:06 avo-db-prod dotnet[47127]: warn: Microsoft.EntityFrameworkCore.Query[20504]
+Nov 07 13:54:06 avo-db-prod dotnet[47127]:       Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Fram
+
+===== Версії зібраних застосунків =====
+/srv/medlink-lab/app: 2026-11-07 13:43:59.000000000 +0000
+/srv/medlink-lab-v2/app: 2026-11-08 13:14:46.000000000 +0000
+
+===== Дані lab-v2: замовлення та підрозділи (без персональних даних) =====
+ERROR:  relation "lab_order" does not exist
+LINE 1: ...(*), count(department_id) as with_department from lab_order;
+                                                             ^
+ERROR:  relation "lab_order_test" does not exist
+LINE 1: select 'order_tests', count(*) from lab_order_test;
+                                            ^
+
+===== Диск і пам'ять =====
+/dev/sda1       150G   60G   85G  42% /
+Mem:            7746        3642        1378        1002        2725        2400

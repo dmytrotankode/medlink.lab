@@ -74,6 +74,16 @@ PGCONF
   umask 022
 fi
 
+# Режим визначення співробітника: на цьому dev-стенді ролі перемикаються заголовком X-MedLink-Employee-Id (Auth:Mode=Header).
+# Для бойового середовища задайте AUTH_MODE=None і підключіть вхід (docs/AUTH_PLAN.md). Наявний drop-in не перезаписується.
+mkdir -p /etc/systemd/system/medlink-lab.service.d
+if [ ! -f /etc/systemd/system/medlink-lab.service.d/auth.conf ]; then
+  cat > /etc/systemd/system/medlink-lab.service.d/auth.conf <<AUTHCONF
+[Service]
+Environment=Auth__Mode=${AUTH_MODE:-Header}
+AUTHCONF
+fi
+
 systemctl daemon-reload
 systemctl enable --now medlink-lab.service
 systemctl restart medlink-lab.service
