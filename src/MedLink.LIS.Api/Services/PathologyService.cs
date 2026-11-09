@@ -776,7 +776,7 @@ public sealed class PathologyService
         if (string.IsNullOrWhiteSpace(topo) || string.IsNullOrWhiteSpace(morph)) return new();
         var site = topo.Trim().ToUpperInvariant()[..Math.Min(3, topo.Trim().Length)];
         var ordered = slides.Where(s => s.Marker != null).Select(s => s.Marker!).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var rules = await _db.IhcReflexRules.AsNoTracking().ToListAsync();
+        var rules = await _db.IhcReflexRules.AsNoTracking().Where(r => r.IsActive).ToListAsync();
         return rules.Where(rule => string.CompareOrdinal(site, rule.TopoFrom) >= 0 && string.CompareOrdinal(site, rule.TopoTo) <= 0 && rule.MorphCodes.Split(',').Select(m => m.Trim()).Contains(morph.Trim()))
             .Select(rule => (object)new
             {

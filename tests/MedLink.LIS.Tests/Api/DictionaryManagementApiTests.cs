@@ -43,6 +43,7 @@ public class DictionaryManagementApiTests
     [InlineData("path-rooms", "T_ROOM_1", "Тестове приміщення")]
     public async Task Pathology_dictionary_create_edit_archive_restore(string name, string code, string title)
     {
+        await Admin.GetAsync($"{Lab}/pathology/rooms"); // типові приміщення створюються при першому зверненні — до тестового запису
         var created = await Json(await Admin.PostAsJsonAsync($"{Dict}/{name}", new { code, name = title, slaDays = 4, price = 100, basePrice = 50 }));
         Assert.True(created["isActive"]!.GetValue<bool>());
         await AssertProblem(await Admin.PostAsJsonAsync($"{Dict}/{name}", new { code, name = "Дубль" }), HttpStatusCode.Conflict);
@@ -56,6 +57,7 @@ public class DictionaryManagementApiTests
         Assert.Single(archived["items"]!.AsArray());
         var restored = await Json(await Admin.PutAsJsonAsync($"{Dict}/{name}/{id}", new { isActive = true }));
         Assert.True(restored["isActive"]!.GetValue<bool>());
+        await Json(await Admin.DeleteAsync($"{Dict}/{name}/{id}")); // повертаємо в архів, щоб не зіпсувати спільні дані інших тестів
     }
 
     [Fact]
